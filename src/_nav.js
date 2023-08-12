@@ -16,19 +16,19 @@ export default [
   {
     component: 'CNavItem',
     name: '와드 관리',
-    to: '/base/accordion',
+    to: '/admin/wod',
     icon: 'cil-list',
   },
   {
     component: 'CNavItem',
-    name: '와드 기록',
-    to: '/base/accordion',
+    name: '기록 관리',
+    to: '/admin/record',
     icon: 'cil-basket',
   },
   {
     component: 'CNavItem',
     name: '회원 관리',
-    to: '/base/accordion',
+    to: '/admin/member',
     icon: 'cil-user',
   },
   {

@@ -8,7 +8,7 @@ const routes = [
     path: '/',
     name: 'Home',
     component: DefaultLayout,
-    redirect: '/dashboard',
+    redirect: '/admin/reservation',
     children: [
       {
         path: '/dashboard',
@@ -45,14 +45,25 @@ const routes = [
         },
         children: [
           {
+            path: '/admin/wod',
+            name: 'Wod',
+            component: () =>
+              import('@/views/admin/workout/WorkoutRegister.vue'),
+          },
+          {
+            path: '/admin/record',
+            name: 'Record',
+            component: () => import('@/views/admin/workout/WorkoutHistory.vue'),
+          },
+          {
+            path: '/admin/member',
+            name: 'Member',
+            component: () => import('@/views/admin/member/MemberList.vue'),
+          },
+          {
             path: '/admin/reservation',
             name: 'Reservation',
             component: () => import('@/views/admin/class/ClassReservation.vue'),
-          },
-          {
-            path: '/base/accordion',
-            name: 'Accordion',
-            component: () => import('@/views/base/Accordion.vue'),
           },
         ],
       },
