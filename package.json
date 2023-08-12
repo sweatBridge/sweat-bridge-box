@@ -28,6 +28,7 @@
     "@coreui/vue-chartjs": "2.1.0",
     "@fullcalendar/daygrid": "^6.1.8",
     "@fullcalendar/interaction": "^6.1.8",
+    "@fullcalendar/timegrid": "^6.1.8",
     "@fullcalendar/vue3": "^6.1.8",
     "core-js": "^3.31.1",
     "vue": "^3.3.4",
