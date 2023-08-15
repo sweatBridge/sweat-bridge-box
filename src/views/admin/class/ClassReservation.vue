@@ -18,6 +18,11 @@
       </CCard>
     </CCol>
   </CRow>
+  <save-class-modal
+    ref="saveModal"
+    purpose="ClassReservation"
+    @saveModalResult="checkSaveModalResult"
+  />
 </template>
 
 <script>
@@ -27,9 +32,11 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import { INITIAL_EVENTS, createEventId } from './event-utils'
 import { defineComponent } from 'vue'
+import SaveClassModal from '@/views/admin/common/modal/SaveClassModal.vue'
 
 export default defineComponent({
   components: {
+    SaveClassModal,
     FullCalendar,
   },
   data() {
@@ -43,9 +50,9 @@ export default defineComponent({
         headerToolbar: {
           left: 'prev,next today',
           center: 'title',
-          right: 'dayGridMonth,timeGridWeek,timeGridDay',
+          right: 'timeGridDay,timeGridWeek,dayGridMonth',
         },
-        initialView: 'dayGridMonth',
+        initialView: 'timeGridWeek',
         initialEvents: INITIAL_EVENTS, // alternatively, use the `events` setting to fetch from a feed
         editable: true,
         selectable: true,
@@ -55,11 +62,9 @@ export default defineComponent({
         select: this.handleDateSelect,
         eventClick: this.handleEventClick,
         eventsSet: this.handleEvents,
-        /* you can update a remote database when these fire:
-        eventAdd:
-        eventChange:
-        eventRemove:
-        */
+        eventAdd: this.handleEventAdd,
+        eventChange: this.handleEventChange,
+        eventRemove: this.handleEventRemove,
       },
       currentEvents: [],
     }
@@ -68,8 +73,11 @@ export default defineComponent({
     handleWeekendsToggle() {
       this.calendarOptions.weekends = !this.calendarOptions.weekends // update a property
     },
+    //TODO : 순서 load -> modal 응답 -> checkSaveModalResult -> addEvent -> handleEventAdd
     handleDateSelect(selectInfo) {
-      let title = prompt('Please enter a new title for your event')
+      this.loadSaveModal(selectInfo)
+      // let title = prompt('Please enter a new title for your event')
+      let title = 'abc'
       let calendarApi = selectInfo.view.calendar
 
       calendarApi.unselect() // clear date selection
@@ -77,7 +85,7 @@ export default defineComponent({
       if (title) {
         calendarApi.addEvent({
           id: createEventId(),
-          title,
+          title: title,
           start: selectInfo.startStr,
           end: selectInfo.endStr,
           allDay: selectInfo.allDay,
@@ -85,10 +93,37 @@ export default defineComponent({
       }
     },
     handleEventClick(clickInfo) {
+      if (
+        confirm(
+          `Are you sure you want to delete the event '${clickInfo.event.title}'`,
+        )
+      ) {
+        clickInfo.event.remove()
+      }
       console.log(clickInfo)
     },
     handleEvents(events) {
       this.currentEvents = events
+    },
+    handleEventAdd(event) {
+      console.log('handle event add')
+      console.log(event)
+    },
+    handleEventChange(event) {
+      console.log('handle event change')
+      console.log(event)
+    },
+    handleEventRemove(event) {
+      console.log('handle event remove')
+      console.log(event)
+    },
+    loadSaveModal(selectInfo) {
+      console.log('loadSaveModal')
+      this.$refs.saveModal.showModal(selectInfo)
+    },
+    checkSaveModalResult(modalResult) {
+      console.log('checkSaveModalResult')
+      console.log(modalResult)
     },
   },
 })
