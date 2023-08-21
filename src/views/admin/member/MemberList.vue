@@ -28,8 +28,17 @@
         <template #item-name="{ name }">
           {{name}}
         </template>
-        <template #item-duration="{ duration }">
-          {{duration}}
+        <template #item-expiryDate="{ expiryDate }">
+          {{expiryDate}}&nbsp;
+          <CButton
+            color="dark"
+            size="sm"
+          >
+            갱신
+          </CButton>
+        </template>
+        <template #item-duration="{ expiryDate }">
+          {{ calculateRemainingDays(expiryDate) }}
         </template>
         <template #item-gender="{ gender }">
           {{gender}}
@@ -70,7 +79,8 @@ export default defineComponent({
   setup() {
     const headers = [
       { text: "이름", value: "name" },
-      { text: "잔여 기간", value: "duration", sortable: true },
+      { text: "만료 일자", value: "expiryDate", sortable: true, width: "250"},
+      { text: "잔여 기간", value: "duration" },
       { text: "성별", value: "gender" },
       { text: "나이", value: "age" },
       { text: "기능", value: "operation", width: "100" }
@@ -86,10 +96,20 @@ export default defineComponent({
       console.log(result)
     }
 
+    const calculateRemainingDays = (expiryDate) => {
+      const today = new Date()
+      const expiry = new Date(expiryDate)
+      const diff = expiry.getTime() - today.getTime()
+      const diffDays = Math.ceil(diff / (1000 * 3600 * 24))
+      return diffDays
+    }
+
+    const picked = ref(new Date())
+
     const items = [
       {
         name: '김대현',
-        duration: 30,
+        expiryDate: '2023-11-07',
         gender: '남',
         age: 28,
         weight: 80,
@@ -100,6 +120,7 @@ export default defineComponent({
       {
         name: '박솔희',
         duration: 60,
+        expiryDate: '2023-12-07',
         gender: '여',
         age: 27,
         weight: 40,
@@ -109,7 +130,7 @@ export default defineComponent({
       },
       {
         name: '김재인',
-        duration: 10,
+        expiryDate: '2024-03-07',
         gender: '남',
         age: 27,
         weight: 70,
@@ -125,7 +146,9 @@ export default defineComponent({
       searchValue,
       deleteItem,
       // approveMembers,
-      checkApprovalRequestModalResult
+      checkApprovalRequestModalResult,
+      calculateRemainingDays,
+      picked
     }
   },
   methods: {
