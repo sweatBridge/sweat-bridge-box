@@ -15,7 +15,7 @@
           <CNavLink href="#/admin/record"> Record </CNavLink>
         </CNavItem>
         <CNavItem>
-          <CNavLink href="#/admin/member"> Memeber </CNavLink>
+          <CNavLink href="#/admin/member"> Member </CNavLink>
         </CNavItem>
         <CNavItem>
           <CNavLink href="#/admin/reservation"> Class </CNavLink>
