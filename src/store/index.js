@@ -1,4 +1,5 @@
 import { createStore } from 'vuex'
+import classManagement from "@/store/modules/classManagement"
 
 export default createStore({
   state: {
@@ -17,5 +18,7 @@ export default createStore({
     },
   },
   actions: {},
-  modules: {},
+  modules: {
+    classManagement,
+  },
 })

@@ -153,6 +153,8 @@ export default defineComponent({
         status: status,
         coach: coach.value,
         capacity: capacity.value,
+        startStr: startStr.value,
+        endStr: endStr.value,
       }
       modalStatus.value = false
       emit('saveModalResult', result)
