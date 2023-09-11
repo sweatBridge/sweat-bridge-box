@@ -1,4 +1,4 @@
-import { getDocs, collection, query, getDoc, doc, setDoc, where } from "firebase/firestore";
+import { getDocs, collection, query, getDoc, doc, setDoc, where, Timestamp } from "firebase/firestore";
 import { db } from '@/firebase'
 import {extractDateTimeFromDocKey} from "@/views/admin/class/event-utils";
 
@@ -40,9 +40,9 @@ const classManagement = {
         const {year, month, day, startHour, startMin, endHour, endMin} = extractDateTimeFromDocKey(docKey)
         const event = doc.data()
         event.id = docKey
+        event.title = payload.box + " WOD"
         event.start = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${startHour}:${startMin}:00+09:00`
         event.end = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${endHour}:${endMin}:00+09:00`
-        event.title = payload.box + " WOD"
         calendarApi.addEvent(event)
       })
     },
@@ -60,12 +60,14 @@ const classManagement = {
       })
     },
     async setClass({commit}, payload) {
-      const {box, date, time, coach, cap} = payload
-      const path = `/box/${box}/class/${date}/time`
-      await setDoc(doc(db, path, time), {
+      const {docKey, box, coach, cap} = payload
+      const {year, month, day} = extractDateTimeFromDocKey(docKey)
+      const path = `/box/${box}/class`
+      const date = new Date(`${year}-${month}-${day}T00:00:00+09:00`)
+      await setDoc(doc(db, path, docKey), {
         cap: cap,
         coach: coach,
-        time: time,
+        date: Timestamp.fromDate(date),
         reserved: [],
       })
 

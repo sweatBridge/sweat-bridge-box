@@ -35,5 +35,24 @@ export function extractDateTimeFromDocKey(docKey) {
     startMin,
     endHour,
     endMin
-  };
+  }
+}
+
+export function extractDateAndTime(datetime) {
+  const dt = new Date(datetime)
+
+  // 연도, 월, 일을 추출하여 문자열로 변환
+  const year = dt.getFullYear()
+  const month = String(dt.getMonth() + 1).padStart(2, '0') // 월은 0부터 시작하므로 +1 해줌
+  const day = String(dt.getDate()).padStart(2, '0')
+
+  // 시간을 추출하여 문자열로 변환
+  const hours = String(dt.getHours()).padStart(2, '0')
+  const minutes = String(dt.getMinutes()).padStart(2, '0')
+
+  // 추출된 연도, 월, 일과 시간, 분을 조합하여 반환
+  const date = `${year}${month}${day}`
+  const time = `${hours}${minutes}`
+
+  return {date, time}
 }

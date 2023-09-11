@@ -138,23 +138,30 @@ export default defineComponent({
       }
     },
     async saveClass(result) {
-      const startDt = this.extractDateAndTime(result.startStr)
-      const endDt = this.extractDateAndTime(result.endStr)
+      let calendarApi = this.$refs.fullCalendar.getApi()
+      const startDt = extractDateAndTime(result.startStr)
+      const endDt = extractDateAndTime(result.endStr)
+      const box = 'CFBD'
       if (startDt.date !== endDt.date) {
         return
       }
-      try {
-        await this.setClass({
-          box: 'Crossfit J',
-          date: startDt.date,
-          time: this.createTimeDocId(startDt.time, endDt.time),
-          coach: result.coach,
-          cap: result.capacity,
+      this.setClass({
+        docKey: startDt.date + startDt.time + endDt.time,
+        box: box,
+        coach: result.coach,
+        cap: parseInt(result.capacity, 10)
+      })
+        .then(() => {
+          calendarApi.addEvent({
+            id: createEventId(),
+            title: box + " WOD",
+            start: result.startStr,
+            end: result.endStr
+          })
         })
-      } catch (error) {
-        console.error('fail to set class', error)
-      }
-
+        .catch(error => {
+          console.error('Failed to set class', error);
+        })
     },
     async dbTest() {
       try {
@@ -163,24 +170,6 @@ export default defineComponent({
       } catch (error) {
         console.error('An error occurred:', error);
       }
-    },
-    extractDateAndTime(datetime) {
-      const dt = new Date(datetime)
-
-      // 연도, 월, 일을 추출하여 문자열로 변환
-      const year = dt.getFullYear()
-      const month = String(dt.getMonth() + 1).padStart(2, '0') // 월은 0부터 시작하므로 +1 해줌
-      const day = String(dt.getDate()).padStart(2, '0')
-
-      // 시간을 추출하여 문자열로 변환
-      const hours = String(dt.getHours()).padStart(2, '0')
-      const minutes = String(dt.getMinutes()).padStart(2, '0')
-
-      // 추출된 연도, 월, 일과 시간, 분을 조합하여 반환
-      const date = `${year}${month}${day}`
-      const time = `${hours}${minutes}`
-
-      return {date, time}
     },
     createTimeDocId(start, end) {
       return `${start}${end}`
