@@ -4,13 +4,19 @@ let todayStr = new Date().toISOString().replace(/T.*$/, '') // YYYY-MM-DD of tod
 export const INITIAL_EVENTS = [
   {
     id: createEventId(),
-    title: 'All-day event',
-    start: todayStr,
+    title: todayStr + '12001300',
+    extendedProps: {
+      coach: '김대현',
+      cap: 20,
+    },
+    start: todayStr + 'T12:00:00',
+    end: todayStr + 'T13:00:00',
   },
   {
     id: createEventId(),
-    title: 'Timed event',
-    start: todayStr + 'T12:00:00',
+    title: todayStr + '14001500',
+    start: todayStr + 'T14:00:00',
+    end: todayStr + 'T15:00:00',
   },
 ]
 
