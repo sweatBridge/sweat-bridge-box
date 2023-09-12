@@ -7,7 +7,7 @@
         </CCardHeader>
         <CCardBody>
           <div class="demo-app-main">
-            <FullCalendar class="demo-app-calendar" :options="calendarOptions">
+            <FullCalendar class="demo-app-calendar" ref="fullCalendar" :options="calendarOptions">
               <template v-slot:eventContent="arg">
                 <b>{{ arg.timeText }}</b>
                 <i>{{ arg.event.title }}</i>
@@ -22,6 +22,7 @@
     <CCard>
       <CCardBody>
         <CButton color="primary" @click="dbTest"> DB Button </CButton>
+        <CButton color="primary" @click="dbTest2"> DB Button </CButton>
       </CCardBody>
     </CCard>
   </CRow>
@@ -37,15 +38,28 @@ import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import { INITIAL_EVENTS, createEventId } from './event-utils'
+import {INITIAL_EVENTS, createEventId, extractDateAndTime} from './classCalendarUtils'
 import { defineComponent } from 'vue'
 import SaveClassModal from '@/views/admin/common/modal/SaveClassModal.vue'
-import {mapActions} from "vuex";
+import {mapActions, mapState} from "vuex";
 
 export default defineComponent({
   components: {
     SaveClassModal,
     FullCalendar,
+  },
+  mounted() {
+    // console.log(calendarApi.view.activeStart)
+    // console.log(calendarApi.view.activeEnd)
+    this.getMonthlyClasses({
+      calendarApi: this.$refs.fullCalendar.getApi(),
+      box: 'CFBD',
+    })
+  },
+  computed: {
+    classes() {
+      return this.$store.getters.getClasses
+    },
   },
   data() {
     return {
@@ -55,11 +69,32 @@ export default defineComponent({
           timeGridPlugin,
           interactionPlugin, // needed for dateClick
         ],
+        customButtons: {
+          // myCustomButton: {
+          //   text: 'custom!',
+          //   click: function() {
+          //     alert('clicked the custom button!');
+          //   }
+          // }
+        },
         headerToolbar: {
           left: 'prev,next today',
           center: 'title',
           right: 'timeGridDay,timeGridWeek,dayGridMonth',
         },
+        views: {
+          dayGridMonth: {
+            titleFormat: { year: 'numeric', month: '2-digit' }
+          },
+          timeGridWeek: {
+            titleFormat: { year: 'numeric', month: '2-digit', day: '2-digit' }
+          },
+          timeGridDay: {
+            titleFormat: { year: 'numeric', month: '2-digit', day: '2-digit' }
+          }
+        },
+        // dayNames: ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"],
+        // dayNamesShort: ["일", "월", "화", "수", "목", "금", "토"],
         initialView: 'timeGridWeek',
         initialEvents: INITIAL_EVENTS, // alternatively, use the `events` setting to fetch from a feed
         editable: true,
@@ -78,29 +113,16 @@ export default defineComponent({
     }
   },
   methods: {
-    ...mapActions(['getDailyClasses', 'getClass', 'setClass']),
+    ...mapActions(['getDailyClasses', 'getClass', 'setClass', 'getMonthlyClasses', 'addClass', 'getClassDoc']),
     handleWeekendsToggle() {
       this.calendarOptions.weekends = !this.calendarOptions.weekends // update a property
     },
     //TODO : 순서 load -> modal 응답 -> checkSaveModalResult -> addEvent -> handleEventAdd
     handleDateSelect(selectInfo) {
       this.loadSaveModal(selectInfo)
-      // let title = prompt('Please enter a new title for your event')
       //TODO : 복원 가능
-      // let title = 'abc'
-      // let calendarApi = selectInfo.view.calendar
-      //
+      let calendarApi = selectInfo.view.calendar
       // calendarApi.unselect() // clear date selection
-      //
-      // if (title) {
-      //   calendarApi.addEvent({
-      //     id: createEventId(),
-      //     title: title,
-      //     start: selectInfo.startStr,
-      //     end: selectInfo.endStr,
-      //     allDay: selectInfo.allDay,
-      //   })
-      // }
     },
     handleEventClick(clickInfo) {
       if (
@@ -163,13 +185,39 @@ export default defineComponent({
           console.error('Failed to set class', error);
         })
     },
+    // test buttion 1
     async dbTest() {
-      try {
-        // await this.getDailyClasses()
-        await this.setClass()
-      } catch (error) {
-        console.error('An error occurred:', error);
+      // this.getMonthlyClasses()
+      // let calendarApi = this.$refs.fullCalendar.getApi()
+      // calendarApi.next()
+      let calendarApi = this.$refs.fullCalendar.getApi()
+      const clases = this.$store.getters.getClasses
+      console.log(clases)
+      for (let i = 1; i <= clases.length; i++) {
+        calendarApi.addEvent({
+          id: createEventId(),
+          title: clases.title,
+          start: clases.start,
+          end: clases.end
+        })
       }
+    },
+    // test buttion 2
+    async dbTest2() {
+      // let todayStr = new Date().toISOString().replace(/T.*$/, '')
+      // let calendarApi = this.$refs.fullCalendar.getApi()
+      // calendarApi.addEvent({
+      //   id: "abc",
+      //   title: 'test & test',
+      //   start: todayStr + 'T18:00:00',
+      //   end: todayStr + 'T20:00:00'
+      // })
+      // console.log(calendarApi)
+      // console.log(this.currentEvents)
+      this.addClass({
+        calendarApi: this.$refs.fullCalendar.getApi(),
+      })
+
     },
     createTimeDocId(start, end) {
       return `${start}${end}`

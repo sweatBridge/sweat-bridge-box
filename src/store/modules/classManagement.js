@@ -1,6 +1,6 @@
 import { getDocs, collection, query, getDoc, doc, setDoc, where, Timestamp } from "firebase/firestore";
 import { db } from '@/firebase'
-import {extractDateTimeFromDocKey} from "@/views/admin/class/event-utils";
+import {extractDateTimeFromDocKey} from "@/views/admin/class/classCalendarUtils";
 
 const classManagement = {
   state: {
@@ -31,7 +31,10 @@ const classManagement = {
       startDt.setDate(today.getDate() - 1)
       endDt.setDate(startDt.getDate() + 30)
       const path = `/box/${payload.box}/class`
-      const q = query(collection(db, path), where('date', '>=', startDt))
+      const q = query(collection(db, path),
+        where('date', '>=', startDt),
+        where('date', '<', endDt)
+      )
       const querySnap = await getDocs(q);
 
       querySnap.forEach((doc) => {
