@@ -31,6 +31,12 @@
     purpose="ClassReservation"
     @saveModalResult="checkSaveModalResult"
   />
+  <manage-class-modal
+    ref="manageModal"
+    @updateModalResult="updateClass"
+    @deleteModalResult="deleteClass"
+  />
+
 </template>
 
 <script>
@@ -41,10 +47,12 @@ import interactionPlugin from '@fullcalendar/interaction'
 import {INITIAL_EVENTS, createEventId, extractDateAndTime} from './classCalendarUtils'
 import { defineComponent } from 'vue'
 import SaveClassModal from '@/views/admin/common/modal/SaveClassModal.vue'
-import {mapActions, mapState} from "vuex";
+import {mapActions} from "vuex";
+import ManageClassModal from "@/views/admin/common/modal/ManageClassModal.vue"
 
 export default defineComponent({
   components: {
+    ManageClassModal,
     SaveClassModal,
     FullCalendar,
   },
@@ -56,11 +64,7 @@ export default defineComponent({
       box: 'CFBD',
     })
   },
-  computed: {
-    classes() {
-      return this.$store.getters.getClasses
-    },
-  },
+  computed: {},
   data() {
     return {
       calendarOptions: {
@@ -113,51 +117,65 @@ export default defineComponent({
     }
   },
   methods: {
-    ...mapActions(['getDailyClasses', 'getClass', 'setClass', 'getMonthlyClasses', 'addClass', 'getClassDoc']),
+    ...mapActions(['getDailyClasses', 'getClass', 'setClass', 'getMonthlyClasses', 'update', 'delete']),
     handleWeekendsToggle() {
       this.calendarOptions.weekends = !this.calendarOptions.weekends // update a property
     },
     //TODO : 순서 load -> modal 응답 -> checkSaveModalResult -> addEvent -> handleEventAdd
     handleDateSelect(selectInfo) {
       this.loadSaveModal(selectInfo)
-      //TODO : 복원 가능
-      let calendarApi = selectInfo.view.calendar
-      // calendarApi.unselect() // clear date selection
     },
     handleEventClick(clickInfo) {
-      if (
-        confirm(
-          `Are you sure you want to delete the event '${clickInfo.event.title}'`,
-        )
-      ) {
-        clickInfo.event.remove()
-      }
-      console.log(clickInfo)
+      this.loadManageModal(clickInfo.event)
     },
     handleEvents(events) {
       this.currentEvents = events
     },
-    handleEventAdd(event) {
-      console.log('handle event add')
-      console.log(event)
-    },
-    handleEventChange(event) {
-      console.log('handle event change')
-      console.log(event)
-    },
-    handleEventRemove(event) {
-      console.log('handle event remove')
-      console.log(event)
-    },
+    // event 추가 시 호출
+    handleEventAdd(event) {},
+    // event 상태 변경 시 호출
+    handleEventChange(event) {},
+    // event 삭제 시 호출
+    handleEventRemove(event) {},
     loadSaveModal(selectInfo) {
-      console.log('loadSaveModal')
       this.$refs.saveModal.showModal(selectInfo)
     },
+    loadManageModal(event) {
+      this.$refs.manageModal.showModal(event)
+    },
     checkSaveModalResult(modalResult) {
-      console.log('checkSaveModalResult')
       if (modalResult.status) {
         this.saveClass(modalResult)
       }
+    },
+    async updateClass(result) {
+      let calendarApi = this.$refs.fullCalendar.getApi()
+      const box = 'CFBD'
+      this.update({
+        docKey: result.id,
+        box: box,
+        coach: result.coach,
+        cap: parseInt(result.capacity, 10),
+        reserved: result.reserved,
+      }).then(() => {
+          calendarApi.getEventById(result.id).setExtendedProp('coach', result.coach)
+          calendarApi.getEventById(result.id).setExtendedProp('cap', result.capacity)
+        }
+      ).catch(error => {
+        console.error('Failed to update class', error);
+      })
+    },
+    async deleteClass(result) {
+      let calendarApi = this.$refs.fullCalendar.getApi()
+      const box = 'CFBD'
+      this.delete({
+        docKey: result.id,
+        box: box,
+      }).then(() => {
+        calendarApi.getEventById(result.id).remove()
+      }).catch(error => {
+        console.error('Failed to delete class', error);
+      })
     },
     async saveClass(result) {
       let calendarApi = this.$refs.fullCalendar.getApi()
@@ -181,50 +199,14 @@ export default defineComponent({
             end: result.endStr,
             extendedProps: {
               coach: result.coach,
-              capacity: result.capacity,
+              cap: parseInt(result.capacity, 10),
+              reserved: result.reserved,
             }
           })
         })
         .catch(error => {
           console.error('Failed to set class', error);
         })
-    },
-    // test buttion 1
-    async dbTest() {
-      // this.getMonthlyClasses()
-      // let calendarApi = this.$refs.fullCalendar.getApi()
-      // calendarApi.next()
-      let calendarApi = this.$refs.fullCalendar.getApi()
-      const clases = this.$store.getters.getClasses
-      console.log(clases)
-      for (let i = 1; i <= clases.length; i++) {
-        calendarApi.addEvent({
-          id: createEventId(),
-          title: clases.title,
-          start: clases.start,
-          end: clases.end
-        })
-      }
-    },
-    // test buttion 2
-    async dbTest2() {
-      // let todayStr = new Date().toISOString().replace(/T.*$/, '')
-      // let calendarApi = this.$refs.fullCalendar.getApi()
-      // calendarApi.addEvent({
-      //   id: "abc",
-      //   title: 'test & test',
-      //   start: todayStr + 'T18:00:00',
-      //   end: todayStr + 'T20:00:00'
-      // })
-      // console.log(calendarApi)
-      // console.log(this.currentEvents)
-      this.addClass({
-        calendarApi: this.$refs.fullCalendar.getApi(),
-      })
-
-    },
-    createTimeDocId(start, end) {
-      return `${start}${end}`
     },
   },
 })

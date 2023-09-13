@@ -1,16 +1,10 @@
-import { getDocs, collection, query, getDoc, doc, setDoc, where, Timestamp } from "firebase/firestore";
+import { getDocs, collection, query, getDoc, doc, setDoc, where, Timestamp, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from '@/firebase'
 import {extractDateTimeFromDocKey} from "@/views/admin/class/classCalendarUtils";
 
 const classManagement = {
-  state: {
-    classes: [],
-  },
-  mutations: {
-    SET_CLASSES(state, payload) {
-      state.classes = payload.classes
-    }
-  },
+  state: {},
+  mutations: {},
   actions: {
     async getDailyClasses({commit}) {
       const box = 'Crossfit J'
@@ -48,6 +42,7 @@ const classManagement = {
         event.extendedProps = {
           coach: event.coach,
           cap: event.cap,
+          reserved: event.reserved,
         }
         calendarApi.addEvent(event)
       })
@@ -67,23 +62,35 @@ const classManagement = {
     },
     async setClass({commit}, payload) {
       const {docKey, box, coach, cap} = payload
-      const {year, month, day} = extractDateTimeFromDocKey(docKey)
+      const {year, month, day, startHour, startMin} = extractDateTimeFromDocKey(docKey)
       const path = `/box/${box}/class`
-      const date = new Date(`${year}-${month}-${day}T00:00:00+09:00`)
+      const date = new Date(`${year}-${month}-${day}T${startHour}:${startMin}:00+09:00`)
       await setDoc(doc(db, path, docKey), {
         cap: cap,
         coach: coach,
         date: Timestamp.fromDate(date),
         reserved: [],
       })
-
     },
-  },
-  getters: {
-    getClasses: function (state) {
-      return state.classes
+    async update({commit}, payload) {
+      const {docKey, box, coach, cap, reserved} = payload
+      const {year, month, day, startHour, startMin} = extractDateTimeFromDocKey(docKey)
+      const path = `/box/${box}/class`
+      const date = new Date(`${year}-${month}-${day}T${startHour}:${startMin}:00+09:00`)
+      await updateDoc(doc(db, path, docKey), {
+        cap: cap,
+        coach: coach,
+        date: Timestamp.fromDate(date),
+        reserved: reserved,
+      })
+    },
+    async delete({commit}, payload) {
+      const {docKey, box} = payload
+      const path = `/box/${box}/class`
+      await deleteDoc(doc(db, path, docKey))
     }
   },
+  getters: {}
 }
 
 export default classManagement
