@@ -178,7 +178,11 @@ export default defineComponent({
             id: createEventId(),
             title: box + " WOD",
             start: result.startStr,
-            end: result.endStr
+            end: result.endStr,
+            extendedProps: {
+              coach: result.coach,
+              capacity: result.capacity,
+            }
           })
         })
         .catch(error => {

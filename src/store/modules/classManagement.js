@@ -38,7 +38,6 @@ const classManagement = {
       const querySnap = await getDocs(q);
 
       querySnap.forEach((doc) => {
-        console.log(doc.data())
         const docKey = doc._key.getCollectionPath().get(3)
         const {year, month, day, startHour, startMin, endHour, endMin} = extractDateTimeFromDocKey(docKey)
         const event = doc.data()
@@ -46,6 +45,10 @@ const classManagement = {
         event.title = payload.box + " WOD"
         event.start = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${startHour}:${startMin}:00+09:00`
         event.end = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${endHour}:${endMin}:00+09:00`
+        event.extendedProps = {
+          coach: event.coach,
+          cap: event.cap,
+        }
         calendarApi.addEvent(event)
       })
     },
