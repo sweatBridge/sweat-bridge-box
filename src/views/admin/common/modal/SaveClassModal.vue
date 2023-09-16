@@ -65,6 +65,7 @@
             name="flexCheckDefault"
             id="flexCheckDefault"
             label="이 수업 4주간 동일하게 적용"
+            v-model="this.isMonthlySchedule"
           />
         </CCol>
       </CRow>
@@ -122,7 +123,7 @@ export default defineComponent({
     const endStr = ref('')
     const coach = ref('')
     const capacity = ref(0)
-    //TODO : selectConfig 보관
+    const isMonthlySchedule = ref(false)
 
     const getSubject = computed(() => {
       switch (props.purpose) {
@@ -155,6 +156,7 @@ export default defineComponent({
         capacity: capacity.value,
         startStr: startStr.value,
         endStr: endStr.value,
+        isMonthlySchedule: isMonthlySchedule.value,
       }
       modalStatus.value = false
       emit('saveModalResult', result)
@@ -168,6 +170,7 @@ export default defineComponent({
       endStr,
       coach,
       capacity,
+      isMonthlySchedule,
       showModal,
       checkSaveModalResult,
     }

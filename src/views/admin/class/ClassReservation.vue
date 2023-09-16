@@ -18,14 +18,6 @@
       </CCard>
     </CCol>
   </CRow>
-  <CRow>
-    <CCard>
-      <CCardBody>
-        <CButton color="primary" @click="dbTest"> DB Button </CButton>
-        <CButton color="primary" @click="dbTest2"> DB Button </CButton>
-      </CCardBody>
-    </CCard>
-  </CRow>
   <save-class-modal
     ref="saveModal"
     purpose="ClassReservation"
@@ -145,7 +137,7 @@ export default defineComponent({
     },
     checkSaveModalResult(modalResult) {
       if (modalResult.status) {
-        this.saveClass(modalResult)
+        this.saveClasses(modalResult)
       }
     },
     async updateClass(result) {
@@ -177,7 +169,27 @@ export default defineComponent({
         console.error('Failed to delete class', error);
       })
     },
-    async saveClass(result) {
+    async saveClasses(result) {
+      if (result.isMonthlySchedule) {
+        let startDt = new Date(result.startStr)
+        let endDt = new Date(result.endStr)
+        const timezoneOffset = new Date().getTimezoneOffset() * 60000
+        startDt.setTime(startDt.getTime() - timezoneOffset - 7 * 24 * 60 * 60 * 1000)
+        endDt.setTime(endDt.getTime() - timezoneOffset - 7 * 24 * 60 * 60 * 1000)
+        for (let i = 0; i < 4; i++) {
+          startDt.setTime(startDt.getTime() + 7 * 24 * 60 * 60 * 1000)
+          endDt.setTime(endDt.getTime() + 7 * 24 * 60 * 60 * 1000)
+          const startStr = startDt.toISOString().replace('.000Z', '+09:00')
+          const endStr = endDt.toISOString().replace('.000Z', '+09:00')
+          result.startStr = startStr
+          result.endStr = endStr
+          this.saveClass(result)
+        }
+      } else {
+        this.saveClass(result)
+      }
+    },
+    saveClass(result) {
       let calendarApi = this.$refs.fullCalendar.getApi()
       const startDt = extractDateAndTime(result.startStr)
       const endDt = extractDateAndTime(result.endStr)
