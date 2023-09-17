@@ -28,11 +28,12 @@
         <template #item-name="{ name }">
           {{name}}
         </template>
-        <template #item-expiryDate="{ expiryDate }">
-          {{expiryDate}}&nbsp;
+        <template #item-expiryDate="item">
+          {{item.expiryDate}}&nbsp;
           <CButton
             color="dark"
             size="sm"
+            @click="updateExpiryDate(item)"
           >
             갱신
           </CButton>
@@ -68,14 +69,22 @@
   <approval-request-modal
     ref="approvalRequestModal"
   />
+  <update-expiry-date-modal
+    :member="updateMember"
+    ref="updateExpiryDateModal"
+  />
 </template>
 
 <script>
+import UpdateExpiryDateModal from "@/views/admin/common/modal/UpdateExpiryDateModal.vue"
 import { ref, defineComponent } from "vue"
-import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue";
+import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue"
 
 export default defineComponent({
-  components: {ApprovalRequestModal},
+  components: {
+    UpdateExpiryDateModal,
+    ApprovalRequestModal,
+  },
   setup() {
     const headers = [
       { text: "이름", value: "name" },
@@ -104,7 +113,7 @@ export default defineComponent({
       return diffDays
     }
 
-    const picked = ref(new Date())
+    const updateMember = ref()
 
     const items = [
       {
@@ -148,13 +157,19 @@ export default defineComponent({
       // approveMembers,
       checkApprovalRequestModalResult,
       calculateRemainingDays,
-      picked
+      // updateExpiryDate,
+      updateMember,
     }
   },
   methods: {
     approveMembers() {
       this.$refs.approvalRequestModal.showModal()
     },
+    updateExpiryDate(member) {
+      console.log(member)
+      this.$refs.updateExpiryDateModal.showModal()
+      this.updateMember = member
+    }
   }
 })
 </script>
