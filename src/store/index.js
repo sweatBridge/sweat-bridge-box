@@ -3,8 +3,8 @@ import classManagement from "@/store/modules/classManagement"
 
 export default createStore({
   state: {
-    sidebarVisible: '',
-    sidebarUnfoldable: false,
+    sidebarVisible: true,
+    sidebarUnfoldable: true,
   },
   mutations: {
     toggleSidebar(state) {

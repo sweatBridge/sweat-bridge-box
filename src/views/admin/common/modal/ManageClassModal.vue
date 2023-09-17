@@ -69,9 +69,6 @@ export default defineComponent({
     const coach = ref('')
     const capacity = ref(0)
     const reserved = ref([])
-    // const emit = defineEmits(
-    //   ['updateModalResult', 'deleteModalResult']
-    // )
 
     const showModal = (event) => {
       modalStatus.value = true

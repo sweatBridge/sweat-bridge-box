@@ -7,7 +7,7 @@
         </CCardHeader>
         <CCardBody>
           <div class="demo-app-main">
-            <FullCalendar class="demo-app-calendar" ref="fullCalendar" :options="calendarOptions">
+            <FullCalendar class="demo-app-calendar" ref="fullCalendar" :options="calendarOptions" style="width: 100%; height: 650px;">
               <template v-slot:eventContent="arg">
                 <b>{{ arg.timeText }}</b>
                 <i>{{ arg.event.title }}</i>
@@ -80,7 +80,7 @@ export default defineComponent({
         },
         views: {
           dayGridMonth: {
-            titleFormat: { year: 'numeric', month: '2-digit' }
+            titleFormat: { year: 'numeric', month: '2-digit' },
           },
           timeGridWeek: {
             titleFormat: { year: 'numeric', month: '2-digit', day: '2-digit' }
@@ -89,8 +89,10 @@ export default defineComponent({
             titleFormat: { year: 'numeric', month: '2-digit', day: '2-digit' }
           }
         },
-        // dayNames: ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"],
-        // dayNamesShort: ["일", "월", "화", "수", "목", "금", "토"],
+        dayHeaderContent: function(arg) {
+          let dayNamesShort = ['일', "월", "화", "수", "목", "금", "토"]
+          return dayNamesShort[arg.date.getDay()]
+        },
         initialView: 'timeGridWeek',
         initialEvents: INITIAL_EVENTS, // alternatively, use the `events` setting to fetch from a feed
         editable: true,
@@ -106,6 +108,8 @@ export default defineComponent({
         eventRemove: this.handleEventRemove,
       },
       currentEvents: [],
+      height: 200,
+      width: 200,
     }
   },
   methods: {

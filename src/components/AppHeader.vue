@@ -9,13 +9,16 @@
       </CHeaderBrand>
       <CHeaderNav class="d-none d-md-flex me-auto">
         <CNavItem>
-          <CNavLink href="/dashboard"> Dashboard </CNavLink>
+          <CNavLink href="#/admin/wod"> Wod </CNavLink>
         </CNavItem>
         <CNavItem>
-          <CNavLink href="#">Users</CNavLink>
+          <CNavLink href="#/admin/record"> Record </CNavLink>
         </CNavItem>
         <CNavItem>
-          <CNavLink href="#">Settings</CNavLink>
+          <CNavLink href="#/admin/member"> Member </CNavLink>
+        </CNavItem>
+        <CNavItem>
+          <CNavLink href="#/admin/reservation"> Class </CNavLink>
         </CNavItem>
       </CHeaderNav>
       <CHeaderNav>
