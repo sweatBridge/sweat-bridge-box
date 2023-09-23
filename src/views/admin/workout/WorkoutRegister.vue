@@ -37,12 +37,13 @@
                   <option value="AMRAP">AMRAP</option>
                   <option value="EMOM">EMOM</option>
                   <option value="Tabata">Tabata</option>
+                  <option value="Custom">Custom</option>
                 </CFormSelect>
               </CInputGroup>
             </CCol>
             <CCol sm="2">
               <div style="height: 8px;"></div>
-              <CFormCheck id="setType" label="세트 운동" v-model="isSetType"/>
+              <CFormCheck id="setType" label="세트 운동" v-model="isSetType" v-if="!isCustomize"/>
             </CCol>
             <CCol sm="3">
               <CInputGroup class="mb-3" v-if="isSetType">
@@ -90,7 +91,7 @@
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow>
+          <CRow v-if="!isCustomize">
             <CCard>
               <CCardHeader color="danger">
                 Movements
@@ -110,11 +111,33 @@
               </CCardBody>
             </CCard>
           </CRow>
+          <CRow v-if="isCustomize">
+            <CForm>
+              <CInputGroupText id="basic-addon3">WOD 커스텀</CInputGroupText>
+              <CFormTextarea
+                id="exampleFormControlTextarea1"
+                rows="10"
+                text="자유 형식으로 작성"
+              ></CFormTextarea>
+            </CForm>
+          </CRow>
+          <CRow>
+            <CForm>
+              <CInputGroupText id="basic-addon3">설명</CInputGroupText>
+              <CFormTextarea
+                id="exampleFormControlTextarea1"
+                rows="3"
+                text="WOD 설명"
+              ></CFormTextarea>
+            </CForm>
+          </CRow>
         </CCardBody>
         <CCardFooter>
           <div class="float-end">
             <CButton
-              color="success" class="position-relative" size="md">
+              color="success" class="position-relative" size="md"
+              @click="testButton"
+            >
               저장
             </CButton>
           </div>
@@ -125,7 +148,7 @@
 </template>
 
 <script>
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, watch } from 'vue'
 import MovementCard from "@/views/admin/movement/MovementCard.vue"
 import DatePicker from "vue3-datepicker"
 
@@ -135,10 +158,24 @@ export default defineComponent({
     const isSetType = ref(false)
     const workoutType = ref('')
     const workoutDate = ref('')
+    const isCustomize = ref(false)
+    watch(workoutType, (newValue) => {
+      if (newValue === "Custom") {
+        isCustomize.value = true
+      } else {
+        isCustomize.value = false
+      }
+    })
+    const testButton = () => {
+      console.log(typeof workoutDate.value)
+      console.log(workoutDate.value)
+    }
     return {
       isSetType,
       workoutType,
       workoutDate,
+      isCustomize,
+      testButton,
     }
   },
 })

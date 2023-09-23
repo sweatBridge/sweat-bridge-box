@@ -88,6 +88,17 @@
           </CCardBody>
         </CCard>
       </CRow>
+      <CRow>
+        <CCol sm="2">
+          <div style="height: 8px;"></div>
+          <CFormCheck id="descriptOption" label="설명 추가" v-model="isDescription"/>
+        </CCol>
+        <CCol sm="10">
+          <CFormInput
+            v-if="isDescription"
+          />
+        </CCol>
+      </CRow>
     </CCardBody>
   </CCard>
 
@@ -112,6 +123,7 @@ export default defineComponent({
       }
     ])
     const isLevelSet = ref(false)
+    const isDescription = ref(false)
     const testButton = () => {
       console.log(items)
     }
@@ -132,6 +144,7 @@ export default defineComponent({
       headers,
       items,
       isLevelSet,
+      isDescription,
       addLevel,
       removeLevel,
       testButton,
