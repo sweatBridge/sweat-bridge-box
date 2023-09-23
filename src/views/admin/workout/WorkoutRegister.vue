@@ -20,13 +20,23 @@
           <CRow>
             <CCol sm="7">
               <CInputGroup class="mb-3">
+                <CInputGroupText id="basic-addon3">WOD 일자</CInputGroupText>
+                <CButton>
+                  <DatePicker v-model="workoutDate"/>
+                </CButton>
+              </CInputGroup>
+            </CCol>
+          </CRow>
+          <CRow>
+            <CCol sm="7">
+              <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">Workout 타입</CInputGroupText>
                 <CFormSelect id="inputGroupSelect01" v-model="workoutType">
                   <option>타입 선택</option>
-                  <option value="1">ForTime</option>
-                  <option value="2">AMRAP</option>
-                  <option value="3">EMOM</option>
-                  <option value="4">Tabata</option>
+                  <option value="ForTime">ForTime</option>
+                  <option value="AMRAP">AMRAP</option>
+                  <option value="EMOM">EMOM</option>
+                  <option value="Tabata">Tabata</option>
                 </CFormSelect>
               </CInputGroup>
             </CCol>
@@ -41,7 +51,7 @@
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="workoutType === '1'">
+          <CRow v-if="workoutType === 'ForTime'">
             <CCol sm="3">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
@@ -55,7 +65,7 @@
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="workoutType === '2'">
+          <CRow v-if="workoutType === 'AMRAP'">
             <CCol sm="3" />
             <CCol sm="3">
               <CInputGroup class="mb-3">
@@ -64,7 +74,7 @@
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="workoutType === '3'">
+          <CRow v-if="workoutType === 'EMOM'">
             <CCol sm="3">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
@@ -72,15 +82,43 @@
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="workoutType === '4'">
+          <CRow v-if="workoutType === 'Tabata'">
             <CCol sm="3">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
                 <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3"/>
               </CInputGroup>
             </CCol>
+          </CRow>
+          <CRow>
+            <CCard>
+              <CCardHeader color="danger">
+                Movements
+                <div class="float-end">
+                  <CButton
+                    color="warning" class="position-relative" size="sm">
+                    휴식 추가
+                  </CButton>
+                  <CButton
+                    color="info" class="position-relative" size="sm">
+                    동작 추가
+                  </CButton>
+                </div>
+              </CCardHeader>
+              <CCardBody>
+                <MovementCard/>
+              </CCardBody>
+            </CCard>
           </CRow>
         </CCardBody>
+        <CCardFooter>
+          <div class="float-end">
+            <CButton
+              color="success" class="position-relative" size="md">
+              저장
+            </CButton>
+          </div>
+        </CCardFooter>
       </CCard>
     </CCol>
   </CRow>
@@ -88,17 +126,24 @@
 
 <script>
 import { defineComponent, ref } from 'vue'
+import MovementCard from "@/views/admin/movement/MovementCard.vue"
+import DatePicker from "vue3-datepicker"
 
 export default defineComponent({
+  components: {DatePicker, MovementCard},
   setup(props, {emit}) {
     const isSetType = ref(false)
     const workoutType = ref('')
+    const workoutDate = ref('')
     return {
       isSetType,
-      workoutType
+      workoutType,
+      workoutDate,
     }
   },
 })
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+
+</style>
