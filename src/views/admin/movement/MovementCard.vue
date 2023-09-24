@@ -1,29 +1,44 @@
 <template>
   <CCard>
-    <CCardBody class="custom-card-border">
+    <CCardBody :class="movmentCardClass">
       <CRow>
-        <CCol sm="4">
+        <CCol sm="6">
           <CInputGroup class="mb-3">
             <CInputGroupText id="basic-addon3">동작 이름</CInputGroupText>
             <CFormInput
               id="basic-url"
               aria-describedby="basic-addon3"
+              v-model="movement.name"
             />
           </CInputGroup>
+        </CCol>
+        <CCol sm="5"></CCol>
+        <CCol sm="1">
+          <div class="float-end">
+            <CButton
+              color="danger"
+              size="sm"
+              @click="removeMovement"
+            >
+              <CIcon name="cil-ban" />
+            </CButton>
+          </div>
         </CCol>
       </CRow>
       <CRow>
         <CCol sm="8">
           <CInputGroup class="mb-3">
-            <CInputGroupText id="basic-addon3">결과(Reps)</CInputGroupText>
+            <CInputGroupText id="basic-addon3">측정(Reps)</CInputGroupText>
             <CFormInput
               id="basic-url"
               aria-describedby="basic-addon3"
+              v-model="movement.measure"
             />
             <CInputGroupText id="basic-addon3">타입</CInputGroupText>
             <CFormInput
               id="basic-url"
               aria-describedby="basic-addon3"
+              v-model="movement.type"
             />
           </CInputGroup>
         </CCol>
@@ -49,7 +64,7 @@
             <EasyDataTable
               :buttons-pagination="false"
               :headers="headers"
-              :items="items"
+              :items="movement.levelSetting"
               show-index
             >
               <template #item-operation="{ index }">
@@ -62,19 +77,19 @@
                 </CButton>
               </template>
               <template #item-level="{ index }">
-                <CFormSelect id="inputGroupSelect01" v-model="items[index-1].level">
+                <CFormSelect id="inputGroupSelect01" v-model="movement.levelSetting[index-1].level">
                   <option>난이도</option>
                   <option value="Rxd">Rxd</option>
                   <option value="Scaled">Scaled</option>
                   <option value="Custom">Custom Level...</option>
                 </CFormSelect>
                 <CFormInput
-                  v-if="items[index-1].level === 'Custom'"
-                  v-model="items[index-1].customLevel"
+                  v-if="movement.levelSetting[index-1].level === 'Custom'"
+                  v-model="movement.levelSetting[index-1].customLevel"
                 ></CFormInput>
               </template>
               <template #item-gender="{ index }">
-                <CFormSelect id="inputGroupSelect01" v-model="items[index-1].gender">
+                <CFormSelect id="inputGroupSelect01" v-model="movement.levelSetting[index-1].gender">
                   <option>성별</option>
                   <option value="M">M</option>
                   <option value="W">W</option>
@@ -82,7 +97,7 @@
                 </CFormSelect>
               </template>
               <template #item-requirement="{ index }">
-                <CFormInput v-model="items[index-1].requirement"></CFormInput>
+                <CFormInput v-model="movement.levelSetting[index-1].requirement"></CFormInput>
               </template>
             </EasyDataTable>
           </CCardBody>
@@ -96,6 +111,7 @@
         <CCol sm="10">
           <CFormInput
             v-if="isDescription"
+            v-model="movement.description"
           />
         </CCol>
       </CRow>
@@ -105,30 +121,34 @@
 </template>
 
 <script>
-import { defineComponent, ref, reactive } from 'vue'
+import { defineComponent, ref, reactive, computed, watch } from 'vue'
+import { useStore } from "vuex"
+import workout from "@/store/modules/workout";
+
 export default defineComponent({
+  props: {
+    index: {
+      type: Number,
+      required: true
+    }
+  },
   setup(props, {emit}) {
+    const store = useStore()
+    const movement = computed(() => store.state.workout.wodRegistration.movements[props.index])
     const headers = [
       { text: "기능", value: "operation"},
       { text: "난이도", value: "level"},
       { text: "성별", value: "gender"},
       { text: "조건", value: "requirement"}
     ]
-    const items = reactive([
-      {
-        level: 'Rxd',
-        customLevel: "",
-        gender: "",
-        requirement: ""
-      }
-    ])
     const isLevelSet = ref(false)
+    // const isLevelSet = computed(() => movement.value.levelSetting && movement.value.levelSetting.length > 0)
     const isDescription = ref(false)
     const testButton = () => {
-      console.log(items)
+      console.log(movement)
     }
     const addLevel = () => {
-      items.push({
+      movement.value.levelSetting.push({
         level: "",
         customLevel: "",
         gender: "",
@@ -137,16 +157,29 @@ export default defineComponent({
     }
 
     const removeLevel = (index) => {
-      items.splice(index, 1);
-    };
+      movement.value.levelSetting.splice(index, 1)
+    }
+
+    const movmentCardClass = computed(() => {
+      if (movement.value.name === 'Rest') {
+        return 'rest-card'
+      }
+      return 'movement-card'
+    })
+
+    const removeMovement = () => {
+      store.commit("removeMovement", props.index)
+    }
 
     return {
+      movement,
       headers,
-      items,
       isLevelSet,
       isDescription,
+      movmentCardClass,
       addLevel,
       removeLevel,
+      removeMovement,
       testButton,
     }
   }
@@ -154,9 +187,12 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.custom-card-border {
-  border-color: var(--cui-danger);
-  /*background-color: var(--cui-cyan);*/
+.movement-card {
+  /*border-color: var(--cui-danger);*/
+  background-color: var(--cui-info);
+}
+.rest-card {
+  background-color: var(--cui-warning);
 }
 .blue-background {
   background-color: var(--cui-blue);

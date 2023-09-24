@@ -13,6 +13,7 @@
                 <CFormInput
                   id="basic-url"
                   aria-describedby="basic-addon3"
+                  v-model="wodRegistration.title"
                 />
               </CInputGroup>
             </CCol>
@@ -22,7 +23,7 @@
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">WOD 일자</CInputGroupText>
                 <CButton>
-                  <DatePicker v-model="workoutDate"/>
+                  <DatePicker v-model="wodRegistration.date"/>
                 </CButton>
               </CInputGroup>
             </CCol>
@@ -31,7 +32,7 @@
             <CCol sm="7">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">Workout 타입</CInputGroupText>
-                <CFormSelect id="inputGroupSelect01" v-model="workoutType">
+                <CFormSelect id="inputGroupSelect01" v-model="wodRegistration.type">
                   <option>타입 선택</option>
                   <option value="ForTime">ForTime</option>
                   <option value="AMRAP">AMRAP</option>
@@ -48,46 +49,46 @@
             <CCol sm="3">
               <CInputGroup class="mb-3" v-if="isSetType">
                 <CInputGroupText id="basic-addon3">세트 수</CInputGroupText>
-                <CFormInput type="number" id="setCount" aria-describedby="basic-addon3"/>
+                <CFormInput type="number" id="setCount" aria-describedby="basic-addon3" v-model="wodRegistration.set"/>
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="workoutType === 'ForTime'">
+          <CRow v-if="wodRegistration.type === 'ForTime'">
             <CCol sm="3">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3"/>
+                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
               </CInputGroup>
             </CCol>
             <CCol sm="3">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3"/>
+                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.timeCap"/>
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="workoutType === 'AMRAP'">
+          <CRow v-if="wodRegistration.type === 'AMRAP'">
             <CCol sm="3" />
             <CCol sm="3">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3"/>
+                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.timeCap"/>
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="workoutType === 'EMOM'">
+          <CRow v-if="wodRegistration.type === 'EMOM'">
             <CCol sm="3">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3"/>
+                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="workoutType === 'Tabata'">
+          <CRow v-if="wodRegistration.type === 'Tabata'">
             <CCol sm="3">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3"/>
+                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
               </CInputGroup>
             </CCol>
           </CRow>
@@ -97,17 +98,25 @@
                 Movements
                 <div class="float-end">
                   <CButton
-                    color="warning" class="position-relative" size="sm">
+                    color="warning" class="position-relative" size="sm"
+                    @click="addRest"
+                  >
                     휴식 추가
                   </CButton>
                   <CButton
-                    color="info" class="position-relative" size="sm">
+                    color="info" class="position-relative" size="sm"
+                    @click="addMovement"
+                  >
                     동작 추가
                   </CButton>
                 </div>
               </CCardHeader>
               <CCardBody>
-                <MovementCard/>
+                <MovementCard
+                  v-for="(movement, index) in wodRegistration.movements"
+                  :key="index"
+                  :index="index"
+                />
               </CCardBody>
             </CCard>
           </CRow>
@@ -118,6 +127,7 @@
                 id="exampleFormControlTextarea1"
                 rows="10"
                 text="자유 형식으로 작성"
+                v-model="wodRegistration.customMovements"
               ></CFormTextarea>
             </CForm>
           </CRow>
@@ -128,6 +138,7 @@
                 id="exampleFormControlTextarea1"
                 rows="3"
                 text="WOD 설명"
+                v-model="wodRegistration.description"
               ></CFormTextarea>
             </CForm>
           </CRow>
@@ -148,33 +159,62 @@
 </template>
 
 <script>
-import { defineComponent, ref, watch } from 'vue'
+import { defineComponent, ref, watch, reactive } from 'vue'
+import { useStore } from "vuex"
 import MovementCard from "@/views/admin/movement/MovementCard.vue"
 import DatePicker from "vue3-datepicker"
 
 export default defineComponent({
   components: {DatePicker, MovementCard},
   setup(props, {emit}) {
+    const store = useStore()
     const isSetType = ref(false)
-    const workoutType = ref('')
-    const workoutDate = ref('')
     const isCustomize = ref(false)
-    watch(workoutType, (newValue) => {
-      if (newValue === "Custom") {
+    const wodRegistration = reactive({
+      title: store.state.workout.wodRegistration.title,
+      date: store.state.workout.wodRegistration.date,
+      type: store.state.workout.wodRegistration.type,
+      set: store.state.workout.wodRegistration.set,
+      round: store.state.workout.wodRegistration.round,
+      timeCap: store.state.workout.wodRegistration.timeCap,
+      movements: store.state.workout.wodRegistration.movements,
+      customMovements: store.state.workout.wodRegistration.customMovements,
+      description: store.state.workout.wodRegistration.description,
+    })
+    watch(() => wodRegistration.type, (newValue) => {
+      if (newValue === 'Custom') {
         isCustomize.value = true
       } else {
         isCustomize.value = false
       }
     })
+    const addMovement = () => {
+      wodRegistration.movements.push({
+        name: "",
+        measure: "",
+        type: "",
+        levelSetting: [],
+        description: "",
+      })
+    }
+    const addRest = () => {
+      wodRegistration.movements.push({
+        name: "Rest",
+        measure: "",
+        type: "time",
+        levelSetting: [],
+        description: "",
+      })
+    }
     const testButton = () => {
-      console.log(typeof workoutDate.value)
-      console.log(workoutDate.value)
+      console.log(wodRegistration)
     }
     return {
       isSetType,
-      workoutType,
-      workoutDate,
       isCustomize,
+      wodRegistration,
+      addMovement,
+      addRest,
       testButton,
     }
   },
