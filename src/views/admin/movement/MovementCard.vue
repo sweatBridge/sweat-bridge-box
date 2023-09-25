@@ -35,11 +35,13 @@
               v-model="movement.measure"
             />
             <CInputGroupText id="basic-addon3">타입</CInputGroupText>
-            <CFormInput
-              id="basic-url"
-              aria-describedby="basic-addon3"
-              v-model="movement.type"
-            />
+            <CFormSelect id="inputGroupSelect01" v-model="movement.type">
+              <option>타입 선택</option>
+              <option value="Count">Count</option>
+              <option value="Reps">Reps</option>
+              <option value="Sec">Sec</option>
+              <option value="Min">Min</option>
+            </CFormSelect>
           </CInputGroup>
         </CCol>
         <CCol sm="2">
@@ -144,9 +146,6 @@ export default defineComponent({
     const isLevelSet = ref(false)
     // const isLevelSet = computed(() => movement.value.levelSetting && movement.value.levelSetting.length > 0)
     const isDescription = ref(false)
-    const testButton = () => {
-      console.log(movement)
-    }
     const addLevel = () => {
       movement.value.levelSetting.push({
         level: "",
@@ -180,7 +179,6 @@ export default defineComponent({
       addLevel,
       removeLevel,
       removeMovement,
-      testButton,
     }
   }
 })

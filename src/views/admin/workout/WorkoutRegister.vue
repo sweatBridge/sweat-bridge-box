@@ -147,7 +147,7 @@
           <div class="float-end">
             <CButton
               color="success" class="position-relative" size="md"
-              @click="testButton"
+              @click="saveWod"
             >
               저장
             </CButton>
@@ -188,6 +188,24 @@ export default defineComponent({
         isCustomize.value = false
       }
     })
+
+    const watchMapping = {
+      title: 'updateWodTitle',
+      date: 'updateWodDate',
+      type: 'updateWodType',
+      set: 'updateWodSet',
+      round: 'updateWodRound',
+      timeCap: 'updateWodTimeCap',
+      customMovements: 'updateWodCustomMovements',
+      description: 'updateWodDescription',
+    }
+
+    for (let key in watchMapping) {
+      watch(() => wodRegistration[key], (newValue) => {
+        store.commit(watchMapping[key], newValue);
+      });
+    }
+
     const addMovement = () => {
       wodRegistration.movements.push({
         name: "",
@@ -201,13 +219,20 @@ export default defineComponent({
       wodRegistration.movements.push({
         name: "Rest",
         measure: "",
-        type: "time",
+        type: "Sec",
         levelSetting: [],
         description: "",
       })
     }
-    const testButton = () => {
-      console.log(wodRegistration)
+    const saveWod = () => {
+      // console.log(store.state.workout)
+      store.dispatch("addWod")
+        .then(() => {
+          console.log("success")
+        })
+        .catch((error) => {
+          console.log(error)
+        })
     }
     return {
       isSetType,
@@ -215,7 +240,7 @@ export default defineComponent({
       wodRegistration,
       addMovement,
       addRest,
-      testButton,
+      saveWod,
     }
   },
 })
