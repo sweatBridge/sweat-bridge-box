@@ -63,7 +63,9 @@
             <CCol sm="3">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.timeCap"/>
+                <CButton>
+                  <VueTimepicker format="mm:ss" v-model="wodRegistration.timeCap"/>
+                </CButton>
               </CInputGroup>
             </CCol>
           </CRow>
@@ -72,7 +74,9 @@
             <CCol sm="3">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.timeCap"/>
+                <CButton>
+                  <VueTimepicker format="mm:ss" v-model="wodRegistration.timeCap"/>
+                </CButton>
               </CInputGroup>
             </CCol>
           </CRow>
@@ -235,6 +239,7 @@ export default defineComponent({
       })
     }
     const saveWod = () => {
+      // console.log(wodRegistration)
       store.dispatch("addWod")
         .then(() => {
           console.log("success")

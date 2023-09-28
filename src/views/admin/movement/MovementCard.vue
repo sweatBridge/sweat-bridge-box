@@ -39,6 +39,7 @@
               <option>타입 선택</option>
               <option value="Count">Count</option>
               <option value="Reps">Reps</option>
+              <option value="Cal">Cal</option>
               <option value="Sec">Sec</option>
               <option value="Min">Min</option>
             </CFormSelect>
@@ -143,7 +144,7 @@ export default defineComponent({
       { text: "성별", value: "gender"},
       { text: "조건", value: "requirement"}
     ]
-    const isLevelSet = ref(true)
+    const isLevelSet = ref(false)
     // const isLevelSet = computed(() => movement.value.levelSetting && movement.value.levelSetting.length > 0)
     const isDescription = ref(false)
     const handleLevelSetChange = () => {

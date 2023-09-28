@@ -12,6 +12,9 @@ import DocsExample from '@/components/DocsExample'
 import { setupCalendar, Calendar, DatePicker } from 'v-calendar'
 import 'v-calendar/style.css'
 
+import VueTimepicker from 'vue3-timepicker'
+import 'vue3-timepicker/dist/VueTimepicker.css'
+
 
 const app = createApp(App)
 app.use(store)
@@ -24,5 +27,6 @@ app.component('DocsExample', DocsExample)
 app.component('EasyDataTable', Vue3EasyDataTable)
 app.component('VCalendar', Calendar)
 app.component('VDatePicker', DatePicker)
+app.component('VueTimepicker', VueTimepicker)
 
 app.mount('#app')
