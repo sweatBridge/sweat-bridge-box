@@ -46,7 +46,7 @@
         </CCol>
         <CCol sm="2">
           <div style="height: 8px;"></div>
-          <CFormCheck id="levelOption" label="난이도 설정" v-model="isLevelSet"/>
+          <CFormCheck id="levelOption" label="난이도 설정" v-model="isLevelSet" @change="handleLevelSetChange"/>
         </CCol>
       </CRow>
       <CRow>
@@ -108,7 +108,7 @@
       <CRow>
         <CCol sm="2">
           <div style="height: 8px;"></div>
-          <CFormCheck id="descriptOption" label="설명 추가" v-model="isDescription"/>
+          <CFormCheck id="descriptOption" label="설명 추가" v-model="isDescription" @change="handleDescriptionChange" />
         </CCol>
         <CCol sm="10">
           <CFormInput
@@ -143,9 +143,15 @@ export default defineComponent({
       { text: "성별", value: "gender"},
       { text: "조건", value: "requirement"}
     ]
-    const isLevelSet = ref(false)
+    const isLevelSet = ref(true)
     // const isLevelSet = computed(() => movement.value.levelSetting && movement.value.levelSetting.length > 0)
     const isDescription = ref(false)
+    const handleLevelSetChange = () => {
+      movement.value.levelSetting = []
+    }
+    const handleDescriptionChange = () => {
+      movement.value.description = ""
+    }
     const addLevel = () => {
       movement.value.levelSetting.push({
         level: "",
@@ -176,6 +182,8 @@ export default defineComponent({
       isLevelSet,
       isDescription,
       movmentCardClass,
+      handleLevelSetChange,
+      handleDescriptionChange,
       addLevel,
       removeLevel,
       removeMovement,

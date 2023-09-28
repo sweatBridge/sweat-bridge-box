@@ -32,7 +32,7 @@
             <CCol sm="7">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">Workout 타입</CInputGroupText>
-                <CFormSelect id="inputGroupSelect01" v-model="wodRegistration.type">
+                <CFormSelect id="inputGroupSelect01" v-model="wodRegistration.type" @change="handleTypeChange">
                   <option>타입 선택</option>
                   <option value="ForTime">ForTime</option>
                   <option value="AMRAP">AMRAP</option>
@@ -44,7 +44,7 @@
             </CCol>
             <CCol sm="2">
               <div style="height: 8px;"></div>
-              <CFormCheck id="setType" label="세트 운동" v-model="isSetType" v-if="!isCustomize"/>
+              <CFormCheck id="setType" label="세트 운동" v-model="isSetType" v-if="!isCustomize" @change="handleSetTypeChange"/>
             </CCol>
             <CCol sm="3">
               <CInputGroup class="mb-3" v-if="isSetType">
@@ -206,6 +206,16 @@ export default defineComponent({
       });
     }
 
+    const handleTypeChange = () => {
+      wodRegistration.round = 0
+      wodRegistration.timeCap = 0
+      wodRegistration.customMovements = ""
+    }
+
+    const handleSetTypeChange = () => {
+      wodRegistration.set = 0
+    }
+
     const addMovement = () => {
       wodRegistration.movements.push({
         name: "",
@@ -225,7 +235,6 @@ export default defineComponent({
       })
     }
     const saveWod = () => {
-      // console.log(store.state.workout)
       store.dispatch("addWod")
         .then(() => {
           console.log("success")
@@ -238,6 +247,8 @@ export default defineComponent({
       isSetType,
       isCustomize,
       wodRegistration,
+      handleTypeChange,
+      handleSetTypeChange,
       addMovement,
       addRest,
       saveWod,
