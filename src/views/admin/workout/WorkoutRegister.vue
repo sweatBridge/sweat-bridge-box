@@ -64,7 +64,7 @@
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
                 <CButton>
-                  <VueTimepicker format="mm:ss" v-model="wodRegistration.timeCap"/>
+                  <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
                 </CButton>
               </CInputGroup>
             </CCol>
@@ -75,7 +75,7 @@
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
                 <CButton>
-                  <VueTimepicker format="mm:ss" v-model="wodRegistration.timeCap"/>
+                  <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
                 </CButton>
               </CInputGroup>
             </CCol>
@@ -163,7 +163,7 @@
 </template>
 
 <script>
-import { defineComponent, ref, watch, reactive } from 'vue'
+import { defineComponent, ref, watch, reactive, computed } from 'vue'
 import { useStore } from "vuex"
 import MovementCard from "@/views/admin/movement/MovementCard.vue"
 import DatePicker from "vue3-datepicker"
@@ -184,6 +184,16 @@ export default defineComponent({
       movements: store.state.workout.wodRegistration.movements,
       customMovements: store.state.workout.wodRegistration.customMovements,
       description: store.state.workout.wodRegistration.description,
+    })
+    const timeCapForPicker = computed({
+      get() {
+        const [mm, ss] = wodRegistration.timeCap.split(':')
+        return { mm, ss }
+      },
+      set(value) {
+        const newTimeCap = `${value.mm}:${value.ss}`
+        wodRegistration.timeCap = newTimeCap
+      }
     })
     watch(() => wodRegistration.type, (newValue) => {
       if (newValue === 'Custom') {
@@ -212,7 +222,7 @@ export default defineComponent({
 
     const handleTypeChange = () => {
       wodRegistration.round = 0
-      wodRegistration.timeCap = 0
+      wodRegistration.timeCap = "00:00"
       wodRegistration.customMovements = ""
     }
 
@@ -252,6 +262,7 @@ export default defineComponent({
       isSetType,
       isCustomize,
       wodRegistration,
+      timeCapForPicker,
       handleTypeChange,
       handleSetTypeChange,
       addMovement,

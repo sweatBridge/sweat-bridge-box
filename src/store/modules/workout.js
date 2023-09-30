@@ -9,10 +9,7 @@ const workout = {
       type: '',
       set: 0,
       round: 0,
-      timeCap: {
-        mm: "00",
-        ss: "00",
-      },
+      timeCap: '00:00',
       movements: [
         {
           name: 'Deadlift',
