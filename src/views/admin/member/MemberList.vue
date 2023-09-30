@@ -8,7 +8,7 @@
           color="primary" class="position-relative" size="sm">
           승인 요청
           <CBadge color="danger" position="top-end" shape="rounded-pill">
-            3 <span class="visually-hidden">unread messages</span>
+            {{pendingMembers.length}} <span class="visually-hidden">unread messages</span>
           </CBadge>
         </CButton>
       </div>
@@ -21,7 +21,7 @@
       <EasyDataTable
         buttons-pagination
         :headers="headers"
-        :items="items"
+        :items="members"
         search-field="name"
         :search-value="searchValue"
       >
@@ -44,8 +44,8 @@
         <template #item-gender="{ gender }">
           {{gender}}
         </template>
-        <template #item-age="{ age }">
-          {{age}}
+        <template #item-age="{ birthDate }">
+          {{ getAge(birthDate) }}
         </template>
         <template #item-operation="item">
           <CButton
@@ -77,8 +77,10 @@
 
 <script>
 import UpdateExpiryDateModal from "@/views/admin/common/modal/UpdateExpiryDateModal.vue"
-import { ref, defineComponent } from "vue"
+import { ref, defineComponent, onMounted, computed } from "vue"
 import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue"
+import { useStore } from "vuex"
+import {calculateAge} from "@/views/admin/util/member";
 
 export default defineComponent({
   components: {
@@ -86,6 +88,11 @@ export default defineComponent({
     ApprovalRequestModal,
   },
   setup() {
+    const store = useStore()
+    onMounted(() => {
+      store.dispatch('getMembers', { box: 'CFBD' })
+      store.dispatch('getPendingMembers', { box: 'CFBD' })
+    })
     const headers = [
       { text: "이름", value: "name" },
       { text: "만료 일자", value: "expiryDate", sortable: true, width: "250"},
@@ -95,9 +102,14 @@ export default defineComponent({
       { text: "기능", value: "operation", width: "100" }
     ]
 
-    const searchValue = ref("");
+    const members = computed(() => store.state.member.members)
+    const pendingMembers = computed(() => store.state.member.pendingMembers)
+
+    const searchValue = ref("")
 
     const deleteItem = (val) => {
+      console.log(store.state.member.members)
+      console.log(store.state.member.pendingMembers)
       console.log(val)
     }
 
@@ -113,50 +125,22 @@ export default defineComponent({
       return diffDays
     }
 
-    const updateMember = ref()
+    const getAge = (birthDate) => {
+      return calculateAge(birthDate)
+    }
 
-    const items = [
-      {
-        name: '김대현',
-        expiryDate: '2023-11-07',
-        gender: '남',
-        age: 28,
-        weight: 80,
-        height: 180,
-        phone: "010-1234-5678",
-        purpose: '다이어트',
-      },
-      {
-        name: '박솔희',
-        duration: 60,
-        expiryDate: '2023-12-07',
-        gender: '여',
-        age: 27,
-        weight: 40,
-        height: 160,
-        phone: "010-1234-5678",
-        purpose: '건강',
-      },
-      {
-        name: '김재인',
-        expiryDate: '2024-03-07',
-        gender: '남',
-        age: 27,
-        weight: 70,
-        height: 180,
-        phone: "010-1234-5678",
-        purpose: '재미',
-      },
-    ];
+    const updateMember = ref()
 
     return {
       headers,
-      items,
+      members,
+      pendingMembers,
       searchValue,
       deleteItem,
       // approveMembers,
       checkApprovalRequestModalResult,
       calculateRemainingDays,
+      getAge,
       // updateExpiryDate,
       updateMember,
     }

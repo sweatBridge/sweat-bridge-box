@@ -1,6 +1,7 @@
 import { createStore } from 'vuex'
 import classManagement from "@/store/modules/classManagement"
-import workout from "@/store/modules/workout";
+import workout from "@/store/modules/workout"
+import member from "@/store/modules/member"
 
 export default createStore({
   state: {
@@ -22,5 +23,6 @@ export default createStore({
   modules: {
     classManagement,
     workout,
+    member,
   },
 })

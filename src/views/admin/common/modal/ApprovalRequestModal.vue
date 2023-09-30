@@ -14,7 +14,7 @@
     <CModalBody>
       <EasyDataTable
         :headers="headers"
-        :items="items"
+        :items="pendingMembers"
       >
         <template #item-name="{ name }">
           {{name}}
@@ -22,8 +22,8 @@
         <template #item-gender="{ gender }">
           {{gender}}
         </template>
-        <template #item-age="{ age }">
-          {{age}}
+        <template #item-age="{ birthDate }">
+          {{getAge(birthDate)}}
         </template>
         <template #item-phone="{ phone }">
           {{phone}}
@@ -52,11 +52,15 @@
 
 <script>
 
-import { ref } from "vue"
+import {ref, onMounted, computed} from "vue"
+import { useStore } from "vuex"
+import {calculateAge} from "@/views/admin/util/member"
 
 export default {
   components: {},
   setup(props, { emit }) {
+    const store = useStore()
+    const pendingMembers = computed(() => store.state.member.pendingMembers)
     const headers = [
       { text: "이름", value: "name" },
       { text: "성별", value: "gender" },
@@ -64,6 +68,10 @@ export default {
       { text: "연락처", value: "phone" },
       { text: "수락/거절", value: "operation", width: "100" }
     ]
+
+    const getAge = (birthDate) => {
+      return calculateAge(birthDate)
+    }
 
     const modalStatus = ref(false)
     const showModal = () => {
@@ -73,21 +81,10 @@ export default {
       modalStatus.value = false
       emit('approvalRequestModalResult', result)
     }
-    const items = [
-      {
-        name: '김대현',
-        duration: 30,
-        gender: '남',
-        age: 28,
-        weight: 80,
-        height: 180,
-        phone: "010-1234-5678",
-        purpose: '다이어트',
-      },
-    ]
     return {
       headers,
-      items,
+      pendingMembers,
+      getAge,
       modalStatus,
       showModal,
       checkApprovalRequestModal,
