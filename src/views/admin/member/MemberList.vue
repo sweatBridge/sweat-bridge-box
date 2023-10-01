@@ -24,6 +24,7 @@
         :items="members"
         search-field="name"
         :search-value="searchValue"
+        show-index
       >
         <template #item-name="{ name }">
           {{name}}
@@ -39,7 +40,7 @@
           </CButton>
         </template>
         <template #item-duration="{ expiryDate }">
-          {{ calculateRemainingDays(expiryDate) }}
+          {{ getRemainingDays(expiryDate) }}
         </template>
         <template #item-gender="{ gender }">
           {{gender}}
@@ -47,18 +48,18 @@
         <template #item-age="{ birthDate }">
           {{ getAge(birthDate) }}
         </template>
-        <template #item-operation="item">
+        <template #item-operation="{ index }">
           <CButton
             color="light"
             size="sm"
-            @click="deleteItem(item)"
+            @click="showMemberDetails(index)"
           >
             <CIcon name="cil-notes" />
           </CButton>
           <CButton
             color="danger"
             size="sm"
-            @click="deleteItem(item)"
+            @click="deleteItem(index)"
           >
             <CIcon name="cil-ban" />
           </CButton>
@@ -73,17 +74,20 @@
     :member="updateMember"
     ref="updateExpiryDateModal"
   />
+  <member-details-modal :index="memberDetatilIdx" ref="memberDetailsModal" />
 </template>
 
 <script>
 import UpdateExpiryDateModal from "@/views/admin/common/modal/UpdateExpiryDateModal.vue"
-import { ref, defineComponent, onMounted, computed } from "vue"
+import {ref, defineComponent, onMounted, computed, reactive} from "vue"
 import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue"
 import { useStore } from "vuex"
-import {calculateAge} from "@/views/admin/util/member";
+import {calculateAge, calculateRemainingDays} from "@/views/admin/util/member"
+import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue"
 
 export default defineComponent({
   components: {
+    MemberDetailsModal,
     UpdateExpiryDateModal,
     ApprovalRequestModal,
   },
@@ -117,19 +121,16 @@ export default defineComponent({
       console.log(result)
     }
 
-    const calculateRemainingDays = (expiryDate) => {
-      const today = new Date()
-      const expiry = new Date(expiryDate)
-      const diff = expiry.getTime() - today.getTime()
-      const diffDays = Math.ceil(diff / (1000 * 3600 * 24))
-      return diffDays
+    const getRemainingDays = (expiryDate) => {
+      return calculateRemainingDays(expiryDate)
     }
 
     const getAge = (birthDate) => {
       return calculateAge(birthDate)
     }
 
-    const updateMember = ref()
+    const updateMember = reactive({})
+    const memberDetatilIdx = ref(0)
 
     return {
       headers,
@@ -139,10 +140,11 @@ export default defineComponent({
       deleteItem,
       // approveMembers,
       checkApprovalRequestModalResult,
-      calculateRemainingDays,
+      getRemainingDays,
       getAge,
       // updateExpiryDate,
       updateMember,
+      memberDetatilIdx,
     }
   },
   methods: {
@@ -153,6 +155,10 @@ export default defineComponent({
       console.log(member)
       this.$refs.updateExpiryDateModal.showModal()
       this.updateMember = member
+    },
+    showMemberDetails(idx) {
+      this.$refs.memberDetailsModal.showModal()
+      this.memberDetatilIdx = idx
     }
   }
 })

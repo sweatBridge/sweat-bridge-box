@@ -12,3 +12,21 @@ export function calculateAge(birthDate) {
 
   return age
 }
+
+export function calculateRemainingDays(expiryDate) {
+  const today = new Date()
+  const expiry = new Date(expiryDate)
+  const diff = expiry.getTime() - today.getTime()
+  return Math.ceil(diff / (1000 * 3600 * 24))
+}
+
+export function convertGenderToKorean(gender) {
+  switch(gender) {
+    case 'M':
+      return '남'
+    case 'W':
+      return '여'
+    default:
+      return '알 수 없음'
+  }
+}
