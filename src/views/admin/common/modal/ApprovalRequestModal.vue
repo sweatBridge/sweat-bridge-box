@@ -1,16 +1,18 @@
 <template>
   <CModal
+    class="close"
     :visible="modalStatus"
     @close="() => {modalStatus = false}"
     backdrop="static"
   >
-    <CModalHeader>
+    <CModalHeader class="modal-header">
       <CModalTitle>승인 요청</CModalTitle>
     </CModalHeader>
     <CModalBody>
       <EasyDataTable
         :headers="headers"
         :items="pendingMembers"
+        show-index
       >
         <template #item-name="{ name }">
           {{name}}
@@ -24,7 +26,7 @@
         <template #item-phone="{ phone }">
           {{phone}}
         </template>
-        <template #item-operation="">
+        <template #item-operation="{ index }">
           <CButton
             color="danger"
             size="sm"
@@ -34,6 +36,7 @@
           <CButton
             color="success"
             size="sm"
+            @click="approveMember(index)"
           >
             <CIcon name="cil-check" />
           </CButton>
@@ -42,8 +45,7 @@
       </EasyDataTable>
     </CModalBody>
   </CModal>
-
-
+  <approval-confirmation-modal ref="approvalConfirmationModal" />
 </template>
 
 <script>
@@ -51,9 +53,10 @@
 import {ref, onMounted, computed} from "vue"
 import { useStore } from "vuex"
 import {calculateAge} from "@/views/admin/util/member"
+import ApprovalConfirmationModal from "@/views/admin/common/modal/ApprovalConfirmationModal.vue";
 
 export default {
-  components: {},
+  components: {ApprovalConfirmationModal},
   setup(props, { emit }) {
     const store = useStore()
     const pendingMembers = computed(() => store.state.member.pendingMembers)
@@ -62,7 +65,7 @@ export default {
       { text: "성별", value: "gender" },
       { text: "나이", value: "age" },
       { text: "연락처", value: "phone" },
-      { text: "수락/거절", value: "operation", width: "100" }
+      { text: "거절/수락", value: "operation", width: "100" }
     ]
 
     const getAge = (birthDate) => {
@@ -85,10 +88,24 @@ export default {
       showModal,
       checkApprovalRequestModal,
     }
+  },
+  methods: {
+    approveMember(index) {
+      const member = this.pendingMembers[index - 1]
+      this.$refs.approvalConfirmationModal.showModal(member)
+    },
+    rejectMember() {
+
+    }
   }
 }
 </script>
 
 <style scoped>
-
+.modal-header {
+  background-color: var(--cui-info)
+}
+.modal-title {
+  color: var(--cui-white)
+}
 </style>
