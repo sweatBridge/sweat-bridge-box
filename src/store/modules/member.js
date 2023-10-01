@@ -1,4 +1,4 @@
-import { getDocs, query, collection, where, updateDoc } from "firebase/firestore"
+import { getDocs, query, collection, where, updateDoc, deleteDoc } from "firebase/firestore"
 import { db } from '@/firebase'
 
 const member = {
@@ -58,6 +58,10 @@ const member = {
       delete payload.box
       payload.state = true
       await updateDoc(ref, payload)
+    },
+    async rejectMember(context, payload) {
+      const ref = await context.dispatch('getMemberRef', payload)
+      await deleteDoc(ref)
     }
   },
   getters: {}

@@ -30,6 +30,7 @@
           <CButton
             color="danger"
             size="sm"
+            @click="rejectMember(index)"
           >
             <CIcon name="cil-ban" />
           </CButton>
@@ -46,6 +47,7 @@
     </CModalBody>
   </CModal>
   <approval-confirmation-modal ref="approvalConfirmationModal" />
+  <approval-rejection-modal ref="approvalRejectionModal" />
 </template>
 
 <script>
@@ -54,9 +56,10 @@ import {ref, onMounted, computed} from "vue"
 import { useStore } from "vuex"
 import {calculateAge} from "@/views/admin/util/member"
 import ApprovalConfirmationModal from "@/views/admin/common/modal/ApprovalConfirmationModal.vue";
+import ApprovalRejectionModal from "@/views/admin/common/modal/ApprovalRejectionModal.vue";
 
 export default {
-  components: {ApprovalConfirmationModal},
+  components: {ApprovalRejectionModal, ApprovalConfirmationModal},
   setup(props, { emit }) {
     const store = useStore()
     const pendingMembers = computed(() => store.state.member.pendingMembers)
@@ -94,8 +97,9 @@ export default {
       const member = this.pendingMembers[index - 1]
       this.$refs.approvalConfirmationModal.showModal(member)
     },
-    rejectMember() {
-
+    rejectMember(index) {
+      const member = this.pendingMembers[index - 1]
+      this.$refs.approvalRejectionModal.showModal(member)
     }
   }
 }
