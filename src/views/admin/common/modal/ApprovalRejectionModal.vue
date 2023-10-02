@@ -19,20 +19,24 @@
       </CButton>
     </CModalFooter>
   </CModal>
+  <toast-message ref="toastMessageRef" />
 
 </template>
 
 <script>
 import {reactive, ref} from "vue"
 import {useStore} from "vuex"
+import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue";
 
 export default {
   name: "ApprovalRejectionModal",
+  components: {ToastMessage},
   setup(props, { emit }) {
     const store = useStore()
     const modalStatus = ref(false)
     const name = ref("")
     const member = reactive({})
+    const toastMessageRef = ref(null)
     const showModal = (user) => {
       modalStatus.value = true
       name.value = user.name
@@ -42,19 +46,46 @@ export default {
       modalStatus.value = false
       member.value.box = "CFBD"
       store.dispatch("rejectMember", member.value)
+        .then(() => {
+          toastMessageRef.value.createToast(
+            {
+              title: '성공',
+              content: '요청 거부 성공.',
+              type: 'success'
+            }
+          )
+          setTimeout(() => {
+            location.reload()
+          }, 2000)
+        })
+        .catch(error => {
+          console.error("An error occurred while rejecting the member:", error)
+          toastMessageRef.value.createToast(
+            {
+              title: '실패',
+              content: '요청 거부 실패 error: ' + error.message,
+              type: 'danger'
+            }
+          )
+          setTimeout(() => {
+            location.reload()
+          }, 2000)
+        })
     }
     const cancel = () => {
       modalStatus.value = false
     }
+
     return {
       modalStatus,
       member,
       name,
+      toastMessageRef,
       showModal,
       reject,
-      cancel
+      cancel,
     }
-  }
+  },
 }
 
 </script>
