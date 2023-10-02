@@ -160,6 +160,7 @@
       </CCard>
     </CCol>
   </CRow>
+  <toast-message ref="toastMessageRef" />
 </template>
 
 <script>
@@ -167,13 +168,15 @@ import { defineComponent, ref, watch, reactive, computed } from 'vue'
 import { useStore } from "vuex"
 import MovementCard from "@/views/admin/movement/MovementCard.vue"
 import DatePicker from "vue3-datepicker"
+import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue"
 
 export default defineComponent({
-  components: {DatePicker, MovementCard},
+  components: {DatePicker, MovementCard, ToastMessage},
   setup(props, {emit}) {
     const store = useStore()
     const isSetType = ref(false)
     const isCustomize = ref(false)
+    const toastMessageRef = ref(null)
     const wodRegistration = reactive({
       title: store.state.workout.wodRegistration.title,
       date: store.state.workout.wodRegistration.date,
@@ -249,18 +252,37 @@ export default defineComponent({
       })
     }
     const saveWod = () => {
-      // console.log(wodRegistration)
       store.dispatch("addWod")
         .then(() => {
-          console.log("success")
+          toastMessageRef.value.createToast(
+            {
+              title: '성공',
+              content: '와드 등록 성공.',
+              type: 'success'
+            }
+          )
+          setTimeout(() => {
+            location.reload()
+          }, 2000)
         })
         .catch((error) => {
           console.log(error)
+          toastMessageRef.value.createToast(
+            {
+              title: '실패',
+              content: '와드 등록 실패 error: ' + error.message,
+              type: 'danger'
+            }
+          )
+          setTimeout(() => {
+            location.reload()
+          }, 2000)
         })
     }
     return {
       isSetType,
       isCustomize,
+      toastMessageRef,
       wodRegistration,
       timeCapForPicker,
       handleTypeChange,
