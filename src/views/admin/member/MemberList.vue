@@ -29,6 +29,9 @@
         <template #item-name="{ name }">
           {{name}}
         </template>
+        <template #item-type="{ type }">
+          {{type}}
+        </template>
         <template #item-expiryDate="item">
           {{item.expiryDate}}&nbsp;
           <CButton
@@ -99,6 +102,7 @@ export default defineComponent({
     })
     const headers = [
       { text: "이름", value: "name" },
+      { text: "등록 타입", value: "type"},
       { text: "만료 일자", value: "expiryDate", sortable: true, width: "250"},
       { text: "잔여 기간", value: "duration" },
       { text: "성별", value: "gender" },
