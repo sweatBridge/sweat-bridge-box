@@ -55,7 +55,7 @@
           <CButton
             color="danger"
             size="sm"
-            @click="deleteItem(index)"
+            @click="deleteMember(index)"
           >
             삭제
           </CButton>
@@ -72,14 +72,10 @@
       </EasyDataTable>
     </CCardBody>
   </CCard>
-  <approval-request-modal
-    ref="approvalRequestModal"
-  />
-  <update-expiry-date-modal
-    :member="updateMember"
-    ref="updateExpiryDateModal"
-  />
+  <approval-request-modal ref="approvalRequestModal"/>
+  <update-expiry-date-modal :member="updateMember" ref="updateExpiryDateModal"/>
   <member-details-modal :index="memberDetatilIdx" ref="memberDetailsModal" />
+  <member-deletion-modal ref="deleteModal" />
 </template>
 
 <script>
@@ -89,9 +85,11 @@ import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModa
 import { useStore } from "vuex"
 import {calculateAge, calculateRemainingDays} from "@/views/admin/util/member"
 import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue"
+import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
 
 export default defineComponent({
   components: {
+    MemberDeletionModal,
     MemberDetailsModal,
     UpdateExpiryDateModal,
     ApprovalRequestModal,
@@ -118,16 +116,6 @@ export default defineComponent({
 
     const searchValue = ref("")
 
-    const deleteItem = (val) => {
-      console.log(store.state.member.members)
-      console.log(store.state.member.pendingMembers)
-      console.log(val)
-    }
-
-    const checkApprovalRequestModalResult = (result) => {
-      console.log(result)
-    }
-
     const getRemainingDays = (expiryDate) => {
       return calculateRemainingDays(expiryDate)
     }
@@ -144,8 +132,6 @@ export default defineComponent({
       members,
       pendingMembers,
       searchValue,
-      deleteItem,
-      checkApprovalRequestModalResult,
       getRemainingDays,
       getAge,
       updateMember,
@@ -155,6 +141,10 @@ export default defineComponent({
   methods: {
     approveMembers() {
       this.$refs.approvalRequestModal.showModal()
+    },
+    deleteMember(index) {
+      const member = this.members[index - 1]
+      this.$refs.deleteModal.showModal(member)
     },
     renewMembership() {
       this.$refs.updateExpiryDateModal.showModal()

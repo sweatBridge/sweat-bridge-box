@@ -1,11 +1,7 @@
 <template>
   <CModal
     :visible="modalStatus"
-    @close="
-      () => {
-        modalStatus = false
-      }
-    "
+    @close="() => {modalStatus = false}"
     backdrop="static"
   >
     <CModalHeader>
