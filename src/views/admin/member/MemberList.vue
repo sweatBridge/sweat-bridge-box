@@ -32,15 +32,8 @@
         <template #item-type="{ type }">
           {{type}}
         </template>
-        <template #item-expiryDate="item">
-          {{item.expiryDate}}&nbsp;
-          <CButton
-            color="dark"
-            size="sm"
-            @click="updateExpiryDate(item)"
-          >
-            갱신
-          </CButton>
+        <template #item-expiryDate="{ expiryDate }">
+          {{expiryDate}}
         </template>
         <template #item-duration="{ expiryDate }">
           {{ getRemainingDays(expiryDate) }}
@@ -53,18 +46,27 @@
         </template>
         <template #item-operation="{ index }">
           <CButton
-            color="light"
+            color="dark"
             size="sm"
-            @click="showMemberDetails(index)"
+            @click="renewMembership()"
           >
-            <CIcon name="cil-notes" />
+            갱신
           </CButton>
           <CButton
             color="danger"
             size="sm"
             @click="deleteItem(index)"
           >
-            <CIcon name="cil-ban" />
+            삭제
+          </CButton>
+        </template>
+        <template #item-details="{ index }">
+          <CButton
+            color="light"
+            size="sm"
+            @click="showMemberDetails(index)"
+          >
+            <CIcon name="cil-notes" />
           </CButton>
         </template>
       </EasyDataTable>
@@ -107,7 +109,8 @@ export default defineComponent({
       { text: "잔여 기간", value: "duration" },
       { text: "성별", value: "gender" },
       { text: "나이", value: "age" },
-      { text: "기능", value: "operation", width: "100" }
+      { text: "기능", value: "operation", width: "150" },
+      { text: "상세", value: "details"},
     ]
 
     const members = computed(() => store.state.member.members)
@@ -142,11 +145,9 @@ export default defineComponent({
       pendingMembers,
       searchValue,
       deleteItem,
-      // approveMembers,
       checkApprovalRequestModalResult,
       getRemainingDays,
       getAge,
-      // updateExpiryDate,
       updateMember,
       memberDetatilIdx,
     }
@@ -155,8 +156,10 @@ export default defineComponent({
     approveMembers() {
       this.$refs.approvalRequestModal.showModal()
     },
+    renewMembership() {
+      this.$refs.updateExpiryDateModal.showModal()
+    },
     updateExpiryDate(member) {
-      console.log(member)
       this.$refs.updateExpiryDateModal.showModal()
       this.updateMember = member
     },
