@@ -38,14 +38,16 @@
         <CInputGroup class="mb-3">
           <CInputGroupText id="basic-addon3">등록 타입</CInputGroupText>
           <CFormInput id="basic-url" aria-describedby="basic-addon3" v-model="member.type" readonly/>
+          <CInputGroupText id="basic-addon3">만료 일자</CInputGroupText>
+          <CFormInput id="basic-url" aria-describedby="basic-addon3" v-model="member.expiryDate" readonly/>
         </CInputGroup>
       </CRow>
       <CRow>
         <CInputGroup class="mb-3">
-          <CInputGroupText id="basic-addon3">만료 일자</CInputGroupText>
-          <CFormInput id="basic-url" aria-describedby="basic-addon3" v-model="member.expiryDate" readonly/>
           <CInputGroupText id="basic-addon3">잔여일 수</CInputGroupText>
           <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getRemainingDays(member.expiryDate)" readonly/>
+          <CInputGroupText id="basic-addon3">잔여일 수</CInputGroupText>
+          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getRemainingVisits(member.type, member.remainingVisits)" readonly/>
         </CInputGroup>
       </CRow>
     </CModalBody>
@@ -56,7 +58,7 @@
 <script>
 import {ref, computed} from "vue"
 import {useStore} from "vuex"
-import {calculateAge, convertGenderToKorean, calculateRemainingDays} from "@/views/admin/util/member"
+import {calculateAge, convertGenderToKorean, calculateRemainingDays, convertRemainingVisits} from "@/views/admin/util/member"
 
 export default {
   name: "MemberDetailsModal",
@@ -87,13 +89,18 @@ export default {
       return calculateRemainingDays(expiryDate)
     }
 
+    const getRemainingVisits = (type, remainingVisits) => {
+      return convertRemainingVisits(type, remainingVisits)
+    }
+
     return {
       modalStatus,
       member,
       showModal,
       getAge,
       getGender,
-      getRemainingDays
+      getRemainingDays,
+      getRemainingVisits
     }
   },
 }

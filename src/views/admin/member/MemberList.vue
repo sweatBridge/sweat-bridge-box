@@ -38,6 +38,9 @@
         <template #item-duration="{ expiryDate }">
           {{ getRemainingDays(expiryDate) }}
         </template>
+        <template #item-remainingVisits="{ index }">
+          {{ getRemainingVisits(index) }}
+        </template>
         <template #item-gender="{ gender }">
           {{gender}}
         </template>
@@ -83,7 +86,7 @@ import UpdateExpiryDateModal from "@/views/admin/common/modal/UpdateExpiryDateMo
 import {ref, defineComponent, onMounted, computed, reactive} from "vue"
 import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue"
 import { useStore } from "vuex"
-import {calculateAge, calculateRemainingDays} from "@/views/admin/util/member"
+import {calculateAge, calculateRemainingDays, convertRemainingVisits,} from "@/views/admin/util/member"
 import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue"
 import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
 
@@ -103,8 +106,9 @@ export default defineComponent({
     const headers = [
       { text: "이름", value: "name" },
       { text: "등록 타입", value: "type"},
-      { text: "만료 일자", value: "expiryDate", sortable: true, width: "250"},
+      { text: "만료 일자", value: "expiryDate", sortable: true},
       { text: "잔여 기간", value: "duration" },
+      { text: "잔여 횟수", value: "remainingVisits"},
       { text: "성별", value: "gender" },
       { text: "나이", value: "age" },
       { text: "기능", value: "operation", width: "150" },
@@ -120,6 +124,11 @@ export default defineComponent({
       return calculateRemainingDays(expiryDate)
     }
 
+    const getRemainingVisits = (index) => {
+      const member = members.value[index - 1]
+      return convertRemainingVisits(member.type, member.remainingVisits)
+    }
+
     const getAge = (birthDate) => {
       return calculateAge(birthDate)
     }
@@ -133,6 +142,7 @@ export default defineComponent({
       pendingMembers,
       searchValue,
       getRemainingDays,
+      getRemainingVisits,
       getAge,
       updateMember,
       memberDetatilIdx,

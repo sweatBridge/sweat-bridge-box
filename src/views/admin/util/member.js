@@ -20,6 +20,16 @@ export function calculateRemainingDays(expiryDate) {
   return Math.ceil(diff / (1000 * 3600 * 24))
 }
 
+export function convertRemainingVisits(type, remainingVisits) {
+  if (type === 'PeriodPass') {
+    return '무제한'
+  } else if (type === 'CountPass') {
+    return remainingVisits
+  } else {
+    return '알 수 없음'
+  }
+}
+
 export function convertGenderToKorean(gender) {
   switch(gender) {
     case 'M':
