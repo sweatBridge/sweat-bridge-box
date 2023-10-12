@@ -28,6 +28,7 @@
     @updateModalResult="updateClass"
     @deleteModalResult="deleteClass"
   />
+  <toast-message ref="toastMessageRef" />
 
 </template>
 
@@ -41,12 +42,14 @@ import { defineComponent } from 'vue'
 import SaveClassModal from '@/views/admin/common/modal/SaveClassModal.vue'
 import {mapActions} from "vuex";
 import ManageClassModal from "@/views/admin/common/modal/ManageClassModal.vue"
+import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue"
 
 export default defineComponent({
   components: {
     ManageClassModal,
     SaveClassModal,
     FullCalendar,
+    ToastMessage,
   },
   mounted() {
     // console.log(calendarApi.view.activeStart)
@@ -154,11 +157,27 @@ export default defineComponent({
         cap: parseInt(result.capacity, 10),
         reserved: result.reserved,
       }).then(() => {
-          calendarApi.getEventById(result.id).setExtendedProp('coach', result.coach)
-          calendarApi.getEventById(result.id).setExtendedProp('cap', result.capacity)
+          // calendarApi.getEventById(result.id).setExtendedProp('coach', result.coach)
+          // calendarApi.getEventById(result.id).setExtendedProp('cap', result.capacity)
+          this.$refs.toastMessageRef.createToast({
+            title: '성공',
+            content: '수업 정보 변경 성공',
+            type: 'success'
+          })
+          setTimeout(() => {
+            location.reload()
+          }, 2000)
         }
       ).catch(error => {
         console.error('Failed to update class', error);
+        this.$refs.toastMessageRef.createToast({
+          title: '실패',
+          content: '수업 정보 변경 실패 error: ' + error.message,
+          type: 'danger'
+        })
+        setTimeout(() => {
+          location.reload()
+        }, 2000)
       })
     },
     async deleteClass(result) {
@@ -168,9 +187,25 @@ export default defineComponent({
         docKey: result.id,
         box: box,
       }).then(() => {
-        calendarApi.getEventById(result.id).remove()
+        // calendarApi.getEventById(result.id).remove()
+        this.$refs.toastMessageRef.createToast({
+          title: '성공',
+          content: '수업 삭제 성공',
+          type: 'success'
+        })
+        setTimeout(() => {
+          location.reload()
+        }, 2000)
       }).catch(error => {
-        console.error('Failed to delete class', error);
+        console.error('Failed to delete class', error)
+        this.$refs.toastMessageRef.createToast({
+          title: '실패',
+          content: '수업 삭제 실패 error: ' + error.message,
+          type: 'danger'
+        })
+        setTimeout(() => {
+          location.reload()
+        }, 2000)
       })
     },
     async saveClasses(result) {
@@ -208,20 +243,36 @@ export default defineComponent({
         cap: parseInt(result.capacity, 10)
       })
         .then(() => {
-          calendarApi.addEvent({
-            id: createEventId(),
-            title: box + " WOD",
-            start: result.startStr,
-            end: result.endStr,
-            extendedProps: {
-              coach: result.coach,
-              cap: parseInt(result.capacity, 10),
-              reserved: result.reserved,
-            }
+          this.$refs.toastMessageRef.createToast({
+            title: '성공',
+            content: '수업 등록 성공',
+            type: 'success'
           })
+          setTimeout(() => {
+            location.reload()
+          }, 2000)
+          // calendarApi.addEvent({
+          //   id: createEventId(),
+          //   title: box + " WOD",
+          //   start: result.startStr,
+          //   end: result.endStr,
+          //   extendedProps: {
+          //     coach: result.coach,
+          //     cap: parseInt(result.capacity, 10),
+          //     reserved: result.reserved,
+          //   }
+          // })
         })
         .catch(error => {
           console.error('Failed to set class', error);
+          this.$refs.toastMessageRef.createToast({
+            title: '실패',
+            content: '수업 등록 실패 error: ' + error.message,
+            type: 'danger'
+          })
+          setTimeout(() => {
+            location.reload()
+          }, 2000)
         })
     },
   },

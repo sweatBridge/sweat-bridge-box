@@ -8,7 +8,7 @@
           color="primary" class="position-relative" size="sm">
           승인 요청
           <CBadge color="danger" position="top-end" shape="rounded-pill">
-            3 <span class="visually-hidden">unread messages</span>
+            {{pendingMembers.length}} <span class="visually-hidden">unread messages</span>
           </CBadge>
         </CButton>
       </div>
@@ -21,154 +21,151 @@
       <EasyDataTable
         buttons-pagination
         :headers="headers"
-        :items="items"
+        :items="members"
         search-field="name"
         :search-value="searchValue"
+        show-index
       >
         <template #item-name="{ name }">
           {{name}}
         </template>
-        <template #item-expiryDate="item">
-          {{item.expiryDate}}&nbsp;
-          <CButton
-            color="dark"
-            size="sm"
-            @click="updateExpiryDate(item)"
-          >
-            갱신
-          </CButton>
+        <template #item-type="{ type }">
+          {{type}}
+        </template>
+        <template #item-expiryDate="{ expiryDate }">
+          {{expiryDate}}
         </template>
         <template #item-duration="{ expiryDate }">
-          {{ calculateRemainingDays(expiryDate) }}
+          {{ getRemainingDays(expiryDate) }}
+        </template>
+        <template #item-remainingVisits="{ index }">
+          {{ getRemainingVisits(index) }}
         </template>
         <template #item-gender="{ gender }">
           {{gender}}
         </template>
-        <template #item-age="{ age }">
-          {{age}}
+        <template #item-age="{ birthDate }">
+          {{ getAge(birthDate) }}
         </template>
-        <template #item-operation="item">
+        <template #item-operation="{ index }">
           <CButton
-            color="light"
+            color="dark"
             size="sm"
-            @click="deleteItem(item)"
+            @click="renewMembership()"
           >
-            <CIcon name="cil-notes" />
+            갱신
           </CButton>
           <CButton
             color="danger"
             size="sm"
-            @click="deleteItem(item)"
+            @click="deleteMember(index)"
           >
-            <CIcon name="cil-ban" />
+            삭제
+          </CButton>
+        </template>
+        <template #item-details="{ index }">
+          <CButton
+            color="light"
+            size="sm"
+            @click="showMemberDetails(index)"
+          >
+            <CIcon name="cil-notes" />
           </CButton>
         </template>
       </EasyDataTable>
     </CCardBody>
   </CCard>
-  <approval-request-modal
-    ref="approvalRequestModal"
-  />
-  <update-expiry-date-modal
-    :member="updateMember"
-    ref="updateExpiryDateModal"
-  />
+  <approval-request-modal ref="approvalRequestModal"/>
+  <update-expiry-date-modal :member="updateMember" ref="updateExpiryDateModal"/>
+  <member-details-modal :index="memberDetatilIdx" ref="memberDetailsModal" />
+  <member-deletion-modal ref="deleteModal" />
 </template>
 
 <script>
 import UpdateExpiryDateModal from "@/views/admin/common/modal/UpdateExpiryDateModal.vue"
-import { ref, defineComponent } from "vue"
+import {ref, defineComponent, onMounted, computed, reactive} from "vue"
 import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue"
+import { useStore } from "vuex"
+import {calculateAge, calculateRemainingDays, convertRemainingVisits,} from "@/views/admin/util/member"
+import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue"
+import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
 
 export default defineComponent({
   components: {
+    MemberDeletionModal,
+    MemberDetailsModal,
     UpdateExpiryDateModal,
     ApprovalRequestModal,
   },
   setup() {
+    const store = useStore()
+    onMounted(() => {
+      store.dispatch('getMembers', { box: 'CFBD' })
+      store.dispatch('getPendingMembers', { box: 'CFBD' })
+    })
     const headers = [
       { text: "이름", value: "name" },
-      { text: "만료 일자", value: "expiryDate", sortable: true, width: "250"},
+      { text: "등록 타입", value: "type"},
+      { text: "만료 일자", value: "expiryDate", sortable: true},
       { text: "잔여 기간", value: "duration" },
+      { text: "잔여 횟수", value: "remainingVisits"},
       { text: "성별", value: "gender" },
       { text: "나이", value: "age" },
-      { text: "기능", value: "operation", width: "100" }
+      { text: "기능", value: "operation", width: "150" },
+      { text: "상세", value: "details"},
     ]
 
-    const searchValue = ref("");
+    const members = computed(() => store.state.member.members)
+    const pendingMembers = computed(() => store.state.member.pendingMembers)
 
-    const deleteItem = (val) => {
-      console.log(val)
+    const searchValue = ref("")
+
+    const getRemainingDays = (expiryDate) => {
+      return calculateRemainingDays(expiryDate)
     }
 
-    const checkApprovalRequestModalResult = (result) => {
-      console.log(result)
+    const getRemainingVisits = (index) => {
+      const member = members.value[index - 1]
+      return convertRemainingVisits(member.type, member.remainingVisits)
     }
 
-    const calculateRemainingDays = (expiryDate) => {
-      const today = new Date()
-      const expiry = new Date(expiryDate)
-      const diff = expiry.getTime() - today.getTime()
-      const diffDays = Math.ceil(diff / (1000 * 3600 * 24))
-      return diffDays
+    const getAge = (birthDate) => {
+      return calculateAge(birthDate)
     }
 
-    const updateMember = ref()
-
-    const items = [
-      {
-        name: '김대현',
-        expiryDate: '2023-11-07',
-        gender: '남',
-        age: 28,
-        weight: 80,
-        height: 180,
-        phone: "010-1234-5678",
-        purpose: '다이어트',
-      },
-      {
-        name: '박솔희',
-        duration: 60,
-        expiryDate: '2023-12-07',
-        gender: '여',
-        age: 27,
-        weight: 40,
-        height: 160,
-        phone: "010-1234-5678",
-        purpose: '건강',
-      },
-      {
-        name: '김재인',
-        expiryDate: '2024-03-07',
-        gender: '남',
-        age: 27,
-        weight: 70,
-        height: 180,
-        phone: "010-1234-5678",
-        purpose: '재미',
-      },
-    ];
+    const updateMember = reactive({})
+    const memberDetatilIdx = ref(0)
 
     return {
       headers,
-      items,
+      members,
+      pendingMembers,
       searchValue,
-      deleteItem,
-      // approveMembers,
-      checkApprovalRequestModalResult,
-      calculateRemainingDays,
-      // updateExpiryDate,
+      getRemainingDays,
+      getRemainingVisits,
+      getAge,
       updateMember,
+      memberDetatilIdx,
     }
   },
   methods: {
     approveMembers() {
       this.$refs.approvalRequestModal.showModal()
     },
+    deleteMember(index) {
+      const member = this.members[index - 1]
+      this.$refs.deleteModal.showModal(member)
+    },
+    renewMembership() {
+      this.$refs.updateExpiryDateModal.showModal()
+    },
     updateExpiryDate(member) {
-      console.log(member)
       this.$refs.updateExpiryDateModal.showModal()
       this.updateMember = member
+    },
+    showMemberDetails(idx) {
+      this.$refs.memberDetailsModal.showModal()
+      this.memberDetatilIdx = idx
     }
   }
 })

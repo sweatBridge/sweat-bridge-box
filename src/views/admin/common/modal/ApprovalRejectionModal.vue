@@ -5,17 +5,17 @@
     backdrop="static"
   >
     <CModalHeader class="modal-header">
-      <CModalTitle>요청 수락</CModalTitle>
+      <CModalTitle>요청 거절</CModalTitle>
     </CModalHeader>
     <CModalBody>
-      <strong>{{name}}</strong> 님을 승인하시겠습니까?
+      <strong>{{name}}</strong> 님을 거부하시겠습니까?
     </CModalBody>
     <CModalFooter>
       <CButton color="danger" @click="cancel">
         취소
       </CButton>
-      <CButton color="success" @click="approve">
-        승인
+      <CButton color="warning" @click="reject">
+        거절
       </CButton>
     </CModalFooter>
   </CModal>
@@ -26,10 +26,10 @@
 <script>
 import {reactive, ref} from "vue"
 import {useStore} from "vuex"
-import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue"
+import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue";
 
 export default {
-  name: "ApprovalConfirmationModal",
+  name: "ApprovalRejectionModal",
   components: {ToastMessage},
   setup(props, { emit }) {
     const store = useStore()
@@ -42,15 +42,15 @@ export default {
       name.value = user.name
       member.value = user
     }
-    const approve = () => {
+    const reject = () => {
       modalStatus.value = false
       member.value.box = "CFBD"
-      store.dispatch("approveMember", member.value)
+      store.dispatch("rejectMember", member.value)
         .then(() => {
           toastMessageRef.value.createToast(
             {
               title: '성공',
-              content: '요청 승인 성공.',
+              content: '요청 거부 성공.',
               type: 'success'
             }
           )
@@ -63,7 +63,7 @@ export default {
           toastMessageRef.value.createToast(
             {
               title: '실패',
-              content: '요청 승인 실패 error: ' + error.message,
+              content: '요청 거부 실패 error: ' + error.message,
               type: 'danger'
             }
           )
@@ -75,16 +75,17 @@ export default {
     const cancel = () => {
       modalStatus.value = false
     }
+
     return {
       modalStatus,
       member,
       name,
       toastMessageRef,
       showModal,
-      approve,
-      cancel
+      reject,
+      cancel,
     }
-  }
+  },
 }
 
 </script>
