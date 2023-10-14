@@ -14,6 +14,10 @@
           <CFormInput v-model="member.value.name" readonly/>
         </CInputGroup>
         <CInputGroup class="mb-3">
+          <CInputGroupText>기존 만료일</CInputGroupText>
+          <CFormInput :value="getExpiryDateStr(member.value.expiryDate)" readonly/>
+        </CInputGroup>
+        <CInputGroup class="mb-3">
           <CInputGroupText>등록 타입</CInputGroupText>
           <CFormSelect v-model="registrationType">
             <option>등록 타입 선택</option>
@@ -24,7 +28,7 @@
       </CRow>
       <CRow v-if="registrationType === 'PeriodPass'">
         <CInputGroup class="mb-3">
-          <CInputGroupText>만료일</CInputGroupText>
+          <CInputGroupText>갱신 만료일</CInputGroupText>
           <CButton><DatePicker v-model="expiryDate"/></CButton>
         </CInputGroup>
       </CRow>
@@ -38,7 +42,7 @@
       </CRow>
     </CModalBody>
     <CModalFooter>
-      <CButton color="danger" @click="testFunc">
+      <CButton color="danger" @click="() => {modalStatus = false}">
         취소
       </CButton>
       <CButton color="success" @click="register">
@@ -54,6 +58,7 @@ import { ref, reactive } from "vue"
 import { useStore } from "vuex"
 import DatePicker from "vue3-datepicker"
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue"
+import {convertTimestampToString} from "@/views/admin/util/member";
 
 export default {
   name: "RegisterMembershipModal",
@@ -71,12 +76,13 @@ export default {
     const toastMessageRef = ref(null)
     const showModal = (user) => {
       member.value = user
-      console.log(member.value.name)
       modalStatus.value = true
     }
-    const checkUpdateExpiryDateModal = () => {
-      modalStatus.value = false
+
+    const getExpiryDateStr = (timestamp) => {
+      return convertTimestampToString(timestamp)
     }
+
     const register = () => {
       member.value.box = "CFBD"
       member.value.type = registrationType.value
@@ -110,9 +116,6 @@ export default {
         })
       modalStatus.value = false
     }
-    const testFunc = () => {
-      console.log(member.value, registrationType.value, expiryDate.value)
-    }
     return {
       modalStatus,
       member,
@@ -121,9 +124,8 @@ export default {
       remainingVisits,
       toastMessageRef,
       showModal,
-      checkUpdateExpiryDateModal,
+      getExpiryDateStr,
       register,
-      testFunc
     }
   }
 }

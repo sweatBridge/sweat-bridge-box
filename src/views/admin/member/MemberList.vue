@@ -33,7 +33,7 @@
           {{type}}
         </template>
         <template #item-expiryDate="{ expiryDate }">
-          {{expiryDate}}
+          {{ getExpiryDateStr(expiryDate) }}
         </template>
         <template #item-duration="{ expiryDate }">
           {{ getRemainingDays(expiryDate) }}
@@ -76,18 +76,21 @@
     </CCardBody>
   </CCard>
   <approval-request-modal ref="approvalRequestModal"/>
-  <update-expiry-date-modal :member="updateMember" ref="updateExpiryDateModal"/>
   <register-membership-modal ref="registerMembershipModal"/>
   <member-details-modal :index="memberDetatilIdx" ref="memberDetailsModal" />
   <member-deletion-modal ref="deleteModal" />
 </template>
 
 <script>
-import UpdateExpiryDateModal from "@/views/admin/common/modal/UpdateExpiryDateModal.vue"
 import {ref, defineComponent, onMounted, computed, reactive} from "vue"
 import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue"
 import { useStore } from "vuex"
-import {calculateAge, calculateRemainingDays, convertRemainingVisits,} from "@/views/admin/util/member"
+import {
+  calculateAge,
+  calculateRemainingDays,
+  convertRemainingVisits,
+  convertTimestampToString,
+} from "@/views/admin/util/member"
 import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue"
 import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
 import RegisterMembershipModal from "@/views/admin/common/modal/RegisterMembershipModal.vue";
@@ -97,7 +100,6 @@ export default defineComponent({
     RegisterMembershipModal,
     MemberDeletionModal,
     MemberDetailsModal,
-    UpdateExpiryDateModal,
     ApprovalRequestModal,
   },
   setup() {
@@ -123,8 +125,13 @@ export default defineComponent({
 
     const searchValue = ref("")
 
+    const getExpiryDateStr = (timestamp) => {
+      return convertTimestampToString(timestamp)
+    }
+
     const getRemainingDays = (expiryDate) => {
-      return calculateRemainingDays(expiryDate)
+      const expiryDateStr = convertTimestampToString(expiryDate)
+      return calculateRemainingDays(expiryDateStr)
     }
 
     const getRemainingVisits = (index) => {
@@ -136,7 +143,6 @@ export default defineComponent({
       return calculateAge(birthDate)
     }
 
-    const updateMember = reactive({})
     const memberDetatilIdx = ref(0)
 
     return {
@@ -144,10 +150,10 @@ export default defineComponent({
       members,
       pendingMembers,
       searchValue,
+      getExpiryDateStr,
       getRemainingDays,
       getRemainingVisits,
       getAge,
-      updateMember,
       memberDetatilIdx,
     }
   },
@@ -162,10 +168,6 @@ export default defineComponent({
     renewMembership(index) {
       const member = this.members[index - 1]
       this.$refs.registerMembershipModal.showModal(member)
-    },
-    updateExpiryDate(member) {
-      this.$refs.updateExpiryDateModal.showModal()
-      this.updateMember = member
     },
     showMemberDetails(idx) {
       this.$refs.memberDetailsModal.showModal()

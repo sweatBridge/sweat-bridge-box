@@ -20,6 +20,12 @@ export function calculateRemainingDays(expiryDate) {
   return Math.ceil(diff / (1000 * 3600 * 24))
 }
 
+export function convertTimestampToString(timestamp) {
+  const date = new Date(timestamp.seconds * 1000)
+  const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
+  return formattedDate
+}
+
 export function convertRemainingVisits(type, remainingVisits) {
   if (type === 'PeriodPass') {
     return '무제한'
