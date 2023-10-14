@@ -62,6 +62,12 @@ const member = {
     async rejectMember(context, payload) {
       const ref = await context.dispatch('getMemberRef', payload)
       await deleteDoc(ref)
+    },
+    //TODO: 추후 update member로 통합
+    async registerMembership(context, payload) {
+      const ref = await context.dispatch('getMemberRef', payload)
+      delete payload.box
+      await updateDoc(ref, payload)
     }
   },
   getters: {}

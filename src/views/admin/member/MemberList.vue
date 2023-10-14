@@ -51,7 +51,7 @@
           <CButton
             color="dark"
             size="sm"
-            @click="renewMembership()"
+            @click="renewMembership(index)"
           >
             갱신
           </CButton>
@@ -77,6 +77,7 @@
   </CCard>
   <approval-request-modal ref="approvalRequestModal"/>
   <update-expiry-date-modal :member="updateMember" ref="updateExpiryDateModal"/>
+  <register-membership-modal ref="registerMembershipModal"/>
   <member-details-modal :index="memberDetatilIdx" ref="memberDetailsModal" />
   <member-deletion-modal ref="deleteModal" />
 </template>
@@ -89,9 +90,11 @@ import { useStore } from "vuex"
 import {calculateAge, calculateRemainingDays, convertRemainingVisits,} from "@/views/admin/util/member"
 import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue"
 import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
+import RegisterMembershipModal from "@/views/admin/common/modal/RegisterMembershipModal.vue";
 
 export default defineComponent({
   components: {
+    RegisterMembershipModal,
     MemberDeletionModal,
     MemberDetailsModal,
     UpdateExpiryDateModal,
@@ -156,8 +159,9 @@ export default defineComponent({
       const member = this.members[index - 1]
       this.$refs.deleteModal.showModal(member)
     },
-    renewMembership() {
-      this.$refs.updateExpiryDateModal.showModal()
+    renewMembership(index) {
+      const member = this.members[index - 1]
+      this.$refs.registerMembershipModal.showModal(member)
     },
     updateExpiryDate(member) {
       this.$refs.updateExpiryDateModal.showModal()
