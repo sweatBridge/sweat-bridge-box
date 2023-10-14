@@ -56,7 +56,7 @@ export default {
           )
           setTimeout(() => {
             location.reload()
-          }, 2000)
+          }, 1000)
         })
         .catch(error => {
           console.error("An error occurred while rejecting the member:", error)
@@ -69,7 +69,7 @@ export default {
           )
           setTimeout(() => {
             location.reload()
-          }, 2000)
+          }, 1000)
         })
     }
     const cancel = () => {

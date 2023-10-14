@@ -166,7 +166,7 @@ export default defineComponent({
           })
           setTimeout(() => {
             location.reload()
-          }, 2000)
+          }, 1000)
         }
       ).catch(error => {
         console.error('Failed to update class', error);
@@ -177,7 +177,7 @@ export default defineComponent({
         })
         setTimeout(() => {
           location.reload()
-        }, 2000)
+        }, 1000)
       })
     },
     async deleteClass(result) {
@@ -195,7 +195,7 @@ export default defineComponent({
         })
         setTimeout(() => {
           location.reload()
-        }, 2000)
+        }, 1000)
       }).catch(error => {
         console.error('Failed to delete class', error)
         this.$refs.toastMessageRef.createToast({
@@ -205,7 +205,7 @@ export default defineComponent({
         })
         setTimeout(() => {
           location.reload()
-        }, 2000)
+        }, 1000)
       })
     },
     async saveClasses(result) {
@@ -250,7 +250,7 @@ export default defineComponent({
           })
           setTimeout(() => {
             location.reload()
-          }, 2000)
+          }, 1000)
           // calendarApi.addEvent({
           //   id: createEventId(),
           //   title: box + " WOD",
@@ -272,7 +272,7 @@ export default defineComponent({
           })
           setTimeout(() => {
             location.reload()
-          }, 2000)
+          }, 1000)
         })
     },
   },

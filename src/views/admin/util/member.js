@@ -14,10 +14,23 @@ export function calculateAge(birthDate) {
 }
 
 export function calculateRemainingDays(expiryDate) {
+  if (expiryDate == 'None') {
+    return 'None'
+  }
   const today = new Date()
   const expiry = new Date(expiryDate)
   const diff = expiry.getTime() - today.getTime()
   return Math.ceil(diff / (1000 * 3600 * 24))
+}
+
+export function convertTimestampToString(timestamp) {
+  if (timestamp && timestamp.seconds) {
+    const date = new Date(timestamp.seconds * 1000)
+    const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
+    return formattedDate
+  } else {
+    return 'None'
+  }
 }
 
 export function convertRemainingVisits(type, remainingVisits) {
@@ -26,7 +39,7 @@ export function convertRemainingVisits(type, remainingVisits) {
   } else if (type === 'CountPass') {
     return remainingVisits
   } else {
-    return '알 수 없음'
+    return 'None'
   }
 }
 
@@ -37,6 +50,17 @@ export function convertGenderToKorean(gender) {
     case 'W':
       return '여'
     default:
-      return '알 수 없음'
+      return 'None'
+  }
+}
+
+export function convertTypeToKorean(type) {
+  switch(type) {
+    case 'PeriodPass':
+      return '기간권'
+    case 'CountPass':
+      return '횟수권'
+    default:
+      return '미등록'
   }
 }
