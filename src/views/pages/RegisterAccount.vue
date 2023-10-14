@@ -46,7 +46,7 @@
                   <CFormCheck label="이용약관 및 개인정보취급방침에 동의합니다." v-model="isTermsAgreed"/>
                 </div>
                 <div class="d-grid">
-                  <CButton color="success" @click="handleNextClick" :disabled="!isValidationPassed">다음</CButton>
+                  <CButton color="warning" @click="handleNextClick" :disabled="!isValidationPassed">다음</CButton>
                 </div>
               </CForm>
             </CCardBody>

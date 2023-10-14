@@ -55,13 +55,14 @@
                     floatingLabel="박스 소개"
                     placeholder="소개 문구"
                     style="height: 100px"
+                    v-model="description"
                   ></CFormTextarea>
                 </CFormFloating>
               </CForm>
             </CCardBody>
             <CCardFooter>
               <div class="d-grid">
-                <CButton color="success">등록</CButton>
+                <CButton color="success" @click="register">등록</CButton>
               </div>
             </CCardFooter>
           </CCard>
@@ -87,6 +88,7 @@ export default {
     const zoneCode = ref("")
     const roadAddress = ref("")
     const detailAddress = ref("")
+    const description = ref("")
 
     watch(phone, (newPhone, oldPhone) => {
       // 예: 입력된 값에 대한 변환
@@ -103,7 +105,20 @@ export default {
       }).open()
     }
     const register = () => {
-      emit("next")
+      const box = {
+        name : account.value.name,
+        email: account.value.id,
+        representative: representative.value,
+        phone: phone.value,
+        zoneCode: zoneCode.value,
+        roadAddress: roadAddress.value,
+        detailAddress: detailAddress.value,
+        description: description.value,
+      }
+      store.commit("SET_BOX", box)
+      //TODO : authentication 로그인 성공 후 액션 등록(firestore 연동)
+      //registration은 authentication
+      //box는 firestore 등록(box 하위에 name 등록 class, member, wod 컬렉션 생성)
     }
 
     return {
@@ -113,6 +128,7 @@ export default {
       zoneCode,
       roadAddress,
       detailAddress,
+      description,
       openPostcode,
       register
     }
