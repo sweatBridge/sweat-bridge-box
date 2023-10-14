@@ -58,7 +58,7 @@
                 </div>
               </CCardBody>
               <CCardFooter class="text-center">
-                <CButton color="light" variant="outline" class="mt-3">
+                <CButton color="light" variant="outline" class="mt-3" @click="handleSignInClick">
                   등록
                 </CButton>
               </CCardFooter>
@@ -71,7 +71,19 @@
 </template>
 
 <script>
+import {useRouter} from "vue-router"
+
 export default {
   name: 'Login',
+  setup() {
+    const router = useRouter()
+    const handleSignInClick = () => {
+      router.push("/pages/register/account")
+    }
+
+    return {
+      handleSignInClick
+    }
+  }
 }
 </script>
