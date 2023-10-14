@@ -27,10 +27,10 @@
         show-index
       >
         <template #item-name="{ name }">
-          {{name}}
+          <strong>{{name}}</strong>
         </template>
         <template #item-type="{ type }">
-          {{type}}
+          {{ getType(type) }}
         </template>
         <template #item-expiryDate="{ expiryDate }">
           {{ getExpiryDateStr(expiryDate) }}
@@ -53,7 +53,7 @@
             size="sm"
             @click="renewMembership(index)"
           >
-            갱신
+            등록
           </CButton>
           <CButton
             color="danger"
@@ -89,7 +89,7 @@ import {
   calculateAge,
   calculateRemainingDays,
   convertRemainingVisits,
-  convertTimestampToString,
+  convertTimestampToString, convertTypeToKorean,
 } from "@/views/admin/util/member"
 import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue"
 import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
@@ -110,7 +110,7 @@ export default defineComponent({
     })
     const headers = [
       { text: "이름", value: "name" },
-      { text: "등록 타입", value: "type"},
+      { text: "등록 타입", value: "type", sortable: true},
       { text: "만료 일자", value: "expiryDate", sortable: true},
       { text: "잔여 기간", value: "duration" },
       { text: "잔여 횟수", value: "remainingVisits"},
@@ -124,6 +124,10 @@ export default defineComponent({
     const pendingMembers = computed(() => store.state.member.pendingMembers)
 
     const searchValue = ref("")
+
+    const getType = (type) => {
+      return convertTypeToKorean(type)
+    }
 
     const getExpiryDateStr = (timestamp) => {
       return convertTimestampToString(timestamp)
@@ -150,6 +154,7 @@ export default defineComponent({
       members,
       pendingMembers,
       searchValue,
+      getType,
       getExpiryDateStr,
       getRemainingDays,
       getRemainingVisits,

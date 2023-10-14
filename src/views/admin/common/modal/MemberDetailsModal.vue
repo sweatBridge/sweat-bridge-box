@@ -37,7 +37,7 @@
       <CRow>
         <CInputGroup class="mb-3">
           <CInputGroupText id="basic-addon3">등록 타입</CInputGroupText>
-          <CFormInput id="basic-url" aria-describedby="basic-addon3" v-model="member.type" readonly/>
+          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getType(member.type)" readonly/>
           <CInputGroupText id="basic-addon3">만료 일자</CInputGroupText>
           <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getExpiryDateStr(member.expiryDate)" readonly/>
         </CInputGroup>
@@ -63,7 +63,7 @@ import {
   convertGenderToKorean,
   calculateRemainingDays,
   convertRemainingVisits,
-  convertTimestampToString
+  convertTimestampToString, convertTypeToKorean
 } from "@/views/admin/util/member"
 
 export default {
@@ -91,6 +91,10 @@ export default {
       return convertGenderToKorean(gender)
     }
 
+    const getType = (type) => {
+      return convertTypeToKorean(type)
+    }
+
     const getExpiryDateStr = (timestamp) => {
       return convertTimestampToString(timestamp)
     }
@@ -110,6 +114,7 @@ export default {
       showModal,
       getAge,
       getGender,
+      getType,
       getExpiryDateStr,
       getRemainingDays,
       getRemainingVisits
