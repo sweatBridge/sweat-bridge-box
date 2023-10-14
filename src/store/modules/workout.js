@@ -5,7 +5,7 @@ const workout = {
   state: {
     wodRegistration: {
       title: '',
-      date: '',
+      date: null,
       type: '',
       set: 0,
       round: 0,
@@ -62,7 +62,7 @@ const workout = {
       state.wodRegistration.title = title
     },
     updateWodDate(state, date) {
-      state.wodRegistration.date = date
+      state.wodRegistration.date = new Date(date)
     },
     updateWodType(state, type) {
       state.wodRegistration.type = type
