@@ -11,27 +11,6 @@ const routes = [
     redirect: '/admin/Wod',
     children: [
       {
-        path: '/dashboard',
-        name: 'Dashboard',
-        component: () =>
-          import(/* webpackChunkName: "dashboard" */ '@/views/Dashboard.vue'),
-      },
-      {
-        path: '/theme',
-        name: 'Theme',
-        redirect: '/theme/typography',
-      },
-      {
-        path: '/theme/colors',
-        name: 'Colors',
-        component: () => import('@/views/theme/Colors.vue'),
-      },
-      {
-        path: '/theme/typography',
-        name: 'Typography',
-        component: () => import('@/views/theme/Typography.vue'),
-      },
-      {
         path: '/admin',
         redirect: '/admin/reservation',
         name: 'Admin',
@@ -92,9 +71,14 @@ const routes = [
         component: () => import('@/views/pages/Login'),
       },
       {
-        path: 'register',
-        name: 'Register',
-        component: () => import('@/views/pages/Register'),
+        path: 'register/account',
+        name: '계정 등록',
+        component: () => import('@/views/pages/RegisterAccount.vue'),
+      },
+      {
+        path: 'register/box',
+        name: '박스 등록',
+        component: () => import('@/views/pages/RegisterBox.vue'),
       },
     ],
   },
