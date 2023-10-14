@@ -19,7 +19,7 @@
         </CInputGroup>
         <CInputGroup class="mb-3">
           <CInputGroupText>등록 타입</CInputGroupText>
-          <CFormSelect v-model="registrationType">
+          <CFormSelect v-model="registrationType" @change="handleTypeChange">
             <option>등록 타입 선택</option>
             <option value="PeriodPass">기간권</option>
             <option value="CountPass">횟수권</option>
@@ -83,6 +83,11 @@ export default {
       return convertTimestampToString(timestamp)
     }
 
+    const handleTypeChange = () => {
+      expiryDate.value = new Date()
+      remainingVisits.value = 0
+    }
+
     const register = () => {
       member.value.box = "CFBD"
       member.value.type = registrationType.value
@@ -125,6 +130,7 @@ export default {
       toastMessageRef,
       showModal,
       getExpiryDateStr,
+      handleTypeChange,
       register,
     }
   }
