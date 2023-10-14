@@ -7,14 +7,14 @@
             <CCard class="p-4">
               <CCardBody>
                 <CForm>
-                  <h1>Login</h1>
-                  <p class="text-medium-emphasis">Sign In to your account</p>
+                  <h1>로그인</h1>
+                  <p class="text-medium-emphasis">관리자 계정으로 로그인</p>
                   <CInputGroup class="mb-3">
                     <CInputGroupText>
                       <CIcon icon="cil-user" />
                     </CInputGroupText>
                     <CFormInput
-                      placeholder="Username"
+                      placeholder="아이디"
                       autocomplete="username"
                     />
                   </CInputGroup>
@@ -24,17 +24,23 @@
                     </CInputGroupText>
                     <CFormInput
                       type="password"
-                      placeholder="Password"
+                      placeholder="비밀번호"
                       autocomplete="current-password"
                     />
                   </CInputGroup>
                   <CRow>
-                    <CCol :xs="6">
-                      <CButton color="primary" class="px-4"> Login </CButton>
-                    </CCol>
-                    <CCol :xs="6" class="text-right">
+                    <CButton color="primary" class="px-1"> 로그인 </CButton>
+                  </CRow>
+                  <CRow>
+                    <CCol :xs="4"></CCol>
+                    <CCol :xs="4" class="text-right">
                       <CButton color="link" class="px-0">
-                        Forgot password?
+                        아이디 찾기
+                      </CButton>
+                    </CCol>
+                    <CCol :xs="4" class="text-right">
+                      <CButton color="link" class="px-0">
+                        비밀번호 찾기
                       </CButton>
                     </CCol>
                   </CRow>
@@ -44,17 +50,18 @@
             <CCard class="text-white bg-primary py-5" style="width: 44%">
               <CCardBody class="text-center">
                 <div>
-                  <h2>Sign up</h2>
+                  <h2>회원가입</h2>
+                  <br><br>
                   <p>
-                    Lorem ipsum dolor sit amet, consectetur adipisicing elit,
-                    sed do eiusmod tempor incididunt ut labore et dolore magna
-                    aliqua.
+                    박스를 등록하세요.
                   </p>
-                  <CButton color="light" variant="outline" class="mt-3">
-                    Register Now!
-                  </CButton>
                 </div>
               </CCardBody>
+              <CCardFooter class="text-center">
+                <CButton color="light" variant="outline" class="mt-3">
+                  등록
+                </CButton>
+              </CCardFooter>
             </CCard>
           </CCardGroup>
         </CCol>
