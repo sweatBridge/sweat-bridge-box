@@ -263,7 +263,7 @@ export default defineComponent({
           )
           setTimeout(() => {
             location.reload()
-          }, 2000)
+          }, 1000)
         })
         .catch((error) => {
           console.log(error)
@@ -276,7 +276,7 @@ export default defineComponent({
           )
           setTimeout(() => {
             location.reload()
-          }, 2000)
+          }, 1000)
         })
     }
     return {
