@@ -246,6 +246,7 @@ export default defineComponent({
         name: "",
         measure: "",
         type: "",
+        isLevelSet: true,
         levelSetting: [
           {
             level: 'Rxd',
@@ -266,6 +267,7 @@ export default defineComponent({
             requirement: "",
           }
         ],
+        isDescription: true,
         description: "",
       })
     }

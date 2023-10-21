@@ -47,11 +47,11 @@
         </CCol>
         <CCol sm="2">
           <div style="height: 8px;"></div>
-          <CFormCheck id="levelOption" label="난이도 설정" :checked="isLevelSet" v-model="isLevelSet" @change="handleLevelSetChange"/>
+          <CFormCheck id="levelOption" label="난이도 설정" :disabled="movement.name === 'Rest'" :checked="movement.isLevelSet" v-model="movement.isLevelSet" @change="handleLevelSetChange"/>
         </CCol>
       </CRow>
       <CRow>
-        <CCard v-if="isLevelSet">
+        <CCard v-if="movement.isLevelSet">
           <CCardHeader>
             난이도 설정
             <div class="float-end">
@@ -84,7 +84,7 @@
                   <option>난이도</option>
                   <option value="Rxd">Rxd</option>
                   <option value="Scaled">Scaled</option>
-                  <option value="Custom">Custom Level...</option>
+                  <option value="Custom">Custom Level</option>
                 </CFormSelect>
                 <CFormInput
                   v-if="movement.levelSetting[index-1].level === 'Custom'"
@@ -109,11 +109,11 @@
       <CRow>
         <CCol sm="2">
           <div style="height: 8px;"></div>
-          <CFormCheck id="descriptOption" label="설명 추가" v-model="isDescription" @change="handleDescriptionChange" />
+          <CFormCheck id="descriptOption" label="설명 추가" :checked="movement.isDescription" v-model="movement.isDescription" @change="handleDescriptionChange" />
         </CCol>
         <CCol sm="10">
           <CFormInput
-            v-if="isDescription"
+            v-if="movement.isDescription"
             v-model="movement.description"
           />
         </CCol>
@@ -160,14 +160,6 @@ export default defineComponent({
       { text: "성별", value: "gender"},
       { text: "조건", value: "requirement"}
     ]
-    let initalLevelSet
-    if (props.pageType === 'wodRegistration') {
-      initalLevelSet = store.state.workout.wodRegistration.movements[props.index].levelSetting.length > 0
-    } else if (props.pageType === 'registeredWod') {
-      initalLevelSet = store.state.workout.registeredWod.movements[props.index].levelSetting.length > 0
-    }
-    const isLevelSet = ref(initalLevelSet)
-    const isDescription = ref(false)
     const handleLevelSetChange = () => {
       movement.value.levelSetting = []
     }
@@ -204,8 +196,6 @@ export default defineComponent({
     return {
       movement,
       headers,
-      isLevelSet,
-      isDescription,
       movmentCardClass,
       handleLevelSetChange,
       handleDescriptionChange,

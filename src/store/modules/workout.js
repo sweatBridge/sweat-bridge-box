@@ -16,6 +16,7 @@ const workout = {
           name: '',
           measure: '',
           type: '',
+          isLevelSet: true,
           levelSetting: [
             {
               level: 'Rxd',
@@ -36,7 +37,8 @@ const workout = {
               requirement: "",
             }
           ],
-          description: 'abc',
+          isDescription: false,
+          description: '',
         }
       ],
       customMovements: '',
