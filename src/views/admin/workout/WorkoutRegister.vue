@@ -44,7 +44,7 @@
             </CCol>
             <CCol sm="2">
               <div style="height: 8px;"></div>
-              <CFormCheck id="setType" label="세트 운동" v-model="isSetType" v-if="!isCustomize" @change="handleSetTypeChange"/>
+              <CFormCheck id="setType" label="세트 운동" v-model="isSetType" :checked="isSetType" v-if="!isCustomize" @change="handleSetTypeChange"/>
             </CCol>
             <CCol sm="3">
               <CInputGroup class="mb-3" v-if="isSetType">
@@ -120,6 +120,7 @@
                   v-for="(movement, index) in wodRegistration.movements"
                   :key="index"
                   :index="index"
+                  pageType="wodRegistration"
                 />
               </CCardBody>
             </CCard>
@@ -219,8 +220,11 @@ export default defineComponent({
 
     for (let key in watchMapping) {
       watch(() => wodRegistration[key], (newValue) => {
-        store.commit(watchMapping[key], newValue);
-      });
+        store.commit(watchMapping[key], {
+          target: 'wodRegistration',
+          [key]: newValue
+        })
+      })
     }
 
     const handleTypeChange = () => {

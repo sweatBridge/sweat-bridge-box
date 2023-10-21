@@ -53,36 +53,79 @@ const workout = {
       customMovements: '',
       description: '',
     },
+    recentRegisteredWodList: [],
+    registeredWod: {
+      title: '',
+      date: new Date(),
+      type: 'ForTime',
+      set: 2,
+      round: 3,
+      timeCap: '03:10',
+      movements: [],
+      customMovements: 'abc',
+      description: '',
+    },
   },
   mutations: {
     removeMovement(state, index) {
       state.wodRegistration.movements.splice(index, 1);
     },
-    updateWodTitle(state, title) {
-      state.wodRegistration.title = title
+    updateWodTitle(state, { target, title }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.title = title;
+      } else if (target === 'registeredWod') {
+        state.registeredWod.title = title;
+      }
     },
-    updateWodDate(state, date) {
-      state.wodRegistration.date = new Date(date)
+    updateWodDate(state, { target, date }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.date = new Date(date)
+      } else if (target === 'registeredWod') {
+        state.registeredWod.date = new Date(date)
+      }
     },
-    updateWodType(state, type) {
-      state.wodRegistration.type = type
+    updateWodType(state, { target, type }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.type = type
+      } else if (target === 'registeredWod') {
+        state.registeredWod.type = type
+      }
     },
-    updateWodSet(state, set) {
-      state.wodRegistration.set = set
+    updateWodSet(state, { target, set }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.set = set
+      } else if (target === 'registeredWod') {
+        state.registeredWod.set = set
+      }
     },
-    updateWodRound(state, round) {
-      state.wodRegistration.round = round
+    updateWodRound(state, { target, round }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.round = round
+      } else if (target === 'registeredWod') {
+        state.registeredWod.round = round
+      }
     },
-    updateWodTimeCap(state, timeCap) {
-      state.wodRegistration.timeCap = timeCap
+    updateWodTimeCap(state, { target, timeCap }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.timeCap = timeCap
+      } else if (target === 'registeredWod') {
+        state.registeredWod.timeCap = timeCap
+      }
     },
-    updateWodCustomMovements(state, customMovements) {
-      state.wodRegistration.customMovements = customMovements
+    updateWodCustomMovements(state, { target, customMovements }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.customMovements = customMovements
+      } else if (target === 'registeredWod') {
+        state.registeredWod.customMovements = customMovements
+      }
     },
-    updateWodDescription(state, description) {
-      state.wodRegistration.description = description
+    updateWodDescription(state, { target, description }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.description = description
+      } else if (target === 'registeredWod') {
+        state.registeredWod.description = description
+      }
     }
-
   },
   actions: {
     async addWod({state}) {
