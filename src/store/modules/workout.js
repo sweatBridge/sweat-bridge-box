@@ -7,48 +7,37 @@ const workout = {
       title: '',
       date: null,
       type: '',
+      isSet: false,
       set: 0,
       round: 0,
       timeCap: '00:00',
       movements: [
         {
-          name: 'Deadlift',
-          measure: '10',
-          type: 'Count',
+          name: '',
+          measure: '',
+          type: '',
           levelSetting: [
             {
               level: 'Rxd',
               customLevel: '',
               gender: 'M',
-              requirement: "220",
+              requirement: "",
             },
             {
               level: 'Rxd',
               customLevel: '',
               gender: 'W',
-              requirement: "160",
-            }
-          ],
-          description: '',
-        },
-        {
-          name: 'Double Under',
-          measure: '100',
-          type: 'Count',
-          levelSetting: [
-            {
-              level: 'Rxd',
-              gender: 'M',
-              requirement: "Double Under",
+              requirement: "",
             },
             {
-              level: 'Rxd',
-              gender: 'W',
-              requirement: "Single Under",
+              level: 'Scaled',
+              customLevel: '',
+              gender: 'None',
+              requirement: "",
             }
           ],
-          description: 'test description',
-        },
+          description: 'abc',
+        }
       ],
       customMovements: '',
       description: '',
@@ -58,6 +47,7 @@ const workout = {
       title: '',
       date: null,
       type: '',
+      isSet: false,
       set: 0,
       round: 0,
       timeCap: '00:00',
@@ -93,6 +83,13 @@ const workout = {
         state.wodRegistration.type = type
       } else if (target === 'registeredWod') {
         state.registeredWod.type = type
+      }
+    },
+    updateWodIsSet(state, { target, set }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.isSet = set
+      } else if (target === 'registeredWod') {
+        state.registeredWod.isSet = set
       }
     },
     updateWodSet(state, { target, set }) {

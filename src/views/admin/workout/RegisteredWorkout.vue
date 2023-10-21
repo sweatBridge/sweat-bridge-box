@@ -44,10 +44,10 @@
             </CCol>
             <CCol sm="2">
               <div style="height: 8px;"></div>
-              <CFormCheck id="setType" label="세트 운동" v-model="isSetType" :checked="isSetType" v-if="!isCustomize" @change="handleSetTypeChange"/>
+              <CFormCheck id="setType" label="세트 운동" v-model="registeredWod.isSet" :checked="registeredWod.isSet" v-if="!isCustomize" @change="handleSetTypeChange"/>
             </CCol>
             <CCol sm="3">
-              <CInputGroup class="mb-3" v-if="isSetType">
+              <CInputGroup class="mb-3" v-if="registeredWod.isSet">
                 <CInputGroupText id="basic-addon3">세트 수</CInputGroupText>
                 <CFormInput type="number" id="setCount" aria-describedby="basic-addon3" v-model="registeredWod.set"/>
               </CInputGroup>
@@ -60,7 +60,7 @@
                 <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
               </CInputGroup>
             </CCol>
-            <CCol sm="3">
+            <CCol sm="4">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
                 <CButton>
@@ -71,7 +71,7 @@
           </CRow>
           <CRow v-if="registeredWod.type === 'AMRAP'">
             <CCol sm="3" />
-            <CCol sm="3">
+            <CCol sm="4">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
                 <CButton>
@@ -93,6 +93,14 @@
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
                 <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
+              </CInputGroup>
+            </CCol>
+            <CCol sm="4">
+              <CInputGroup class="mb-3">
+                <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
+                <CButton>
+                  <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
+                </CButton>
               </CInputGroup>
             </CCol>
           </CRow>
@@ -175,10 +183,6 @@ export default defineComponent({
   components: {DatePicker, MovementCard, ToastMessage},
   setup(props, {emit}) {
     const store = useStore()
-    const initialSetType = store.state.workout.registeredWod.set !== 0
-    const initialCustomize = store.state.workout.registeredWod.type === "Custom"
-    const isSetType = ref(initialSetType);
-    const isCustomize = ref(initialCustomize)
     const toastMessageRef = ref(null)
     const registeredWod = reactive(store.state.workout.registeredWod)
     const timeCapForPicker = computed({
@@ -191,29 +195,8 @@ export default defineComponent({
         registeredWod.timeCap = newTimeCap
       }
     })
-    watch(() => registeredWod.type, (newValue) => {
-      isCustomize.value = newValue === 'Custom';
-    })
 
-    const watchMapping = {
-      title: 'updateWodTitle',
-      date: 'updateWodDate',
-      type: 'updateWodType',
-      set: 'updateWodSet',
-      round: 'updateWodRound',
-      timeCap: 'updateWodTimeCap',
-      customMovements: 'updateWodCustomMovements',
-      description: 'updateWodDescription',
-    }
-
-    for (let key in watchMapping) {
-      watch(() => registeredWod[key], (newValue) => {
-        store.commit(watchMapping[key], {
-          target: 'registeredWod',
-          [key]: newValue
-        })
-      })
-    }
+    const isCustomize = computed(() => registeredWod.type === 'Custom')
 
     const handleTypeChange = () => {
       registeredWod.round = 0
@@ -230,7 +213,26 @@ export default defineComponent({
         name: "",
         measure: "",
         type: "",
-        levelSetting: [],
+        levelSetting: [
+          {
+            level: 'Rxd',
+            customLevel: '',
+            gender: 'M',
+            requirement: "",
+          },
+          {
+            level: 'Rxd',
+            customLevel: '',
+            gender: 'W',
+            requirement: "",
+          },
+          {
+            level: 'Scaled',
+            customLevel: '',
+            gender: 'None',
+            requirement: "",
+          }
+        ],
         description: "",
       })
     }
@@ -272,11 +274,10 @@ export default defineComponent({
         })
     }
     return {
-      isSetType,
-      isCustomize,
       toastMessageRef,
       registeredWod,
       timeCapForPicker,
+      isCustomize,
       handleTypeChange,
       handleSetTypeChange,
       addMovement,
