@@ -8,7 +8,7 @@ const routes = [
     path: '/',
     name: 'Home',
     component: DefaultLayout,
-    redirect: '/admin/Wod',
+    redirect: '/admin/wod/register',
     children: [
       {
         path: '/admin',
@@ -21,10 +21,16 @@ const routes = [
         },
         children: [
           {
-            path: '/admin/wod',
+            path: '/admin/wod/register',
             name: 'Wod',
             component: () =>
               import('@/views/admin/workout/WorkoutRegister.vue'),
+          },
+          {
+            path: '/admin/registered-wod',
+            name: 'RegisteredWodList',
+            component: () =>
+              import('@/views/admin/workout/WorkoutRegisterList.vue'),
           },
           {
             path: '/admin/record',
