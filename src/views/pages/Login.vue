@@ -29,7 +29,7 @@
                     />
                   </CInputGroup>
                   <CRow>
-                    <CButton color="primary" class="px-1"> 로그인 </CButton>
+                    <CButton color="primary" class="px-1" @click="handleLoginClick"> 로그인 </CButton>
                   </CRow>
                   <CRow>
                     <CCol :xs="4"></CCol>
@@ -77,11 +77,16 @@ export default {
   name: 'Login',
   setup() {
     const router = useRouter()
+    const handleLoginClick = () => {
+      // TODO : authentication & login
+      router.push("/admin/Wod")
+    }
     const handleSignInClick = () => {
       router.push("/pages/register/account")
     }
 
     return {
+      handleLoginClick,
       handleSignInClick
     }
   }
