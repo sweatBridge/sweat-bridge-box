@@ -56,19 +56,23 @@ const workout = {
     recentRegisteredWodList: [],
     registeredWod: {
       title: '',
-      date: new Date(),
-      type: 'ForTime',
-      set: 2,
-      round: 3,
-      timeCap: '03:10',
+      date: null,
+      type: '',
+      set: 0,
+      round: 0,
+      timeCap: '00:00',
       movements: [],
-      customMovements: 'abc',
+      customMovements: '',
       description: '',
     },
   },
   mutations: {
-    removeMovement(state, index) {
-      state.wodRegistration.movements.splice(index, 1);
+    removeMovement(state, { target, index }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.movements.splice(index, 1)
+      } else if (target === 'registeredWod') {
+        state.registeredWod.movements.splice(index, 1)
+      }
     },
     updateWodTitle(state, { target, title }) {
       if (target === 'wodRegistration') {

@@ -160,13 +160,13 @@ export default defineComponent({
       { text: "성별", value: "gender"},
       { text: "조건", value: "requirement"}
     ]
-    // const isLevelSet = ref(true)
-    const isLevelSet = computed(() => {
-      if (props.pageType === 'registeredWod') {
-        return store.state.workout.registeredWod.movements[props.index].levelSetting.length > 0
-      }
-      return false
-    });
+    let initalLevelSet
+    if (props.pageType === 'wodRegistration') {
+      initalLevelSet = store.state.workout.wodRegistration.movements[props.index].levelSetting.length > 0
+    } else if (props.pageType === 'registeredWod') {
+      initalLevelSet = store.state.workout.registeredWod.movements[props.index].levelSetting.length > 0
+    }
+    const isLevelSet = ref(initalLevelSet)
     const isDescription = ref(false)
     const handleLevelSetChange = () => {
       movement.value.levelSetting = []
@@ -195,7 +195,10 @@ export default defineComponent({
     })
 
     const removeMovement = () => {
-      store.commit("removeMovement", props.index)
+      store.commit("removeMovement", {
+        target: props.pageType,
+        index: props.index
+      })
     }
 
     return {

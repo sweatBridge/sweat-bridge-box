@@ -227,7 +227,7 @@ export default defineComponent({
 
     const addMovement = () => {
       registeredWod.movements.push({
-        name: "abc",
+        name: "",
         measure: "",
         type: "",
         levelSetting: [],
