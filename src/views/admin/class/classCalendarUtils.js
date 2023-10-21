@@ -6,26 +6,11 @@ function addDate(days) {
   return result.toISOString().replace(/T.*$/, '')
 }
 export const INITIAL_REGISTERD_WODS = [
-  {
-    id: 'abc',
-    title: 'WOD-1',
-    start: todayStr
-  },
-  {
-    id: 'def',
-    title: 'WOD-2',
-    start: addDate(1)
-  },
-  {
-    id: 'ghi',
-    title: 'WOD-3',
-    start: addDate(2)
-  },
-  {
-    id: 'jkl',
-    title: 'WOD-4',
-    start: addDate(2)
-  }
+  // {
+  //   id: 'abc',
+  //   title: 'WOD-1',
+  //   start: addDate(1)
+  // },
 ]
 export const INITIAL_EVENTS = [
   // {
@@ -47,7 +32,7 @@ export const INITIAL_EVENTS = [
 ]
 
 export function convertDateToKstString(date) {
-  const dateUTC = date.toDate();
+  const dateUTC = date.toDate()
   const dateKST = new Date(dateUTC.getTime() + (9 * 60 * 60 * 1000))
   return dateKST.toISOString().replace(/T.*$/, '')
 }

@@ -159,7 +159,7 @@
         <CCardFooter>
           <div class="float-end">
             <CButton
-              color="success" class="position-relative" size="md"
+              color="success" class="position-relative" size="sm"
               @click="saveWod"
             >
               저장

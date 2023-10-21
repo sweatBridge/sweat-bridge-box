@@ -35,13 +35,10 @@ export default defineComponent({
     const router = useRouter()
     const store = useStore()
     const fullCalendarRef = ref(null)
-    const handleEventClick = (clickInfo) => {
-      console.log(clickInfo)
-      router.push("/admin/registerd-wod")
-    }
 
     const moveToModifyPage = (clickInfo) => {
-      console.log(clickInfo)
+      store.commit('setRegisteredWod', clickInfo.event.extendedProps.data)
+      router.push("/admin/registerd-wod")
     }
 
     onMounted(() => {
@@ -76,7 +73,7 @@ export default defineComponent({
       dayMaxEvents: true,
       weekends: true,
       initialEvents: INITIAL_REGISTERD_WODS,
-      eventClick: handleEventClick,
+      eventClick: moveToModifyPage,
       /* you can update a remote database when these fire:
       select: this.handleDateSelect,
       eventClick: this.handleEventClick,
@@ -89,7 +86,6 @@ export default defineComponent({
     return {
       fullCalendarRef,
       calendarOptions,
-      handleEventClick,
       moveToModifyPage,
     }
   }

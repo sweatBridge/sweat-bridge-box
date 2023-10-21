@@ -45,7 +45,7 @@ const workout = {
       customMovements: '',
       description: '',
     },
-    recentRegisteredWodList: [],
+    // recentRegisteredWodList: [],
     registeredWod: {
       title: '',
       date: null,
@@ -60,6 +60,11 @@ const workout = {
     },
   },
   mutations: {
+    setRegisteredWod(state, payload) {
+      state.registeredWod = payload
+      state.registeredWod.date = payload.date.toDate()
+      console.log(state.registeredWod)
+    },
     removeMovement(state, { target, index }) {
       if (target === 'wodRegistration') {
         state.wodRegistration.movements.splice(index, 1)
@@ -159,9 +164,9 @@ const workout = {
       )
       const querySnap = await getDocs(q)
 
-      const wods = []
+      // const wods = []
       querySnap.forEach((doc) => {
-        wods.push(doc.data())
+        // wods.push(doc.data())
         const event = {
           id: doc._key.getCollectionPath().get(3),
           title: doc.data().title,
@@ -170,10 +175,9 @@ const workout = {
             data: doc.data()
           }
         }
-        console.log(event)
         calendarApi.addEvent(event)
       })
-      state.recentRegisteredWodList = wods
+      // state.recentRegisteredWodList = wods
     }
   },
   getters: {}
