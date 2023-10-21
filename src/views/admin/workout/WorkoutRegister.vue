@@ -267,7 +267,7 @@ export default defineComponent({
             requirement: "",
           }
         ],
-        isDescription: true,
+        isDescription: false,
         description: "",
       })
     }

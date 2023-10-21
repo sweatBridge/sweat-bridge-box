@@ -46,6 +46,12 @@ export const INITIAL_EVENTS = [
   // },
 ]
 
+export function convertDateToKstString(date) {
+  const dateUTC = date.toDate();
+  const dateKST = new Date(dateUTC.getTime() + (9 * 60 * 60 * 1000))
+  return dateKST.toISOString().replace(/T.*$/, '')
+}
+
 export function extractDateTimeFromDocKey(docKey) {
   const year = docKey.substr(0, 4);
   const month = docKey.substr(4, 2);
