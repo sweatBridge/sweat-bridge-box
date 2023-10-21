@@ -27,10 +27,16 @@ const routes = [
               import('@/views/admin/workout/WorkoutRegister.vue'),
           },
           {
-            path: '/admin/registered-wod',
+            path: '/admin/registerd-wod',
+            name: 'RegisteredWod',
+            component: () =>
+              import('@/views/admin/workout/RegisteredWorkout.vue'),
+          },
+          {
+            path: '/admin/registered-wod-list',
             name: 'RegisteredWodList',
             component: () =>
-              import('@/views/admin/workout/WorkoutRegisterList.vue'),
+              import('@/views/admin/workout/RegisteredWorkoutList.vue'),
           },
           {
             path: '/admin/record',

@@ -37,7 +37,7 @@ import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import {INITIAL_EVENTS, createEventId, extractDateAndTime} from './classCalendarUtils'
+import {INITIAL_EVENTS, extractDateAndTime} from './classCalendarUtils'
 import { defineComponent } from 'vue'
 import SaveClassModal from '@/views/admin/common/modal/SaveClassModal.vue'
 import {mapActions} from "vuex";

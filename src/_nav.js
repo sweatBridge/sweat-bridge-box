@@ -22,7 +22,7 @@ export default [
       {
         component: 'CNavItem',
         name: '등록 와드 목록',
-        to: '/admin/registered-wod',
+        to: '/admin/registered-wod-list',
       },
       {
         component: 'CNavItem',
