@@ -47,7 +47,7 @@
         </CCol>
         <CCol sm="2">
           <div style="height: 8px;"></div>
-          <CFormCheck id="levelOption" label="난이도 설정" v-model="isLevelSet" @change="handleLevelSetChange"/>
+          <CFormCheck id="levelOption" label="난이도 설정" :checked="isLevelSet" v-model="isLevelSet" @change="handleLevelSetChange"/>
         </CCol>
       </CRow>
       <CRow>
@@ -133,19 +133,40 @@ export default defineComponent({
     index: {
       type: Number,
       required: true
+    },
+    pageType: {
+      type: String,
+      required: true
     }
   },
   setup(props, {emit}) {
     const store = useStore()
-    const movement = computed(() => store.state.workout.wodRegistration.movements[props.index])
+    const movement = computed(() => {
+      if (!store.state || !store.state.workout) return null
+
+      if (props.pageType === 'wodRegistration' && store.state.workout.wodRegistration) {
+        return store.state.workout.wodRegistration.movements[props.index]
+      } else if (props.pageType === 'registeredWod' && store.state.workout.registeredWod) {
+        return store.state.workout.registeredWod.movements[props.index]
+      }
+
+      console.warn(`Invalid pageType: ${props.pageType}`)
+      return null
+    })
+
     const headers = [
       { text: "기능", value: "operation"},
       { text: "난이도", value: "level"},
       { text: "성별", value: "gender"},
       { text: "조건", value: "requirement"}
     ]
-    const isLevelSet = ref(false)
-    // const isLevelSet = computed(() => movement.value.levelSetting && movement.value.levelSetting.length > 0)
+    // const isLevelSet = ref(true)
+    const isLevelSet = computed(() => {
+      if (props.pageType === 'registeredWod') {
+        return store.state.workout.registeredWod.movements[props.index].levelSetting.length > 0
+      }
+      return false
+    });
     const isDescription = ref(false)
     const handleLevelSetChange = () => {
       movement.value.levelSetting = []
