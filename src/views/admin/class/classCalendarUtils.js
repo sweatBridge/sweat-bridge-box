@@ -1,6 +1,17 @@
 let eventGuid = 0
 let todayStr = new Date().toISOString().replace(/T.*$/, '') // YYYY-MM-DD of today
-
+function addDate(days) {
+  let result = new Date();
+  result.setDate(result.getDate() + days);
+  return result.toISOString().replace(/T.*$/, '')
+}
+export const INITIAL_REGISTERD_WODS = [
+  // {
+  //   id: 'abc',
+  //   title: 'WOD-1',
+  //   start: addDate(1)
+  // },
+]
 export const INITIAL_EVENTS = [
   // {
   //   id: createEventId(),
@@ -20,8 +31,10 @@ export const INITIAL_EVENTS = [
   // },
 ]
 
-export function createEventId() {
-  return String(eventGuid++)
+export function convertDateToKstString(date) {
+  const dateUTC = date.toDate()
+  const dateKST = new Date(dateUTC.getTime() + (9 * 60 * 60 * 1000))
+  return dateKST.toISOString().replace(/T.*$/, '')
 }
 
 export function extractDateTimeFromDocKey(docKey) {

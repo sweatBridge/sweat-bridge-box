@@ -1,5 +1,6 @@
-import { addDoc, collection } from "firebase/firestore";
+import {addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where} from "firebase/firestore";
 import { db } from '@/firebase'
+import {convertDateToKstString} from "@/views/admin/class/classCalendarUtils";
 
 const workout = {
   state: {
@@ -7,82 +8,134 @@ const workout = {
       title: '',
       date: null,
       type: '',
+      isSet: false,
       set: 0,
       round: 0,
       timeCap: '00:00',
       movements: [
         {
-          name: 'Deadlift',
-          measure: '10',
-          type: 'Count',
+          name: '',
+          measure: '',
+          type: '',
+          isLevelSet: true,
           levelSetting: [
             {
               level: 'Rxd',
               customLevel: '',
               gender: 'M',
-              requirement: "220",
+              requirement: "",
             },
             {
               level: 'Rxd',
               customLevel: '',
               gender: 'W',
-              requirement: "160",
+              requirement: "",
+            },
+            {
+              level: 'Scaled',
+              customLevel: '',
+              gender: 'None',
+              requirement: "",
             }
           ],
+          isDescription: false,
           description: '',
-        },
-        {
-          name: 'Double Under',
-          measure: '100',
-          type: 'Count',
-          levelSetting: [
-            {
-              level: 'Rxd',
-              gender: 'M',
-              requirement: "Double Under",
-            },
-            {
-              level: 'Rxd',
-              gender: 'W',
-              requirement: "Single Under",
-            }
-          ],
-          description: 'test description',
-        },
+        }
       ],
+      customMovements: '',
+      description: '',
+    },
+    // recentRegisteredWodList: [],
+    registeredWod: {
+      id: '',
+      title: '',
+      date: null,
+      type: '',
+      isSet: false,
+      set: 0,
+      round: 0,
+      timeCap: '00:00',
+      movements: [],
       customMovements: '',
       description: '',
     },
   },
   mutations: {
-    removeMovement(state, index) {
-      state.wodRegistration.movements.splice(index, 1);
+    setRegisteredWod(state, event) {
+      state.registeredWod = event.extendedProps.data
+      state.registeredWod.date = event.extendedProps.data.date.toDate()
+      state.registeredWod.id = event.id
     },
-    updateWodTitle(state, title) {
-      state.wodRegistration.title = title
+    removeMovement(state, { target, index }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.movements.splice(index, 1)
+      } else if (target === 'registeredWod') {
+        state.registeredWod.movements.splice(index, 1)
+      }
     },
-    updateWodDate(state, date) {
-      state.wodRegistration.date = new Date(date)
+    updateWodTitle(state, { target, title }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.title = title;
+      } else if (target === 'registeredWod') {
+        state.registeredWod.title = title;
+      }
     },
-    updateWodType(state, type) {
-      state.wodRegistration.type = type
+    updateWodDate(state, { target, date }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.date = new Date(date)
+      } else if (target === 'registeredWod') {
+        state.registeredWod.date = new Date(date)
+      }
     },
-    updateWodSet(state, set) {
-      state.wodRegistration.set = set
+    updateWodType(state, { target, type }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.type = type
+      } else if (target === 'registeredWod') {
+        state.registeredWod.type = type
+      }
     },
-    updateWodRound(state, round) {
-      state.wodRegistration.round = round
+    updateWodIsSet(state, { target, set }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.isSet = set
+      } else if (target === 'registeredWod') {
+        state.registeredWod.isSet = set
+      }
     },
-    updateWodTimeCap(state, timeCap) {
-      state.wodRegistration.timeCap = timeCap
+    updateWodSet(state, { target, set }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.set = set
+      } else if (target === 'registeredWod') {
+        state.registeredWod.set = set
+      }
     },
-    updateWodCustomMovements(state, customMovements) {
-      state.wodRegistration.customMovements = customMovements
+    updateWodRound(state, { target, round }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.round = round
+      } else if (target === 'registeredWod') {
+        state.registeredWod.round = round
+      }
     },
-    updateWodDescription(state, description) {
-      state.wodRegistration.description = description
+    updateWodTimeCap(state, { target, timeCap }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.timeCap = timeCap
+      } else if (target === 'registeredWod') {
+        state.registeredWod.timeCap = timeCap
+      }
+    },
+    updateWodCustomMovements(state, { target, customMovements }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.customMovements = customMovements
+      } else if (target === 'registeredWod') {
+        state.registeredWod.customMovements = customMovements
+      }
+    },
+    updateWodDescription(state, { target, description }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.description = description
+      } else if (target === 'registeredWod') {
+        state.registeredWod.description = description
+      }
     }
-
   },
   actions: {
     async addWod({state}) {
@@ -91,13 +144,52 @@ const workout = {
       const collectionRef = collection(db, path)
       await addDoc(collectionRef, state.wodRegistration)
         .then((docRef) => {
-          console.log(state.wodRegistration)
           console.log("Document written with ID: ", docRef.id)
         })
         .catch((error) => {
           console.error("Error adding document: ", error)
         })
     },
+
+    async updateWod({state}) {
+      const box = "CFBD"
+      const path = `/box/${box}/wod`
+      await updateDoc(doc(db, path, state.registeredWod.id), state.registeredWod)
+    },
+
+    async deleteWod({state}) {
+      const box = "CFBD"
+      const path = `/box/${box}/wod`
+      await deleteDoc(doc(db, path, state.registeredWod.id))
+    },
+
+    async getRecentRegisteredWodList({state}, payload) {
+      let calendarApi = payload.calendarApi
+      const path = `/box/${payload.box}/wod`
+      const startDt = new Date()
+      const endDt = new Date()
+      endDt.setDate(startDt.getDate() + 14)
+      const q = query(collection(db, path),
+        where('date', '>=', startDt),
+        where('date', '<', endDt)
+      )
+      const querySnap = await getDocs(q)
+
+      // const wods = []
+      querySnap.forEach((doc) => {
+        // wods.push(doc.data())
+        const event = {
+          id: doc._key.getCollectionPath().get(3),
+          title: doc.data().title,
+          start: convertDateToKstString(doc.data().date),
+          extendedProps: {
+            data: doc.data()
+          }
+        }
+        calendarApi.addEvent(event)
+      })
+      // state.recentRegisteredWodList = wods
+    }
   },
   getters: {}
 }

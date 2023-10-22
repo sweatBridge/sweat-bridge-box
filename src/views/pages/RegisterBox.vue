@@ -76,12 +76,15 @@
 import {useStore} from "vuex"
 import {computed, ref, watch} from "vue"
 import {getPhoneMask} from "@/views/admin/util/account";
+import {useRouter} from "vue-router";
 
 export default {
   name: "RegisterBox",
   methods: {getPhoneMask},
   setup(props, { emit }) {
+    const router = useRouter()
     const store = useStore()
+
     const account = computed(() => store.state.account.registration)
     const phone = ref("")
     const representative = ref("")
@@ -119,6 +122,7 @@ export default {
       //TODO : authentication 로그인 성공 후 액션 등록(firestore 연동)
       //registration은 authentication
       //box는 firestore 등록(box 하위에 name 등록 class, member, wod 컬렉션 생성)
+      router.push("/pages/register/login")
     }
 
     return {

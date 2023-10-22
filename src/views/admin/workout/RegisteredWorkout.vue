@@ -3,7 +3,15 @@
     <CCol>
       <CCard>
         <CCardHeader>
-          <strong>와드 등록</strong>
+          <strong>와드 수정(삭제)</strong>
+          <div class="float-end">
+            <CButton
+              color="dark" class="position-relative" size="sm"
+              @click="moveToRegisteredWodList"
+            >
+              목록
+            </CButton>
+          </div>
         </CCardHeader>
         <CCardBody>
           <CRow>
@@ -13,7 +21,7 @@
                 <CFormInput
                   id="basic-url"
                   aria-describedby="basic-addon3"
-                  v-model="wodRegistration.title"
+                  v-model="registeredWod.title"
                 />
               </CInputGroup>
             </CCol>
@@ -23,7 +31,7 @@
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">WOD 일자</CInputGroupText>
                 <CButton>
-                  <DatePicker v-model="wodRegistration.date"/>
+                  <DatePicker v-model="registeredWod.date"/>
                 </CButton>
               </CInputGroup>
             </CCol>
@@ -32,7 +40,7 @@
             <CCol sm="7">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">Workout 타입</CInputGroupText>
-                <CFormSelect id="inputGroupSelect01" v-model="wodRegistration.type" @change="handleTypeChange">
+                <CFormSelect id="inputGroupSelect01" v-model="registeredWod.type" @change="handleTypeChange">
                   <option>타입 선택</option>
                   <option value="ForTime">ForTime</option>
                   <option value="AMRAP">AMRAP</option>
@@ -44,20 +52,20 @@
             </CCol>
             <CCol sm="2">
               <div style="height: 8px;"></div>
-              <CFormCheck id="setType" label="세트 운동" v-model="wodRegistration.isSet" :checked="wodRegistration.isSet" v-if="!isCustomize" @change="handleSetTypeChange"/>
+              <CFormCheck id="setType" label="세트 운동" v-model="registeredWod.isSet" :checked="registeredWod.isSet" v-if="!isCustomize" @change="handleSetTypeChange"/>
             </CCol>
             <CCol sm="3">
-              <CInputGroup class="mb-3" v-if="wodRegistration.isSet">
+              <CInputGroup class="mb-3" v-if="registeredWod.isSet">
                 <CInputGroupText id="basic-addon3">세트 수</CInputGroupText>
-                <CFormInput type="number" id="setCount" aria-describedby="basic-addon3" v-model="wodRegistration.set"/>
+                <CFormInput type="number" id="setCount" aria-describedby="basic-addon3" v-model="registeredWod.set"/>
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="wodRegistration.type === 'ForTime'">
+          <CRow v-if="registeredWod.type === 'ForTime'">
             <CCol sm="3">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
+                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
               </CInputGroup>
             </CCol>
             <CCol sm="4">
@@ -69,7 +77,7 @@
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="wodRegistration.type === 'AMRAP'">
+          <CRow v-if="registeredWod.type === 'AMRAP'">
             <CCol sm="3" />
             <CCol sm="4">
               <CInputGroup class="mb-3">
@@ -80,11 +88,11 @@
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="wodRegistration.type === 'EMOM'">
+          <CRow v-if="registeredWod.type === 'EMOM'">
             <CCol sm="3">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
+                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
               </CInputGroup>
             </CCol>
             <CCol sm="4">
@@ -96,11 +104,11 @@
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="wodRegistration.type === 'Tabata'">
+          <CRow v-if="registeredWod.type === 'Tabata'">
             <CCol sm="3">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
+                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
               </CInputGroup>
             </CCol>
           </CRow>
@@ -125,10 +133,10 @@
               </CCardHeader>
               <CCardBody>
                 <MovementCard
-                  v-for="(movement, index) in wodRegistration.movements"
+                  v-for="(movement, index) in registeredWod.movements"
                   :key="index"
                   :index="index"
-                  pageType="wodRegistration"
+                  pageType="registeredWod"
                 />
               </CCardBody>
             </CCard>
@@ -140,7 +148,7 @@
                 id="exampleFormControlTextarea1"
                 rows="10"
                 text="자유 형식으로 작성"
-                v-model="wodRegistration.customMovements"
+                v-model="registeredWod.customMovements"
               ></CFormTextarea>
             </CForm>
           </CRow>
@@ -151,7 +159,7 @@
                 id="exampleFormControlTextarea1"
                 rows="3"
                 text="WOD 설명"
-                v-model="wodRegistration.description"
+                v-model="registeredWod.description"
               ></CFormTextarea>
             </CForm>
           </CRow>
@@ -159,10 +167,16 @@
         <CCardFooter>
           <div class="float-end">
             <CButton
-              color="success" class="position-relative" size="sm"
-              @click="saveWod"
+              color="danger" class="position-relative" size="sm"
+              @click="deleteWod"
             >
-              저장
+              삭제
+            </CButton>
+            <CButton
+              color="success" class="position-relative" size="sm"
+              @click="updateWod"
+            >
+              수정
             </CButton>
           </div>
         </CCardFooter>
@@ -186,65 +200,32 @@ export default defineComponent({
     const router = useRouter()
     const store = useStore()
     const toastMessageRef = ref(null)
-    const wodRegistration = reactive({
-      title: store.state.workout.wodRegistration.title,
-      date: store.state.workout.wodRegistration.date,
-      type: store.state.workout.wodRegistration.type,
-      isSet: store.state.workout.wodRegistration.isSet,
-      set: store.state.workout.wodRegistration.set,
-      round: store.state.workout.wodRegistration.round,
-      timeCap: store.state.workout.wodRegistration.timeCap,
-      movements: store.state.workout.wodRegistration.movements,
-      customMovements: store.state.workout.wodRegistration.customMovements,
-      description: store.state.workout.wodRegistration.description,
-    })
+    const registeredWod = reactive(store.state.workout.registeredWod)
     const timeCapForPicker = computed({
       get() {
-        const [mm, ss] = wodRegistration.timeCap.split(':')
+        const [mm, ss] = registeredWod.timeCap.split(':')
         return { mm, ss }
       },
       set(value) {
         const newTimeCap = `${value.mm}:${value.ss}`
-        wodRegistration.timeCap = newTimeCap
+        registeredWod.timeCap = newTimeCap
       }
     })
 
-    const isCustomize = computed(() => wodRegistration.type === 'Custom')
-
-    const watchMapping = {
-      title: 'updateWodTitle',
-      date: 'updateWodDate',
-      type: 'updateWodType',
-      isSet: 'updateWodIsSet',
-      set: 'updateWodSet',
-      round: 'updateWodRound',
-      timeCap: 'updateWodTimeCap',
-      customMovements: 'updateWodCustomMovements',
-      description: 'updateWodDescription',
-    }
-
-    for (let key in watchMapping) {
-      watch(() => wodRegistration[key], (newValue) => {
-        store.commit(watchMapping[key], {
-          target: 'wodRegistration',
-          [key]: newValue
-        })
-      })
-    }
+    const isCustomize = computed(() => registeredWod.type === 'Custom')
 
     const handleTypeChange = () => {
-      wodRegistration.round = 0
-      wodRegistration.timeCap = "00:00"
-      wodRegistration.customMovements = ""
+      registeredWod.round = 0
+      registeredWod.timeCap = "00:00"
+      registeredWod.customMovements = ""
     }
 
     const handleSetTypeChange = () => {
-      wodRegistration.isSet = !wodRegistration.isSet
-      wodRegistration.set = 0
+      registeredWod.set = 0
     }
 
     const addMovement = () => {
-      wodRegistration.movements.push({
+      registeredWod.movements.push({
         name: "",
         measure: "",
         type: "",
@@ -274,7 +255,7 @@ export default defineComponent({
       })
     }
     const addRest = () => {
-      wodRegistration.movements.push({
+      registeredWod.movements.push({
         name: "Rest",
         measure: "",
         type: "Sec",
@@ -282,13 +263,14 @@ export default defineComponent({
         description: "",
       })
     }
-    const saveWod = () => {
-      store.dispatch("addWod")
+
+    const updateWod = () => {
+      store.dispatch("updateWod")
         .then(() => {
           toastMessageRef.value.createToast(
             {
               title: '성공',
-              content: '와드 등록 성공.',
+              content: '와드 수정 성공.',
               type: 'success'
             }
           )
@@ -301,7 +283,7 @@ export default defineComponent({
           toastMessageRef.value.createToast(
             {
               title: '실패',
-              content: '와드 등록 실패 error: ' + error.message,
+              content: '와드 수정 실패 error: ' + error.message,
               type: 'danger'
             }
           )
@@ -310,16 +292,49 @@ export default defineComponent({
           }, 1000)
         })
     }
+    const deleteWod = () => {
+      store.dispatch("deleteWod")
+        .then(() => {
+          toastMessageRef.value.createToast(
+            {
+              title: '성공',
+              content: '와드 삭제 성공.',
+              type: 'success'
+            }
+          )
+          setTimeout(() => {
+            router.push("/admin/registered-wod-list")
+          }, 1000)
+        })
+        .catch((error) => {
+          console.log(error)
+          toastMessageRef.value.createToast(
+            {
+              title: '실패',
+              content: '와드 삭제 실패 error: ' + error.message,
+              type: 'danger'
+            }
+          )
+          setTimeout(() => {
+            router.push("/admin/registered-wod-list")
+          }, 1000)
+        })
+    }
+    const moveToRegisteredWodList = () => {
+      router.push("/admin/registered-wod-list")
+    }
     return {
       toastMessageRef,
-      wodRegistration,
+      registeredWod,
       timeCapForPicker,
       isCustomize,
       handleTypeChange,
       handleSetTypeChange,
       addMovement,
       addRest,
-      saveWod,
+      updateWod,
+      deleteWod,
+      moveToRegisteredWodList,
     }
   },
 })
