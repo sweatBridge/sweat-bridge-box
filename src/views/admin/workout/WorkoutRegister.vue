@@ -178,10 +178,12 @@ import { useStore } from "vuex"
 import MovementCard from "@/views/admin/movement/MovementCard.vue"
 import DatePicker from "vue3-datepicker"
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue"
+import {useRouter} from "vue-router";
 
 export default defineComponent({
   components: {DatePicker, MovementCard, ToastMessage},
   setup(props, {emit}) {
+    const router = useRouter()
     const store = useStore()
     const toastMessageRef = ref(null)
     const wodRegistration = reactive({
@@ -291,7 +293,7 @@ export default defineComponent({
             }
           )
           setTimeout(() => {
-            location.reload()
+            router.push("/admin/registered-wod-list")
           }, 1000)
         })
         .catch((error) => {
@@ -304,7 +306,7 @@ export default defineComponent({
             }
           )
           setTimeout(() => {
-            location.reload()
+            router.push("/admin/registered-wod-list")
           }, 1000)
         })
     }

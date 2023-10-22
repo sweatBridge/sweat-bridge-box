@@ -3,7 +3,15 @@
     <CCol>
       <CCard>
         <CCardHeader>
-          <strong>와드 등록</strong>
+          <strong>와드 수정(삭제)</strong>
+          <div class="float-end">
+            <CButton
+              color="dark" class="position-relative" size="sm"
+              @click="moveToRegisteredWodList"
+            >
+              목록
+            </CButton>
+          </div>
         </CCardHeader>
         <CCardBody>
           <CRow>
@@ -87,20 +95,20 @@
                 <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
               </CInputGroup>
             </CCol>
-          </CRow>
-          <CRow v-if="registeredWod.type === 'Tabata'">
-            <CCol sm="3">
-              <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
-              </CInputGroup>
-            </CCol>
             <CCol sm="4">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
                 <CButton>
                   <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
                 </CButton>
+              </CInputGroup>
+            </CCol>
+          </CRow>
+          <CRow v-if="registeredWod.type === 'Tabata'">
+            <CCol sm="3">
+              <CInputGroup class="mb-3">
+                <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
+                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
               </CInputGroup>
             </CCol>
           </CRow>
@@ -159,10 +167,16 @@
         <CCardFooter>
           <div class="float-end">
             <CButton
-              color="success" class="position-relative" size="sm"
-              @click="saveWod"
+              color="danger" class="position-relative" size="sm"
+              @click="deleteWod"
             >
-              저장
+              삭제
+            </CButton>
+            <CButton
+              color="success" class="position-relative" size="sm"
+              @click="updateWod"
+            >
+              수정
             </CButton>
           </div>
         </CCardFooter>
@@ -178,10 +192,12 @@ import { useStore } from "vuex"
 import MovementCard from "@/views/admin/movement/MovementCard.vue"
 import DatePicker from "vue3-datepicker"
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue"
+import {useRouter} from "vue-router";
 
 export default defineComponent({
   components: {DatePicker, MovementCard, ToastMessage},
   setup(props, {emit}) {
+    const router = useRouter()
     const store = useStore()
     const toastMessageRef = ref(null)
     const registeredWod = reactive(store.state.workout.registeredWod)
@@ -247,18 +263,19 @@ export default defineComponent({
         description: "",
       })
     }
-    const saveWod = () => {
-      store.dispatch("addWod")
+
+    const updateWod = () => {
+      store.dispatch("updateWod")
         .then(() => {
           toastMessageRef.value.createToast(
             {
               title: '성공',
-              content: '와드 등록 성공.',
+              content: '와드 수정 성공.',
               type: 'success'
             }
           )
           setTimeout(() => {
-            location.reload()
+            router.push("/admin/registered-wod-list")
           }, 1000)
         })
         .catch((error) => {
@@ -266,14 +283,45 @@ export default defineComponent({
           toastMessageRef.value.createToast(
             {
               title: '실패',
-              content: '와드 등록 실패 error: ' + error.message,
+              content: '와드 수정 실패 error: ' + error.message,
               type: 'danger'
             }
           )
           setTimeout(() => {
-            location.reload()
+            router.push("/admin/registered-wod-list")
           }, 1000)
         })
+    }
+    const deleteWod = () => {
+      store.dispatch("deleteWod")
+        .then(() => {
+          toastMessageRef.value.createToast(
+            {
+              title: '성공',
+              content: '와드 삭제 성공.',
+              type: 'success'
+            }
+          )
+          setTimeout(() => {
+            router.push("/admin/registered-wod-list")
+          }, 1000)
+        })
+        .catch((error) => {
+          console.log(error)
+          toastMessageRef.value.createToast(
+            {
+              title: '실패',
+              content: '와드 삭제 실패 error: ' + error.message,
+              type: 'danger'
+            }
+          )
+          setTimeout(() => {
+            router.push("/admin/registered-wod-list")
+          }, 1000)
+        })
+    }
+    const moveToRegisteredWodList = () => {
+      router.push("/admin/registered-wod-list")
     }
     return {
       toastMessageRef,
@@ -284,7 +332,9 @@ export default defineComponent({
       handleSetTypeChange,
       addMovement,
       addRest,
-      saveWod,
+      updateWod,
+      deleteWod,
+      moveToRegisteredWodList,
     }
   },
 })

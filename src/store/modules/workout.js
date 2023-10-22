@@ -1,4 +1,4 @@
-import {addDoc, collection, getDocs, query, where} from "firebase/firestore";
+import {addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where} from "firebase/firestore";
 import { db } from '@/firebase'
 import {convertDateToKstString} from "@/views/admin/class/classCalendarUtils";
 
@@ -47,6 +47,7 @@ const workout = {
     },
     // recentRegisteredWodList: [],
     registeredWod: {
+      id: '',
       title: '',
       date: null,
       type: '',
@@ -60,10 +61,10 @@ const workout = {
     },
   },
   mutations: {
-    setRegisteredWod(state, payload) {
-      state.registeredWod = payload
-      state.registeredWod.date = payload.date.toDate()
-      console.log(state.registeredWod)
+    setRegisteredWod(state, event) {
+      state.registeredWod = event.extendedProps.data
+      state.registeredWod.date = event.extendedProps.data.date.toDate()
+      state.registeredWod.id = event.id
     },
     removeMovement(state, { target, index }) {
       if (target === 'wodRegistration') {
@@ -143,12 +144,23 @@ const workout = {
       const collectionRef = collection(db, path)
       await addDoc(collectionRef, state.wodRegistration)
         .then((docRef) => {
-          console.log(state.wodRegistration)
           console.log("Document written with ID: ", docRef.id)
         })
         .catch((error) => {
           console.error("Error adding document: ", error)
         })
+    },
+
+    async updateWod({state}) {
+      const box = "CFBD"
+      const path = `/box/${box}/wod`
+      await updateDoc(doc(db, path, state.registeredWod.id), state.registeredWod)
+    },
+
+    async deleteWod({state}) {
+      const box = "CFBD"
+      const path = `/box/${box}/wod`
+      await deleteDoc(doc(db, path, state.registeredWod.id))
     },
 
     async getRecentRegisteredWodList({state}, payload) {
@@ -157,7 +169,6 @@ const workout = {
       const startDt = new Date()
       const endDt = new Date()
       endDt.setDate(startDt.getDate() + 14)
-      console.log(endDt)
       const q = query(collection(db, path),
         where('date', '>=', startDt),
         where('date', '<', endDt)

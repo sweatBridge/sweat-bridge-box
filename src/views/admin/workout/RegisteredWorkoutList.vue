@@ -37,7 +37,7 @@ export default defineComponent({
     const fullCalendarRef = ref(null)
 
     const moveToModifyPage = (clickInfo) => {
-      store.commit('setRegisteredWod', clickInfo.event.extendedProps.data)
+      store.commit('setRegisteredWod', clickInfo.event)
       router.push("/admin/registerd-wod")
     }
 
