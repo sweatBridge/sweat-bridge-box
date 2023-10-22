@@ -1,7 +1,7 @@
 <template>
   <CCard>
-    <CCardHeader component="h5">
-      <CIcon icon="cil-user" size="lg" /> 회원 관리
+    <CCardHeader>
+      <strong>회원 관리</strong>
       <div class="float-end">
         <CButton
           @click="approveMembers"
@@ -14,7 +14,7 @@
       </div>
     </CCardHeader>
     <CCardBody>
-      <span>이름 검색: </span>
+      <span><strong>이름 : </strong></span>
       <input type="text" v-model="searchValue">
       <br>
       <br>
@@ -27,7 +27,7 @@
         show-index
       >
         <template #item-name="{ name }">
-          <strong>{{name}}</strong>
+          {{name}}
         </template>
         <template #item-type="{ type }">
           {{ getType(type) }}
@@ -112,8 +112,8 @@ export default defineComponent({
       { text: "이름", value: "name" },
       { text: "등록 타입", value: "type", sortable: true},
       { text: "만료 일자", value: "expiryDate", sortable: true},
-      { text: "잔여 기간", value: "duration" },
-      { text: "잔여 횟수", value: "remainingVisits"},
+      { text: "잔여 기간(일)", value: "duration" },
+      { text: "잔여 횟수(회)", value: "remainingVisits"},
       { text: "성별", value: "gender" },
       { text: "나이", value: "age" },
       { text: "기능", value: "operation", width: "150" },
