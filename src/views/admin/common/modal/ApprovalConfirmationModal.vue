@@ -5,10 +5,10 @@
     backdrop="static"
   >
     <CModalHeader class="modal-header">
-      <CModalTitle>요청 수락</CModalTitle>
+      <CModalTitle>요청 승인</CModalTitle>
     </CModalHeader>
     <CModalBody>
-      <strong>{{name}}</strong> 님을 승인하시겠습니까?
+      <strong>{{name}}</strong> 님 요청을 승인하시겠습니까?
     </CModalBody>
     <CModalFooter>
       <CButton color="danger" @click="cancel">

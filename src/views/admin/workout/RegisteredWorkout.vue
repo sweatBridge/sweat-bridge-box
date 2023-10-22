@@ -30,7 +30,8 @@
             <CCol sm="7">
               <CInputGroup class="mb-3">
                 <CInputGroupText id="basic-addon3">WOD 일자</CInputGroupText>
-                <CButton>
+                <CButton style="display: flex; align-items: center;">
+                  <CIcon name="cil-calendar" style="margin-right: 8px;"/>
                   <DatePicker v-model="registeredWod.date"/>
                 </CButton>
               </CInputGroup>

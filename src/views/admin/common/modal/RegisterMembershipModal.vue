@@ -29,13 +29,19 @@
       <CRow v-if="registrationType === 'PeriodPass'">
         <CInputGroup class="mb-3">
           <CInputGroupText>갱신 만료일</CInputGroupText>
-          <CButton><DatePicker v-model="expiryDate"/></CButton>
+          <CButton style="display: flex; align-items: center;">
+            <CIcon name="cil-calendar" style="margin-right: 8px;"/>
+            <DatePicker v-model="expiryDate"/>
+          </CButton>
         </CInputGroup>
       </CRow>
       <CRow v-if="registrationType === 'CountPass'">
         <CInputGroup class="mb-3">
           <CInputGroupText>만료일</CInputGroupText>
-          <CButton><DatePicker v-model="expiryDate"/></CButton>
+          <CButton style="display: flex; align-items: center;">
+            <CIcon name="cil-calendar" style="margin-right: 8px;"/>
+            <DatePicker v-model="expiryDate"/>
+          </CButton>
           <CInputGroupText>횟수</CInputGroupText>
           <CFormInput v-model="remainingVisits" />
         </CInputGroup>

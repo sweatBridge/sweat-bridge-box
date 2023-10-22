@@ -49,18 +49,18 @@
         </template>
         <template #item-operation="{ index }">
           <CButton
-            color="dark"
-            size="sm"
-            @click="renewMembership(index)"
-          >
-            등록
-          </CButton>
-          <CButton
             color="danger"
             size="sm"
             @click="deleteMember(index)"
           >
             삭제
+          </CButton>
+          <CButton
+            color="dark"
+            size="sm"
+            @click="renewMembership(index)"
+          >
+            등록
           </CButton>
         </template>
         <template #item-details="{ index }">

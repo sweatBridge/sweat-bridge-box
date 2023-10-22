@@ -32,14 +32,14 @@
             size="sm"
             @click="rejectMember(index)"
           >
-            <CIcon name="cil-ban" />
+            <CIcon name="cil-x-circle" />
           </CButton>
           <CButton
-            color="success"
+            color="dark"
             size="sm"
             @click="approveMember(index)"
           >
-            <CIcon name="cil-check" />
+            <CIcon name="cil-check-circle" />
           </CButton>
         </template>
 
