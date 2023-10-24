@@ -13,6 +13,8 @@
         :headers="headers"
         :items="pendingMembers"
         show-index
+        body-text-direction="center"
+        header-text-direction="center"
       >
         <template #item-name="{ name }">
           {{name}}

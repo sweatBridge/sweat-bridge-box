@@ -25,6 +25,8 @@
         search-field="name"
         :search-value="searchValue"
         show-index
+        body-text-direction="center"
+        header-text-direction="center"
       >
         <template #item-name="{ name }">
           {{name}}
@@ -47,7 +49,7 @@
         <template #item-age="{ birthDate }">
           {{ getAge(birthDate) }}
         </template>
-        <template #item-operation="{ index }">
+        <template #item-operation="{ index, type }">
           <CButton
             color="danger"
             size="sm"
@@ -60,7 +62,7 @@
             size="sm"
             @click="renewMembership(index)"
           >
-            등록
+            {{ getRegisterButtonDescription(type) }}
           </CButton>
         </template>
         <template #item-details="{ index }">
@@ -125,6 +127,14 @@ export default defineComponent({
 
     const searchValue = ref("")
 
+    const getRegisterButtonDescription = (type) => {
+      if (type === 'PeriodPass' || type === 'CountPass') {
+        return '갱신'
+      } else {
+        return '등록'
+      }
+    }
+
     const getType = (type) => {
       return convertTypeToKorean(type)
     }
@@ -154,6 +164,7 @@ export default defineComponent({
       members,
       pendingMembers,
       searchValue,
+      getRegisterButtonDescription,
       getType,
       getExpiryDateStr,
       getRemainingDays,
