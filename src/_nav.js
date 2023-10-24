@@ -47,6 +47,6 @@ export default [
     component: 'CNavItem',
     name: '수업 관리',
     to: '/admin/reservation',
-    icon: 'cil-check-circle',
+    icon: 'cil-calendar',
   },
 ]

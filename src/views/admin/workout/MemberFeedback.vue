@@ -3,6 +3,8 @@
     :headers="headers"
     :items="feedbacks"
     table-class-name="customize-table"
+    body-text-direction="center"
+    header-text-direction="center"
   >
     <template #item-name="{ name }">
       {{name}}

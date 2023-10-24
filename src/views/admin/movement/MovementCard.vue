@@ -69,6 +69,8 @@
               :headers="headers"
               :items="movement.levelSetting"
               show-index
+              body-text-direction="center"
+              header-text-direction="center"
             >
               <template #item-operation="{ index }">
                 <CButton

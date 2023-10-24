@@ -1,7 +1,7 @@
 <template>
   <CCard>
-    <CCardHeader component="h5">
-      <CIcon icon="cil-user" size="lg" /> 회원 관리
+    <CCardHeader>
+      <strong>회원 관리</strong>
       <div class="float-end">
         <CButton
           @click="approveMembers"
@@ -14,7 +14,7 @@
       </div>
     </CCardHeader>
     <CCardBody>
-      <span>이름 검색: </span>
+      <span><strong>이름 : </strong></span>
       <input type="text" v-model="searchValue">
       <br>
       <br>
@@ -25,9 +25,11 @@
         search-field="name"
         :search-value="searchValue"
         show-index
+        body-text-direction="center"
+        header-text-direction="center"
       >
         <template #item-name="{ name }">
-          <strong>{{name}}</strong>
+          {{name}}
         </template>
         <template #item-type="{ type }">
           {{ getType(type) }}
@@ -47,20 +49,20 @@
         <template #item-age="{ birthDate }">
           {{ getAge(birthDate) }}
         </template>
-        <template #item-operation="{ index }">
-          <CButton
-            color="dark"
-            size="sm"
-            @click="renewMembership(index)"
-          >
-            등록
-          </CButton>
+        <template #item-operation="{ index, type }">
           <CButton
             color="danger"
             size="sm"
             @click="deleteMember(index)"
           >
             삭제
+          </CButton>
+          <CButton
+            color="dark"
+            size="sm"
+            @click="renewMembership(index)"
+          >
+            {{ getRegisterButtonDescription(type) }}
           </CButton>
         </template>
         <template #item-details="{ index }">
@@ -112,8 +114,8 @@ export default defineComponent({
       { text: "이름", value: "name" },
       { text: "등록 타입", value: "type", sortable: true},
       { text: "만료 일자", value: "expiryDate", sortable: true},
-      { text: "잔여 기간", value: "duration" },
-      { text: "잔여 횟수", value: "remainingVisits"},
+      { text: "잔여 기간(일)", value: "duration" },
+      { text: "잔여 횟수(회)", value: "remainingVisits"},
       { text: "성별", value: "gender" },
       { text: "나이", value: "age" },
       { text: "기능", value: "operation", width: "150" },
@@ -124,6 +126,14 @@ export default defineComponent({
     const pendingMembers = computed(() => store.state.member.pendingMembers)
 
     const searchValue = ref("")
+
+    const getRegisterButtonDescription = (type) => {
+      if (type === 'PeriodPass' || type === 'CountPass') {
+        return '갱신'
+      } else {
+        return '등록'
+      }
+    }
 
     const getType = (type) => {
       return convertTypeToKorean(type)
@@ -154,6 +164,7 @@ export default defineComponent({
       members,
       pendingMembers,
       searchValue,
+      getRegisterButtonDescription,
       getType,
       getExpiryDateStr,
       getRemainingDays,

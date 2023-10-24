@@ -3,6 +3,8 @@
     :headers="headers"
     :items="records"
     table-class-name="customize-table"
+    body-text-direction="center"
+    header-text-direction="center"
   >
     <template #item-name="{ name }">
       {{name}}
