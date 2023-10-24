@@ -41,6 +41,11 @@ export default defineComponent({
       router.push("/admin/registerd-wod")
     }
 
+    const moveToRegisterPage = (selectInfo) => {
+      store.commit('setSelectedDate', selectInfo.start)
+      router.push("/admin/wod/register")
+    }
+
     onMounted(() => {
       if (fullCalendarRef.value && fullCalendarRef.value.getApi) {
         store.dispatch('getRecentRegisteredWodList', {
@@ -56,7 +61,7 @@ export default defineComponent({
       headerToolbar: {
         left: 'title',
         center: '',
-        right: 'dayGridMonth',
+        right: '',
       },
       views: {
         dayGridMonth: {
@@ -74,6 +79,7 @@ export default defineComponent({
       weekends: true,
       initialEvents: INITIAL_REGISTERD_WODS,
       eventClick: moveToModifyPage,
+      select: moveToRegisterPage,
       /* you can update a remote database when these fire:
       select: this.handleDateSelect,
       eventClick: this.handleEventClick,

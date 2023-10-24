@@ -61,6 +61,9 @@ const workout = {
     },
   },
   mutations: {
+    setSelectedDate(state, date) {
+      state.wodRegistration.date = date
+    },
     setRegisteredWod(state, event) {
       state.registeredWod = event.extendedProps.data
       state.registeredWod.date = event.extendedProps.data.date.toDate()
