@@ -3,9 +3,21 @@
     <CCol sm="8">
       <CCard>
         <CCardHeader>
-          <strong>등록 와드 목록</strong>
+          <strong>등록 와드 목록 </strong>
+          <CTooltip content="달력에서 일자 클릭 시 해당 일자 와드 등록 가능" placement="top">
+            <template #toggler="{ on }">
+              <CButton color="warning" v-on="on" size="sm">Tips!</CButton>
+            </template>
+          </CTooltip>
+          <div class="float-end">
+            <CButton
+              color="light" class="position-relative" size="sm" @click="moveToRegisterPage">
+              추가
+            </CButton>
+          </div>
         </CCardHeader>
         <CCardBody>
+
           <div class="demo-app-main">
             <FullCalendar class="demo-app-calendar" ref="fullCalendarRef" :options="calendarOptions" style="width: 100%; height: 100%;">
               <template v-slot:eventContent="arg">
@@ -114,7 +126,9 @@ export default defineComponent({
     }
 
     const moveToRegisterPage = (selectInfo) => {
-      store.commit('setSelectedDate', selectInfo.start)
+      if (selectInfo !== null) {
+        store.commit('setSelectedDate', selectInfo.start)
+      }
       router.push("/admin/wod/register")
     }
 
@@ -224,6 +238,7 @@ export default defineComponent({
       fullCalendarRef,
       calendarOptions,
       moveToModifyPage,
+      moveToRegisterPage,
       feedbacks,
       records,
     }
