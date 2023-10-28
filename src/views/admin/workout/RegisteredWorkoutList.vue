@@ -34,13 +34,13 @@
         <CCol sm="12">
           <CCard>
             <CCardHeader class="card-header">
-              <strong>오늘의 와드</strong>
+              <strong>{{workoutDateStr}} 와드</strong>
               <div class="float-end">
                 <CButton class="position-relative custom-button" size="sm" shape="rounded-pill">
                   요약
                 </CButton>
                 <CButton
-                  color="light" class="position-relative" size="sm" shape="rounded-pill">
+                  color="light" class="position-relative" size="sm" shape="rounded-pill" @click="moveToModifyPage">
                   수정
                 </CButton>
               </div>
@@ -103,6 +103,7 @@ import interactionPlugin from '@fullcalendar/interaction'
 import {INITIAL_REGISTERD_WODS} from '@/views/admin/class/classCalendarUtils'
 import {useRouter} from "vue-router";
 import {useStore} from "vuex";
+import {extractDateInKorean} from "@/views/admin/util/date";
 export default defineComponent({
   name: "RegisteredWorkoutList",
   components: {
@@ -119,9 +120,10 @@ export default defineComponent({
     const router = useRouter()
     const store = useStore()
     const fullCalendarRef = ref(null)
+    const workoutDateStr = ref("")
 
-    const moveToModifyPage = (clickInfo) => {
-      store.commit('setRegisteredWod', clickInfo.event)
+    const moveToModifyPage = () => {
+      // store.commit('setRegisteredWod', clickInfo.event)
       router.push("/admin/registerd-wod")
     }
 
@@ -130,6 +132,11 @@ export default defineComponent({
         store.commit('setSelectedDate', selectInfo.start)
       }
       router.push("/admin/wod/register")
+    }
+
+    const handleEventClick = (clickInfo) => {
+      store.commit('setRegisteredWod', clickInfo.event)
+      workoutDateStr.value = extractDateInKorean(clickInfo.event.startStr)
     }
 
     onMounted(() => {
@@ -164,7 +171,7 @@ export default defineComponent({
       dayMaxEvents: true,
       weekends: true,
       initialEvents: INITIAL_REGISTERD_WODS,
-      eventClick: moveToModifyPage,
+      eventClick: handleEventClick,
       select: moveToRegisterPage,
       /* you can update a remote database when these fire:
       select: this.handleDateSelect,
@@ -236,6 +243,7 @@ export default defineComponent({
     return {
       shortWod,
       fullCalendarRef,
+      workoutDateStr,
       calendarOptions,
       moveToModifyPage,
       moveToRegisterPage,

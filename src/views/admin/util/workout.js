@@ -4,9 +4,6 @@ export function selectWodEventColor(date) {
 
   today.setHours(0, 0, 0, 0);
 
-  console.log(today)
-  console.log(selectedDate)
-
   if (selectedDate < today) {
     return '#607d8b'; // 오늘보다 이전
   } else {
