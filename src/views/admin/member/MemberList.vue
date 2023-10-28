@@ -5,7 +5,7 @@
       <div class="float-end">
         <CButton
           @click="approveMembers"
-          color="primary" class="position-relative" size="sm">
+          color="info" class="position-relative" size="sm">
           승인 요청
           <CBadge color="danger" position="top-end" shape="rounded-pill">
             {{pendingMembers.length}} <span class="visually-hidden">unread messages</span>

@@ -5,6 +5,8 @@
     table-class-name="customize-table"
     body-text-direction="center"
     header-text-direction="center"
+    buttons-pagination
+    rows-per-page="5"
   >
     <template #item-name="{ name }">
       {{name}}
