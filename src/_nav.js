@@ -21,12 +21,6 @@ export default [
   },
   {
     component: 'CNavItem',
-    name: '기록 관리',
-    to: '/admin/record',
-    icon: 'cil-basket',
-  },
-  {
-    component: 'CNavItem',
     name: '회원 관리',
     to: '/admin/member',
     icon: 'cil-user',

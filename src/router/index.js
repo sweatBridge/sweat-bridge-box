@@ -39,11 +39,6 @@ const routes = [
               import('@/views/admin/workout/RegisteredWorkoutList.vue'),
           },
           {
-            path: '/admin/record',
-            name: 'Record',
-            component: () => import('@/views/admin/workout/WorkoutHistory.vue'),
-          },
-          {
             path: '/admin/member',
             name: 'Member',
             component: () => import('@/views/admin/member/MemberList.vue'),
