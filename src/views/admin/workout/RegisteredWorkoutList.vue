@@ -21,12 +21,15 @@
       <CRow>
         <CCol sm="12">
           <CCard>
-            <CCardHeader>
+            <CCardHeader class="card-header">
               <strong>오늘의 와드</strong>
               <div class="float-end">
+                <CButton class="position-relative custom-button" size="sm" shape="rounded-pill">
+                  요약
+                </CButton>
                 <CButton
-                  color="secondary" class="position-relative" size="sm" shape="rounded-pill">
-                  전체 기록
+                  color="light" class="position-relative" size="sm" shape="rounded-pill">
+                  수정
                 </CButton>
               </div>
             </CCardHeader>
@@ -38,7 +41,7 @@
               <strong>회원 기록 </strong>
               <div class="float-end">
                 <CButton
-                  color="secondary" class="position-relative" size="sm">
+                  color="light" class="position-relative" size="sm">
                   전체 기록
                   <CBadge color="danger" position="top-end" shape="rounded-pill">
                     {{26}} <span class="visually-hidden">member record</span>
@@ -57,7 +60,7 @@
               <strong>회원 피드백</strong>
               <div class="float-end">
                 <CButton
-                  color="secondary" class="position-relative" size="sm">
+                  color="light" class="position-relative" size="sm">
                   전체 피드백
                   <CBadge color="danger" position="top-end" shape="rounded-pill">
                     {{13}} <span class="visually-hidden">member feedback</span>
@@ -229,5 +232,14 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.card-header {
+  background-color: rgb(76, 192, 115);
+  color: var(--cui-white);
+}
+
+.custom-button {
+  background-color: rgba(216, 230, 82, 0.98);
+  color: #011d2a;
+}
 
 </style>
