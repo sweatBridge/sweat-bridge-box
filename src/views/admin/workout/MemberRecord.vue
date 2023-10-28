@@ -5,6 +5,8 @@
     table-class-name="customize-table"
     body-text-direction="center"
     header-text-direction="center"
+    buttons-pagination
+    rows-per-page="5"
   >
     <template #item-name="{ name }">
       {{name}}
@@ -54,8 +56,9 @@ export default {
 
 <style scoped>
 .customize-table {
-  /*--easy-table-header-background-color: #53651e;*/
-  /*--easy-table-header-font-color: rgba(255, 255, 255, 0.38);*/
+  /*--easy-table-header-item-padding: 1px;*/
+  /*--easy-table-header-font-size: 10px;*/
+  /*--easy-table-header-height: 5px;*/
 }
 
 </style>

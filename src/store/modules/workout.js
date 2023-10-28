@@ -1,6 +1,7 @@
 import {addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where} from "firebase/firestore";
 import { db } from '@/firebase'
 import {convertDateToKstString} from "@/views/admin/class/classCalendarUtils";
+import {selectWodEventColor} from "@/views/admin/util/workout";
 
 const workout = {
   state: {
@@ -61,6 +62,9 @@ const workout = {
     },
   },
   mutations: {
+    setSelectedDate(state, date) {
+      state.wodRegistration.date = date
+    },
     setRegisteredWod(state, event) {
       state.registeredWod = event.extendedProps.data
       state.registeredWod.date = event.extendedProps.data.date.toDate()
@@ -166,30 +170,31 @@ const workout = {
     async getRecentRegisteredWodList({state}, payload) {
       let calendarApi = payload.calendarApi
       const path = `/box/${payload.box}/wod`
+      const today = new Date()
       const startDt = new Date()
       const endDt = new Date()
-      endDt.setDate(startDt.getDate() + 14)
+      startDt.setDate(today.getDate() - 15)
+      endDt.setDate(today.getDate() + 15)
       const q = query(collection(db, path),
         where('date', '>=', startDt),
         where('date', '<', endDt)
       )
       const querySnap = await getDocs(q)
 
-      // const wods = []
       querySnap.forEach((doc) => {
-        // wods.push(doc.data())
+        // console.log(doc.id, " => ", doc.data())
         const event = {
           id: doc._key.getCollectionPath().get(3),
           title: doc.data().title,
           start: convertDateToKstString(doc.data().date),
           extendedProps: {
             data: doc.data()
-          }
+          },
+          color: selectWodEventColor(doc.data().date),
         }
         calendarApi.addEvent(event)
       })
-      // state.recentRegisteredWodList = wods
-    }
+    },
   },
   getters: {}
 }

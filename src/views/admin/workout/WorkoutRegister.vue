@@ -4,6 +4,14 @@
       <CCard>
         <CCardHeader>
           <strong>와드 등록</strong>
+          <div class="float-end">
+            <CButton
+              color="dark" class="position-relative" size="sm"
+              @click="moveToRegisteredWodList"
+            >
+              목록
+            </CButton>
+          </div>
         </CCardHeader>
         <CCardBody>
           <CRow>
@@ -311,6 +319,9 @@ export default defineComponent({
           }, 1000)
         })
     }
+    const moveToRegisteredWodList = () => {
+      router.push("/admin/registered-wod-list")
+    }
     return {
       toastMessageRef,
       wodRegistration,
@@ -321,6 +332,7 @@ export default defineComponent({
       addMovement,
       addRest,
       saveWod,
+      moveToRegisteredWodList,
     }
   },
 })
