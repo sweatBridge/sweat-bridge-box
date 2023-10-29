@@ -76,7 +76,7 @@
                   color="light" class="position-relative" size="sm">
                   전체 피드백
                   <CBadge color="danger" position="top-end" shape="rounded-pill">
-                    {{13}} <span class="visually-hidden">member feedback</span>
+                    {{feedbacks.length}} <span class="visually-hidden">member feedback</span>
                   </CBadge>
                 </CButton>
               </div>
@@ -97,7 +97,7 @@
 import MemberFeedback from "@/views/admin/workout/MemberFeedback.vue"
 import MemberRecord from "@/views/admin/workout/MemberRecord.vue"
 import FullCalendar from '@fullcalendar/vue3'
-import {defineComponent, onMounted, ref} from "vue"
+import {computed, defineComponent, onMounted, reactive, ref} from "vue"
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
@@ -128,6 +128,7 @@ export default defineComponent({
     const workoutDateStr = ref("")
     const workoutModifyModalRef = ref(null)
     const eventAlertRef = ref(null)
+    const feedbacks = computed(() => store.state.record.records)
 
     const moveToModifyPage = () => {
       // store.commit('setRegisteredWod', clickInfo.event)
@@ -144,6 +145,7 @@ export default defineComponent({
 
     const handleEventClick = (clickInfo) => {
       store.commit('setRegisteredWod', clickInfo.event)
+      store.dispatch('getRecords', clickInfo.event.id)
       const dateStrKor = extractDateInKorean(clickInfo.event.startStr)
       workoutDateStr.value = dateStrKor
       eventAlertRef.value.createToast({
@@ -195,45 +197,6 @@ export default defineComponent({
       */
     })
 
-    const feedbacks = ref([
-      {
-        name: "김대현",
-        feedback: "오늘 와드는 초보자가 따라가기에 너무 어려웠어요. 다음에 자세히 설명해주세요"
-      },
-      {
-        name: "김재인",
-        feedback: "데드리프트 때 어떤 무게를 들어야할지 모르겠어요"
-      },
-      {
-        name: "박솔희",
-        feedback: "8:30 수업에 사람이 너무 많아요"
-      },
-      {
-        name: "김대현",
-        feedback: "오늘 와드는 초보자가 따라가기에 너무 어려웠어요. 다음에 자세히 설명해주세요"
-      },
-      {
-        name: "김재인",
-        feedback: "데드리프트 때 어떤 무게를 들어야할지 모르겠어요"
-      },
-      {
-        name: "박솔희",
-        feedback: "8:30 수업에 사람이 너무 많아요"
-      },
-      {
-        name: "김대현",
-        feedback: "오늘 와드는 초보자가 따라가기에 너무 어려웠어요. 다음에 자세히 설명해주세요"
-      },
-      {
-        name: "김재인",
-        feedback: "데드리프트 때 어떤 무게를 들어야할지 모르겠어요"
-      },
-      {
-        name: "박솔희",
-        feedback: "8:30 수업에 사람이 너무 많아요"
-      },
-    ])
-
     const records = ref([
       {name: "김대현", level: "RXD", record: "06:54"},
       {name: "김대현", level: "RXD", record: "06:54"},
@@ -258,10 +221,10 @@ export default defineComponent({
       workoutDateStr,
       workoutModifyModalRef,
       eventAlertRef,
+      feedbacks,
       calendarOptions,
       moveToModifyPage,
       moveToRegisterPage,
-      feedbacks,
       records,
     }
   }
