@@ -73,7 +73,7 @@
               <strong>회원 피드백</strong>
               <div class="float-end">
                 <CButton
-                  color="light" class="position-relative" size="sm">
+                  color="light" class="position-relative" size="sm" @click="handleFeedbackClick">
                   전체 피드백
                   <CBadge color="danger" position="top-end" shape="rounded-pill">
                     {{feedbacks.length}} <span class="visually-hidden">member feedback</span>
@@ -90,6 +90,7 @@
     </CCol>
   </CRow>
   <workout-modify-modal ref="workoutModifyModalRef" />
+  <user-feedback-modal ref="userFeedbackModalRef" />
   <event-alert ref="eventAlertRef" />
 </template>
 
@@ -107,9 +108,11 @@ import {useStore} from "vuex";
 import {extractDateInKorean} from "@/views/admin/util/date";
 import WorkoutModifyModal from "@/views/admin/common/modal/WorkoutModifyModal.vue";
 import EventAlert from "@/views/admin/common/toast/EventAlert.vue";
+import UserFeedbackModal from "@/views/admin/common/modal/UserFeedbackModal.vue";
 export default defineComponent({
   name: "RegisteredWorkoutList",
   components: {
+    UserFeedbackModal,
     EventAlert,
     WorkoutModifyModal,
     FullCalendar,
@@ -127,6 +130,7 @@ export default defineComponent({
     const fullCalendarRef = ref(null)
     const workoutDateStr = ref("")
     const workoutModifyModalRef = ref(null)
+    const userFeedbackModalRef = ref(null)
     const eventAlertRef = ref(null)
     const feedbacks = computed(() => store.state.record.records)
 
@@ -151,6 +155,10 @@ export default defineComponent({
       eventAlertRef.value.createToast({
         content: `${dateStrKor} 와드를 선택하셨습니다.`,
       })
+    }
+
+    const handleFeedbackClick = () => {
+      userFeedbackModalRef.value.showModal()
     }
 
     onMounted(() => {
@@ -221,11 +229,13 @@ export default defineComponent({
       workoutDateStr,
       workoutModifyModalRef,
       eventAlertRef,
+      userFeedbackModalRef,
       feedbacks,
       calendarOptions,
       moveToModifyPage,
       moveToRegisterPage,
       records,
+      handleFeedbackClick
     }
   }
 })

@@ -6,7 +6,7 @@
     body-text-direction="center"
     header-text-direction="center"
     buttons-pagination
-    :rows-per-page="5"
+    :rows-per-page="rowsPerPage"
   >
     <template #item-name="{ name }">
       {{name}}
@@ -41,7 +41,11 @@ export default {
     feedbacks: {
       type: Object,
       required: true,
-    }
+    },
+    rowsPerPage: {
+      type: Number,
+      default: 5,
+    },
   },
   setup() {
     const headers = [
