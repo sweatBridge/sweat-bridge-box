@@ -90,6 +90,7 @@
     </CCol>
   </CRow>
   <workout-modify-modal ref="workoutModifyModalRef" />
+  <event-alert ref="eventAlertRef" />
 </template>
 
 <script>
@@ -105,9 +106,11 @@ import {useRouter} from "vue-router";
 import {useStore} from "vuex";
 import {extractDateInKorean} from "@/views/admin/util/date";
 import WorkoutModifyModal from "@/views/admin/common/modal/WorkoutModifyModal.vue";
+import EventAlert from "@/views/admin/common/toast/EventAlert.vue";
 export default defineComponent({
   name: "RegisteredWorkoutList",
   components: {
+    EventAlert,
     WorkoutModifyModal,
     FullCalendar,
     MemberFeedback,
@@ -124,6 +127,7 @@ export default defineComponent({
     const fullCalendarRef = ref(null)
     const workoutDateStr = ref("")
     const workoutModifyModalRef = ref(null)
+    const eventAlertRef = ref(null)
 
     const moveToModifyPage = () => {
       // store.commit('setRegisteredWod', clickInfo.event)
@@ -140,7 +144,11 @@ export default defineComponent({
 
     const handleEventClick = (clickInfo) => {
       store.commit('setRegisteredWod', clickInfo.event)
-      workoutDateStr.value = extractDateInKorean(clickInfo.event.startStr)
+      const dateStrKor = extractDateInKorean(clickInfo.event.startStr)
+      workoutDateStr.value = dateStrKor
+      eventAlertRef.value.createToast({
+        content: `${dateStrKor} 와드를 선택하셨습니다.`,
+      })
     }
 
     onMounted(() => {
@@ -249,6 +257,7 @@ export default defineComponent({
       fullCalendarRef,
       workoutDateStr,
       workoutModifyModalRef,
+      eventAlertRef,
       calendarOptions,
       moveToModifyPage,
       moveToRegisterPage,
