@@ -36,11 +36,12 @@
             <CCardHeader class="card-header">
               <strong>{{workoutDateStr}} 와드</strong>
               <div class="float-end">
-                <CButton class="position-relative custom-button" size="sm" shape="rounded-pill">
+                <CButton class="position-relative custom-button" size="sm" shape="rounded-pill"
+                         v-if="workoutDateStr !== ''">
                   요약
                 </CButton>
-                <CButton
-                  color="light" class="position-relative" size="sm" shape="rounded-pill" @click="moveToModifyPage">
+                <CButton color="light" class="position-relative" size="sm" shape="rounded-pill"
+                  @click="moveToModifyPage" v-if="workoutDateStr !== ''">
                   수정
                 </CButton>
               </div>
@@ -88,8 +89,7 @@
       </CRow>
     </CCol>
   </CRow>
-
-
+  <workout-modify-modal ref="workoutModifyModalRef" />
 </template>
 
 <script>
@@ -104,9 +104,11 @@ import {INITIAL_REGISTERD_WODS} from '@/views/admin/class/classCalendarUtils'
 import {useRouter} from "vue-router";
 import {useStore} from "vuex";
 import {extractDateInKorean} from "@/views/admin/util/date";
+import WorkoutModifyModal from "@/views/admin/common/modal/WorkoutModifyModal.vue";
 export default defineComponent({
   name: "RegisteredWorkoutList",
   components: {
+    WorkoutModifyModal,
     FullCalendar,
     MemberFeedback,
     MemberRecord,
@@ -121,10 +123,12 @@ export default defineComponent({
     const store = useStore()
     const fullCalendarRef = ref(null)
     const workoutDateStr = ref("")
+    const workoutModifyModalRef = ref(null)
 
     const moveToModifyPage = () => {
       // store.commit('setRegisteredWod', clickInfo.event)
-      router.push("/admin/registerd-wod")
+      // router.push("/admin/registerd-wod")
+      workoutModifyModalRef.value.showModal()
     }
 
     const moveToRegisterPage = (selectInfo) => {
@@ -244,6 +248,7 @@ export default defineComponent({
       shortWod,
       fullCalendarRef,
       workoutDateStr,
+      workoutModifyModalRef,
       calendarOptions,
       moveToModifyPage,
       moveToRegisterPage,
