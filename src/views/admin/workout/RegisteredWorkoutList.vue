@@ -3,9 +3,21 @@
     <CCol sm="8">
       <CCard>
         <CCardHeader>
-          <strong>등록 와드 목록</strong>
+          <strong>등록 와드 목록 </strong>
+          <CTooltip content="달력에서 일자 클릭 시 해당 일자 와드 등록 가능" placement="top">
+            <template #toggler="{ on }">
+              <CButton color="warning" v-on="on" size="sm">Tips!</CButton>
+            </template>
+          </CTooltip>
+          <div class="float-end">
+            <CButton
+              color="light" class="position-relative" size="sm" @click="moveToRegisterPage">
+              추가
+            </CButton>
+          </div>
         </CCardHeader>
         <CCardBody>
+
           <div class="demo-app-main">
             <FullCalendar class="demo-app-calendar" ref="fullCalendarRef" :options="calendarOptions" style="width: 100%; height: 100%;">
               <template v-slot:eventContent="arg">
@@ -22,13 +34,14 @@
         <CCol sm="12">
           <CCard>
             <CCardHeader class="card-header">
-              <strong>오늘의 와드</strong>
+              <strong>{{workoutDateStr}} 와드</strong>
               <div class="float-end">
-                <CButton class="position-relative custom-button" size="sm" shape="rounded-pill">
+                <CButton class="position-relative custom-button" size="sm" shape="rounded-pill"
+                         v-if="workoutDateStr !== ''">
                   요약
                 </CButton>
-                <CButton
-                  color="light" class="position-relative" size="sm" shape="rounded-pill">
+                <CButton color="light" class="position-relative" size="sm" shape="rounded-pill"
+                  @click="moveToModifyPage" v-if="workoutDateStr !== ''">
                   수정
                 </CButton>
               </div>
@@ -60,10 +73,10 @@
               <strong>회원 피드백</strong>
               <div class="float-end">
                 <CButton
-                  color="light" class="position-relative" size="sm">
+                  color="light" class="position-relative" size="sm" @click="handleFeedbackClick">
                   전체 피드백
                   <CBadge color="danger" position="top-end" shape="rounded-pill">
-                    {{13}} <span class="visually-hidden">member feedback</span>
+                    {{feedbacks.length}} <span class="visually-hidden">member feedback</span>
                   </CBadge>
                 </CButton>
               </div>
@@ -76,24 +89,32 @@
       </CRow>
     </CCol>
   </CRow>
-
-
+  <workout-modify-modal ref="workoutModifyModalRef" />
+  <user-feedback-modal ref="userFeedbackModalRef" />
+  <event-alert ref="eventAlertRef" />
 </template>
 
 <script>
 import MemberFeedback from "@/views/admin/workout/MemberFeedback.vue"
 import MemberRecord from "@/views/admin/workout/MemberRecord.vue"
 import FullCalendar from '@fullcalendar/vue3'
-import {defineComponent, onMounted, ref} from "vue"
+import {computed, defineComponent, onMounted, reactive, ref} from "vue"
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import {INITIAL_REGISTERD_WODS} from '@/views/admin/class/classCalendarUtils'
 import {useRouter} from "vue-router";
 import {useStore} from "vuex";
+import {extractDateInKorean} from "@/views/admin/util/date";
+import WorkoutModifyModal from "@/views/admin/common/modal/WorkoutModifyModal.vue";
+import EventAlert from "@/views/admin/common/toast/EventAlert.vue";
+import UserFeedbackModal from "@/views/admin/common/modal/UserFeedbackModal.vue";
 export default defineComponent({
   name: "RegisteredWorkoutList",
   components: {
+    UserFeedbackModal,
+    EventAlert,
+    WorkoutModifyModal,
     FullCalendar,
     MemberFeedback,
     MemberRecord,
@@ -107,15 +128,37 @@ export default defineComponent({
     const router = useRouter()
     const store = useStore()
     const fullCalendarRef = ref(null)
+    const workoutDateStr = ref("")
+    const workoutModifyModalRef = ref(null)
+    const userFeedbackModalRef = ref(null)
+    const eventAlertRef = ref(null)
+    const feedbacks = computed(() => store.state.record.records)
 
-    const moveToModifyPage = (clickInfo) => {
-      store.commit('setRegisteredWod', clickInfo.event)
-      router.push("/admin/registerd-wod")
+    const moveToModifyPage = () => {
+      // store.commit('setRegisteredWod', clickInfo.event)
+      // router.push("/admin/registerd-wod")
+      workoutModifyModalRef.value.showModal()
     }
 
     const moveToRegisterPage = (selectInfo) => {
-      store.commit('setSelectedDate', selectInfo.start)
+      if (selectInfo !== null) {
+        store.commit('setSelectedDate', selectInfo.start)
+      }
       router.push("/admin/wod/register")
+    }
+
+    const handleEventClick = (clickInfo) => {
+      store.commit('setRegisteredWod', clickInfo.event)
+      store.dispatch('getRecords', clickInfo.event.id)
+      const dateStrKor = extractDateInKorean(clickInfo.event.startStr)
+      workoutDateStr.value = dateStrKor
+      eventAlertRef.value.createToast({
+        content: `${dateStrKor} 와드를 선택하셨습니다.`,
+      })
+    }
+
+    const handleFeedbackClick = () => {
+      userFeedbackModalRef.value.showModal()
     }
 
     onMounted(() => {
@@ -150,7 +193,7 @@ export default defineComponent({
       dayMaxEvents: true,
       weekends: true,
       initialEvents: INITIAL_REGISTERD_WODS,
-      eventClick: moveToModifyPage,
+      eventClick: handleEventClick,
       select: moveToRegisterPage,
       /* you can update a remote database when these fire:
       select: this.handleDateSelect,
@@ -161,45 +204,6 @@ export default defineComponent({
       eventRemove:
       */
     })
-
-    const feedbacks = ref([
-      {
-        name: "김대현",
-        feedback: "오늘 와드는 초보자가 따라가기에 너무 어려웠어요. 다음에 자세히 설명해주세요"
-      },
-      {
-        name: "김재인",
-        feedback: "데드리프트 때 어떤 무게를 들어야할지 모르겠어요"
-      },
-      {
-        name: "박솔희",
-        feedback: "8:30 수업에 사람이 너무 많아요"
-      },
-      {
-        name: "김대현",
-        feedback: "오늘 와드는 초보자가 따라가기에 너무 어려웠어요. 다음에 자세히 설명해주세요"
-      },
-      {
-        name: "김재인",
-        feedback: "데드리프트 때 어떤 무게를 들어야할지 모르겠어요"
-      },
-      {
-        name: "박솔희",
-        feedback: "8:30 수업에 사람이 너무 많아요"
-      },
-      {
-        name: "김대현",
-        feedback: "오늘 와드는 초보자가 따라가기에 너무 어려웠어요. 다음에 자세히 설명해주세요"
-      },
-      {
-        name: "김재인",
-        feedback: "데드리프트 때 어떤 무게를 들어야할지 모르겠어요"
-      },
-      {
-        name: "박솔희",
-        feedback: "8:30 수업에 사람이 너무 많아요"
-      },
-    ])
 
     const records = ref([
       {name: "김대현", level: "RXD", record: "06:54"},
@@ -222,10 +226,16 @@ export default defineComponent({
     return {
       shortWod,
       fullCalendarRef,
+      workoutDateStr,
+      workoutModifyModalRef,
+      eventAlertRef,
+      userFeedbackModalRef,
+      feedbacks,
       calendarOptions,
       moveToModifyPage,
-      feedbacks,
+      moveToRegisterPage,
       records,
+      handleFeedbackClick
     }
   }
 })

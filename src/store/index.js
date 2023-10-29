@@ -3,6 +3,7 @@ import classManagement from "@/store/modules/classManagement"
 import workout from "@/store/modules/workout"
 import member from "@/store/modules/member"
 import account from "@/store/modules/account";
+import record from "@/store/modules/record";
 
 export default createStore({
   state: {
@@ -25,6 +26,7 @@ export default createStore({
     classManagement,
     workout,
     member,
-    account
+    account,
+    record,
   },
 })

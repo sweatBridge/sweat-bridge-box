@@ -2,17 +2,17 @@
   <CRow>
     <CCol>
       <CCard>
-        <CCardHeader>
-          <strong>와드 수정(삭제)</strong>
-          <div class="float-end">
-            <CButton
-              color="dark" class="position-relative" size="sm"
-              @click="moveToRegisteredWodList"
-            >
-              목록
-            </CButton>
-          </div>
-        </CCardHeader>
+<!--        <CCardHeader>-->
+<!--          <strong>와드 수정(삭제)</strong>-->
+<!--          <div class="float-end">-->
+<!--            <CButton-->
+<!--              color="dark" class="position-relative" size="sm"-->
+<!--              @click="moveToRegisteredWodList"-->
+<!--            >-->
+<!--              목록-->
+<!--            </CButton>-->
+<!--          </div>-->
+<!--        </CCardHeader>-->
         <CCardBody>
           <CRow>
             <CCol sm="7">
@@ -276,7 +276,8 @@ export default defineComponent({
             }
           )
           setTimeout(() => {
-            router.push("/admin/registered-wod-list")
+            location.reload()
+            // router.push("/admin/registered-wod-list")
           }, 1000)
         })
         .catch((error) => {
@@ -289,7 +290,8 @@ export default defineComponent({
             }
           )
           setTimeout(() => {
-            router.push("/admin/registered-wod-list")
+            location.reload()
+            // router.push("/admin/registered-wod-list")
           }, 1000)
         })
     }
@@ -304,7 +306,8 @@ export default defineComponent({
             }
           )
           setTimeout(() => {
-            router.push("/admin/registered-wod-list")
+            location.reload()
+            // router.push("/admin/registered-wod-list")
           }, 1000)
         })
         .catch((error) => {
@@ -317,7 +320,8 @@ export default defineComponent({
             }
           )
           setTimeout(() => {
-            router.push("/admin/registered-wod-list")
+            location.reload()
+            // router.push("/admin/registered-wod-list")
           }, 1000)
         })
     }

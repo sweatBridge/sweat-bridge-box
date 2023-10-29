@@ -3,7 +3,6 @@
     <CToast v-for="(toast, index) in toasts" :key="index" :visible="true">
       <CToastHeader closeButton :class="toast.headerClass">
         <span class="me-auto fw-bold">{{toast.title}}</span>
-<!--        <small>7 min ago</small>-->
       </CToastHeader>
       <CToastBody :class="toast.bodyClass">
         {{ toast.content }}
