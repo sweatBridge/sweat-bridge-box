@@ -54,7 +54,7 @@
               <strong>회원 기록 </strong>
               <div class="float-end">
                 <CButton
-                  color="light" class="position-relative" size="sm">
+                  color="light" class="position-relative" size="sm" @click="handleRecordClick">
                   전체 기록
                   <CBadge color="danger" position="top-end" shape="rounded-pill">
                     {{records.length}} <span class="visually-hidden">member record</span>
@@ -76,13 +76,13 @@
                   color="light" class="position-relative" size="sm" @click="handleFeedbackClick">
                   전체 피드백
                   <CBadge color="danger" position="top-end" shape="rounded-pill">
-                    {{records.length}} <span class="visually-hidden">member feedback</span>
+                    {{feedbacks.length}} <span class="visually-hidden">member feedback</span>
                   </CBadge>
                 </CButton>
               </div>
             </CCardHeader>
             <CCardBody>
-              <member-feedback :feedbacks="records" />
+              <member-feedback :feedbacks="feedbacks" />
             </CCardBody>
           </CCard>
         </CCol>
@@ -90,6 +90,7 @@
     </CCol>
   </CRow>
   <workout-modify-modal ref="workoutModifyModalRef" />
+  <user-record-modal ref="userRecordModalRef" />
   <user-feedback-modal ref="userFeedbackModalRef" />
   <event-alert ref="eventAlertRef" />
 </template>
@@ -109,9 +110,11 @@ import {extractDateInKorean} from "@/views/admin/util/date";
 import WorkoutModifyModal from "@/views/admin/common/modal/WorkoutModifyModal.vue";
 import EventAlert from "@/views/admin/common/toast/EventAlert.vue";
 import UserFeedbackModal from "@/views/admin/common/modal/UserFeedbackModal.vue";
+import UserRecordModal from "@/views/admin/common/modal/UserRecordModal.vue";
 export default defineComponent({
   name: "RegisteredWorkoutList",
   components: {
+    UserRecordModal,
     UserFeedbackModal,
     EventAlert,
     WorkoutModifyModal,
@@ -130,9 +133,11 @@ export default defineComponent({
     const fullCalendarRef = ref(null)
     const workoutDateStr = ref("")
     const workoutModifyModalRef = ref(null)
+    const userRecordModalRef = ref(null)
     const userFeedbackModalRef = ref(null)
     const eventAlertRef = ref(null)
     const records = computed(() => store.state.record.records)
+    const feedbacks = computed(() => store.state.record.feedbacks)
 
     const moveToModifyPage = () => {
       // store.commit('setRegisteredWod', clickInfo.event)
@@ -155,6 +160,10 @@ export default defineComponent({
       eventAlertRef.value.createToast({
         content: `${dateStrKor} 와드를 선택하셨습니다.`,
       })
+    }
+
+    const handleRecordClick = () => {
+      userRecordModalRef.value.showModal()
     }
 
     const handleFeedbackClick = () => {
@@ -210,11 +219,14 @@ export default defineComponent({
       workoutDateStr,
       workoutModifyModalRef,
       eventAlertRef,
+      userRecordModalRef,
       userFeedbackModalRef,
       records,
+      feedbacks,
       calendarOptions,
       moveToModifyPage,
       moveToRegisterPage,
+      handleRecordClick,
       handleFeedbackClick
     }
   }

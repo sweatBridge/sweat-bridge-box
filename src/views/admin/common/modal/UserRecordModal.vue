@@ -6,27 +6,28 @@
     size="xl"
   >
     <CModalHeader class="modal-header">
-      <CModalTitle>피드백 모아보기</CModalTitle>
+      <CModalTitle>기록 모아보기</CModalTitle>
     </CModalHeader>
     <CModalBody>
-      <member-feedback :feedbacks="feedbacks" :rows-per-page="25"/>
+      <member-record :records="records" :rows-per-page="25"/>
     </CModalBody>
   </CModal>
+
 </template>
 
 <script>
-import {computed, ref} from "vue";
-import MemberFeedback from "@/views/admin/workout/MemberFeedback.vue";
 import {useStore} from "vuex";
+import {computed, ref} from "vue";
+import MemberRecord from "@/views/admin/workout/MemberRecord.vue";
 
 export default {
-  name: "UserFeedbackModal",
-  components: {MemberFeedback},
+  name: "UserRecordModal",
+  components: {MemberRecord},
   setup() {
     const store = useStore()
     const modalStatus = ref(false)
     const toastMessageRef = ref(null)
-    const feedbacks = computed(() => store.state.record.feedbacks)
+    const records = computed(() => store.state.record.records)
     const showModal = () => {
       modalStatus.value = true
     }
@@ -37,7 +38,7 @@ export default {
     return {
       modalStatus,
       toastMessageRef,
-      feedbacks,
+      records,
       showModal,
       cancel,
     }
