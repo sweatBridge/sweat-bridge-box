@@ -9,6 +9,7 @@ const workout = {
       title: '',
       date: null,
       type: '',
+      scoreType: '',
       isSet: false,
       set: 0,
       round: 0,
@@ -52,6 +53,7 @@ const workout = {
       title: '',
       date: null,
       type: '',
+      scoreType: '',
       isSet: false,
       set: 0,
       round: 0,
@@ -96,6 +98,13 @@ const workout = {
         state.wodRegistration.type = type
       } else if (target === 'registeredWod') {
         state.registeredWod.type = type
+      }
+    },
+    updateWodScoreType(state, { target, scoreType }) {
+      if (target === 'wodRegistration') {
+        state.wodRegistration.scoreType = scoreType
+      } else if (target === 'registeredWod') {
+        state.registeredWod.scoreType = scoreType
       }
     },
     updateWodIsSet(state, { target, set }) {
