@@ -79,7 +79,7 @@ export default {
     const router = useRouter()
     const handleLoginClick = () => {
       // TODO : authentication & login
-      router.push("/admin/Wod")
+      router.push("/admin/registered-wod-list")
     }
     const handleSignInClick = () => {
       router.push("/pages/register/account")
