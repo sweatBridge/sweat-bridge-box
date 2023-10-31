@@ -57,7 +57,7 @@
                   color="light" class="position-relative" size="sm">
                   전체 기록
                   <CBadge color="danger" position="top-end" shape="rounded-pill">
-                    {{26}} <span class="visually-hidden">member record</span>
+                    {{records.length}} <span class="visually-hidden">member record</span>
                   </CBadge>
                 </CButton>
               </div>
@@ -76,13 +76,13 @@
                   color="light" class="position-relative" size="sm" @click="handleFeedbackClick">
                   전체 피드백
                   <CBadge color="danger" position="top-end" shape="rounded-pill">
-                    {{feedbacks.length}} <span class="visually-hidden">member feedback</span>
+                    {{records.length}} <span class="visually-hidden">member feedback</span>
                   </CBadge>
                 </CButton>
               </div>
             </CCardHeader>
             <CCardBody>
-              <member-feedback :feedbacks="feedbacks" />
+              <member-feedback :feedbacks="records" />
             </CCardBody>
           </CCard>
         </CCol>
@@ -132,7 +132,7 @@ export default defineComponent({
     const workoutModifyModalRef = ref(null)
     const userFeedbackModalRef = ref(null)
     const eventAlertRef = ref(null)
-    const feedbacks = computed(() => store.state.record.records)
+    const records = computed(() => store.state.record.records)
 
     const moveToModifyPage = () => {
       // store.commit('setRegisteredWod', clickInfo.event)
@@ -204,25 +204,6 @@ export default defineComponent({
       eventRemove:
       */
     })
-
-    const records = ref([
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-      {name: "김대현", level: "RXD", record: "06:54"},
-    ])
     return {
       shortWod,
       fullCalendarRef,
@@ -230,11 +211,10 @@ export default defineComponent({
       workoutModifyModalRef,
       eventAlertRef,
       userFeedbackModalRef,
-      feedbacks,
+      records,
       calendarOptions,
       moveToModifyPage,
       moveToRegisterPage,
-      records,
       handleFeedbackClick
     }
   }

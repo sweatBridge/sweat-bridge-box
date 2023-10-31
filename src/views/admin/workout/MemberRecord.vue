@@ -1,7 +1,13 @@
 <template>
+  Level :
+  <input type="text" v-model="searchValue">
+  <br>
+  <br>
   <EasyDataTable
     :headers="headers"
     :items="records"
+    search-field="level"
+    :search-value="searchValue"
     table-class-name="customize-table"
     body-text-direction="center"
     header-text-direction="center"
@@ -14,8 +20,8 @@
     <template #item-level="{ level }">
       {{level}}
     </template>
-    <template #item-record="{ record }">
-      {{record}}
+    <template #item-score="{ score }">
+      {{score}}
     </template>
     <template #item-detail="">
       <CButton
@@ -30,6 +36,8 @@
 </template>
 
 <script>
+import {ref} from "vue";
+
 export default {
   name: "MemberRecord",
   components: {},
@@ -42,13 +50,16 @@ export default {
   setup() {
     const headers = [
       { text: "이름", value: "name", width: "80" },
-      { text: "난이도", value: "level" },
-      { text: "기록", value: "record" },
+      { text: "난이도", value: "level", sortable: true },
+      { text: "기록", value: "score", sortable: true },
       { text: "상세", value: "detail" },
     ]
 
+    const searchValue = ref('')
+
     return {
       headers,
+      searchValue,
     }
   }
 }
