@@ -9,10 +9,7 @@
       </CHeaderBrand>
       <CHeaderNav class="d-none d-md-flex me-auto">
         <CNavItem>
-          <CNavLink href="#/admin/wod"> Wod </CNavLink>
-        </CNavItem>
-        <CNavItem>
-          <CNavLink href="#/admin/record"> Record </CNavLink>
+          <CNavLink href="#/admin/registered-wod-list"> Wod </CNavLink>
         </CNavItem>
         <CNavItem>
           <CNavLink href="#/admin/member"> Member </CNavLink>

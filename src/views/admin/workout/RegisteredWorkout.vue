@@ -2,17 +2,6 @@
   <CRow>
     <CCol>
       <CCard>
-<!--        <CCardHeader>-->
-<!--          <strong>와드 수정(삭제)</strong>-->
-<!--          <div class="float-end">-->
-<!--            <CButton-->
-<!--              color="dark" class="position-relative" size="sm"-->
-<!--              @click="moveToRegisteredWodList"-->
-<!--            >-->
-<!--              목록-->
-<!--            </CButton>-->
-<!--          </div>-->
-<!--        </CCardHeader>-->
         <CCardBody>
           <CRow>
             <CCol sm="7">
@@ -56,60 +45,77 @@
               <CFormCheck id="setType" label="세트 운동" v-model="registeredWod.isSet" :checked="registeredWod.isSet" v-if="!isCustomize" @change="handleSetTypeChange"/>
             </CCol>
             <CCol sm="3">
-              <CInputGroup class="mb-3" v-if="registeredWod.isSet">
+              <CInputGroup class="mb-3" v-if="registeredWod.isSet && !isCustomize">
                 <CInputGroupText id="basic-addon3">세트 수</CInputGroupText>
                 <CFormInput type="number" id="setCount" aria-describedby="basic-addon3" v-model="registeredWod.set"/>
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="registeredWod.type === 'ForTime'">
-            <CCol sm="3">
-              <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
-              </CInputGroup>
+          <CRow>
+            <CCol sm="8">
+              <CRow v-if="registeredWod.type === 'ForTime'">
+                <CCol sm="3">
+                  <CInputGroup class="mb-3">
+                    <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
+                    <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
+                  </CInputGroup>
+                </CCol>
+                <CCol sm="6">
+                  <CInputGroup class="mb-3">
+                    <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
+                    <CButton>
+                      <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
+                    </CButton>
+                  </CInputGroup>
+                </CCol>
+              </CRow>
+              <CRow v-if="registeredWod.type === 'AMRAP'">
+                <CCol sm="3" />
+                <CCol sm="6">
+                  <CInputGroup class="mb-3">
+                    <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
+                    <CButton>
+                      <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
+                    </CButton>
+                  </CInputGroup>
+                </CCol>
+              </CRow>
+              <CRow v-if="registeredWod.type === 'EMOM'">
+                <CCol sm="3">
+                  <CInputGroup class="mb-3">
+                    <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
+                    <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
+                  </CInputGroup>
+                </CCol>
+                <CCol sm="6">
+                  <CInputGroup class="mb-3">
+                    <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
+                    <CButton>
+                      <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
+                    </CButton>
+                  </CInputGroup>
+                </CCol>
+              </CRow>
+              <CRow v-if="registeredWod.type === 'Tabata'">
+                <CCol sm="3">
+                  <CInputGroup class="mb-3">
+                    <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
+                    <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
+                  </CInputGroup>
+                </CCol>
+              </CRow>
             </CCol>
             <CCol sm="4">
               <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
-                <CButton>
-                  <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
-                </CButton>
-              </CInputGroup>
-            </CCol>
-          </CRow>
-          <CRow v-if="registeredWod.type === 'AMRAP'">
-            <CCol sm="3" />
-            <CCol sm="4">
-              <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
-                <CButton>
-                  <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
-                </CButton>
-              </CInputGroup>
-            </CCol>
-          </CRow>
-          <CRow v-if="registeredWod.type === 'EMOM'">
-            <CCol sm="3">
-              <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
-              </CInputGroup>
-            </CCol>
-            <CCol sm="4">
-              <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
-                <CButton>
-                  <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
-                </CButton>
-              </CInputGroup>
-            </CCol>
-          </CRow>
-          <CRow v-if="registeredWod.type === 'Tabata'">
-            <CCol sm="3">
-              <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
+                <CInputGroupText id="basic-addon3">기록 타입</CInputGroupText>
+                <CFormSelect id="inputGroupSelect01" v-model="registeredWod.scoreType">
+                  <option>타입 선택</option>
+                  <option value="time">시간(분, 초)</option>
+                  <option value="totalReps">카운트</option>
+                  <option value="roundsPlusReps">라운드 & 카운트</option>
+                  <option value="repsPerRound">라운드별 카운트</option>
+                  <option value="completeFail">성공/실패</option>
+                </CFormSelect>
               </CInputGroup>
             </CCol>
           </CRow>

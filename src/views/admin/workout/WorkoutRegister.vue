@@ -56,60 +56,77 @@
               <CFormCheck id="setType" label="세트 운동" v-model="wodRegistration.isSet" :checked="wodRegistration.isSet" v-if="!isCustomize" @change="handleSetTypeChange"/>
             </CCol>
             <CCol sm="3">
-              <CInputGroup class="mb-3" v-if="wodRegistration.isSet">
+              <CInputGroup class="mb-3" v-if="wodRegistration.isSet && !isCustomize">
                 <CInputGroupText id="basic-addon3">세트 수</CInputGroupText>
                 <CFormInput type="number" id="setCount" aria-describedby="basic-addon3" v-model="wodRegistration.set"/>
               </CInputGroup>
             </CCol>
           </CRow>
-          <CRow v-if="wodRegistration.type === 'ForTime'">
-            <CCol sm="3">
-              <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
-              </CInputGroup>
+          <CRow>
+            <CCol sm="8">
+              <CRow v-if="wodRegistration.type === 'ForTime'">
+                <CCol sm="3">
+                  <CInputGroup class="mb-3">
+                    <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
+                    <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
+                  </CInputGroup>
+                </CCol>
+                <CCol sm="6">
+                  <CInputGroup class="mb-3">
+                    <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
+                    <CButton size="sm">
+                      <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
+                    </CButton>
+                  </CInputGroup>
+                </CCol>
+              </CRow>
+              <CRow v-if="wodRegistration.type === 'AMRAP'">
+                <CCol sm="3" />
+                <CCol sm="6">
+                  <CInputGroup class="mb-3">
+                    <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
+                    <CButton size="sm">
+                      <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
+                    </CButton>
+                  </CInputGroup>
+                </CCol>
+              </CRow>
+              <CRow v-if="wodRegistration.type === 'EMOM'">
+                <CCol sm="3">
+                  <CInputGroup class="mb-3">
+                    <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
+                    <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
+                  </CInputGroup>
+                </CCol>
+                <CCol sm="6">
+                  <CInputGroup class="mb-3">
+                    <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
+                    <CButton size="sm">
+                      <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
+                    </CButton>
+                  </CInputGroup>
+                </CCol>
+              </CRow>
+              <CRow v-if="wodRegistration.type === 'Tabata'">
+                <CCol sm="3">
+                  <CInputGroup class="mb-3">
+                    <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
+                    <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
+                  </CInputGroup>
+                </CCol>
+              </CRow>
             </CCol>
             <CCol sm="4">
               <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
-                <CButton>
-                  <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
-                </CButton>
-              </CInputGroup>
-            </CCol>
-          </CRow>
-          <CRow v-if="wodRegistration.type === 'AMRAP'">
-            <CCol sm="3" />
-            <CCol sm="4">
-              <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
-                <CButton>
-                  <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
-                </CButton>
-              </CInputGroup>
-            </CCol>
-          </CRow>
-          <CRow v-if="wodRegistration.type === 'EMOM'">
-            <CCol sm="3">
-              <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
-              </CInputGroup>
-            </CCol>
-            <CCol sm="4">
-              <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">시간 제한</CInputGroupText>
-                <CButton>
-                  <VueTimepicker format="mm:ss" v-model="timeCapForPicker"/>
-                </CButton>
-              </CInputGroup>
-            </CCol>
-          </CRow>
-          <CRow v-if="wodRegistration.type === 'Tabata'">
-            <CCol sm="3">
-              <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
+                <CInputGroupText id="basic-addon3">기록 타입</CInputGroupText>
+                <CFormSelect id="inputGroupSelect01" v-model="wodRegistration.scoreType">
+                  <option>타입 선택</option>
+                  <option value="time">시간(분, 초)</option>
+                  <option value="totalReps">카운트</option>
+                  <option value="roundsPlusReps">라운드 & 카운트</option>
+                  <option value="repsPerRound">라운드별 카운트</option>
+                  <option value="completeFail">성공/실패</option>
+                </CFormSelect>
               </CInputGroup>
             </CCol>
           </CRow>
@@ -224,6 +241,7 @@ export default defineComponent({
       title: 'updateWodTitle',
       date: 'updateWodDate',
       type: 'updateWodType',
+      scoreType: 'updateWodScoreType',
       isSet: 'updateWodIsSet',
       set: 'updateWodSet',
       round: 'updateWodRound',
