@@ -26,7 +26,7 @@
       <CDropdownHeader component="h6" class="bg-light fw-semibold py-2">
         Settings
       </CDropdownHeader>
-      <CDropdownItem> <CIcon icon="cil-user" /> Profile </CDropdownItem>
+      <CDropdownItem @click="handleProfileClick"> <CIcon icon="cil-user" /> Profile </CDropdownItem>
       <CDropdownItem> <CIcon icon="cil-settings" /> Settings </CDropdownItem>
       <CDropdownItem>
         <CIcon icon="cil-dollar" /> Payments
@@ -50,7 +50,11 @@ import avatar from '@/assets/images/avatars/CFBD_logo.jpg'
 export default {
   name: 'AppHeaderDropdownAccnt',
   setup() {
+    const handleProfileClick = () => {
+      console.log('profile clicked')
+    }
     return {
+      handleProfileClick,
       avatar: avatar,
       itemsCount: 42,
     }
