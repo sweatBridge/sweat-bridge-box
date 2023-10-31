@@ -46,7 +46,7 @@
 </template>
 
 <script>
-import avatar from '@/assets/images/avatars/8.jpg'
+import avatar from '@/assets/images/avatars/CFBD_logo.jpg'
 export default {
   name: 'AppHeaderDropdownAccnt',
   setup() {
