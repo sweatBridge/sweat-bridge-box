@@ -116,7 +116,7 @@ export default defineComponent({
     }
   },
   methods: {
-    ...mapActions(['getDailyClasses', 'getClass', 'setClass', 'getMonthlyClasses', 'update', 'delete']),
+    ...mapActions(['getClass', 'setClass', 'getMonthlyClasses', 'update', 'delete']),
     handleWeekendsToggle() {
       this.calendarOptions.weekends = !this.calendarOptions.weekends // update a property
     },
@@ -212,17 +212,19 @@ export default defineComponent({
       if (result.isMonthlySchedule) {
         let startDt = new Date(result.startStr)
         let endDt = new Date(result.endStr)
-        const timezoneOffset = new Date().getTimezoneOffset() * 60000
-        startDt.setTime(startDt.getTime() - timezoneOffset - 7 * 24 * 60 * 60 * 1000)
-        endDt.setTime(endDt.getTime() - timezoneOffset - 7 * 24 * 60 * 60 * 1000)
+        console.log(startDt, endDt)
         for (let i = 0; i < 4; i++) {
-          startDt.setTime(startDt.getTime() + 7 * 24 * 60 * 60 * 1000)
-          endDt.setTime(endDt.getTime() + 7 * 24 * 60 * 60 * 1000)
-          const startStr = startDt.toISOString().replace('.000Z', '+09:00')
-          const endStr = endDt.toISOString().replace('.000Z', '+09:00')
+          const startStr = new Date(startDt.getTime() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
+          const endStr = new Date(endDt.getTime() + 9 * 60 * 60 * 1000).toISOString().replace('Z', '+09:00')
+          console.log(startStr, endStr)
           result.startStr = startStr
           result.endStr = endStr
+          console.log(result)
           this.saveClass(result)
+
+          // 다음 주로 날짜 조정
+          startDt.setTime(startDt.getTime() + 7 * 24 * 60 * 60 * 1000)
+          endDt.setTime(endDt.getTime() + 7 * 24 * 60 * 60 * 1000)
         }
       } else {
         this.saveClass(result)
