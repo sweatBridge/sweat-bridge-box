@@ -41,6 +41,16 @@
           aria-describedby="basic-addon3"
           v-model="capacity"
         />
+        <CInputGroupText id="basic-addon3">예약</CInputGroupText>
+        <CFormInput
+          id="basic-url"
+          aria-describedby="basic-addon3"
+          v-model="reserved.length"
+        >
+        </CFormInput>
+        <CButton color="dark" shape="rounded-pill" @click="handleShowMember">
+          보기
+        </CButton>
       </CInputGroup>
     </CModalBody>
     <CModalFooter class="d-flex justify-content-between">
@@ -51,16 +61,18 @@
         변경
       </CButton>
     </CModalFooter>
-
   </CModal>
+  <reserved-member-modal :members="reserved" ref="reservedMemberModalRef"></reserved-member-modal>
 
 </template>
 
 <script>
-import {ref, defineComponent} from "vue"
+import {defineComponent, ref} from "vue"
 import {extractDateTimeFromDocKey} from "@/views/admin/class/classCalendarUtils";
+import ReservedMemberModal from "@/views/admin/common/modal/ReservedMemberModal.vue";
 
 export default defineComponent({
+  components: {ReservedMemberModal},
   setup(props, {emit}) {
     const modalStatus = ref(false)
     const id = ref('')
@@ -69,6 +81,7 @@ export default defineComponent({
     const coach = ref('')
     const capacity = ref(0)
     const reserved = ref([])
+    const reservedMemberModalRef = ref(null)
 
     const showModal = (event) => {
       modalStatus.value = true
@@ -78,7 +91,9 @@ export default defineComponent({
       id.value = event.id
       coach.value = event.extendedProps.coach
       capacity.value = event.extendedProps.cap
-      reserved.value = event.extendedProps.reserved
+      reserved.value = event.extendedProps.reserved.map(reservation => {
+        return { name: reservation.split(',')[1].trim() }
+      })
     }
 
     const checkUpdateModalResult = () => {
@@ -102,16 +117,23 @@ export default defineComponent({
       modalStatus.value = false
     }
 
+    const handleShowMember = () => {
+      reservedMemberModalRef.value.showModal()
+    }
+
     return {
       modalStatus,
       startStr,
       endStr,
       coach,
       capacity,
+      reserved,
+      reservedMemberModalRef,
       emit,
       showModal,
       checkUpdateModalResult,
-      checkDeleteModalResult
+      checkDeleteModalResult,
+      handleShowMember,
     }
   }
 })

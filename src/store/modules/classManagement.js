@@ -6,17 +6,6 @@ const classManagement = {
   state: {},
   mutations: {},
   actions: {
-    async getDailyClasses({commit}) {
-      const box = 'Crossfit J'
-      const date = '20230910'
-      const path = `/box/${box}/class/${date}/time`
-      const querySnap = await getDocs(query(collection(db, path)));
-      const classes = []
-      querySnap.forEach((doc) => {
-        classes.push(doc.data())
-      })
-    },
-    //payload: {calendarApi}
     async getMonthlyClasses({commit}, payload) {
       let calendarApi = payload.calendarApi
       const today = new Date()

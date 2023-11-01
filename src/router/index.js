@@ -8,7 +8,7 @@ const routes = [
     path: '/',
     name: 'Home',
     component: DefaultLayout,
-    redirect: '/admin/registered-wod-list',
+    redirect: '/pages/login',
     children: [
       {
         path: '/admin',

@@ -122,7 +122,7 @@ export default {
       //TODO : authentication 로그인 성공 후 액션 등록(firestore 연동)
       //registration은 authentication
       //box는 firestore 등록(box 하위에 name 등록 class, member, wod 컬렉션 생성)
-      router.push("/pages/register/login")
+      router.push("/pages/login")
     }
 
     return {
