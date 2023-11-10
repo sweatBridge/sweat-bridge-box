@@ -3,16 +3,21 @@
     <CCol sm="8">
       <CCard>
         <CCardHeader>
-          <strong>등록 와드 목록 </strong>
-          <CTooltip content="달력에서 일자 클릭 시 해당 일자 와드 등록 가능" placement="top">
+          <strong>등록 와드 목록</strong>&nbsp;
+
+          <CTooltip content="날짜를 클릭해 와드를 등록해요!" placement="top">
             <template #toggler="{ on }">
-              <CButton color="warning" v-on="on" size="sm">Tips!</CButton>
+              <CButton class="header-button" v-on="on" size="sm">
+                <CIcon icon="cil-star" size="sm" />&nbsp;
+<!--                <CIcon class="tips-icon" name="cil-s" />-->
+                <strong>Tips</strong>
+              </CButton>
             </template>
           </CTooltip>
           <div class="float-end">
             <CButton
-              color="light" class="position-relative" size="sm" @click="moveToRegisterPage">
-              추가
+              class="position-relative header-button" size="sm" @click="moveToRegisterPage">
+              <strong>추가</strong>
             </CButton>
           </div>
         </CCardHeader>
@@ -54,8 +59,8 @@
               <strong>회원 기록 </strong>
               <div class="float-end">
                 <CButton
-                  color="light" class="position-relative" size="sm" @click="handleRecordClick">
-                  전체 기록
+                  class="position-relative header-button" size="sm" @click="handleRecordClick">
+                  <strong>전체 기록</strong>
                   <CBadge color="danger" position="top-end" shape="rounded-pill">
                     {{records.length}} <span class="visually-hidden">member record</span>
                   </CBadge>
@@ -73,8 +78,8 @@
               <strong>회원 피드백</strong>
               <div class="float-end">
                 <CButton
-                  color="light" class="position-relative" size="sm" @click="handleFeedbackClick">
-                  전체 피드백
+                  class="position-relative header-button" size="sm" @click="handleFeedbackClick">
+                  <strong>전체 피드백</strong>
                   <CBadge color="danger" position="top-end" shape="rounded-pill">
                     {{feedbacks.length}} <span class="visually-hidden">member feedback</span>
                   </CBadge>
@@ -235,12 +240,23 @@ export default defineComponent({
 
 <style scoped>
 .card-header {
-  background-color: rgb(76, 192, 115);
-  color: var(--cui-white);
+  background-color: rgb(70, 100, 200);
+  color: #ffffff;
 }
 
 .custom-button {
   background-color: rgba(216, 230, 82, 0.98);
+  color: #011d2a;
+}
+
+.header-button {
+  background-color: #ffffff;
+  color: rgb(70, 100, 200)
+}
+
+
+
+.tips-icon {
   color: #011d2a;
 }
 
