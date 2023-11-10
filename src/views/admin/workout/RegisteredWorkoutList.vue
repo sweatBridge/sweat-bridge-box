@@ -245,7 +245,7 @@ export default defineComponent({
 }
 
 .custom-button {
-  background-color: rgba(142, 170, 230, 0.98);
+  background-color: rgba(140, 170, 230, 0.98);
   color: #000000;
 }
 
