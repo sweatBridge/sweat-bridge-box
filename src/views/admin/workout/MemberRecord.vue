@@ -1,5 +1,8 @@
 <template>
-  Level :
+  <CBadge class="p-lg-2 header-button">
+    <strong>난이도</strong>
+  </CBadge>
+   :
   <input type="text" v-model="searchValue">
   <br>
   <br>
@@ -72,4 +75,8 @@ export default {
   /*--easy-table-header-height: 5px;*/
 }
 
+.header-button {
+  background-color: rgb(101, 107, 130);
+  color: rgb(255, 255, 255)
+}
 </style>

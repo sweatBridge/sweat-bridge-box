@@ -43,11 +43,11 @@
               <div class="float-end">
                 <CButton class="position-relative custom-button" size="sm" shape="rounded-pill"
                          v-if="workoutDateStr !== ''">
-                  요약
+                  <strong>요약</strong>
                 </CButton>
                 <CButton color="light" class="position-relative" size="sm" shape="rounded-pill"
                   @click="moveToModifyPage" v-if="workoutDateStr !== ''">
-                  수정
+                  <strong>수정</strong>
                 </CButton>
               </div>
             </CCardHeader>
@@ -245,19 +245,13 @@ export default defineComponent({
 }
 
 .custom-button {
-  background-color: rgba(216, 230, 82, 0.98);
-  color: #011d2a;
+  background-color: rgba(142, 170, 230, 0.98);
+  color: #000000;
 }
 
 .header-button {
   background-color: #ffffff;
   color: rgb(70, 100, 200)
-}
-
-
-
-.tips-icon {
-  color: #011d2a;
 }
 
 </style>
