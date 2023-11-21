@@ -109,7 +109,8 @@ export default {
 
 <style scoped>
 .modal-header {
-  background-color: var(--cui-info)
+  background-color: rgb(70, 100, 200);
+  color: #ffffff;
 }
 .modal-title {
   color: var(--cui-white)
