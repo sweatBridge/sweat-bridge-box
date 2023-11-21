@@ -47,19 +47,18 @@
         </CCol>
         <CCol sm="2">
           <div style="height: 8px;"></div>
-          <CFormCheck id="levelOption" label="난이도 설정" :disabled="movement.name === 'Rest'" :checked="movement.isLevelSet" v-model="movement.isLevelSet" @change="handleLevelSetChange"/>
+          <CFormCheck id="levelOption" label="난이도 설정" v-if="movement.name !== 'Rest'" :checked="movement.isLevelSet" v-model="movement.isLevelSet" @change="handleLevelSetChange"/>
         </CCol>
       </CRow>
       <CRow>
         <CCard v-if="movement.isLevelSet">
           <CCardHeader>
-            난이도 설정
             <div class="float-end">
               <CButton
-                color="info" class="position-relative" size="sm"
+                class="position-relative header-button" size="sm"
                 @click="addLevel"
               >
-                난이도 추가
+                <strong>난이도 추가</strong>
               </CButton>
             </div>
           </CCardHeader>
@@ -212,13 +211,20 @@ export default defineComponent({
 <style scoped>
 .movement-card {
   /*border-color: var(--cui-danger);*/
-  background-color: var(--cui-info);
+  background-color: rgb(95, 118, 201);
+  color: rgb(255, 255, 255)
 }
 .rest-card {
-  background-color: var(--cui-warning);
+  background-color: rgba(244, 204, 107, 0.87);
+  color: black;
 }
 .blue-background {
   background-color: var(--cui-blue);
   --cui-body-color: #ff0000;
+}
+.header-button {
+  /*border-color: var(--cui-danger);*/
+  background-color: rgba(140, 170, 230, 0.98);
+  color: rgb(0, 0, 0)
 }
 </style>

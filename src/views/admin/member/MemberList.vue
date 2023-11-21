@@ -1,12 +1,12 @@
 <template>
   <CCard>
-    <CCardHeader>
+    <CCardHeader class="card-header">
       <strong>회원 관리</strong>
       <div class="float-end">
         <CButton
           @click="approveMembers"
-          color="info" class="position-relative" size="sm">
-          승인 요청
+          class="position-relative header-button" size="sm">
+          <strong>승인 요청</strong>
           <CBadge color="danger" position="top-end" shape="rounded-pill">
             {{pendingMembers.length}} <span class="visually-hidden">unread messages</span>
           </CBadge>
@@ -14,7 +14,10 @@
       </div>
     </CCardHeader>
     <CCardBody>
-      <span><strong>이름 : </strong></span>
+      <CBadge class="p-lg-2 name-button">
+        <strong>이름</strong>
+      </CBadge>
+      :
       <input type="text" v-model="searchValue">
       <br>
       <br>
@@ -193,4 +196,17 @@ export default defineComponent({
 })
 </script>
 
-<style scoped lang="scss"> </style>
+<style scoped lang="scss">
+.header-button {
+  background-color: #ffffff;
+  color: rgb(70, 100, 200)
+}
+.card-header {
+  background-color: rgb(70, 100, 200);
+  color: #ffffff;
+}
+.name-button {
+  background-color: rgb(101, 107, 130);
+  color: rgb(255, 255, 255)
+}
+</style>

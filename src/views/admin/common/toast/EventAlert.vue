@@ -33,7 +33,7 @@ export default defineComponent({
 
 <style scoped>
 .toast-body {
-  background-color : #d9d97a;
+  background-color: rgba(142, 170, 230, 0.98);
   color: #011d2a;
 }
 .toast-close {

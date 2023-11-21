@@ -125,16 +125,16 @@
                 Movements
                 <div class="float-end">
                   <CButton
-                    color="warning" class="position-relative" size="sm"
+                    class="position-relative rest-card" size="sm"
                     @click="addRest"
                   >
-                    휴식 추가
+                    <strong>휴식 추가</strong>
                   </CButton>
                   <CButton
-                    color="info" class="position-relative" size="sm"
+                    class="position-relative custom-button" size="sm"
                     @click="addMovement"
                   >
-                    동작 추가
+                    <strong>동작 추가</strong>
                   </CButton>
                 </div>
               </CCardHeader>
@@ -161,11 +161,10 @@
           </CRow>
           <CRow>
             <CForm>
-              <CInputGroupText id="basic-addon3">설명</CInputGroupText>
+              <CInputGroupText id="basic-addon3">기타 설명</CInputGroupText>
               <CFormTextarea
                 id="exampleFormControlTextarea1"
                 rows="3"
-                text="WOD 설명"
                 v-model="registeredWod.description"
               ></CFormTextarea>
             </CForm>
@@ -352,5 +351,12 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-
+.rest-card {
+  background-color: rgba(247, 192, 59, 0.87);
+  color: black;
+}
+.custom-button {
+  background-color: rgba(140, 170, 230, 0.98);
+  color: #000000;
+}
 </style>

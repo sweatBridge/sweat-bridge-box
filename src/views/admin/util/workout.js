@@ -5,8 +5,8 @@ export function selectWodEventColor(date) {
   today.setHours(0, 0, 0, 0);
 
   if (selectedDate < today) {
-    return '#607d8b'; // 오늘보다 이전
+    return 'rgba(53,69,120,0.89)'; // 오늘보다 이전
   } else {
-    return 'rgba(141,227,121,0.99)'; // 오늘 또는 미래
+    return 'rgba(105,143,241,0.99)'; // 오늘 또는 미래
   }
 }
