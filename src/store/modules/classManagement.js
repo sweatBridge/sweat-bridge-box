@@ -33,6 +33,7 @@ const classManagement = {
           cap: event.cap,
           reserved: event.reserved,
         }
+        event.color = 'rgba(105,143,241,0.99)'
         calendarApi.addEvent(event)
       })
     },

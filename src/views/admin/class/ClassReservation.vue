@@ -2,7 +2,7 @@
   <CRow>
     <CCol>
       <CCard>
-        <CCardHeader>
+        <CCardHeader class="card-header">
           <strong>수업 등록</strong>
         </CCardHeader>
         <CCardBody>
@@ -296,5 +296,9 @@ export default defineComponent({
 .demo-app-main {
   flex-grow: 1;
   padding: 3em;
+}
+.card-header {
+  background-color: rgb(70, 100, 200);
+  color: #ffffff;
 }
 </style>

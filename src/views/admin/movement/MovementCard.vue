@@ -47,7 +47,7 @@
         </CCol>
         <CCol sm="2">
           <div style="height: 8px;"></div>
-          <CFormCheck id="levelOption" label="난이도 설정" :disabled="movement.name === 'Rest'" :checked="movement.isLevelSet" v-model="movement.isLevelSet" @change="handleLevelSetChange"/>
+          <CFormCheck id="levelOption" label="난이도 설정" v-if="movement.name !== 'Rest'" :checked="movement.isLevelSet" v-model="movement.isLevelSet" @change="handleLevelSetChange"/>
         </CCol>
       </CRow>
       <CRow>
