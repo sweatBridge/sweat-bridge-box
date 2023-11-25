@@ -123,7 +123,7 @@ export default {
           )
           setTimeout(() => {
             location.reload()
-          }, 100000)
+          }, 1000)
         })
       modalStatus.value = false
     }

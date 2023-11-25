@@ -25,14 +25,17 @@
         buttons-pagination
         :headers="headers"
         :items="members"
-        search-field="name"
+        search-field="realName"
         :search-value="searchValue"
         show-index
         body-text-direction="center"
         header-text-direction="center"
       >
-        <template #item-name="{ name }">
-          {{name}}
+        <template #item-realName="{ realName }">
+          {{realName}}
+        </template>
+        <template #item-nickName="{ nickName }">
+          {{nickName}}
         </template>
         <template #item-type="{ type }">
           {{ getType(type) }}
@@ -48,9 +51,6 @@
         </template>
         <template #item-gender="{ gender }">
           {{gender}}
-        </template>
-        <template #item-age="{ birthDate }">
-          {{ getAge(birthDate) }}
         </template>
         <template #item-operation="{ index, type }">
           <CButton
@@ -114,13 +114,13 @@ export default defineComponent({
       store.dispatch('getPendingMembers', { box: 'CFBD' })
     })
     const headers = [
-      { text: "이름", value: "name" },
+      { text: "이름", value: "realName" },
+      { text: "닉네임", value: "nickName" },
       { text: "등록 타입", value: "type", sortable: true},
       { text: "만료 일자", value: "expiryDate", sortable: true},
       { text: "잔여 기간(일)", value: "duration" },
       { text: "잔여 횟수(회)", value: "remainingVisits"},
       { text: "성별", value: "gender" },
-      { text: "나이", value: "age" },
       { text: "기능", value: "operation", width: "150" },
       { text: "상세", value: "details"},
     ]

@@ -39,7 +39,7 @@ export default {
     const toastMessageRef = ref(null)
     const showModal = (user) => {
       modalStatus.value = true
-      name.value = user.name
+      name.value = user.realName
       member.value = user
     }
     const reject = () => {

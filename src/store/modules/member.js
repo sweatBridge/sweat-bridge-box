@@ -41,7 +41,7 @@ const member = {
       commit('SET_PENDING_MEMBERS', members)
     },
     async getMemberRef({commit}, payload) {
-      const path = `/box/${payload.boxName}/member`
+      const path = `/box/${payload.box}/member`
       const q = query(collection(db, path),
         where('email', '==', payload.email),
       )
@@ -81,11 +81,11 @@ const member = {
       const memberRef = await context.dispatch('getMemberRef', payload)
       const userRef = await context.dispatch('getUserRef', payload)
       payload.boxApply = ''
+      payload.boxName = ''
       delete payload.box
       await deleteDoc(memberRef)
       await updateDoc(userRef, payload)
     },
-    //TODO: 추후 update member로 통합
     async registerMembership(context, payload) {
       const memberRef = await context.dispatch('getMemberRef', payload)
       const userRef = await context.dispatch('getUserRef', payload)
