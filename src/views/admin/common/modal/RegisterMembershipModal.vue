@@ -95,7 +95,7 @@ export default {
     }
 
     const register = () => {
-      member.value.boxName = "CFBD"
+      member.value.box = "CFBD"
       member.value.type = registrationType.value
       member.value.expiryDate = expiryDate.value
       member.value.remainingVisits = remainingVisits.value
