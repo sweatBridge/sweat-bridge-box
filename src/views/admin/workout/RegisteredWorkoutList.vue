@@ -1,5 +1,5 @@
 <template>
-  <CRow style="width: 110%">
+  <CRow style="width: 100%">
     <CCol sm="8">
       <CCard>
         <CCardHeader>
@@ -128,11 +128,6 @@ export default defineComponent({
     MemberRecord,
   },
   setup() {
-    const shortWod = ref("For Time\n" +
-      "3 Rounds\n" +
-      "15 Wall Ball(20/14)\n" +
-      "15 Deadlift(185/125)\n" +
-      "15 Box Jump Over(24/20)\n")
     const router = useRouter()
     const store = useStore()
     const fullCalendarRef = ref(null)
@@ -219,7 +214,7 @@ export default defineComponent({
       */
     })
     return {
-      shortWod,
+
       fullCalendarRef,
       workoutDateStr,
       workoutModifyModalRef,

@@ -11,7 +11,7 @@
       <CRow>
         <CInputGroup class="mb-3">
           <CInputGroupText>이름</CInputGroupText>
-          <CFormInput v-model="member.value.name" readonly/>
+          <CFormInput v-model="member.value.realName" readonly/>
         </CInputGroup>
         <CInputGroup class="mb-3">
           <CInputGroupText>기존 만료일</CInputGroupText>
@@ -95,7 +95,7 @@ export default {
     }
 
     const register = () => {
-      member.value.box = "CFBD"
+      member.value.boxName = "CFBD"
       member.value.type = registrationType.value
       member.value.expiryDate = expiryDate.value
       member.value.remainingVisits = remainingVisits.value

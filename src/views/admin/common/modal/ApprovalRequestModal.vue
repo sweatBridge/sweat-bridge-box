@@ -16,14 +16,14 @@
         body-text-direction="center"
         header-text-direction="center"
       >
-        <template #item-name="{ name }">
-          {{name}}
+        <template #item-real-name="{ realName }">
+          {{realName}}
+        </template>
+        <template #item-nick-name="{ nickname }">
+          {{nickname}}
         </template>
         <template #item-gender="{ gender }">
           {{gender}}
-        </template>
-        <template #item-age="{ birthDate }">
-          {{getAge(birthDate)}}
         </template>
         <template #item-phone="{ phone }">
           {{phone}}
@@ -66,9 +66,9 @@ export default {
     const store = useStore()
     const pendingMembers = computed(() => store.state.member.pendingMembers)
     const headers = [
-      { text: "이름", value: "name" },
+      { text: "이름", value: "realName" },
+      { text: "닉네임", value: "nickName"},
       { text: "성별", value: "gender" },
-      { text: "나이", value: "age" },
       { text: "연락처", value: "phone" },
       { text: "거절/수락", value: "operation", width: "100" }
     ]

@@ -7,7 +7,13 @@
       <CRow>
         <CInputGroup class="mb-3">
           <CInputGroupText id="basic-addon3">이름</CInputGroupText>
-          <CFormInput id="basic-url" aria-describedby="basic-addon3" v-model="member.name" readonly/>
+          <CFormInput id="basic-url" aria-describedby="basic-addon3" v-model="member.realName" readonly/>
+          <CInputGroupText id="basic-addon3">닉네임</CInputGroupText>
+          <CFormInput id="basic-url" aria-describedby="basic-addon3" v-model="member.nickName" readonly/>
+        </CInputGroup>
+      </CRow>
+      <CRow>
+        <CInputGroup class="mb-3">
           <CInputGroupText id="basic-addon3">성별</CInputGroupText>
           <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getGender(member.gender)" readonly/>
           <CInputGroupText id="basic-addon3">나이</CInputGroupText>

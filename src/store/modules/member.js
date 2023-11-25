@@ -18,7 +18,7 @@ const member = {
     async getMembers({commit}, payload) {
       const path = `/box/${payload.box}/member`
       const q = query(collection(db, path),
-        where('state', '==', true),
+        where('boxName', '==', payload.box),
       )
       const querySnap = await getDocs(q)
       const members = []
@@ -30,7 +30,8 @@ const member = {
     async getPendingMembers({commit}, payload) {
       const path = `/box/${payload.box}/member`
       const q = query(collection(db, path),
-        where('state', '==', false),
+        where('boxApply', '==', payload.box),  // boxApply가 'CFBD'인 문서
+        where('boxName', '==', ''),       // boxName이 빈 문자열인 문서
       )
       const querySnap = await getDocs(q)
       const members = []
@@ -42,7 +43,7 @@ const member = {
     async getMemberRef({commit}, payload) {
       const path = `/box/${payload.box}/member`
       const q = query(collection(db, path),
-        where('id', '==', payload.id),
+        where('email', '==', payload.email),
       )
       const querySnap = await getDocs(q)
       const memberRef = []
@@ -53,21 +54,44 @@ const member = {
         return memberRef[0]
       }
     },
+    async getUserRef({commit}, payload) {
+      const path = `/user`
+      const q = query(collection(db, path),
+        where('email', '==', payload.email),
+      )
+      const querySnap = await getDocs(q)
+      const userRef = []
+      querySnap.forEach((doc) => {
+        userRef.push(doc.ref)
+      })
+      if (userRef.length === 1) {
+        return userRef[0]
+      }
+    },
     async approveMember(context, payload) {
-      const ref = await context.dispatch('getMemberRef', payload)
+      const memberRef = await context.dispatch('getMemberRef', payload)
+      const userRef = await context.dispatch('getUserRef', payload)
+      payload.boxName = payload.box
+      payload.boxApply = ''
       delete payload.box
-      payload.state = true
-      await updateDoc(ref, payload)
+      await updateDoc(memberRef, payload)
+      await updateDoc(userRef, payload)
     },
     async rejectMember(context, payload) {
-      const ref = await context.dispatch('getMemberRef', payload)
-      await deleteDoc(ref)
-    },
-    //TODO: 추후 update member로 통합
-    async registerMembership(context, payload) {
-      const ref = await context.dispatch('getMemberRef', payload)
+      const memberRef = await context.dispatch('getMemberRef', payload)
+      const userRef = await context.dispatch('getUserRef', payload)
+      payload.boxApply = ''
+      payload.boxName = ''
       delete payload.box
-      await updateDoc(ref, payload)
+      await deleteDoc(memberRef)
+      await updateDoc(userRef, payload)
+    },
+    async registerMembership(context, payload) {
+      const memberRef = await context.dispatch('getMemberRef', payload)
+      const userRef = await context.dispatch('getUserRef', payload)
+      delete payload.box
+      await updateDoc(memberRef, payload)
+      await updateDoc(userRef, payload)
     }
   },
   getters: {}
