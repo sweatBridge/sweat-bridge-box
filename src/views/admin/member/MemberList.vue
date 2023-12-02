@@ -40,11 +40,11 @@
         <template #item-type="{ type }">
           {{ getType(type) }}
         </template>
-        <template #item-expiryDate="{ expiryDate }">
-          {{ getExpiryDateStr(expiryDate) }}
+        <template #item-expired="{ index }">
+          {{ getExpiryDateStr(index) }}
         </template>
-        <template #item-duration="{ expiryDate }">
-          {{ getRemainingDays(expiryDate) }}
+        <template #item-duration="{ index }">
+          {{ getRemainingDays(index) }}
         </template>
         <template #item-remainingVisits="{ index }">
           {{ getRemainingVisits(index) }}
@@ -116,8 +116,8 @@ export default defineComponent({
     const headers = [
       { text: "이름", value: "realName" },
       { text: "닉네임", value: "nickName" },
-      { text: "등록 타입", value: "type", sortable: true},
-      { text: "만료 일자", value: "expiryDate", sortable: true},
+      { text: "등록 타입", value: "remain.type", sortable: true},
+      { text: "만료 일자", value: "expired", sortable: true},
       { text: "잔여 기간(일)", value: "duration" },
       { text: "잔여 횟수(회)", value: "remainingVisits"},
       { text: "성별", value: "gender" },
@@ -142,18 +142,20 @@ export default defineComponent({
       return convertTypeToKorean(type)
     }
 
-    const getExpiryDateStr = (timestamp) => {
-      return convertTimestampToString(timestamp)
+    const getExpiryDateStr = (index) => {
+      const member = members.value[index - 1]
+      return convertTimestampToString(member.remain.expired)
     }
 
-    const getRemainingDays = (expiryDate) => {
-      const expiryDateStr = convertTimestampToString(expiryDate)
+    const getRemainingDays = (index) => {
+      const member = members.value[index - 1]
+      const expiryDateStr = convertTimestampToString(member.remain.expired)
       return calculateRemainingDays(expiryDateStr)
     }
 
     const getRemainingVisits = (index) => {
       const member = members.value[index - 1]
-      return convertRemainingVisits(member.type, member.remainingVisits)
+      return convertRemainingVisits(member.remain.type, member.remain.times)
     }
 
     const getAge = (birthDate) => {
