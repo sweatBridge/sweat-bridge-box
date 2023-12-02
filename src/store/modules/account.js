@@ -1,9 +1,12 @@
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { setDoc, doc } from "firebase/firestore";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import {setDoc, doc, query, collection, where, getDocs} from "firebase/firestore";
 import { db } from '@/firebase'
 
 const account = {
   state: {
+    boxState: {
+      boxName: '',
+    },
     registration: {
       email: '',
       password: '',
@@ -32,6 +35,9 @@ const account = {
     }
   },
   mutations: {
+    SET_BOX_STATE(state, payload) {
+      state.boxState.boxName = payload.boxName
+    },
     SET_ACCOUNT(state, payload) {
       state.registration = payload
     },
@@ -43,6 +49,10 @@ const account = {
     },
   },
   actions: {
+    async login({commit}, payload) {
+      const auth = getAuth()
+      await signInWithEmailAndPassword(auth, payload.email, payload.password)
+    },
     async signUp({state}) {
       const auth = getAuth()
       await createUserWithEmailAndPassword(auth, state.registration.email, state.registration.password)
@@ -63,6 +73,22 @@ const account = {
         role: state.user.role,
       })
     },
+    async setBoxState({commit, state}, payload) {
+      const path = `/user`
+      const q = query(collection(db, path),
+        where('email', '==', payload.email),
+      )
+      const querySnap = await getDocs(q)
+      const user = []
+      querySnap.forEach((doc) => {
+        user.push(doc.data())
+      })
+      if (user.length === 1) {
+        commit('SET_BOX_STATE', {
+          boxName: user[0].boxName,
+        })
+      }
+    }
   },
   getters: {}
 }

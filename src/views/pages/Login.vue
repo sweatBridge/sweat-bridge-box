@@ -16,6 +16,7 @@
                     <CFormInput
                       placeholder="아이디"
                       autocomplete="username"
+                      v-model="email"
                     />
                   </CInputGroup>
                   <CInputGroup class="mb-4">
@@ -26,6 +27,7 @@
                       type="password"
                       placeholder="비밀번호"
                       autocomplete="current-password"
+                      v-model="password"
                     />
                   </CInputGroup>
                   <CRow>
@@ -66,26 +68,58 @@
           </CCardGroup>
         </CCol>
       </CRow>
+      <toast-message ref="toastMessageRef" />
     </CContainer>
   </div>
 </template>
 
 <script>
 import {useRouter} from "vue-router"
+import {ref} from "vue";
+import {useStore} from "vuex";
+import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue"
 
 export default {
   name: 'Login',
+  components: {
+    ToastMessage
+  },
   setup() {
     const router = useRouter()
+    const store = useStore()
+
+    const email = ref("")
+    const password = ref("")
+    const toastMessageRef = ref(null)
     const handleLoginClick = () => {
-      // TODO : authentication & login
-      router.push("/admin/registered-wod-list")
+      try {
+        store.dispatch('login', { email: email.value, password: password.value })
+        toastMessageRef.value.createToast({
+          title: '성공',
+          content: '로그인 성공',
+          type: 'success'
+        });
+        store.dispatch('setBoxState', { email: email.value })
+        setTimeout(() => {
+          router.push("/admin/registered-wod-list")
+        }, 1000)
+      } catch (error) {
+        console.error(error);
+        toastMessageRef.value.createToast({
+          title: '실패',
+          content: 'User 등록 실패 error: ' + error.message,
+          type: 'danger'
+        });
+      }
     }
     const handleSignInClick = () => {
       router.push("/pages/register/account")
     }
 
     return {
+      email,
+      password,
+      toastMessageRef,
       handleLoginClick,
       handleSignInClick
     }
