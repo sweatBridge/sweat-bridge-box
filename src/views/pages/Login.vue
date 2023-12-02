@@ -91,15 +91,15 @@ export default {
     const email = ref("")
     const password = ref("")
     const toastMessageRef = ref(null)
-    const handleLoginClick = () => {
+    const handleLoginClick = async () => {
       try {
-        store.dispatch('login', { email: email.value, password: password.value })
+        await store.dispatch('login', {email: email.value, password: password.value});
         toastMessageRef.value.createToast({
           title: '성공',
           content: '로그인 성공',
           type: 'success'
         });
-        store.dispatch('setBoxState', { email: email.value })
+        await store.dispatch('setBoxState', {email: email.value})
         setTimeout(() => {
           router.push("/admin/registered-wod-list")
         }, 1000)
@@ -111,6 +111,28 @@ export default {
           type: 'danger'
         });
       }
+/*
+      store.dispatch('login', {email: email.value, password: password.value})
+        .then(() => {
+          toastMessageRef.value.createToast({
+            title: '성공',
+            content: '로그인 성공',
+            type: 'success'
+          });
+          store.dispatch('setBoxState', {email: email.value})
+          setTimeout(() => {
+            router.push("/admin/registered-wod-list")
+          }, 10000)
+        }).catch(error => {
+        console.error(error);
+        toastMessageRef.value.createToast({
+          title: '실패',
+          content: 'User 등록 실패 error: ' + error.message,
+          type: 'danger'
+        });
+      })
+ */
+
     }
     const handleSignInClick = () => {
       router.push("/pages/register/account")
