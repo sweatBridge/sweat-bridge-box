@@ -43,17 +43,17 @@
       <CRow>
         <CInputGroup class="mb-3">
           <CInputGroupText id="basic-addon3">등록 타입</CInputGroupText>
-          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getType(member.type)" readonly/>
+          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getType(member.remain.type)" readonly/>
           <CInputGroupText id="basic-addon3">만료 일자</CInputGroupText>
-          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getExpiryDateStr(member.expiryDate)" readonly/>
+          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getExpiryDateStr(member.remain.expired)" readonly/>
         </CInputGroup>
       </CRow>
       <CRow>
         <CInputGroup class="mb-3">
           <CInputGroupText id="basic-addon3">잔여일 수</CInputGroupText>
-          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getRemainingDays(member.expiryDate)" readonly/>
+          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getRemainingDays(member.remain.expired)" readonly/>
           <CInputGroupText id="basic-addon3">잔여일 수</CInputGroupText>
-          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getRemainingVisits(member.type, member.remainingVisits)" readonly/>
+          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getRemainingVisits(member.type, member.remain.times)" readonly/>
         </CInputGroup>
       </CRow>
     </CModalBody>
