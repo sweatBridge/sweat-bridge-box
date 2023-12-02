@@ -10,7 +10,7 @@
                 <p class="text-medium-emphasis">관리자 계정 등록</p>
                 <CInputGroup class="mb-3">
                   <CInputGroupText>@</CInputGroupText>
-                  <CFormInput placeholder="아이디{이메일}" autocomplete="email" v-model="id"/>
+                  <CFormInput placeholder="아이디{이메일}" autocomplete="email" v-model="email"/>
                 </CInputGroup>
                 <CInputGroup class="mb-3">
                   <CInputGroupText>
@@ -40,7 +40,7 @@
                   <CInputGroupText>
                     <CIcon icon="cil-user" />
                   </CInputGroupText>
-                  <CFormInput placeholder="박스 이름" autocomplete="username" v-model="name" />
+                  <CFormInput placeholder="박스 이름" autocomplete="username" v-model="boxName" />
                 </CInputGroup>
                 <div class="d-grid">
                   <CFormCheck label="이용약관 및 개인정보취급방침에 동의합니다." v-model="isTermsAgreed"/>
@@ -68,10 +68,10 @@ export default {
     const router = useRouter()
     const store = useStore()
 
-    const id = ref("")
+    const email = ref("")
     const password = ref("")
     const confirmPassword = ref("")
-    const name = ref("")
+    const boxName = ref("")
     const isTermsAgreed = ref(false)
     const isPasswordMismatch = computed(() => {
       return password.value === "" || password.value !== confirmPassword.value
@@ -81,19 +81,19 @@ export default {
     })
     const handleNextClick = () => {
       const account = {
-        id: id.value,
+        email: email.value,
         password: password.value,
-        name: name.value,
+        boxName: boxName.value,
       }
 
       store.commit("SET_ACCOUNT", account)
       router.push('/pages/register/box')
     }
     return {
-      id,
+      email,
       password,
       confirmPassword,
-      name,
+      boxName,
       isTermsAgreed,
       isPasswordMismatch,
       isValidationPassed,

@@ -7,14 +7,14 @@
             <CCardBody class="p-4">
               <CForm>
                 <h1>등록</h1>
-                <p class="text-medium-emphasis"> "<strong>{{ account.name }}</strong>" 정보 기입</p>
+                <p class="text-medium-emphasis"> "<strong>{{ account.boxName }}</strong>" 정보 기입</p>
                 <CInputGroup class="mb-3">
                   <CInputGroupText>박스명</CInputGroupText>
-                  <CFormInput placeholder="박스명" :value="account.name" readonly/>
+                  <CFormInput placeholder="박스명" :value="account.boxName" readonly/>
                 </CInputGroup>
                 <CInputGroup class="mb-3">
                   <CInputGroupText>@</CInputGroupText>
-                  <CFormInput placeholder="이메일" autocomplete="email" :value="account.id" readonly/>
+                  <CFormInput placeholder="이메일" autocomplete="email" :value="account.email" readonly/>
                 </CInputGroup>
                 <CInputGroup class="mb-3">
                   <CInputGroupText>대표 코치</CInputGroupText>
@@ -35,20 +35,11 @@
                     </div>
                   </CCardHeader>
                   <CCardBody>
-                    <CFormInput placeholder="우편번호" :value="zoneCode" readonly/>
-                    <CFormInput placeholder="도로명 주소" :value="roadAddress" readonly/>
-                    <CFormInput placeholder="상세 주소" v-model="detailAddress"/>
+                    <CFormInput placeholder="우편번호" :value="address.zoneCode" readonly/>
+                    <CFormInput placeholder="도로명 주소" :value="address.roadAddress" readonly/>
+                    <CFormInput placeholder="상세 주소" v-model="address.detailAddress"/>
                   </CCardBody>
                 </CCard>
-<!--                <CInputGroup class="mb-3">-->
-<!--                  <CInputGroupText>주소</CInputGroupText>-->
-<!--                  <CForm>-->
-<!--                    <CFormInput placeholder="우편번호" :value="zoneCode" readonly/>-->
-<!--                    <CFormInput placeholder="도로명 주소" :value="roadAddress" readonly/>-->
-<!--                    <CFormInput placeholder="상세 주소" v-model="detailAddress"/>-->
-<!--                  </CForm>-->
-<!--                  <CButton color="dark" @click="openPostcode">주소 검색</CButton>-->
-<!--                </CInputGroup>-->
                 <CFormFloating>
                   <CFormTextarea
                     id="floatingTextarea"
@@ -88,13 +79,14 @@ export default {
     const account = computed(() => store.state.account.registration)
     const phone = ref("")
     const representative = ref("")
-    const zoneCode = ref("")
-    const roadAddress = ref("")
-    const detailAddress = ref("")
+    const address = ref({
+      zoneCode: '',
+      roadAddress: '',
+      detailAddress: '',
+    })
     const description = ref("")
 
     watch(phone, (newPhone, oldPhone) => {
-      // 예: 입력된 값에 대한 변환
       const maskedPhone = getPhoneMask(newPhone)
       phone.value = maskedPhone
     })
@@ -102,36 +94,46 @@ export default {
     const openPostcode = () => {
       new window.daum.Postcode({
         oncomplete: function(data) {
-          zoneCode.value = data.zonecode
-          roadAddress.value = data.roadAddress
+          address.value.zoneCode = data.zonecode
+          address.value.roadAddress = data.roadAddress
         }
       }).open()
     }
     const register = () => {
       const box = {
-        name : account.value.name,
-        email: account.value.id,
+        boxName : account.value.boxName,
+        email: account.value.email,
         representative: representative.value,
         phone: phone.value,
-        zoneCode: zoneCode.value,
-        roadAddress: roadAddress.value,
-        detailAddress: detailAddress.value,
+        address: {
+          zoneCode: address.value.zoneCode,
+          roadAddress: address.value.roadAddress,
+          detailAddress: address.value.detailAddress,
+        },
         description: description.value,
+        coaches: [{
+          name: representative.value,
+          phone: phone.value,
+          email: account.value.email,
+        }],
       }
       store.commit("SET_BOX", box)
       //TODO : authentication 로그인 성공 후 액션 등록(firestore 연동)
-      //registration은 authentication
-      //box는 firestore 등록(box 하위에 name 등록 class, member, wod 컬렉션 생성)
+      // authentication 추가
+      // box 정보 등록
+      // user 추가
       router.push("/pages/login")
+    }
+
+    const addCoach = () => {
+
     }
 
     return {
       account,
       representative,
       phone,
-      zoneCode,
-      roadAddress,
-      detailAddress,
+      address,
       description,
       openPostcode,
       register

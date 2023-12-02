@@ -1,19 +1,22 @@
 const account = {
   state: {
     registration: {
-      id: '',
+      email: '',
       password: '',
-      name: '',
+      boxName: '',
     },
     box: {
-      name: '',
+      boxName: '',
       email: '',
       representative: '',
       phone: '',
-      zoneCode: '',
-      roadAddress: '',
-      detailAddress: '',
+      address: {
+        zoneCode: '',
+        roadAddress: '',
+        detailAddress: '',
+      },
       description: '',
+      coaches: [],
     }
   },
   mutations: {
