@@ -15,7 +15,7 @@
         </CInputGroup>
         <CInputGroup class="mb-3">
           <CInputGroupText>기존 만료일</CInputGroupText>
-          <CFormInput :value="getExpiryDateStr(member.value.expiryDate)" readonly/>
+          <CFormInput :value="getExpiryDateStr(member.value.remain.expired)" readonly/>
         </CInputGroup>
         <CInputGroup class="mb-3">
           <CInputGroupText>등록 타입</CInputGroupText>
@@ -96,9 +96,9 @@ export default {
 
     const register = () => {
       member.value.box = "CFBD"
-      member.value.type = registrationType.value
-      member.value.expiryDate = expiryDate.value
-      member.value.remainingVisits = remainingVisits.value
+      member.value.remain.type = registrationType.value
+      member.value.remain.expired = expiryDate.value
+      member.value.remain.times = remainingVisits.value
       store.dispatch("registerMembership", member.value)
         .then(() => {
           toastMessageRef.value.createToast(
