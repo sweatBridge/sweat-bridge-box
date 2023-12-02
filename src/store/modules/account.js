@@ -1,4 +1,4 @@
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import {setDoc, doc, query, collection, where, getDocs} from "firebase/firestore";
 import { db } from '@/firebase'
 
@@ -6,6 +6,7 @@ const account = {
   state: {
     boxState: {
       boxName: '',
+      email: '',
     },
     registration: {
       email: '',
@@ -37,6 +38,11 @@ const account = {
   mutations: {
     SET_BOX_STATE(state, payload) {
       state.boxState.boxName = payload.boxName
+      state.boxState.email = payload.email
+    },
+    SET_BOX_STATE_EMPTY(state) {
+      state.boxState.boxName = ''
+      state.boxState.email = ''
     },
     SET_ACCOUNT(state, payload) {
       state.registration = payload
@@ -52,6 +58,10 @@ const account = {
     async login({commit}, payload) {
       const auth = getAuth()
       await signInWithEmailAndPassword(auth, payload.email, payload.password)
+    },
+    async logout() {
+      const auth = getAuth()
+      await signOut(auth)
     },
     async signUp({state}) {
       const auth = getAuth()
@@ -86,9 +96,10 @@ const account = {
       if (user.length === 1) {
         commit('SET_BOX_STATE', {
           boxName: user[0].boxName,
+          email: user[0].email,
         })
       }
-    }
+    },
   },
   getters: {}
 }
