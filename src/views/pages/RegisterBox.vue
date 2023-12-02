@@ -59,6 +59,7 @@
           </CCard>
         </CCol>
       </CRow>
+      <toast-message ref="toastMessageRef" />
     </CContainer>
   </div>
 </template>
@@ -66,11 +67,15 @@
 <script>
 import {useStore} from "vuex"
 import {computed, ref, watch} from "vue"
-import {getPhoneMask} from "@/views/admin/util/account";
-import {useRouter} from "vue-router";
+import {getPhoneMask} from "@/views/admin/util/account"
+import {useRouter} from "vue-router"
+import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue"
 
 export default {
   name: "RegisterBox",
+  components: {
+    ToastMessage
+  },
   methods: {getPhoneMask},
   setup(props, { emit }) {
     const router = useRouter()
@@ -86,6 +91,8 @@ export default {
     })
     const description = ref("")
 
+    const toastMessageRef = ref(null)
+
     watch(phone, (newPhone, oldPhone) => {
       const maskedPhone = getPhoneMask(newPhone)
       phone.value = maskedPhone
@@ -99,7 +106,64 @@ export default {
         }
       }).open()
     }
-    const register = () => {
+    const register = async () => {
+      try {
+        await store.dispatch("signUp");
+        toastMessageRef.value.createToast({
+          title: '성공',
+          content: '계정 생성 성공',
+          type: 'success'
+        });
+        await registerBox();
+      } catch (error) {
+        console.error(error);
+        toastMessageRef.value.createToast({
+          title: '실패',
+          content: '계정 생성 실패 error: ' + error.message,
+          type: 'danger'
+        });
+      }
+    };
+
+    const registerBox = async () => {
+      try {
+        await setBox();
+        await store.dispatch('createBox');
+        await registerUser();
+      } catch (error) {
+        console.error(error);
+        toastMessageRef.value.createToast({
+          title: '실패',
+          content: 'Box 등록 실패 error: ' + error.message,
+          type: 'danger'
+        });
+      }
+    };
+
+    const registerUser = async () => {
+      try {
+        await setUser();
+        await store.dispatch('createUser');
+        toastMessageRef.value.createToast({
+          title: '성공',
+          content: 'User 등록 성공',
+          type: 'success'
+        });
+        setTimeout(() => {
+          router.push("/pages/login");
+        }, 1000)
+      } catch (error) {
+        console.error(error);
+        toastMessageRef.value.createToast({
+          title: '실패',
+          content: 'User 등록 실패 error: ' + error.message,
+          type: 'danger'
+        });
+      }
+    };
+
+
+    const setBox = () => {
       const box = {
         boxName : account.value.boxName,
         email: account.value.email,
@@ -118,15 +182,18 @@ export default {
         }],
       }
       store.commit("SET_BOX", box)
-      //TODO : authentication 로그인 성공 후 액션 등록(firestore 연동)
-      // authentication 추가
-      // box 정보 등록
-      // user 추가
-      router.push("/pages/login")
     }
 
-    const addCoach = () => {
-
+    const setUser = () => {
+      const user = {
+        boxName: account.value.boxName,
+        email: account.value.email,
+        realName: representative.value,
+        nickName: account.value.boxName + "_COACH",
+        phone: phone.value,
+        role: 'COACH'
+      }
+      store.commit("SET_USER", user)
     }
 
     return {
@@ -135,6 +202,7 @@ export default {
       phone,
       address,
       description,
+      toastMessageRef,
       openPostcode,
       register
     }
