@@ -20,19 +20,22 @@
       </CHeaderNav>
       <CHeaderNav>
         <CNavItem>
-          <CNavLink href="#">
+          <CNavLink href="#/admin/registered-wod-list">
             <CIcon class="mx-2" icon="cil-bell" size="lg" />
           </CNavLink>
         </CNavItem>
         <CNavItem>
-          <CNavLink href="#">
+          <CNavLink href="#/admin/registered-wod-list">
             <CIcon class="mx-2" icon="cil-list" size="lg" />
           </CNavLink>
         </CNavItem>
         <CNavItem>
-          <CNavLink href="#">
+          <CNavLink href="#/admin/registered-wod-list">
             <CIcon class="mx-2" icon="cil-envelope-open" size="lg" />
           </CNavLink>
+        </CNavItem>
+        <CNavItem>
+          <CInputGroupText id="basic-addon3">{{boxName}}</CInputGroupText>
         </CNavItem>
         <AppHeaderDropdownAccnt />
       </CHeaderNav>
@@ -48,6 +51,8 @@
 import AppBreadcrumb from './AppBreadcrumb'
 import AppHeaderDropdownAccnt from './AppHeaderDropdownAccnt'
 import { logo } from '@/assets/brand/logo'
+import {useStore} from "vuex";
+import {computed} from "vue";
 export default {
   name: 'AppHeader',
   components: {
@@ -55,8 +60,10 @@ export default {
     AppHeaderDropdownAccnt,
   },
   setup() {
+    const store = useStore()
     return {
       logo,
+      boxName: computed(() => store.state.account.boxState.boxName)
     }
   },
 }
