@@ -48,6 +48,11 @@ const routes = [
             name: 'Reservation',
             component: () => import('@/views/admin/class/ClassReservation.vue'),
           },
+          {
+            path: '/admin/my-page',
+            name: 'MyPage',
+            component: () => import('@/views/pages/MyPage.vue'),
+          },
         ],
       },
     ],
