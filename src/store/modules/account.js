@@ -1,5 +1,5 @@
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import {setDoc, doc, query, collection, where, getDocs} from "firebase/firestore";
+import {setDoc, doc, query, collection, where, getDocs, getDoc} from "firebase/firestore";
 import { db } from '@/firebase'
 
 const account = {
@@ -82,6 +82,13 @@ const account = {
         phone: state.user.phone,
         role: state.user.role,
       })
+    },
+    async getBox({commit, state}) {
+      const docRef = doc(db, "box", state.boxState.boxName)
+      const docSnap = await getDoc(docRef)
+      if (docSnap.exists()) {
+        commit('SET_BOX', docSnap.data())
+      }
     },
     async setBoxState({commit, state}, payload) {
       const path = `/user`

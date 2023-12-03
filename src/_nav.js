@@ -31,4 +31,10 @@ export default [
     to: '/admin/reservation',
     icon: 'cil-calendar',
   },
+  {
+    component: 'CNavItem',
+    name: '마이페이지',
+    to: '/admin/my-page',
+    icon: 'cil-user',
+  }
 ]

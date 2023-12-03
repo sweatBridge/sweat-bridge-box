@@ -62,7 +62,7 @@ export default {
     const store = useStore()
     const toastMessageRef = ref(null)
     const handleProfileClick = () => {
-      console.log('profile clicked')
+      router.push("/admin/my-page")
     }
     const handleLogOutClick = () => {
       try {
