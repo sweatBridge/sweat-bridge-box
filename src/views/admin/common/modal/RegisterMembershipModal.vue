@@ -98,7 +98,7 @@ export default {
       member.value.box = "CFBD"
       member.value.remain.type = registrationType.value
       member.value.remain.expired = expiryDate.value
-      member.value.remain.times = remainingVisits.value
+      member.value.remain.count = parseInt(remainingVisits.value.toString(), 10)
       store.dispatch("registerMembership", member.value)
         .then(() => {
           toastMessageRef.value.createToast(

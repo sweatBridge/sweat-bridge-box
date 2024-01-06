@@ -155,7 +155,7 @@ export default defineComponent({
 
     const getRemainingVisits = (index) => {
       const member = members.value[index - 1]
-      return convertRemainingVisits(member.remain.type, member.remain.times)
+      return convertRemainingVisits(member.remain.type, member.remain.count)
     }
 
     const getAge = (birthDate) => {
