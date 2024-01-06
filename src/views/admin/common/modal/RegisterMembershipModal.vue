@@ -21,12 +21,12 @@
           <CInputGroupText>등록 타입</CInputGroupText>
           <CFormSelect v-model="registrationType" @change="handleTypeChange">
             <option>등록 타입 선택</option>
-            <option value="PeriodPass">기간권</option>
-            <option value="CountPass">횟수권</option>
+            <option value="periodPass">기간권</option>
+            <option value="countPass">횟수권</option>
           </CFormSelect>
         </CInputGroup>
       </CRow>
-      <CRow v-if="registrationType === 'PeriodPass'">
+      <CRow v-if="registrationType === 'periodPass'">
         <CInputGroup class="mb-3">
           <CInputGroupText>갱신 만료일</CInputGroupText>
           <CButton style="display: flex; align-items: center;">
@@ -35,7 +35,7 @@
           </CButton>
         </CInputGroup>
       </CRow>
-      <CRow v-if="registrationType === 'CountPass'">
+      <CRow v-if="registrationType === 'countPass'">
         <CInputGroup class="mb-3">
           <CInputGroupText>만료일</CInputGroupText>
           <CButton style="display: flex; align-items: center;">
@@ -98,7 +98,7 @@ export default {
       member.value.box = "CFBD"
       member.value.remain.type = registrationType.value
       member.value.remain.expired = expiryDate.value
-      member.value.remain.times = remainingVisits.value
+      member.value.remain.count = parseInt(remainingVisits.value.toString(), 10)
       store.dispatch("registerMembership", member.value)
         .then(() => {
           toastMessageRef.value.createToast(

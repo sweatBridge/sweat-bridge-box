@@ -131,7 +131,7 @@ export default defineComponent({
     const searchValue = ref("")
 
     const getRegisterButtonDescription = (type) => {
-      if (type === 'PeriodPass' || type === 'CountPass') {
+      if (type === 'periodPass' || type === 'countPass') {
         return '갱신'
       } else {
         return '등록'
@@ -155,7 +155,7 @@ export default defineComponent({
 
     const getRemainingVisits = (index) => {
       const member = members.value[index - 1]
-      return convertRemainingVisits(member.remain.type, member.remain.times)
+      return convertRemainingVisits(member.remain.type, member.remain.count)
     }
 
     const getAge = (birthDate) => {

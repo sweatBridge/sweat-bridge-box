@@ -34,9 +34,9 @@ export function convertTimestampToString(timestamp) {
 }
 
 export function convertRemainingVisits(type, remainingVisits) {
-  if (type === 'PeriodPass') {
+  if (type === 'periodPass') {
     return '무제한'
-  } else if (type === 'CountPass') {
+  } else if (type === 'countPass') {
     return remainingVisits
   } else {
     return 'None'
@@ -56,9 +56,9 @@ export function convertGenderToKorean(gender) {
 
 export function convertTypeToKorean(type) {
   switch(type) {
-    case 'PeriodPass':
+    case 'periodPass':
       return '기간권'
-    case 'CountPass':
+    case 'countPass':
       return '횟수권'
     default:
       return '미등록'
