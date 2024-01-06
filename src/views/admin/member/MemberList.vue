@@ -131,7 +131,7 @@ export default defineComponent({
     const searchValue = ref("")
 
     const getRegisterButtonDescription = (type) => {
-      if (type === 'PeriodPass' || type === 'CountPass') {
+      if (type === 'periodPass' || type === 'countPass') {
         return '갱신'
       } else {
         return '등록'
