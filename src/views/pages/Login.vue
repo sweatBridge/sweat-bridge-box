@@ -107,7 +107,7 @@ export default {
         console.error(error);
         toastMessageRef.value.createToast({
           title: '실패',
-          content: 'User 등록 실패 error: ' + error.message,
+          content: '아이디와 비밀번호를 다시 학인해주세요.',
           type: 'danger'
         });
       }
