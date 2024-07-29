@@ -87,6 +87,7 @@ export default {
   setup() {
     const store = useStore()
     const toastMessageRef = ref(null)
+    const boxName = ref(localStorage.getItem('boxName') || '')
     const handleLogOutClick = () => {
       try {
         store.dispatch('logout')
@@ -110,7 +111,8 @@ export default {
     }
     return {
       logo,
-      boxName: computed(() => store.state.account.boxState.boxName),
+      // boxName: computed(() => store.state.account.boxState.boxName),
+      boxName,
       toastMessageRef,
       handleLogOutClick,
     }

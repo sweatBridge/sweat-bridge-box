@@ -89,7 +89,8 @@ const account = {
       })
     },
     async getBox({commit, state}) {
-      const docRef = doc(db, "box", state.boxState.boxName)
+      const boxName = localStorage.getItem('boxName')
+      const docRef = doc(db, "box", boxName)
       const docSnap = await getDoc(docRef)
       if (docSnap.exists()) {
         commit('SET_BOX', docSnap.data())
