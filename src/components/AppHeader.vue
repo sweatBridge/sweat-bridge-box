@@ -4,25 +4,25 @@
       <!-- <CHeaderToggler class="ps-1" @click="$store.commit('toggleSidebar')">
         <CIcon icon="cil-menu" size="lg" />
       </CHeaderToggler> -->
-      <CHeaderBrand class="mx-auto d-lg-none" to="/">
+      <!-- <CHeaderBrand class="mx-auto d-lg-none" to="/">
         <CIcon :icon="logo" height="48" alt="Logo" />
-      </CHeaderBrand>
+      </CHeaderBrand> -->
       <CHeaderNav class="d-none d-md-flex me-auto">
         <CNavItem>
           <CNavLink href="#/admin/registered-wod-list">
-            <CIcon class="mx-2" icon="cil-list" size="md" />
+            <CIcon class="mx-2" icon="cil-list"/>
             와드
           </CNavLink>
         </CNavItem>
         <CNavItem>
           <CNavLink href="#/admin/member">
-            <CIcon class="mx-2" icon="cil-user" size="md" />
+            <CIcon class="mx-2" icon="cil-user"/>
             회원
           </CNavLink>
         </CNavItem>
         <CNavItem>
           <CNavLink href="#/admin/reservation">
-            <CIcon class="mx-2" icon="cil-calendar" size="md" />
+            <CIcon class="mx-2" icon="cil-calendar"/>
             수업
           </CNavLink>
         </CNavItem>
@@ -49,13 +49,13 @@
         <AppHeaderDropdownAccnt />
         <CNavItem>
           <CNavLink href="#/admin/my-page">
-            <CIcon class="mx-2" icon="cil-settings" size="md" />
+            <CIcon class="mx-2" icon="cil-settings"/>
             관리자 설정
           </CNavLink>
         </CNavItem>
         <CNavItem>
           <CNavLink @click="handleLogOutClick">
-            <CIcon class="mx-2" icon="cil-lock-locked" size="md" />
+            <CIcon class="mx-2" icon="cil-lock-locked"/>
             로그아웃
           </CNavLink>
         </CNavItem>
