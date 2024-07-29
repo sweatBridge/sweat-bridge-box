@@ -25,33 +25,39 @@ const routes = [
             name: 'Wod',
             component: () =>
               import('@/views/admin/workout/WorkoutRegister.vue'),
+            meta: { requiresAuth: true } 
           },
           {
             path: '/admin/registerd-wod',
             name: 'RegisteredWod',
             component: () =>
               import('@/views/admin/workout/RegisteredWorkout.vue'),
+            meta: { requiresAuth: true } 
           },
           {
             path: '/admin/registered-wod-list',
             name: 'RegisteredWodList',
             component: () =>
               import('@/views/admin/workout/RegisteredWorkoutList.vue'),
+            meta: { requiresAuth: true } 
           },
           {
             path: '/admin/member',
             name: 'Member',
             component: () => import('@/views/admin/member/MemberList.vue'),
+            meta: { requiresAuth: true } 
           },
           {
             path: '/admin/reservation',
             name: 'Reservation',
             component: () => import('@/views/admin/class/ClassReservation.vue'),
+            meta: { requiresAuth: true } 
           },
           {
             path: '/admin/my-page',
             name: 'MyPage',
             component: () => import('@/views/pages/MyPage.vue'),
+            meta: { requiresAuth: true } 
           },
         ],
       },
@@ -104,5 +110,32 @@ const router = createRouter({
     return { top: 0 }
   },
 })
+
+function checkTokenExpiration() {
+  const tokenExpiration = localStorage.getItem('tokenExpiration');
+  if (tokenExpiration && new Date(tokenExpiration) < new Date()) {
+    // logout and remove token and move to login page
+    // auth.signOut();
+    // localStorage.removeItem('userToken');
+    // localStorage.removeItem('tokenExpiration');
+    // router.push('/login');
+  }
+}
+
+router.beforeEach((to, from, next) => {
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  const token = localStorage.getItem('userToken');
+
+  if (requiresAuth) {
+    checkTokenExpiration();
+    if (!token) {
+      next('/login');
+    } else {
+      next();
+    }
+  } else {
+    next();
+  }
+});
 
 export default router

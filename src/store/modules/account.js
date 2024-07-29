@@ -57,7 +57,12 @@ const account = {
   actions: {
     async login({commit}, payload) {
       const auth = getAuth()
-      await signInWithEmailAndPassword(auth, payload.email, payload.password)
+      const userCredential = await signInWithEmailAndPassword(auth, payload.email, payload.password)
+      const idToken = await userCredential.user.getIdToken()
+      const idTokenResult = await userCredential.user.getIdTokenResult()
+      localStorage.setItem('userToken', idToken)
+      localStorage.setItem('tokenExpiration', idTokenResult.expirationTime)
+      localStorage.setItem('id', idTokenResult)
     },
     async logout() {
       const auth = getAuth()
@@ -101,6 +106,7 @@ const account = {
         user.push(doc.data())
       })
       if (user.length === 1) {
+        localStorage.setItem('boxName', user[0].boxName)
         commit('SET_BOX_STATE', {
           boxName: user[0].boxName,
           email: user[0].email,
