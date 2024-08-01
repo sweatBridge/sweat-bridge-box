@@ -8,6 +8,12 @@
         <CIcon :icon="logo" height="48" alt="Logo" />
       </CHeaderBrand> -->
       <CHeaderNav class="d-none d-md-flex me-auto">
+        <!-- <CNavItem>
+          <CAvatar :src="sbLogo" size="md" />
+        </CNavItem> -->
+        <CNavItem class="image-container">
+          <img :src="sbLogo" alt="Logo" />
+        </CNavItem>
         <CNavItem>
           <CNavLink href="#/admin/registered-wod-list">
             <CIcon class="mx-2" icon="cil-list"/>
@@ -74,6 +80,7 @@
 
 <script>
 import avatar from '@/assets/images/avatars/CFBD_logo.jpg'
+import sbLogo from '@/assets/images/avatars/sb_icon.jpg'
 // import AppBreadcrumb from './AppBreadcrumb'
 // import AppHeaderDropdownAccnt from './AppHeaderDropdownAccnt'
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue";
@@ -118,9 +125,27 @@ export default {
       // boxName: computed(() => store.state.account.boxState.boxName),
       boxName,
       avatar: avatar,
+      sbLogo: sbLogo,
       toastMessageRef,
       handleLogOutClick,
     }
   },
 }
 </script>
+
+<style scoped>
+.image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px; /* 원하는 너비 설정 */
+  height: 40px; /* 원하는 높이 설정 */
+  overflow: hidden;
+}
+
+.image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 이미지 크기를 조정하는 방식: cover, contain 등 사용 가능 */
+}
+</style>
