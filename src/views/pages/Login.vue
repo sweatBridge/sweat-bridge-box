@@ -31,7 +31,7 @@
                     />
                   </CInputGroup>
                   <CRow>
-                    <CButton color="primary" class="px-1" @click="handleLoginClick"> 로그인 </CButton>
+                    <CButton color="primary" class="px-1" @click="handleLoginClick" :disabled="isLoading"> 로그인 </CButton>
                   </CRow>
                   <CRow>
                     <CCol :xs="4"></CCol>
@@ -74,10 +74,11 @@
 </template>
 
 <script>
-import {useRouter} from "vue-router"
-import {ref} from "vue";
-import {useStore} from "vuex";
-import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue"
+import { ref } from 'vue';
+import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
+import ToastMessage from '@/views/admin/common/toast/ToastMessage.vue';
+import { loadingMixin } from '@/mixins/loadingMixin';
 
 export default {
   name: 'Login',
@@ -85,66 +86,55 @@ export default {
     ToastMessage
   },
   setup() {
-    const router = useRouter()
-    const store = useStore()
+    const email = ref('');
+    const password = ref('');
+    const toastMessageRef = ref(null);
+    const store = useStore();
+    const router = useRouter();
 
-    const email = ref("")
-    const password = ref("")
-    const toastMessageRef = ref(null)
-    const handleLoginClick = async () => {
-      try {
-        await store.dispatch('login', {email: email.value, password: password.value});
-        toastMessageRef.value.createToast({
-          title: '성공',
-          content: '로그인 성공',
-          type: 'success'
-        });
-        await store.dispatch('setBoxState', {email: email.value})
-        setTimeout(() => {
-          router.push("/admin/registered-wod-list")
-        }, 1000)
-      } catch (error) {
-        console.error(error);
-        toastMessageRef.value.createToast({
-          title: '실패',
-          content: '아이디와 비밀번호를 다시 학인해주세요.',
-          type: 'danger'
-        });
-      }
-/*
-      store.dispatch('login', {email: email.value, password: password.value})
-        .then(() => {
+    // Use loadingMixin
+    const { isLoading, withLoading } = loadingMixin.setup();
+
+    const handleLoginClick = () => {
+      withLoading({ isLoading }, async () => {
+        try {
+          await store.dispatch('login', { email: email.value, password: password.value });
           toastMessageRef.value.createToast({
             title: '성공',
             content: '로그인 성공',
             type: 'success'
           });
-          store.dispatch('setBoxState', {email: email.value})
+          await store.dispatch('setBoxState', { email: email.value });
           setTimeout(() => {
-            router.push("/admin/registered-wod-list")
-          }, 10000)
-        }).catch(error => {
-        console.error(error);
-        toastMessageRef.value.createToast({
-          title: '실패',
-          content: 'User 등록 실패 error: ' + error.message,
-          type: 'danger'
-        });
-      })
- */
+            router.push('/admin/registered-wod-list');
+          }, 1000);
+        } catch (error) {
+          console.error(error);
+          toastMessageRef.value.createToast({
+            title: '실패',
+            content: '아이디와 비밀번호를 다시 확인해주세요.',
+            type: 'danger'
+          });
+        }
+      });
+    };
 
-    }
     const handleSignInClick = () => {
-      router.push("/pages/register/account")
-    }
+      router.push('/pages/register/account');
+    };
 
     return {
       email,
       password,
+      isLoading,
       toastMessageRef,
       handleLoginClick,
       handleSignInClick
-    }
+    };
   }
-}
+};
 </script>
+
+<style scoped>
+/* 스타일 정의 */
+</style>
