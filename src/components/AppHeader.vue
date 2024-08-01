@@ -64,17 +64,17 @@
         </CNavItem>
       </CHeaderNav>
     </CContainer>
-    <CHeaderDivider />
-    <CContainer fluid>
+    <!-- <CHeaderDivider /> -->
+    <!-- <CContainer fluid>
       <AppBreadcrumb />
-    </CContainer>
+    </CContainer> -->
   </CHeader>
   <toast-message ref="toastMessageRef" />
 </template>
 
 <script>
 import avatar from '@/assets/images/avatars/CFBD_logo.jpg'
-import AppBreadcrumb from './AppBreadcrumb'
+// import AppBreadcrumb from './AppBreadcrumb'
 // import AppHeaderDropdownAccnt from './AppHeaderDropdownAccnt'
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue";
 import { logo } from '@/assets/brand/logo'
@@ -84,7 +84,7 @@ import router from '@/router';
 export default {
   name: 'AppHeader',
   components: {
-    AppBreadcrumb,
+    // AppBreadcrumb,
     // AppHeaderDropdownAccnt,
     ToastMessage
   },
