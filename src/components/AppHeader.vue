@@ -46,7 +46,10 @@
         <CNavItem>
           <CInputGroupText id="basic-addon3">{{boxName}}</CInputGroupText>
         </CNavItem>
-        <AppHeaderDropdownAccnt />
+        <CNavItem style="margin-left: 20px;">
+          <CAvatar :src="avatar" size="md" />
+        </CNavItem>
+        <!-- <AppHeaderDropdownAccnt /> -->
         <CNavItem>
           <CNavLink href="#/admin/my-page">
             <CIcon class="mx-2" icon="cil-settings"/>
@@ -70,8 +73,9 @@
 </template>
 
 <script>
+import avatar from '@/assets/images/avatars/CFBD_logo.jpg'
 import AppBreadcrumb from './AppBreadcrumb'
-import AppHeaderDropdownAccnt from './AppHeaderDropdownAccnt'
+// import AppHeaderDropdownAccnt from './AppHeaderDropdownAccnt'
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue";
 import { logo } from '@/assets/brand/logo'
 import {useStore} from "vuex";
@@ -81,7 +85,7 @@ export default {
   name: 'AppHeader',
   components: {
     AppBreadcrumb,
-    AppHeaderDropdownAccnt,
+    // AppHeaderDropdownAccnt,
     ToastMessage
   },
   setup() {
@@ -113,6 +117,7 @@ export default {
       logo,
       // boxName: computed(() => store.state.account.boxState.boxName),
       boxName,
+      avatar: avatar,
       toastMessageRef,
       handleLogOutClick,
     }
