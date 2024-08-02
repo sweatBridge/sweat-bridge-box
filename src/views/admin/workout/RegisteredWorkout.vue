@@ -248,12 +248,6 @@ export default defineComponent({
             customLevel: '',
             gender: 'W',
             requirement: "",
-          },
-          {
-            level: 'Scaled',
-            customLevel: '',
-            gender: 'None',
-            requirement: "",
           }
         ],
         isDescription: false,

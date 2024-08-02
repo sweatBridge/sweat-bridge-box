@@ -10,7 +10,7 @@ const workout = {
       date: null,
       type: '',
       scoreType: '',
-      isSet: false,
+      isSet: true,
       set: 0,
       round: 0,
       timeCap: '00:00',
@@ -31,12 +31,6 @@ const workout = {
               level: 'Rxd',
               customLevel: '',
               gender: 'W',
-              requirement: "",
-            },
-            {
-              level: 'Scaled',
-              customLevel: '',
-              gender: 'None',
               requirement: "",
             }
           ],
@@ -155,11 +149,14 @@ const workout = {
       const box = "CFBD"
       const path = `/box/${box}/wod`
       const collectionRef = collection(db, path)
+      console.log('addWod')
+      console.log(state.wodRegistration)
       await addDoc(collectionRef, state.wodRegistration)
         .then((docRef) => {
           console.log("Document written with ID: ", docRef.id)
         })
         .catch((error) => {
+          console.log(state.wodRegistration)
           console.error("Error adding document: ", error)
         })
     },
