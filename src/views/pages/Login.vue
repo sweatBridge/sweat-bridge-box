@@ -105,7 +105,9 @@ export default {
             type: 'success'
           });
           await store.dispatch('setBoxState', { email: email.value });
-          router.push('/admin/registered-wod-list');
+          setTimeout(() => {
+            router.push('/admin/registered-wod-list');
+          }, 500);
         } catch (error) {
           console.error(error);
           toastMessageRef.value.createToast({
