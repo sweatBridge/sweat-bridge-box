@@ -186,6 +186,7 @@
             <CButton
               color="success" class="position-relative" size="sm"
               @click="saveWod"
+              :disabled="isLoading"
             >
               저장
             </CButton>
@@ -204,6 +205,7 @@ import MovementCard from "@/views/admin/movement/MovementCard.vue"
 import DatePicker from "vue3-datepicker"
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue"
 import {useRouter} from "vue-router";
+import { loadingMixin } from '@/mixins/loadingMixin'
 
 export default defineComponent({
   components: {DatePicker, MovementCard, ToastMessage},
@@ -235,6 +237,8 @@ export default defineComponent({
     })
 
     const isCustomize = computed(() => wodRegistration.type === 'Custom')
+
+    const { isLoading, withLoading } = loadingMixin.setup();
 
     const watchMapping = {
       title: 'updateWodTitle',
@@ -302,34 +306,32 @@ export default defineComponent({
         description: "",
       })
     }
+
     const saveWod = () => {
-      store.dispatch("addWod")
-        .then(() => {
-          toastMessageRef.value.createToast(
-            {
-              title: '성공',
-              content: '와드 등록 성공.',
-              type: 'success'
-            }
-          )
+      withLoading({ isLoading }, async () => {
+        try {
+          await store.dispatch('addWod');
+          await toastMessageRef.value.createToast({
+            title: '성공',
+            content: '와드 등록 성공.',
+            type: 'success'
+          });
           setTimeout(() => {
-            router.push("/admin/registered-wod-list")
-          }, 1000)
-        })
-        .catch((error) => {
-          console.log(error)
+            router.push("/admin/registered-wod-list");
+          }, 500);
+        } catch (error) {
+          console.log(error);
           toastMessageRef.value.createToast(
             {
               title: '실패',
-              content: '와드 등록 실패 error: ' + error.message,
+              content: '와드 등록 실패',
               type: 'danger'
             }
-          )
-          setTimeout(() => {
-            router.push("/admin/registered-wod-list")
-          }, 1000)
-        })
+          );
+        }
+      })
     }
+    
     const moveToRegisteredWodList = () => {
       router.push("/admin/registered-wod-list")
     }
@@ -338,6 +340,7 @@ export default defineComponent({
       wodRegistration,
       timeCapForPicker,
       isCustomize,
+      isLoading,
       handleTypeChange,
       handleSetTypeChange,
       addMovement,
