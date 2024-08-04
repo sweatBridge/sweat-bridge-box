@@ -4,7 +4,7 @@
     <div class="wrapper d-flex flex-column min-vh-100 bg-light">
       <AppHeader />
       <div class="body flex-grow-1 px-3">
-        <CContainer lg>
+        <CContainer class="custom-container">
           <router-view />
         </CContainer>
       </div>
@@ -28,3 +28,9 @@ export default {
   },
 }
 </script>
+<style scoped>
+.custom-container {
+  max-width: 80%;
+  width: 100%;
+}
+</style>
