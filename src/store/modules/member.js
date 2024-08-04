@@ -30,7 +30,7 @@ const member = {
     async getPendingMembers({commit}, payload) {
       const path = `/box/${payload.box}/member`
       const q = query(collection(db, path),
-        where('boxApply', '==', payload.box),  // boxApply가 'CFBD'인 문서
+        where('boxApply', '==', payload.box),
         where('boxName', '==', ''),       // boxName이 빈 문자열인 문서
       )
       const querySnap = await getDocs(q)

@@ -138,6 +138,7 @@ export default defineComponent({
     const eventAlertRef = ref(null)
     const records = computed(() => store.state.record.records)
     const feedbacks = computed(() => store.state.record.feedbacks)
+    const boxName = ref(localStorage.getItem('boxName') || '')
 
     const moveToModifyPage = () => {
       // store.commit('setRegisteredWod', clickInfo.event)
@@ -174,7 +175,7 @@ export default defineComponent({
       if (fullCalendarRef.value && fullCalendarRef.value.getApi) {
         store.dispatch('getRecentRegisteredWodList', {
           calendarApi: fullCalendarRef.value.getApi(),
-          box: 'CFBD',
+          box: boxName.value
         })
       }
     })
@@ -185,7 +186,7 @@ export default defineComponent({
       headerToolbar: {
         left: 'title',
         center: '',
-        right: '',
+        right: 'prev,next',
       },
       views: {
         dayGridMonth: {

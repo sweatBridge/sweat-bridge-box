@@ -110,8 +110,9 @@ export default defineComponent({
   setup() {
     const store = useStore()
     onMounted(() => {
-      store.dispatch('getMembers', { box: 'CFBD' })
-      store.dispatch('getPendingMembers', { box: 'CFBD' })
+      const boxName = ref(localStorage.getItem('boxName') || '');
+      store.dispatch('getMembers', { box: boxName.value })
+      store.dispatch('getPendingMembers', { box: boxName.value })
     })
     const headers = [
       { text: "이름", value: "realName" },

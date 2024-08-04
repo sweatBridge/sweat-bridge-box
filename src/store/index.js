@@ -7,7 +7,7 @@ import record from "@/store/modules/record";
 
 export default createStore({
   state: {
-    sidebarVisible: true,
+    sidebarVisible: false,
     sidebarUnfoldable: true,
   },
   mutations: {

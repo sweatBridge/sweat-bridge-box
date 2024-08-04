@@ -175,12 +175,14 @@
             <CButton
               color="danger" class="position-relative" size="sm"
               @click="deleteWod"
+              :disabled="isLoading"
             >
               삭제
             </CButton>
             <CButton
               color="success" class="position-relative" size="sm"
               @click="updateWod"
+              :disabled="isLoading"
             >
               수정
             </CButton>
@@ -199,6 +201,7 @@ import MovementCard from "@/views/admin/movement/MovementCard.vue"
 import DatePicker from "vue3-datepicker"
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue"
 import {useRouter} from "vue-router";
+import { loadingMixin } from '@/mixins/loadingMixin'
 
 export default defineComponent({
   components: {DatePicker, MovementCard, ToastMessage},
@@ -219,6 +222,8 @@ export default defineComponent({
     })
 
     const isCustomize = computed(() => registeredWod.type === 'Custom')
+
+    const { isLoading, withLoading } = loadingMixin.setup();
 
     const handleTypeChange = () => {
       registeredWod.round = 0
@@ -248,12 +253,6 @@ export default defineComponent({
             customLevel: '',
             gender: 'W',
             requirement: "",
-          },
-          {
-            level: 'Scaled',
-            customLevel: '',
-            gender: 'None',
-            requirement: "",
           }
         ],
         isDescription: false,
@@ -271,65 +270,55 @@ export default defineComponent({
     }
 
     const updateWod = () => {
-      store.dispatch("updateWod")
-        .then(() => {
+      withLoading({ isLoading }, async () => {
+        try {
+          await store.dispatch("updateWod");
           toastMessageRef.value.createToast(
             {
               title: '성공',
               content: '와드 수정 성공.',
               type: 'success'
-            }
-          )
+            });
           setTimeout(() => {
-            location.reload()
-            // router.push("/admin/registered-wod-list")
-          }, 1000)
-        })
-        .catch((error) => {
-          console.log(error)
+            location.reload();
+          }, 500);
+        } catch (error) {
+          console.log(error);
           toastMessageRef.value.createToast(
             {
               title: '실패',
-              content: '와드 수정 실패 error: ' + error.message,
+              content: '와드 수정 실패',
               type: 'danger'
-            }
-          )
-          setTimeout(() => {
-            location.reload()
-            // router.push("/admin/registered-wod-list")
-          }, 1000)
-        })
+            });
+        }
+      })
     }
+
     const deleteWod = () => {
-      store.dispatch("deleteWod")
-        .then(() => {
+      withLoading({ isLoading }, async () => {
+        try {
+          await store.dispatch("deleteWod");
           toastMessageRef.value.createToast(
             {
               title: '성공',
               content: '와드 삭제 성공.',
               type: 'success'
-            }
-          )
+            });
           setTimeout(() => {
-            location.reload()
-            // router.push("/admin/registered-wod-list")
-          }, 1000)
-        })
-        .catch((error) => {
-          console.log(error)
+            location.reload();
+          }, 500);
+        } catch (error) {
+          console.log(error);
           toastMessageRef.value.createToast(
             {
               title: '실패',
-              content: '와드 삭제 실패 error: ' + error.message,
+              content: '와드 삭제 실패',
               type: 'danger'
-            }
-          )
-          setTimeout(() => {
-            location.reload()
-            // router.push("/admin/registered-wod-list")
-          }, 1000)
-        })
+            });
+        }
+      })
     }
+
     const moveToRegisteredWodList = () => {
       router.push("/admin/registered-wod-list")
     }

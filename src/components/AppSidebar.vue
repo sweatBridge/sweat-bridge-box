@@ -11,7 +11,7 @@
         })
     "
   >
-    <CSidebarBrand>
+    <!-- <CSidebarBrand>
       <CIcon
         custom-class-name="sidebar-brand-full"
         :icon="logoNegative"
@@ -22,7 +22,7 @@
         :icon="sygnet"
         :height="35"
       />
-    </CSidebarBrand>
+    </CSidebarBrand> -->
     <AppSidebarNav />
     <CSidebarToggler
       class="d-none d-lg-flex"

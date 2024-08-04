@@ -10,7 +10,7 @@ const workout = {
       date: null,
       type: '',
       scoreType: '',
-      isSet: false,
+      isSet: true,
       set: 0,
       round: 0,
       timeCap: '00:00',
@@ -31,12 +31,6 @@ const workout = {
               level: 'Rxd',
               customLevel: '',
               gender: 'W',
-              requirement: "",
-            },
-            {
-              level: 'Scaled',
-              customLevel: '',
-              gender: 'None',
               requirement: "",
             }
           ],
@@ -151,27 +145,29 @@ const workout = {
     }
   },
   actions: {
-    async addWod({state}) {
-      const box = "CFBD"
-      const path = `/box/${box}/wod`
-      const collectionRef = collection(db, path)
+    async addWod({ state }) {
+      const box = localStorage.getItem('boxName') || '';
+      const path = `/box/${box}/wod`;
+      const collectionRef = collection(db, path);
+      
       await addDoc(collectionRef, state.wodRegistration)
         .then((docRef) => {
-          console.log("Document written with ID: ", docRef.id)
+          console.log("Document written with ID: ", docRef.id);
         })
         .catch((error) => {
-          console.error("Error adding document: ", error)
-        })
+          console.error("Error adding document: ", error);
+        });
     },
+  
 
     async updateWod({state}) {
-      const box = "CFBD"
+      const box = localStorage.getItem('boxName') || '';
       const path = `/box/${box}/wod`
       await updateDoc(doc(db, path, state.registeredWod.id), state.registeredWod)
     },
 
     async deleteWod({state}) {
-      const box = "CFBD"
+      const box = localStorage.getItem('boxName') || '';
       const path = `/box/${box}/wod`
       await deleteDoc(doc(db, path, state.registeredWod.id))
     },
@@ -182,8 +178,8 @@ const workout = {
       const today = new Date()
       const startDt = new Date()
       const endDt = new Date()
-      startDt.setDate(today.getDate() - 15)
-      endDt.setDate(today.getDate() + 15)
+      startDt.setDate(today.getDate() - 30)
+      endDt.setDate(today.getDate() + 30)
       const q = query(collection(db, path),
         where('date', '>=', startDt),
         where('date', '<', endDt)

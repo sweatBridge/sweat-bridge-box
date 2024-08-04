@@ -37,6 +37,8 @@ export default {
     const name = ref("")
     const member = reactive({})
     const toastMessageRef = ref(null)
+    const boxName = ref(localStorage.getItem('boxName') || '');
+
     const showModal = (user) => {
       modalStatus.value = true
       name.value = user.realName
@@ -44,7 +46,7 @@ export default {
     }
     const reject = () => {
       modalStatus.value = false
-      member.value.box = "CFBD"
+      member.value.box = boxName.value
       store.dispatch("rejectMember", member.value)
         .then(() => {
           toastMessageRef.value.createToast(

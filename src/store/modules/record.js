@@ -16,7 +16,7 @@ const record = {
   },
   actions: {
     async getRecords({commit}, id) {
-      const box = "CFBD"
+      const box = localStorage.getItem('boxName');
       const path = `/box/${box}/wod/${id}/records`
       const q = query(collection(db, path))
       const querySnap = await getDocs(q)
