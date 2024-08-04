@@ -54,10 +54,11 @@ export default defineComponent({
   mounted() {
     // console.log(calendarApi.view.activeStart)
     // console.log(calendarApi.view.activeEnd)
+    const boxName = localStorage.getItem('boxName');
     this.getMonthlyClasses({
       calendarApi: this.$refs.fullCalendar.getApi(),
-      box: 'CFBD',
-    })
+      box: boxName,
+    });
   },
   computed: {},
   data() {
@@ -149,7 +150,7 @@ export default defineComponent({
     },
     async updateClass(result) {
       let calendarApi = this.$refs.fullCalendar.getApi()
-      const box = 'CFBD'
+      const box = localStorage.getItem('boxName');
       this.update({
         docKey: result.id,
         box: box,
@@ -182,7 +183,7 @@ export default defineComponent({
     },
     async deleteClass(result) {
       let calendarApi = this.$refs.fullCalendar.getApi()
-      const box = 'CFBD'
+      const box = localStorage.getItem('boxName');
       this.delete({
         docKey: result.id,
         box: box,
@@ -234,7 +235,7 @@ export default defineComponent({
       let calendarApi = this.$refs.fullCalendar.getApi()
       const startDt = extractDateAndTime(result.startStr)
       const endDt = extractDateAndTime(result.endStr)
-      const box = 'CFBD'
+      const box = localStorage.getItem('boxName');
       if (startDt.date !== endDt.date) {
         return
       }

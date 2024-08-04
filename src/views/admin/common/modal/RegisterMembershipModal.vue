@@ -80,6 +80,8 @@ export default {
     const expiryDate = ref(new Date())
     const remainingVisits = ref(0)
     const toastMessageRef = ref(null)
+    const boxName = ref(localStorage.getItem('boxName') || '');
+
     const showModal = (user) => {
       member.value = user
       modalStatus.value = true
@@ -95,7 +97,7 @@ export default {
     }
 
     const register = () => {
-      member.value.box = "CFBD"
+      member.value.box = boxName.value
       member.value.remain.type = registrationType.value
       member.value.remain.expired = expiryDate.value
       member.value.remain.count = parseInt(remainingVisits.value.toString(), 10)
