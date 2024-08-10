@@ -28,6 +28,7 @@
                       placeholder="비밀번호"
                       autocomplete="current-password"
                       v-model="password"
+                      @keyup.enter="handleLoginClick"
                     />
                   </CInputGroup>
                   <CRow>
