@@ -17,7 +17,7 @@
         <CFormInput
           id="basic-url"
           aria-describedby="basic-addon3"
-          v-model="this.startStr"
+          v-model="this.startStrKst"
           readonly
         />
       </CInputGroup>
@@ -26,7 +26,7 @@
         <CFormInput
           id="basic-url"
           aria-describedby="basic-addon3"
-          v-model="this.endStr"
+          v-model="this.endStrKst"
           readonly
         />
       </CInputGroup>
@@ -121,6 +121,8 @@ export default defineComponent({
     const modalStatus = ref(false)
     const startStr = ref('')
     const endStr = ref('')
+    const startStrKst = ref('')
+    const endStrKst = ref('')
     const coach = ref('')
     const capacity = ref(0)
     const isMonthlySchedule = ref(false)
@@ -147,7 +149,23 @@ export default defineComponent({
       modalStatus.value = true
       startStr.value = selectInfo.startStr
       endStr.value = selectInfo.endStr
+      startStrKst.value = formatDateTime(selectInfo.startStr);
+      endStrKst.value = formatDateTime(selectInfo.endStr);
     }
+
+    const formatDateTime = (isoString) => {
+      const date = new Date(isoString);
+
+      // 날짜 포맷팅
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+
+      // 원하는 포맷으로 변환
+      return `${year}년 ${month}월 ${day}일 ${hours}시 ${minutes}분`;
+    };
 
     const checkSaveModalResult = (status) => {
       let result = {
@@ -166,8 +184,8 @@ export default defineComponent({
       modalStatus,
       getSubject,
       getTitleSubject,
-      startStr,
-      endStr,
+      startStrKst,
+      endStrKst,
       coach,
       capacity,
       isMonthlySchedule,
