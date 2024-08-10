@@ -93,9 +93,21 @@ export default defineComponent({
             titleFormat: { year: 'numeric', month: '2-digit', day: '2-digit' }
           }
         },
+        buttonText: {
+          today: '오늘',
+          month: '월',
+          week: '주',
+          day: '일'
+        },
         dayHeaderContent: function(arg) {
           let dayNamesShort = ['일', "월", "화", "수", "목", "금", "토"]
-          return dayNamesShort[arg.date.getDay()]
+          let date = new Date(arg.date)
+          // this if branch for dayGridMonth view
+          if (date.getFullYear() == 1970) {
+            return dayNamesShort[arg.date.getDay()]
+          }
+          let dateStr = `${date.getMonth()+1}/${date.getDate()}(${dayNamesShort[arg.date.getDay()]})`
+          return dateStr
         },
         initialView: 'timeGridWeek',
         initialEvents: INITIAL_EVENTS, // alternatively, use the `events` setting to fetch from a feed
