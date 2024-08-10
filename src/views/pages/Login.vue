@@ -74,11 +74,12 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import ToastMessage from '@/views/admin/common/toast/ToastMessage.vue';
 import { loadingMixin } from '@/mixins/loadingMixin';
+import { useCookies } from 'vue3-cookies';
 
 export default {
   name: 'Login',
@@ -91,9 +92,17 @@ export default {
     const toastMessageRef = ref(null);
     const store = useStore();
     const router = useRouter();
+    const { cookies } = useCookies();
 
     // Use loadingMixin
     const { isLoading, withLoading } = loadingMixin.setup();
+
+    onMounted(() => {
+      const savedEmail = cookies.get('emailCookie');
+      if (savedEmail) {
+        email.value = savedEmail; // email 변수에 저장된 이메일 설정
+      }
+    });
 
     const handleLoginClick = () => {
       withLoading({ isLoading }, async () => {
@@ -105,6 +114,7 @@ export default {
             type: 'success'
           });
           await store.dispatch('setBoxState', { email: email.value });
+          cookies.set("emailCookie", email.value); // vue3-cookies를 통해 쿠키 설정
           setTimeout(() => {
             router.push('/admin/registered-wod-list');
           }, 500);
