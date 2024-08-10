@@ -37,22 +37,22 @@
         <template #item-nickName="{ nickName }">
           {{nickName}}
         </template>
-        <template #item-type="{ type }">
-          {{ getType(type) }}
+        <template #item-type="{ remain }">
+          {{ getType(remain.type) }}
         </template>
-        <template #item-expired="{ index }">
-          {{ getExpiryDateStr(index) }}
+        <template #item-expired="{ remain }">
+          {{ getExpiryDateStr(remain.expired) }}
         </template>
-        <template #item-duration="{ index }">
-          {{ getRemainingDays(index) }}
+        <template #item-duration="{ remain }">
+          {{ getRemainingDays(remain.expired) }}
         </template>
-        <template #item-remainingVisits="{ index }">
-          {{ getRemainingVisits(index) }}
+        <template #item-remainingVisits="{ remain }">
+          {{ getRemainingVisits(remain) }}
         </template>
         <template #item-gender="{ gender }">
-          {{gender}}
+          {{ getGender(gender) }}
         </template>
-        <template #item-operation="{ index, type }">
+        <template #item-operation="{ index, remain }">
           <CButton
             color="danger"
             size="sm"
@@ -61,11 +61,11 @@
             삭제
           </CButton>
           <CButton
-            color="dark"
+            :color=getRegisterButtonColor(remain.type)
             size="sm"
             @click="renewMembership(index)"
           >
-            {{ getRegisterButtonDescription(type) }}
+            {{ getRegisterButtonDescription(remain.type) }}
           </CButton>
         </template>
         <template #item-details="{ index }">
@@ -117,7 +117,7 @@ export default defineComponent({
     const headers = [
       { text: "이름", value: "realName" },
       { text: "닉네임", value: "nickName" },
-      { text: "등록 타입", value: "remain.type", sortable: true},
+      { text: "등록 타입", value: "type", sortable: true},
       { text: "만료 일자", value: "expired", sortable: true},
       { text: "잔여 기간(일)", value: "duration" },
       { text: "잔여 횟수(회)", value: "remainingVisits"},
@@ -131,32 +131,44 @@ export default defineComponent({
 
     const searchValue = ref("")
 
-    const getRegisterButtonDescription = (type) => {
-      if (type === 'periodPass' || type === 'countPass') {
+    const getRegisterButtonDescription = (item) => {
+      if (item === 'periodPass' || item === 'countPass') {
         return '갱신'
       } else {
         return '등록'
       }
     }
-
-    const getType = (type) => {
-      return convertTypeToKorean(type)
+    // distinguish button color by type
+    const getRegisterButtonColor = (type) => {
+      if (type === 'periodPass' || type === 'countPass') {
+        return 'secondary'
+      } else {
+        return 'dark'
+      }
     }
 
-    const getExpiryDateStr = (index) => {
-      const member = members.value[index - 1]
-      return convertTimestampToString(member.remain.expired)
+    const getType = (item) => {
+      return convertTypeToKorean(item)
     }
 
-    const getRemainingDays = (index) => {
-      const member = members.value[index - 1]
-      const expiryDateStr = convertTimestampToString(member.remain.expired)
+    const getExpiryDateStr = (item) => {
+      return convertTimestampToString(item)
+    }
+
+    const getRemainingDays = (item) => {
+      const expiryDateStr = convertTimestampToString(item)
       return calculateRemainingDays(expiryDateStr)
     }
 
-    const getRemainingVisits = (index) => {
-      const member = members.value[index - 1]
-      return convertRemainingVisits(member.remain.type, member.remain.count)
+    const getRemainingVisits = (item) => {
+      return convertRemainingVisits(item.type, item.count)
+    }
+
+    const getGender = (item) => {
+      if (item == 'M') {
+        return '남'
+      }
+      return '여'
     }
 
     const getAge = (birthDate) => {
@@ -170,12 +182,14 @@ export default defineComponent({
       members,
       pendingMembers,
       searchValue,
+      getRegisterButtonColor,
       getRegisterButtonDescription,
       getType,
       getExpiryDateStr,
       getRemainingDays,
       getRemainingVisits,
       getAge,
+      getGender,
       memberDetatilIdx,
     }
   },
