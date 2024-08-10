@@ -113,13 +113,15 @@ const router = createRouter({
 
 function checkTokenExpiration() {
   const tokenExpiration = localStorage.getItem('tokenExpiration');
-  if (tokenExpiration && new Date(tokenExpiration) < new Date()) {
-    // logout and remove token and move to login page
-    // auth.signOut();
-    // localStorage.removeItem('userToken');
-    // localStorage.removeItem('tokenExpiration');
-    // router.push('/login');
+  const tokenExpired = tokenExpiration && new Date(tokenExpiration) < new Date();
+
+  if (tokenExpired) {
+    // Remove token and redirect to login page
+    ['userToken', 'tokenExpiration', 'id'].forEach(item => localStorage.removeItem(item));
+    return true; // Indicate that the token is expired
   }
+
+  return false; // Token is still valid
 }
 
 router.beforeEach((to, from, next) => {
@@ -127,15 +129,12 @@ router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('userToken');
 
   if (requiresAuth) {
-    checkTokenExpiration();
-    if (!token) {
-      next('/login');
-    } else {
-      next();
+    if (checkTokenExpiration() || !token) {
+      return router.push("/pages/login"); // Redirect to login if token is expired or missing
     }
-  } else {
-    next();
   }
+
+  next(); // Proceed to the next route
 });
 
 export default router
