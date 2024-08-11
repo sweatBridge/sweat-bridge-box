@@ -17,9 +17,17 @@ export function calculateRemainingDays(expiryDate) {
   if (expiryDate == 'None') {
     return 'None'
   }
+
+  const expiryDateStr = convertTimestampToString(expiryDate)
+
   const today = new Date()
-  const expiry = new Date(expiryDate)
+  const expiry = new Date(expiryDateStr)
   const diff = expiry.getTime() - today.getTime()
+
+  if (diff <= 0) {
+    return 0
+  }
+
   return Math.ceil(diff / (1000 * 3600 * 24))
 }
 

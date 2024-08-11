@@ -107,8 +107,7 @@ export default {
     }
 
     const getRemainingDays = (expiryDate) => {
-      const expiryDateStr = convertTimestampToString(expiryDate)
-      return calculateRemainingDays(expiryDateStr)
+      return calculateRemainingDays(expiryDate)
     }
 
     const getRemainingVisits = (type, remainingVisits) => {

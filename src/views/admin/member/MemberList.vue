@@ -43,9 +43,6 @@
         <template #item-expired="{ remain }">
           {{ getExpiryDateStr(remain.expired) }}
         </template>
-        <template #item-duration="{ remain }">
-          {{ getRemainingDays(remain.expired) }}
-        </template>
         <template #item-remainingVisits="{ remain }">
           {{ getRemainingVisits(remain) }}
         </template>
@@ -87,12 +84,11 @@
 </template>
 
 <script>
-import {ref, defineComponent, onMounted, computed, reactive} from "vue"
+import {ref, defineComponent, onMounted, computed} from "vue"
 import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue"
 import { useStore } from "vuex"
 import {
   calculateAge,
-  calculateRemainingDays,
   convertRemainingVisits,
   convertTimestampToString,
   convertGenderToKorean,
@@ -121,8 +117,8 @@ export default defineComponent({
       { text: "닉네임", value: "nickName" },
       { text: "등록 타입", value: "type"},
       { text: "만료 일자", value: "expired"},
-      { text: "잔여 기간(일)", value: "duration", sortable: true},
-      { text: "잔여 횟수(회)", value: "remain.count"},
+      { text: "잔여 기간(일)", value: "remain.days", sortable: true},
+      { text: "잔여 횟수(회)", value: "remainingVisits"},
       { text: "성별", value: "gender" },
       { text: "기능", value: "operation", width: "150" },
       { text: "상세", value: "details"},
@@ -157,11 +153,6 @@ export default defineComponent({
       return convertTimestampToString(item)
     }
 
-    const getRemainingDays = (item) => {
-      const expiryDateStr = convertTimestampToString(item)
-      return calculateRemainingDays(expiryDateStr)
-    }
-
     const getRemainingVisits = (item) => {
       return convertRemainingVisits(item.type, item.count)
     }
@@ -185,7 +176,6 @@ export default defineComponent({
       getRegisterButtonDescription,
       getType,
       getExpiryDateStr,
-      getRemainingDays,
       getRemainingVisits,
       getAge,
       getGender,

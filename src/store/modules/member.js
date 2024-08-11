@@ -1,5 +1,6 @@
 import { getDocs, query, collection, where, updateDoc, deleteDoc } from "firebase/firestore"
 import { db } from '@/firebase'
+import { calculateRemainingDays } from "@/views/admin/util/member"
 
 const member = {
   state: {
@@ -22,8 +23,13 @@ const member = {
       )
       const querySnap = await getDocs(q)
       const members = []
+
       querySnap.forEach((doc) => {
-        members.push(doc.data())
+        let member = doc.data()
+        let expiryDate = member.remain.expired
+        let remainDays = calculateRemainingDays(expiryDate)
+        member.remain.days = remainDays
+        members.push(member)
       })
       commit('SET_MEMBERS', members)
     },
