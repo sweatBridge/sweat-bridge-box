@@ -38,7 +38,7 @@
           {{nickName}}
         </template>
         <template #item-type="{ remain }">
-          {{ getType(remain.type) }}
+          {{ getType(remain) }}
         </template>
         <template #item-expired="{ remain }">
           {{ getExpiryDateStr(remain.expired) }}
@@ -146,7 +146,7 @@ export default defineComponent({
     }
 
     const getType = (item) => {
-      return getTypeKor(item)
+      return getTypeKor(item.type, item.days)
     }
 
     const getExpiryDateStr = (item) => {
@@ -214,5 +214,13 @@ export default defineComponent({
 .name-button {
   background-color: rgb(101, 107, 130);
   color: rgb(255, 255, 255)
+}
+.fail-row {
+  --easy-table-body-row-background-color: #f56c6c;
+  --easy-table-body-row-font-color: #fff;
+}
+.pass-row {
+  --easy-table-body-row-background-color: #67c23a;
+  --easy-table-body-row-font-color: #fff;
 }
 </style>

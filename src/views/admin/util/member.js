@@ -62,7 +62,10 @@ export function convertGenderToKorean(gender) {
   }
 }
 
-export function getTypeKor(type, ) {
+export function getTypeKor(type, remainDays) {
+  if (remainDays == 0) {
+    return '만료'
+  }
   switch(type) {
     case 'periodPass':
       return '기간권'
