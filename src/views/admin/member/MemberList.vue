@@ -94,7 +94,9 @@ import {
   calculateAge,
   calculateRemainingDays,
   convertRemainingVisits,
-  convertTimestampToString, convertTypeToKorean,
+  convertTimestampToString,
+  convertGenderToKorean,
+  getTypeKor
 } from "@/views/admin/util/member"
 import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue"
 import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
@@ -117,10 +119,10 @@ export default defineComponent({
     const headers = [
       { text: "이름", value: "realName" },
       { text: "닉네임", value: "nickName" },
-      { text: "등록 타입", value: "type", sortable: true},
-      { text: "만료 일자", value: "expired", sortable: true},
-      { text: "잔여 기간(일)", value: "duration" },
-      { text: "잔여 횟수(회)", value: "remainingVisits"},
+      { text: "등록 타입", value: "type"},
+      { text: "만료 일자", value: "expired"},
+      { text: "잔여 기간(일)", value: "duration", sortable: true},
+      { text: "잔여 횟수(회)", value: "remain.count"},
       { text: "성별", value: "gender" },
       { text: "기능", value: "operation", width: "150" },
       { text: "상세", value: "details"},
@@ -148,7 +150,7 @@ export default defineComponent({
     }
 
     const getType = (item) => {
-      return convertTypeToKorean(item)
+      return getTypeKor(item)
     }
 
     const getExpiryDateStr = (item) => {
@@ -165,10 +167,7 @@ export default defineComponent({
     }
 
     const getGender = (item) => {
-      if (item == 'M') {
-        return '남'
-      }
-      return '여'
+      return convertGenderToKorean(item)
     }
 
     const getAge = (birthDate) => {

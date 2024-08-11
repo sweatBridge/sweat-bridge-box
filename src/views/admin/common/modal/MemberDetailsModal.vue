@@ -69,7 +69,8 @@ import {
   convertGenderToKorean,
   calculateRemainingDays,
   convertRemainingVisits,
-  convertTimestampToString, convertTypeToKorean
+  convertTimestampToString,
+  getTypeKor
 } from "@/views/admin/util/member"
 
 export default {
@@ -98,7 +99,7 @@ export default {
     }
 
     const getType = (type) => {
-      return convertTypeToKorean(type)
+      return getTypeKor(type)
     }
 
     const getExpiryDateStr = (timestamp) => {

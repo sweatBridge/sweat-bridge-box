@@ -47,14 +47,14 @@ export function convertGenderToKorean(gender) {
   switch(gender) {
     case 'M':
       return '남'
-    case 'W':
+    case 'F':
       return '여'
     default:
       return 'None'
   }
 }
 
-export function convertTypeToKorean(type) {
+export function getTypeKor(type, ) {
   switch(type) {
     case 'periodPass':
       return '기간권'
