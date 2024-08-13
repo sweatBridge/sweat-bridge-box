@@ -3,7 +3,6 @@
     class="close"
     :visible="modalStatus"
     @close="() => {modalStatus = false}"
-    backdrop="static"
   >
     <CModalHeader class="modal-header">
       <CModalTitle>승인 요청</CModalTitle>

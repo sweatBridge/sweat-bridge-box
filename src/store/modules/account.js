@@ -67,6 +67,9 @@ const account = {
     async logout() {
       const auth = getAuth()
       await signOut(auth)
+      localStorage.removeItem('userToken');
+      localStorage.removeItem('tokenExpiration');
+      localStorage.removeItem('id');
     },
     async signUp({state}) {
       const auth = getAuth()

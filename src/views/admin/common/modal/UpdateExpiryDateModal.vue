@@ -2,7 +2,6 @@
   <CModal
     :visible="modalStatus"
     @close="() => {modalStatus = false}"
-    backdrop="static"
   >
     <CModalHeader>
       <CModalTitle>만료 일자 갱신</CModalTitle>

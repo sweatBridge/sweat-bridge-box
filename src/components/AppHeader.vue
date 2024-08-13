@@ -110,7 +110,7 @@ export default {
         store.commit('SET_BOX_STATE_EMPTY')
         setTimeout(() => {
           router.push("/pages/login")
-        }, 1000)
+        }, 500)
       } catch (error) {
         console.log('로그아웃 실패 : ' + error.meessage)
         toastMessageRef.value.createToast({

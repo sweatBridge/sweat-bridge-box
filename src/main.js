@@ -14,19 +14,21 @@ import 'v-calendar/style.css'
 
 import VueTimepicker from 'vue3-timepicker'
 import 'vue3-timepicker/dist/VueTimepicker.css'
+import { useCookies } from 'vue3-cookies';
 
 
-const app = createApp(App)
-app.use(store)
-app.use(router)
-app.use(CoreuiVue)
-app.use(setupCalendar, {})
-app.provide('icons', icons)
-app.component('CIcon', CIcon)
-app.component('DocsExample', DocsExample)
-app.component('EasyDataTable', Vue3EasyDataTable)
-app.component('VCalendar', Calendar)
-app.component('VDatePicker', DatePicker)
-app.component('VueTimepicker', VueTimepicker)
+const app = createApp(App);
+app.use(store);
+app.use(router);
+app.use(CoreuiVue);
+app.use(setupCalendar, {});
+app.use(useCookies);
+app.provide('icons', icons);
+app.component('CIcon', CIcon);
+app.component('DocsExample', DocsExample);
+app.component('EasyDataTable', Vue3EasyDataTable);
+app.component('VCalendar', Calendar);
+app.component('VDatePicker', DatePicker);
+app.component('VueTimepicker', VueTimepicker);
 
-app.mount('#app')
+app.mount('#app');

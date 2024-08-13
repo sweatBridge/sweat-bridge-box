@@ -37,35 +37,32 @@
         <template #item-nickName="{ nickName }">
           {{nickName}}
         </template>
-        <template #item-type="{ type }">
-          {{ getType(type) }}
+        <template #item-type="{ remain }">
+          {{ getType(remain) }}
         </template>
-        <template #item-expired="{ index }">
-          {{ getExpiryDateStr(index) }}
+        <template #item-expired="{ remain }">
+          {{ getExpiryDateStr(remain.expired) }}
         </template>
-        <template #item-duration="{ index }">
-          {{ getRemainingDays(index) }}
-        </template>
-        <template #item-remainingVisits="{ index }">
-          {{ getRemainingVisits(index) }}
+        <template #item-remainingVisits="{ remain }">
+          {{ getRemainingVisits(remain) }}
         </template>
         <template #item-gender="{ gender }">
-          {{gender}}
+          {{ getGender(gender) }}
         </template>
-        <template #item-operation="{ index, type }">
+        <template #item-operation="{ email, remain }">
           <CButton
             color="danger"
             size="sm"
-            @click="deleteMember(index)"
+            @click="deleteMember(email)"
           >
             삭제
           </CButton>
           <CButton
-            color="dark"
+            :color=getRegisterButtonColor(remain.type)
             size="sm"
-            @click="renewMembership(index)"
+            @click="renewMembership(email)"
           >
-            {{ getRegisterButtonDescription(type) }}
+            {{ getRegisterButtonDescription(remain.type) }}
           </CButton>
         </template>
         <template #item-details="{ index }">
@@ -87,14 +84,16 @@
 </template>
 
 <script>
-import {ref, defineComponent, onMounted, computed, reactive} from "vue"
+import {ref, defineComponent, onMounted, computed} from "vue"
 import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue"
 import { useStore } from "vuex"
 import {
   calculateAge,
-  calculateRemainingDays,
   convertRemainingVisits,
-  convertTimestampToString, convertTypeToKorean,
+  convertTimestampToString,
+  convertGenderToKorean,
+  getTypeKor,
+  findMemberById
 } from "@/views/admin/util/member"
 import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue"
 import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
@@ -117,9 +116,9 @@ export default defineComponent({
     const headers = [
       { text: "이름", value: "realName" },
       { text: "닉네임", value: "nickName" },
-      { text: "등록 타입", value: "remain.type", sortable: true},
-      { text: "만료 일자", value: "expired", sortable: true},
-      { text: "잔여 기간(일)", value: "duration" },
+      { text: "등록 타입", value: "type"},
+      { text: "만료 일자", value: "expired"},
+      { text: "잔여 기간(일)", value: "remain.days", sortable: true},
       { text: "잔여 횟수(회)", value: "remainingVisits"},
       { text: "성별", value: "gender" },
       { text: "기능", value: "operation", width: "150" },
@@ -131,32 +130,36 @@ export default defineComponent({
 
     const searchValue = ref("")
 
-    const getRegisterButtonDescription = (type) => {
-      if (type === 'periodPass' || type === 'countPass') {
+    const getRegisterButtonDescription = (item) => {
+      if (item === 'periodPass' || item === 'countPass') {
         return '갱신'
       } else {
         return '등록'
       }
     }
-
-    const getType = (type) => {
-      return convertTypeToKorean(type)
+    // distinguish button color by type
+    const getRegisterButtonColor = (type) => {
+      if (type === 'periodPass' || type === 'countPass') {
+        return 'secondary'
+      } else {
+        return 'dark'
+      }
     }
 
-    const getExpiryDateStr = (index) => {
-      const member = members.value[index - 1]
-      return convertTimestampToString(member.remain.expired)
+    const getType = (item) => {
+      return getTypeKor(item.type, item.days)
     }
 
-    const getRemainingDays = (index) => {
-      const member = members.value[index - 1]
-      const expiryDateStr = convertTimestampToString(member.remain.expired)
-      return calculateRemainingDays(expiryDateStr)
+    const getExpiryDateStr = (item) => {
+      return convertTimestampToString(item)
     }
 
-    const getRemainingVisits = (index) => {
-      const member = members.value[index - 1]
-      return convertRemainingVisits(member.remain.type, member.remain.count)
+    const getRemainingVisits = (item) => {
+      return convertRemainingVisits(item.type, item.count)
+    }
+
+    const getGender = (item) => {
+      return convertGenderToKorean(item)
     }
 
     const getAge = (birthDate) => {
@@ -170,12 +173,13 @@ export default defineComponent({
       members,
       pendingMembers,
       searchValue,
+      getRegisterButtonColor,
       getRegisterButtonDescription,
       getType,
       getExpiryDateStr,
-      getRemainingDays,
       getRemainingVisits,
       getAge,
+      getGender,
       memberDetatilIdx,
     }
   },
@@ -183,12 +187,12 @@ export default defineComponent({
     approveMembers() {
       this.$refs.approvalRequestModal.showModal()
     },
-    deleteMember(index) {
-      const member = this.members[index - 1]
+    deleteMember(id) {
+      let member = findMemberById(this.members, id)
       this.$refs.deleteModal.showModal(member)
     },
-    renewMembership(index) {
-      const member = this.members[index - 1]
+    renewMembership(id) {
+      let member = findMemberById(this.members, id)
       this.$refs.registerMembershipModal.showModal(member)
     },
     showMemberDetails(idx) {
@@ -211,5 +215,13 @@ export default defineComponent({
 .name-button {
   background-color: rgb(101, 107, 130);
   color: rgb(255, 255, 255)
+}
+.fail-row {
+  --easy-table-body-row-background-color: #f56c6c;
+  --easy-table-body-row-font-color: #fff;
+}
+.pass-row {
+  --easy-table-body-row-background-color: #67c23a;
+  --easy-table-body-row-font-color: #fff;
 }
 </style>

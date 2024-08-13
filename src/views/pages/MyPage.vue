@@ -185,17 +185,17 @@ export default {
         await store.dispatch("createBox");
         toastMessageRef.value.createToast({
           title: '성공',
-          content: 'Box 정보 수정 성공',
+          content: '관리자 정보 수정 성공',
           type: 'success'
         });
         setTimeout(() => {
           location.reload()
-        }, 1000)
+        }, 500)
       } catch (error) {
         console.error(error);
         toastMessageRef.value.createToast({
           title: '실패',
-          content: 'Box 정보 실패 error: ' + error.message,
+          content: '관리자 정보 수정 실패',
           type: 'danger'
         });
       }

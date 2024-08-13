@@ -1,5 +1,6 @@
 import { getDocs, query, collection, where, updateDoc, deleteDoc } from "firebase/firestore"
 import { db } from '@/firebase'
+import { calculateRemainingDays, initializeMember, removeDaysFromMember } from "@/views/admin/util/member"
 
 const member = {
   state: {
@@ -22,9 +23,12 @@ const member = {
       )
       const querySnap = await getDocs(q)
       const members = []
+
       querySnap.forEach((doc) => {
-        members.push(doc.data())
+        let member = initializeMember(doc.data())
+        members.push(member)
       })
+
       commit('SET_MEMBERS', members)
     },
     async getPendingMembers({commit}, payload) {
@@ -90,8 +94,9 @@ const member = {
       const memberRef = await context.dispatch('getMemberRef', payload)
       const userRef = await context.dispatch('getUserRef', payload)
       delete payload.box
-      await updateDoc(memberRef, payload)
-      await updateDoc(userRef, payload)
+      let member = removeDaysFromMember(payload)
+      await updateDoc(memberRef, member)
+      await updateDoc(userRef, member)
     }
   },
   getters: {}
