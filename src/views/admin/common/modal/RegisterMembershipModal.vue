@@ -2,7 +2,6 @@
   <CModal
     :visible="modalStatus"
     @close="() => {modalStatus = false}"
-    backdrop="static"
   >
     <CModalHeader>
       <CModalTitle>회원권 등록(갱신)</CModalTitle>

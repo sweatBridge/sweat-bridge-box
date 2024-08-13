@@ -6,7 +6,6 @@
         modalStatus = false
       }
     "
-    backdrop="static"
   >
     <CModalHeader>
       <CModalTitle>{{ getSubject }} 등록</CModalTitle>

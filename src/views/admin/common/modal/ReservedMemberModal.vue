@@ -2,7 +2,6 @@
   <CModal
     :visible="modalStatus"
     @close="() => {modalStatus = false}"
-    backdrop="static"
     size="sm"
   >
     <CModalHeader class="modal-header">

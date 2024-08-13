@@ -2,7 +2,6 @@
   <CModal
     :visible="modalStatus"
     @close="() => {modalStatus = false}"
-    backdrop="static"
   >
     <CModalHeader class="modal-header">
       <CModalTitle>회원 탈퇴</CModalTitle>

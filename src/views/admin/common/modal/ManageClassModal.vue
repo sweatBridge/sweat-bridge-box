@@ -2,7 +2,6 @@
   <CModal
     :visible="modalStatus"
     @close="( ) => { modalStatus = false }"
-    backdrop="static"
     >
     <CModalHeader>
       <CModalTitle>수업 관리</CModalTitle>
