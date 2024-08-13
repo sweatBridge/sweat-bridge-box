@@ -64,13 +64,13 @@ export default {
           toastMessageRef.value.createToast(
             {
               title: '실패',
-              content: '요청 거부 실패 error: ' + error.message,
+              content: '요청 거부 실패',
               type: 'danger'
             }
           )
           setTimeout(() => {
             location.reload()
-          }, 1000)
+          }, 500)
         })
     }
     const cancel = () => {
