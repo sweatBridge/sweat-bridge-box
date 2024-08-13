@@ -112,20 +112,19 @@ export default {
           )
           setTimeout(() => {
             location.reload()
-          }, 1000)
+          }, 500)
         })
         .catch(error => {
-          console.error("An error occurred while rejecting the member:", error)
+          console.error("회원권 등록 실패", error.message)
           toastMessageRef.value.createToast(
             {
               title: '실패',
-              content: '회원권 등록 실패 error: ' + error.message,
+              content: '회원권 등록 실패',
               type: 'danger'
             }
           )
           setTimeout(() => {
-            location.reload()
-          }, 1000)
+          }, 500)
         })
       modalStatus.value = false
     }

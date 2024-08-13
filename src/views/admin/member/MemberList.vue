@@ -49,18 +49,18 @@
         <template #item-gender="{ gender }">
           {{ getGender(gender) }}
         </template>
-        <template #item-operation="{ index, remain }">
+        <template #item-operation="{ email, remain }">
           <CButton
             color="danger"
             size="sm"
-            @click="deleteMember(index)"
+            @click="deleteMember(email)"
           >
             삭제
           </CButton>
           <CButton
             :color=getRegisterButtonColor(remain.type)
             size="sm"
-            @click="renewMembership(index)"
+            @click="renewMembership(email)"
           >
             {{ getRegisterButtonDescription(remain.type) }}
           </CButton>
@@ -92,7 +92,8 @@ import {
   convertRemainingVisits,
   convertTimestampToString,
   convertGenderToKorean,
-  getTypeKor
+  getTypeKor,
+  findMemberById
 } from "@/views/admin/util/member"
 import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue"
 import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
@@ -186,12 +187,12 @@ export default defineComponent({
     approveMembers() {
       this.$refs.approvalRequestModal.showModal()
     },
-    deleteMember(index) {
-      const member = this.members[index - 1]
+    deleteMember(id) {
+      let member = findMemberById(this.members, id)
       this.$refs.deleteModal.showModal(member)
     },
-    renewMembership(index) {
-      const member = this.members[index - 1]
+    renewMembership(id) {
+      let member = findMemberById(this.members, id)
       this.$refs.registerMembershipModal.showModal(member)
     },
     showMemberDetails(idx) {

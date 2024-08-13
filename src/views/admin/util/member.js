@@ -75,3 +75,26 @@ export function getTypeKor(type, remainDays) {
       return '미등록'
   }
 }
+
+export function findMemberById(members, id) {
+  for (let i = 0; i < members.length; i++) {
+    if (members[i].email === id) {
+        return members[i]; // 일치하는 원소를 찾으면 반환
+    }
+}
+return undefined;
+}
+
+export function initializeMember(member) {
+  let expiryDate = member.remain.expired;
+  let remainDays = calculateRemainingDays(expiryDate);
+  member.remain.days = remainDays;
+  return member;
+}
+
+export function removeDaysFromMember(member) {
+  if (member.remain && member.remain.days !== undefined) {
+    delete member.remain.days;
+}
+return member;
+}
