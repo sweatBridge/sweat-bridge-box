@@ -43,17 +43,17 @@
       <CRow>
         <CInputGroup class="mb-3">
           <CInputGroupText id="basic-addon3">등록 타입</CInputGroupText>
-          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getType(member.remain.type)" readonly/>
+          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getType(member.remain.type, member.remain.days)" readonly/>
           <CInputGroupText id="basic-addon3">만료 일자</CInputGroupText>
           <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getExpiryDateStr(member.remain.expired)" readonly/>
         </CInputGroup>
       </CRow>
       <CRow>
         <CInputGroup class="mb-3">
-          <CInputGroupText id="basic-addon3">잔여일 수</CInputGroupText>
-          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getRemainingDays(member.remain.expired)" readonly/>
-          <CInputGroupText id="basic-addon3">잔여일 수</CInputGroupText>
-          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getRemainingVisits(member.type, member.remain.count)" readonly/>
+          <CInputGroupText id="basic-addon3">잔여 기간(일)</CInputGroupText>
+          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="member.remain.days" readonly/>
+          <CInputGroupText id="basic-addon3">잔여 횟수(회)</CInputGroupText>
+          <CFormInput id="basic-url" aria-describedby="basic-addon3" :value="getRemainingVisits(member.remain.type, member.remain.count)" readonly/>
         </CInputGroup>
       </CRow>
     </CModalBody>
@@ -72,6 +72,7 @@ import {
   convertTimestampToString,
   getTypeKor
 } from "@/views/admin/util/member"
+import member from "@/store/modules/member";
 
 export default {
   name: "MemberDetailsModal",
@@ -98,8 +99,8 @@ export default {
       return convertGenderToKorean(gender)
     }
 
-    const getType = (type) => {
-      return getTypeKor(type)
+    const getType = (type, days) => {
+      return getTypeKor(type, days)
     }
 
     const getExpiryDateStr = (timestamp) => {
