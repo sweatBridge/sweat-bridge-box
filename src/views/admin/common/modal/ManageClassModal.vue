@@ -91,7 +91,7 @@ export default defineComponent({
       let end = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${endHour}:${endMin}:00+09:00`
 
       modalStatus.value = true
-      
+
       startStr.value = start
       endStr.value = end
       startStrKst.value = formatDateTime(start)
@@ -100,7 +100,8 @@ export default defineComponent({
       coach.value = event.extendedProps.coach
       capacity.value = event.extendedProps.cap
       reserved.value = event.extendedProps.reserved.map(reservation => {
-        return { name: reservation.split(',')[1].trim() }
+        //TODO: realName으로 변경 예정(현재 id)
+        return { name: reservation.split(',')[0].trim() }
       })
     }
 
