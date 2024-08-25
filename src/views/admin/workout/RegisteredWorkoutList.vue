@@ -39,14 +39,14 @@
         <CCol sm="12">
           <CCard>
             <CCardHeader class="card-header">
-              <strong>{{workoutDateStr}} 와드</strong>
+              <strong>{{wodTitle}} 와드</strong>
               <div class="float-end">
                 <CButton class="position-relative custom-button" size="sm" shape="rounded-pill"
-                  @click="handleWodSummary" v-if="workoutDateStr !== ''">
+                  @click="handleWodSummary" v-if="wodTitle !== ''">
                   <strong>요약</strong>
                 </CButton>
                 <CButton color="light" class="position-relative" size="sm" shape="rounded-pill"
-                  @click="moveToModifyPage" v-if="workoutDateStr !== ''">
+                  @click="moveToModifyPage" v-if="wodTitle !== ''">
                   <strong>수정</strong>
                 </CButton>
               </div>
@@ -134,7 +134,7 @@ export default defineComponent({
     const router = useRouter()
     const store = useStore()
     const fullCalendarRef = ref(null)
-    const workoutDateStr = ref("")
+    const wodTitle = ref("")
     const workoutModifyModalRef = ref(null)
     const userRecordModalRef = ref(null)
     const userFeedbackModalRef = ref(null)
@@ -164,10 +164,11 @@ export default defineComponent({
     const handleEventClick = (clickInfo) => {
       store.commit('setRegisteredWod', clickInfo.event)
       store.dispatch('getRecords', clickInfo.event.id)
-      const dateStrKor = extractDateInKorean(clickInfo.event.startStr)
-      workoutDateStr.value = dateStrKor
+      // const dateStrKor = extractDateInKorean(clickInfo.event.startStr);
+      const title = clickInfo.event.title;
+      wodTitle.value = title
       eventAlertRef.value.createToast({
-        content: `${dateStrKor} 와드를 선택하셨습니다.`,
+        content: `${title} 와드를 선택하셨습니다.`,
       })
     }
 
@@ -225,7 +226,7 @@ export default defineComponent({
     return {
 
       fullCalendarRef,
-      workoutDateStr,
+      wodTitle,
       workoutModifyModalRef,
       eventAlertRef,
       userRecordModalRef,
