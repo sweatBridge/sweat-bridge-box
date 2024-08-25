@@ -95,6 +95,7 @@ import {
   CCol,
 } from '@coreui/vue'
 import { computed, defineComponent, ref } from 'vue'
+import { formatDateTime } from '../../util/date';
 
 export default defineComponent({
   components: {
@@ -151,20 +152,6 @@ export default defineComponent({
       startStrKst.value = formatDateTime(selectInfo.startStr);
       endStrKst.value = formatDateTime(selectInfo.endStr);
     }
-
-    const formatDateTime = (isoString) => {
-      const date = new Date(isoString);
-
-      // 날짜 포맷팅
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-
-      // 원하는 포맷으로 변환
-      return `${year}년 ${month}월 ${day}일 ${hours}시 ${minutes}분`;
-    };
 
     const checkSaveModalResult = (status) => {
       let result = {

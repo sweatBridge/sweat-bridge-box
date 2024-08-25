@@ -12,7 +12,7 @@
         <CFormInput
           id="basic-url"
           aria-describedby="basic-addon3"
-          v-model="startStr"
+          v-model="startStrKst"
           readonly
         />
       </CInputGroup>
@@ -21,7 +21,7 @@
         <CFormInput
           id="basic-url"
           aria-describedby="basic-addon3"
-          v-model="endStr"
+          v-model="endStrKst"
           readonly
         />
       </CInputGroup>
@@ -69,6 +69,7 @@
 import {defineComponent, ref} from "vue"
 import {extractDateTimeFromDocKey} from "@/views/admin/class/classCalendarUtils";
 import ReservedMemberModal from "@/views/admin/common/modal/ReservedMemberModal.vue";
+import { formatDateTime } from "../../util/date";
 
 export default defineComponent({
   components: {ReservedMemberModal},
@@ -77,21 +78,30 @@ export default defineComponent({
     const id = ref('')
     const startStr = ref('')
     const endStr = ref('')
+    const startStrKst = ref('')
+    const endStrKst = ref('')
     const coach = ref('')
     const capacity = ref(0)
     const reserved = ref([])
     const reservedMemberModalRef = ref(null)
 
     const showModal = (event) => {
-      modalStatus.value = true
       const {year, month, day, startHour, startMin, endHour, endMin} = extractDateTimeFromDocKey(event.id)
-      startStr.value = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${startHour}:${startMin}:00+09:00`
-      endStr.value = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${endHour}:${endMin}:00+09:00`
+      let start = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${startHour}:${startMin}:00+09:00`
+      let end = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${endHour}:${endMin}:00+09:00`
+
+      modalStatus.value = true
+
+      startStr.value = start
+      endStr.value = end
+      startStrKst.value = formatDateTime(start)
+      endStrKst.value = formatDateTime(end)
       id.value = event.id
       coach.value = event.extendedProps.coach
       capacity.value = event.extendedProps.cap
       reserved.value = event.extendedProps.reserved.map(reservation => {
-        return { name: reservation.split(',')[1].trim() }
+        //TODO: realName으로 변경 예정(현재 id)
+        return { name: reservation.split(',')[0].trim() }
       })
     }
 
@@ -122,8 +132,8 @@ export default defineComponent({
 
     return {
       modalStatus,
-      startStr,
-      endStr,
+      startStrKst,
+      endStrKst,
       coach,
       capacity,
       reserved,

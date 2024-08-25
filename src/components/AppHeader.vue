@@ -63,7 +63,7 @@
           </CNavLink>
         </CNavItem>
         <CNavItem>
-          <CNavLink @click="handleLogOutClick">
+          <CNavLink @click="handleLogout">
             <CIcon class="mx-2" icon="cil-lock-locked"/>
             로그아웃
           </CNavLink>
@@ -76,6 +76,7 @@
     </CContainer> -->
   </CHeader>
   <toast-message ref="toastMessageRef" />
+  <logout-modal ref="logoutModalRef"></logout-modal>
 </template>
 
 <script>
@@ -87,39 +88,25 @@ import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue";
 import { logo } from '@/assets/brand/logo'
 import {useStore} from "vuex";
 import {computed, ref} from "vue";
-import router from '@/router';
+import LogoutModal from '@/views/admin/common/modal/LogoutModal.vue';
 export default {
   name: 'AppHeader',
   components: {
     // AppBreadcrumb,
     // AppHeaderDropdownAccnt,
-    ToastMessage
+    ToastMessage,
+    LogoutModal
   },
   setup() {
     const store = useStore()
     const toastMessageRef = ref(null)
     const boxName = ref(localStorage.getItem('boxName') || '')
-    const handleLogOutClick = () => {
-      try {
-        store.dispatch('logout')
-        toastMessageRef.value.createToast({
-          title: '성공',
-          content: '로그아웃 성공',
-          type: 'success'
-        });
-        store.commit('SET_BOX_STATE_EMPTY')
-        setTimeout(() => {
-          router.push("/pages/login")
-        }, 500)
-      } catch (error) {
-        console.log('로그아웃 실패 : ' + error.meessage)
-        toastMessageRef.value.createToast({
-          title: '실패',
-          content: '로그아웃 실패',
-          type: 'danger'
-        })
-      }
+    const logoutModalRef = ref(null);
+
+    const handleLogout = () => {
+      logoutModalRef.value.showModal();
     }
+
     return {
       logo,
       // boxName: computed(() => store.state.account.boxState.boxName),
@@ -127,7 +114,8 @@ export default {
       avatar: avatar,
       sbLogo: sbLogo,
       toastMessageRef,
-      handleLogOutClick,
+      logoutModalRef,
+      handleLogout,
     }
   },
 }

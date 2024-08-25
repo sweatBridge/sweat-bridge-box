@@ -65,11 +65,11 @@ const account = {
       localStorage.setItem('id', idTokenResult)
     },
     async logout() {
-      const auth = getAuth()
+      const auth = getAuth();
+      const localStorageItems = ['userToken', 'tokenExpiration', 'id', 'boxName', 'realName', 'nickName'];
+
       await signOut(auth)
-      localStorage.removeItem('userToken');
-      localStorage.removeItem('tokenExpiration');
-      localStorage.removeItem('id');
+      localStorageItems.forEach(item => localStorage.removeItem(item));
     },
     async signUp({state}) {
       const auth = getAuth()
@@ -110,7 +110,11 @@ const account = {
         user.push(doc.data())
       })
       if (user.length === 1) {
-        localStorage.setItem('boxName', user[0].boxName)
+        // set coach information into loacl storage
+        localStorage.setItem('boxName', user[0].boxName);
+        localStorage.setItem('realName', user[0].realName);
+        localStorage.setItem('nickName', user[0].nickName);
+        
         commit('SET_BOX_STATE', {
           boxName: user[0].boxName,
           email: user[0].email,
