@@ -17,8 +17,8 @@
     buttons-pagination
     :rows-per-page="5"
   >
-    <template #item-name="{ name }">
-      {{name}}
+    <template #item-name="{ realName }">
+      {{realName}}
     </template>
     <template #item-level="{ level }">
       {{level}}
@@ -52,7 +52,7 @@ export default {
   },
   setup() {
     const headers = [
-      { text: "이름", value: "name", width: "80" },
+      { text: "이름", value: "realName", width: "80" },
       { text: "난이도", value: "level", sortable: true },
       { text: "기록", value: "score", sortable: true },
       { text: "상세", value: "detail" },
