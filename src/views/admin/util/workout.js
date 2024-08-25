@@ -87,25 +87,93 @@ export function validateWod(wod) {
     }
 
     // 레벨 설정 검증
-    if (!Array.isArray(movement.levelSetting) || movement.levelSetting.length === 0) {
-      return { valid: false, error: '최소 하나의 레벨 설정이 필요합니다.' };
-    }
-
-    for (const level of movement.levelSetting) {
-      if (!level.level || level.level.trim() === '') {
-        return { valid: false, error: '레벨 이름이 필요합니다.' };
+    if (movement.name !== 'Rest') {
+      if (!Array.isArray(movement.levelSetting) || movement.levelSetting.length === 0) {
+        return { valid: false, error: '최소 하나의 레벨 설정이 필요합니다.' };
       }
 
-      if (!['M', 'W', 'None'].includes(level.gender)) {
-        return { valid: false, error: '유효한 성별 (M 또는 W)이 필요합니다.' };
-      }
+      for (const level of movement.levelSetting) {
+        if (!level.level || level.level.trim() === '') {
+          return { valid: false, error: '레벨 이름이 필요합니다.' };
+        }
 
-      if (!level.requirement || level.requirement.trim() === '') {
-        return { valid: false, error: '레벨 요구사항이 필요합니다.' };
+        if (!['M', 'W', 'None'].includes(level.gender)) {
+          return { valid: false, error: '유효한 성별 (M 또는 W)이 필요합니다.' };
+        }
+
+        if (!level.requirement || level.requirement.trim() === '') {
+          return { valid: false, error: '레벨 요구사항이 필요합니다.' };
+        }
       }
     }
   }
 
   // 모든 검증을 통과하면 valid: true 반환
   return { valid: true };
+}
+
+export function generateWodSummary(wodData) {
+  let summary = "";
+
+  // Custom 타입일 경우
+  if (wodData.type === "Custom") {
+    summary += `${wodData.customMovements}\n`;
+    if (wodData.description.trim() !== "") {
+      summary += `${wodData.description.trim()}\n`;
+    }
+    return summary.trim();
+  }
+
+  // Type과 Set, Round 정보 추가
+  summary += `${wodData.type} `;
+  if (wodData.isSet && wodData.set) {
+    summary += `${wodData.set} Set`;
+  }
+  if (wodData.round && wodData.round !== 0) {
+    summary += ` ${wodData.round} Round`;
+  }
+  summary += "\n";
+
+  // Movements 요약 생성
+  wodData.movements.forEach(movement => {
+    let movementSummary = "";
+
+    // 이름과 측정 단위 추가
+    if (movement.measure) {
+      movementSummary += `${movement.measure} `;
+    }
+    movementSummary += movement.name;
+
+    // 레벨 설정 요약 추가
+    if (movement.levelSetting && movement.levelSetting.length > 0) {
+      let requirements = movement.levelSetting
+        .filter(level => level.requirement)
+        .map(level => level.requirement);
+
+      if (requirements.length > 0) {
+        movementSummary += ` (${requirements.join('/')})`;
+      }
+    }
+
+    // 요약에 추가
+    summary += `${movementSummary}\n`;
+
+    // isDescription이 true인 경우, description 추가
+    if (movement.isDescription && movement.description.trim() !== "") {
+      summary += `${movement.description.trim()}\n`;
+    }
+  });
+
+  // Time Cap 추가
+  if (wodData.timeCap && wodData.timeCap !== "00:00") {
+    summary += `Time Cap ${wodData.timeCap}\n`;
+  }
+
+  // Description이 빈칸이 아니면 맨 마지막 줄에 추가
+  if (wodData.description.trim() !== "") {
+    summary += `${wodData.description.trim()}\n`;
+  }
+
+  // 마지막 줄의 공백 제거
+  return summary.trim();
 }
