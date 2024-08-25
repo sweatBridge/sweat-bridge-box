@@ -1,7 +1,7 @@
 import {addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where} from "firebase/firestore";
 import { db } from '@/firebase'
 import {convertDateToKstString} from "@/views/admin/class/classCalendarUtils";
-import {selectWodEventColor} from "@/views/admin/util/workout";
+import {selectWodEventColor, validateWod} from "@/views/admin/util/workout";
 
 const workout = {
   state: {
@@ -146,24 +146,42 @@ const workout = {
   },
   actions: {
     async addWod({ state }) {
+      // 정합성 검증 수행
+      const validationResult = validateWod(state.wodRegistration);
+  
+      if (!validationResult.valid) {
+        throw new Error(validationResult.error);
+      }
+  
       const box = localStorage.getItem('boxName') || '';
       const path = `/box/${box}/wod`;
       const collectionRef = collection(db, path);
       
-      await addDoc(collectionRef, state.wodRegistration)
-        .then((docRef) => {
-          console.log("Document written with ID: ", docRef.id);
-        })
-        .catch((error) => {
-          console.error("Error adding document: ", error);
-        });
-    },
-  
+      try {
+        const docRef = await addDoc(collectionRef, state.wodRegistration);
+        console.log("Document written with ID: ", docRef.id);
+      } catch (error) {
+        console.error("Error adding document: ", error);
+        throw error;  // 에러를 다시 던져 호출자에게 알림
+      }
+    }, 
 
-    async updateWod({state}) {
+    async updateWod({ state }) {
+      // 정합성 검증 수행
+      const validationResult = validateWod(state.registeredWod);
+    
+      if (!validationResult.valid) {
+        throw new Error(validationResult.error);
+      }
+    
       const box = localStorage.getItem('boxName') || '';
-      const path = `/box/${box}/wod`
-      await updateDoc(doc(db, path, state.registeredWod.id), state.registeredWod)
+      const path = `/box/${box}/wod`;
+    
+      try {
+        await updateDoc(doc(db, path, state.registeredWod.id), state.registeredWod);
+      } catch (error) {
+        throw error;
+      }
     },
 
     async deleteWod({state}) {

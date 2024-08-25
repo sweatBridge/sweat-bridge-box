@@ -324,7 +324,7 @@ export default defineComponent({
           toastMessageRef.value.createToast(
             {
               title: '실패',
-              content: '와드 등록 실패',
+              content: `와드 등록 실패 : ${error.message}`,
               type: 'danger'
             }
           );

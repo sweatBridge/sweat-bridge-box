@@ -122,7 +122,7 @@
           <CRow v-if="!isCustomize">
             <CCard>
               <CCardHeader color="danger">
-                동작 구성
+                동작 구성 
                 <div class="float-end">
                   <CButton
                     class="position-relative rest-card" size="sm"
@@ -287,9 +287,10 @@ export default defineComponent({
           toastMessageRef.value.createToast(
             {
               title: '실패',
-              content: '와드 수정 실패',
+              content: `와드 수정 실패 : ${error.message}`,
               type: 'danger'
-            });
+            }
+          );
         }
       })
     }
