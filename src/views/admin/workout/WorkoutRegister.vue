@@ -17,7 +17,7 @@
           <CRow>
             <CCol sm="7">
               <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">WOD 타이틀</CInputGroupText>
+                <CInputGroupText id="basic-addon3">타이틀</CInputGroupText>
                 <CFormInput
                   id="basic-url"
                   aria-describedby="basic-addon3"
@@ -29,7 +29,7 @@
           <CRow>
             <CCol sm="7">
               <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">WOD 일자</CInputGroupText>
+                <CInputGroupText id="basic-addon3">일자</CInputGroupText>
                 <CButton style="display: flex; align-items: center;">
                   <CIcon name="cil-calendar" style="margin-right: 8px;"/>
                   <DatePicker v-model="wodRegistration.date"/>
@@ -40,7 +40,7 @@
           <CRow>
             <CCol sm="7">
               <CInputGroup class="mb-3">
-                <CInputGroupText id="basic-addon3">Workout 타입</CInputGroupText>
+                <CInputGroupText id="basic-addon3">와드 타입</CInputGroupText>
                 <CFormSelect id="inputGroupSelect01" v-model="wodRegistration.type" @change="handleTypeChange">
                   <option>타입 선택</option>
                   <option value="ForTime">ForTime</option>
@@ -133,7 +133,7 @@
           <CRow v-if="!isCustomize">
             <CCard>
               <CCardHeader color="danger">
-                Movements
+                동작 구성
                 <div class="float-end">
                   <CButton
                     class="position-relative rest-card" size="sm"
