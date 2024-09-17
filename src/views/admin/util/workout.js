@@ -126,10 +126,10 @@ export function generateWodSummary(wodData) {
 
   // Type과 Set, Round 정보 추가
   summary += `${wodData.type} `;
-  if (wodData.isSet && wodData.set) {
+  if (wodData.isSet && wodData.set != '0') {
     summary += `${wodData.set} Set`;
   }
-  if (wodData.round && wodData.round !== 0) {
+  if (wodData.round && wodData.round !== '0') {
     summary += ` ${wodData.round} Round`;
   }
   summary += "\n";

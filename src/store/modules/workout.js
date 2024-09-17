@@ -11,8 +11,8 @@ const workout = {
       type: '',
       scoreType: '',
       isSet: true,
-      set: 0,
-      round: 0,
+      set: '10',
+      round: '0',
       timeCap: '00:00',
       movements: [
         {
@@ -49,8 +49,8 @@ const workout = {
       type: '',
       scoreType: '',
       isSet: false,
-      set: 0,
-      round: 0,
+      set: '',
+      round: '',
       timeCap: '00:00',
       movements: [],
       customMovements: '',
