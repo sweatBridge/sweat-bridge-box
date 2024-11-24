@@ -229,6 +229,11 @@ export default defineComponent({
       registeredWod.round = "0"
       registeredWod.timeCap = "00:00"
       registeredWod.customMovements = ""
+
+      // wod type이 Custom인 경우에만 movements 초기화
+      if (registeredWod.type === 'Custom') {
+        registeredWod.movements = []
+      }
     }
 
     const handleSetTypeChange = () => {

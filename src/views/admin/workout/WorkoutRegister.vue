@@ -266,6 +266,11 @@ export default defineComponent({
       wodRegistration.round = "0"
       wodRegistration.timeCap = "00:00"
       wodRegistration.customMovements = ""
+      
+      // wod type이 Custom인 경우에만 movements 초기화
+      if (wodRegistration.type === 'Custom') {
+        wodRegistration.movements = []
+      }
     }
 
     const handleSetTypeChange = () => {
