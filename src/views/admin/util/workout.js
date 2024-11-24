@@ -65,6 +65,11 @@ export function validateWod(wod) {
     return { valid: false, error: '유효한 시간 제한 (MM:SS) 형식이 필요합니다.' };
   }
 
+  // 'Custom' 타입인 경우 하위 항목 검사 생략
+  if (wod.type === 'Custom') {
+    return { valid: true }
+  }
+
   // 운동 목록 검증
   if (!Array.isArray(wod.movements) || wod.movements.length === 0) {
     return { valid: false, error: '최소 하나의 운동이 필요합니다.' };
