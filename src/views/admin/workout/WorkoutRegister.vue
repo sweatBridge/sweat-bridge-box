@@ -58,7 +58,7 @@
             <CCol sm="3">
               <CInputGroup class="mb-3" v-if="wodRegistration.isSet && !isCustomize">
                 <CInputGroupText id="basic-addon3">세트 수</CInputGroupText>
-                <CFormInput type="number" id="setCount" aria-describedby="basic-addon3" v-model="wodRegistration.set"/>
+                <CFormInput id="setCount" aria-describedby="basic-addon3" v-model="wodRegistration.set"/>
               </CInputGroup>
             </CCol>
           </CRow>
@@ -68,7 +68,7 @@
                 <CCol sm="3">
                   <CInputGroup class="mb-3">
                     <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                    <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
+                    <CFormInput id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
                   </CInputGroup>
                 </CCol>
                 <CCol sm="6">
@@ -95,7 +95,7 @@
                 <CCol sm="3">
                   <CInputGroup class="mb-3">
                     <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                    <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
+                    <CFormInput id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
                   </CInputGroup>
                 </CCol>
                 <CCol sm="6">
@@ -111,7 +111,7 @@
                 <CCol sm="3">
                   <CInputGroup class="mb-3">
                     <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                    <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
+                    <CFormInput id="roundCount" aria-describedby="basic-addon3" v-model="wodRegistration.round"/>
                   </CInputGroup>
                 </CCol>
               </CRow>
@@ -263,14 +263,19 @@ export default defineComponent({
     }
 
     const handleTypeChange = () => {
-      wodRegistration.round = 0
+      wodRegistration.round = "0"
       wodRegistration.timeCap = "00:00"
       wodRegistration.customMovements = ""
+      
+      // wod type이 Custom인 경우에만 movements 초기화
+      if (wodRegistration.type === 'Custom') {
+        wodRegistration.movements = []
+      }
     }
 
     const handleSetTypeChange = () => {
       wodRegistration.isSet = !wodRegistration.isSet
-      wodRegistration.set = 0
+      wodRegistration.set = "0"
     }
 
     const addMovement = () => {

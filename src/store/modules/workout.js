@@ -1,7 +1,7 @@
-import {addDoc, collection, deleteDoc, doc, getDocs, query, updateDoc, where} from "firebase/firestore";
+import {addDoc, collection, deleteDoc, doc, getDocs, query, setDoc, updateDoc, where} from "firebase/firestore";
 import { db } from '@/firebase'
 import {convertDateToKstString} from "@/views/admin/class/classCalendarUtils";
-import {selectWodEventColor, validateWod} from "@/views/admin/util/workout";
+import {generateWodDocKey, selectWodEventColor, validateWod} from "@/views/admin/util/workout";
 
 const workout = {
   state: {
@@ -11,8 +11,8 @@ const workout = {
       type: '',
       scoreType: '',
       isSet: true,
-      set: 0,
-      round: 0,
+      set: '10',
+      round: '0',
       timeCap: '00:00',
       movements: [
         {
@@ -49,8 +49,8 @@ const workout = {
       type: '',
       scoreType: '',
       isSet: false,
-      set: 0,
-      round: 0,
+      set: '',
+      round: '',
       timeCap: '00:00',
       movements: [],
       customMovements: '',
@@ -155,15 +155,26 @@ const workout = {
   
       const box = localStorage.getItem('boxName') || '';
       const path = `/box/${box}/wod`;
-      const collectionRef = collection(db, path);
-      
+
+      const docKey = generateWodDocKey(state.wodRegistration.date, state.wodRegistration.title)
+
       try {
-        const docRef = await addDoc(collectionRef, state.wodRegistration);
-        console.log("Document written with ID: ", docRef.id);
+        await setDoc(doc(db, path, docKey), state.wodRegistration)
       } catch (error) {
         console.error("Error adding document: ", error);
         throw error;  // 에러를 다시 던져 호출자에게 알림
       }
+
+      // addDoc Sample
+      // const collectionRef = collection(db, path);
+
+      // try {
+      //   const docRef = await addDoc(collectionRef, state.wodRegistration);
+      //   console.log("Document written with ID: ", docRef.id);
+      // } catch (error) {
+      //   console.error("Error adding document: ", error);
+      //   throw error;  // 에러를 다시 던져 호출자에게 알림
+      // }
     }, 
 
     async updateWod({ state }) {
@@ -176,9 +187,10 @@ const workout = {
     
       const box = localStorage.getItem('boxName') || '';
       const path = `/box/${box}/wod`;
+      const docKey = generateWodDocKey(state.registeredWod.date, state.registeredWod.title)
     
       try {
-        await updateDoc(doc(db, path, state.registeredWod.id), state.registeredWod);
+        await updateDoc(doc(db, path, docKey), state.registeredWod);
       } catch (error) {
         throw error;
       }
@@ -187,7 +199,13 @@ const workout = {
     async deleteWod({state}) {
       const box = localStorage.getItem('boxName') || '';
       const path = `/box/${box}/wod`
-      await deleteDoc(doc(db, path, state.registeredWod.id))
+      const docKey = generateWodDocKey(state.registeredWod.date, state.registeredWod.title)
+
+      try {
+        await deleteDoc(doc(db, path, docKey))
+      } catch (error) {
+        throw error;
+      }
     },
 
     async getRecentRegisteredWodList({state}, payload) {

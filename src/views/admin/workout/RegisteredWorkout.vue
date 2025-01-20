@@ -47,7 +47,7 @@
             <CCol sm="3">
               <CInputGroup class="mb-3" v-if="registeredWod.isSet && !isCustomize">
                 <CInputGroupText id="basic-addon3">세트 수</CInputGroupText>
-                <CFormInput type="number" id="setCount" aria-describedby="basic-addon3" v-model="registeredWod.set"/>
+                <CFormInput id="setCount" aria-describedby="basic-addon3" v-model="registeredWod.set"/>
               </CInputGroup>
             </CCol>
           </CRow>
@@ -57,7 +57,7 @@
                 <CCol sm="3">
                   <CInputGroup class="mb-3">
                     <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                    <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
+                    <CFormInput id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
                   </CInputGroup>
                 </CCol>
                 <CCol sm="6">
@@ -84,7 +84,7 @@
                 <CCol sm="3">
                   <CInputGroup class="mb-3">
                     <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                    <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
+                    <CFormInput id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
                   </CInputGroup>
                 </CCol>
                 <CCol sm="6">
@@ -100,7 +100,7 @@
                 <CCol sm="3">
                   <CInputGroup class="mb-3">
                     <CInputGroupText id="basic-addon3">라운드 수</CInputGroupText>
-                    <CFormInput type="number" id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
+                    <CFormInput id="roundCount" aria-describedby="basic-addon3" v-model="registeredWod.round"/>
                   </CInputGroup>
                 </CCol>
               </CRow>
@@ -226,13 +226,18 @@ export default defineComponent({
     const { isLoading, withLoading } = loadingMixin.setup();
 
     const handleTypeChange = () => {
-      registeredWod.round = 0
+      registeredWod.round = "0"
       registeredWod.timeCap = "00:00"
       registeredWod.customMovements = ""
+
+      // wod type이 Custom인 경우에만 movements 초기화
+      if (registeredWod.type === 'Custom') {
+        registeredWod.movements = []
+      }
     }
 
     const handleSetTypeChange = () => {
-      registeredWod.set = 0
+      registeredWod.set = "0"
     }
 
     const addMovement = () => {
