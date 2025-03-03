@@ -4,6 +4,7 @@ import workout from "@/store/modules/workout"
 import member from "@/store/modules/member"
 import account from "@/store/modules/account";
 import record from "@/store/modules/record";
+import membership from './modules/membership';
 
 export default createStore({
   state: {
@@ -28,5 +29,6 @@ export default createStore({
     member,
     account,
     record,
+    membership
   },
 })
