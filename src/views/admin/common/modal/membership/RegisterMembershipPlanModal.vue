@@ -60,7 +60,16 @@
         :items="membershipPlans"
         theme-color="#42A5F5"
         alternating
-      />
+      >
+      <template #item-type="{ value }">
+        {{ value === "countPass" ? "횟수권" : "기간권" }}
+      </template>
+      <template #item-actions="{ plan }">
+        <CButton color="danger" @click="deleteMembershipPlan(plan)">
+          X
+        </CButton>
+      </template>
+      </EasyDataTable>
     </CModalBody>
     <CModalFooter>
       <CButton color="danger" @click="() => {modalStatus = false}">
@@ -97,6 +106,7 @@ export default {
       { text: "횟수", value: "count" },
       { text: "기간(일)", value: "duration" },
       { text: "가격", value: "price"},
+      { text: "삭제", value: "actions" },
     ];
 
     const showModal = async () => {
@@ -133,6 +143,13 @@ export default {
       price.value = 0
     }
 
+    const deleteMembershipPlan = (plan) => {
+      if (confirm(`"${plan}" 플랜을 삭제하시겠습니까?`)) {
+        store.dispatch("deleteMembershipPlan", plan);
+      }
+      store.dispatch("deleteMembershipPlan", plan);
+    };
+
     const register = () => {
       modalStatus.value = false
     }
@@ -149,6 +166,7 @@ export default {
       showModal,
       handleTypeChange,
       addMembershipPlan,
+      deleteMembershipPlan,
       register
     }
   }

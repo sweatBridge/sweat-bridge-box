@@ -19,7 +19,14 @@ const membership = {
         },
         ADD_MEMBERSHIP_PLAN(state, plan) {
             state.plans.push(plan);
-        }
+        },
+        REMOVE_MEMBERSHIP_PLAN(state, planName) {
+            const index = state.plans.findIndex(plan => plan.plan === planName);
+            if (index !== -1) {
+                state.plans.splice(index, 1);
+            }
+        },
+        
     },
     actions: {
         async getMembershipPlans({ commit }) {
@@ -32,7 +39,7 @@ const membership = {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     commit('SET_MEMBERSHIP_PLANS', data.plans)
-                    console.log(data.plans);
+
                     return data.plans || [];
                 } else {
                     console.log("No membership document found, returning empty array.");
@@ -81,6 +88,24 @@ const membership = {
                 console.error("Error adding membership plan:", error);
             }
         },
+
+        async deleteMembershipPlan({ commit, state }, plan) {
+            try {
+                const boxName = localStorage.getItem('boxName');
+                if (!boxName) {
+                    console.error("Error: boxName is missing");
+                    return;
+                }
+        
+                commit("REMOVE_MEMBERSHIP_PLAN", plan);
+        
+                await this.dispatch("setMembershipPlans", { boxName, plans: state.plans });
+        
+                console.log("Successfully deleted membership plan:", plan);
+            } catch (error) {
+                console.error("Error deleting membership plan:", error);
+            }
+        }
     },
     getters: {
         getMembershipPlans: (state) => state.plans,
