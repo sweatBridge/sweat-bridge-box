@@ -92,7 +92,7 @@
   <register-membership-modal ref="registerMembershipModal"/>
   <member-details-modal :index="memberDetatilIdx" ref="memberDetailsModal" />
   <member-deletion-modal ref="deleteModal" />
-  <register-membership-plan-modal ref="registerMembershipPlanModal" />
+  <membership-plan-modal ref="membershipPlanModal" />
 </template>
 
 <script>
@@ -110,7 +110,7 @@ import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModa
 import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue";
 import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
 import RegisterMembershipModal from "@/views/admin/common/modal/RegisterMembershipModal.vue";
-import RegisterMembershipPlanModal from "@/views/admin/common/modal/membership/RegisterMembershipPlanModal.vue";
+import MembershipPlanModal from "@/views/admin/common/modal/membership/MembershipPlanModal.vue";
 
 export default defineComponent({
   components: {
@@ -118,7 +118,7 @@ export default defineComponent({
     MemberDeletionModal,
     MemberDetailsModal,
     ApprovalRequestModal,
-    RegisterMembershipPlanModal,
+    MembershipPlanModal,
   },
   setup() {
     const store = useStore()
@@ -214,7 +214,7 @@ export default defineComponent({
       this.memberDetatilIdx = idx
     },
     manageMembershipPlans() {
-      this.$refs.registerMembershipPlanModal.showModal()
+      this.$refs.membershipPlanModal.showModal()
     },
   }
 })
