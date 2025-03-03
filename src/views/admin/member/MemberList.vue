@@ -4,14 +4,14 @@
       <strong>회원 관리</strong>
       <div class="float-end">
         <CRow class="g-3">
-          <CCol md="6">
+          <CCol>
             <CButton
               @click="approveMembers"
               class="position-relative header-button" size="sm">
               <strong>회원 추가</strong>
             </CButton>
           </CCol>
-          <CCol md="6">
+          <CCol>
             <CButton
               @click="manageMembershipPlans"
               class="position-relative header-button" size="sm">
@@ -73,6 +73,15 @@
             {{ getRegisterButtonDescription(remain.type) }}
           </CButton>
         </template>
+        <template #item-membership="{}">
+          <CButton
+            color="info"
+            size="sm"
+            @click="manageMembership()"
+          >
+            O
+          </CButton>
+        </template>
         <template #item-details="{ index }">
           <CButton
             color="light"
@@ -90,6 +99,7 @@
   <member-details-modal :index="memberDetatilIdx" ref="memberDetailsModal" />
   <member-deletion-modal ref="deleteModal" />
   <membership-plan-modal ref="membershipPlanModal" />
+  <membership-modal ref="membershipModal" />
 </template>
 
 <script>
@@ -108,6 +118,7 @@ import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vu
 import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
 import RegisterMembershipModal from "@/views/admin/common/modal/RegisterMembershipModal.vue";
 import MembershipPlanModal from "@/views/admin/common/modal/membership/MembershipPlanModal.vue";
+import MembershipModal from "@/views/admin/common/modal/membership/MembershipModal.vue";
 
 export default defineComponent({
   components: {
@@ -116,6 +127,7 @@ export default defineComponent({
     MemberDetailsModal,
     ApprovalRequestModal,
     MembershipPlanModal,
+    MembershipModal,
   },
   setup() {
     const store = useStore()
@@ -131,6 +143,7 @@ export default defineComponent({
       { text: "잔여 기간(일)", value: "remain.days", sortable: true},
       { text: "잔여 횟수(회)", value: "remainingVisits"},
       { text: "성별", value: "gender" },
+      { text: "멤버십", value: "membership"},
       { text: "기능", value: "operation", width: "150" },
       { text: "상세", value: "details"},
     ]
@@ -198,6 +211,9 @@ export default defineComponent({
     deleteMember(id) {
       let member = findMemberById(this.members, id)
       this.$refs.deleteModal.showModal(member)
+    },
+    manageMembership() {
+      this.$refs.membershipModal.showModal()
     },
     renewMembership(id) {
       let member = findMemberById(this.members, id)

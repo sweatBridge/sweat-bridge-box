@@ -86,7 +86,7 @@ import { useStore } from "vuex";
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue"
 
 export default {
-  name: "RegisterMembershipPlanModal",
+  name: "MembershipPlanModal",
   components: {
     ToastMessage
   },
