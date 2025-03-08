@@ -4,17 +4,17 @@
     @close="() => {modalStatus = false}"
   >
     <CModalHeader class="modal-header">
-      <CModalTitle>요청 승인</CModalTitle>
+      <CModalTitle>회원 추가</CModalTitle>
     </CModalHeader>
     <CModalBody>
-      <strong>{{name}}</strong> 님 요청을 승인하시겠습니까?
+      <strong>{{name}}</strong> 님을 추가하시겠습니까?
     </CModalBody>
     <CModalFooter>
       <CButton color="danger" @click="cancel">
         취소
       </CButton>
       <CButton color="success" @click="approve">
-        승인
+        확인
       </CButton>
     </CModalFooter>
   </CModal>
@@ -51,7 +51,7 @@ export default {
           toastMessageRef.value.createToast(
             {
               title: '성공',
-              content: '요청 승인 성공.',
+              content: '회원 추가가 성공.',
               type: 'success'
             }
           )
@@ -64,7 +64,7 @@ export default {
           toastMessageRef.value.createToast(
             {
               title: '실패',
-              content: '요청 승인 실패',
+              content: '회원 추가가 실패',
               type: 'danger'
             }
           )

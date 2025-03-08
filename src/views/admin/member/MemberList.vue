@@ -6,9 +6,8 @@
         <CButton
           @click="approveMembers"
           class="position-relative header-button" size="sm">
-          <strong>승인 요청</strong>
+          <strong>회원 찾기</strong>
           <CBadge color="danger" position="top-end" shape="rounded-pill">
-            {{pendingMembers.length}} <span class="visually-hidden">unread messages</span>
           </CBadge>
         </CButton>
       </div>
@@ -111,7 +110,6 @@ export default defineComponent({
     onMounted(() => {
       const boxName = ref(localStorage.getItem('boxName') || '');
       store.dispatch('getMembers', { box: boxName.value })
-      store.dispatch('getPendingMembers', { box: boxName.value })
     })
     const headers = [
       { text: "이름", value: "realName" },
@@ -126,7 +124,6 @@ export default defineComponent({
     ]
 
     const members = computed(() => store.state.member.members)
-    const pendingMembers = computed(() => store.state.member.pendingMembers)
 
     const searchValue = ref("")
 
@@ -171,7 +168,6 @@ export default defineComponent({
     return {
       headers,
       members,
-      pendingMembers,
       searchValue,
       getRegisterButtonColor,
       getRegisterButtonDescription,
