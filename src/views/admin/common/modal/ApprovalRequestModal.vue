@@ -5,12 +5,12 @@
     @close="() => {modalStatus = false}"
   >
     <CModalHeader class="modal-header">
-      <CModalTitle>회원 찾기</CModalTitle>
+      <CModalTitle>회원 추가</CModalTitle>
     </CModalHeader>
     <CModalBody>
       <CTabs active-tab="email">
         <!-- 탭 네비게이션 -->
-        <CNav variant="tabs">
+        <CNav variant="tabs" class="mb-3">
           <CNavItem>
             <CNavLink :active="activeTab === 'email'" @click="setActiveTab('email')">
               이메일로 찾기
@@ -21,10 +21,16 @@
               전화번호로 찾기
             </CNavLink>
           </CNavItem>
+          <CNavItem>
+            <CNavLink :active="activeTab === 'manual'" @click="setActiveTab('manual')">
+              직접 추가
+            </CNavLink>
+          </CNavItem>
         </CNav>
 
-        <!-- 이메일 검색 탭 -->
+        <!-- 탭 컨텐츠 -->
         <CTabContent>
+          <!-- 이메일 검색 탭 -->
           <CTabPane v-if="activeTab === 'email'" visible>
             <CRow class="align-items-center g-2">
               <CCol md="2">이메일</CCol>
@@ -63,8 +69,55 @@
               </CCol>
             </CRow>
           </CTabPane>
+
+          <!-- 직접 추가 탭 -->
+          <CTabPane v-if="activeTab === 'manual'" visible>
+            <CRow class="align-items-center g-2">
+              <CCol md="2">이름</CCol>
+              <CCol md="10">
+                <CFormInput 
+                  v-model="manualName"
+                  type="text"
+                  id="nameInput"
+                  placeholder="이름을 입력하세요."
+                />
+              </CCol>
+            </CRow>
+            <CRow class="align-items-center g-2 mt-2">
+              <CCol md="2">전화번호</CCol>
+              <CCol md="10">
+                <CFormInput 
+                  v-model="manualPhone"
+                  type="text"
+                  id="manualPhoneInput"
+                  placeholder="전화번호를 입력하세요.(- 제외)"
+                />
+              </CCol>
+            </CRow>
+            <CRow class="align-items-center g-2 mt-2">
+              <CCol md="2">성별</CCol>
+              <CCol md="10">
+                <CButtonGroup>
+                  <CButton color="primary" :variant="manualGender === '남' ? '' : 'outline'" @click="setManualGender('남')">
+                    남
+                  </CButton>
+                  <CButton color="primary" :variant="manualGender === '여' ? '' : 'outline'" @click="setManualGender('여')">
+                    여
+                  </CButton>
+                </CButtonGroup>
+              </CCol>
+            </CRow>
+            <CRow class="mt-3">
+              <CCol class="text-end">
+                <CButton color="success" @click="addManualUser">
+                  추가
+                </CButton>
+              </CCol>
+            </CRow>
+          </CTabPane>
         </CTabContent>
       </CTabs>
+
 
       <CCard class="border-dark mt-3" v-if="user">
         <CCardHeader class="bg-light fw-bold">검색 결과</CCardHeader>
@@ -99,7 +152,6 @@ import {ref} from "vue"
 import { useStore } from "vuex"
 import {calculateAge, convertGenderToKorean} from "@/views/admin/util/member"
 import ApprovalConfirmationModal from "@/views/admin/common/modal/ApprovalConfirmationModal.vue";
-import { CFormInput } from "@coreui/vue";
 
 export default {
   components: {ApprovalConfirmationModal},
@@ -109,6 +161,9 @@ export default {
     const activeTab = ref('email');
     const searchEmail = ref("");
     const searchPhone = ref("");
+    const manualName = ref("");
+    const manualPhone = ref("");
+    const manualGender = ref("");
     const user = ref(null);
 
     const headers = [
@@ -132,6 +187,15 @@ export default {
       searchEmail.value = '';
       searchPhone.value = '';
     }
+
+    const setManualGender = (gender) => {
+      if (gender === '남') {
+        manualGender.value = 'M';
+      } else if (gender === '여') {
+        manualGender.value = 'F';
+      }
+    };
+
 
     const searchUserByEmail = async () => {
       if (!searchEmail.value.trim()) {
@@ -174,6 +238,10 @@ export default {
       searchEmail,
       searchPhone,
       setActiveTab,
+      setManualGender,
+      manualName,
+      manualPhone,
+      manualGender,
       getAge,
       getGender,
       searchUserByEmail,
