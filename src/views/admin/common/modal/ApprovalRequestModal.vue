@@ -98,10 +98,10 @@
               <CCol md="2">성별</CCol>
               <CCol md="10">
                 <CButtonGroup>
-                  <CButton color="primary" :variant="manualGender === '남' ? '' : 'outline'" @click="setManualGender('남')">
+                  <CButton color="primary" :variant="manualGender === 'M' ? '' : 'outline'" @click="setManualGender('M')">
                     남
                   </CButton>
-                  <CButton color="primary" :variant="manualGender === '여' ? '' : 'outline'" @click="setManualGender('여')">
+                  <CButton color="primary" :variant="manualGender === 'F' ? '' : 'outline'" @click="setManualGender('F')">
                     여
                   </CButton>
                 </CButtonGroup>
@@ -127,6 +127,7 @@
             <CListGroupItem><strong>닉네임:</strong> {{ user.nickName }}</CListGroupItem>
             <CListGroupItem><strong>성별:</strong> {{ getGender(user.gender) }}</CListGroupItem>
             <CListGroupItem><strong>연락처:</strong> {{ user.phone }}</CListGroupItem>
+            <CListGroupItem><strong>이메일:</strong> {{ user.email }}</CListGroupItem>
           </CListGroup>
         </CCardBody>
         <CCardFooter class="text-end">
@@ -189,11 +190,7 @@ export default {
     }
 
     const setManualGender = (gender) => {
-      if (gender === '남') {
-        manualGender.value = 'M';
-      } else if (gender === '여') {
-        manualGender.value = 'F';
-      }
+      manualGender.value = gender;
     };
 
 
@@ -222,11 +219,36 @@ export default {
         alert("사용자 검색 중 오류가 발생했습니다.");
       }
     };
-    const searchUserByPhone = async () => {}
+    const searchUserByPhone = async () => {
+      if (!searchPhone.value.trim()) {
+        alert("전화번호를 입력하세요.");
+        return;
+      }
+
+      try {
+        // Call Vuex action to get user data
+        const userData = await store.dispatch("getUserByPhone", { phone: searchPhone.value });
+
+        console.log("🔍 Debug: User Data from getUserDoc:", userData);
+
+        if (userData) {
+          user.value = userData; // ✅ Assign actual user data
+          console.log("✅ Debug: User Data Set:", user.value);
+        } else {
+          user.value = null;
+          console.warn("⚠️ Warning: User document does not exist.");
+          alert("해당 사용자를 찾을 수 없습니다.");
+        }
+      } catch (error) {
+        console.error("❌ Error fetching user:", error);
+        alert("사용자 검색 중 오류가 발생했습니다.");
+      }
+    }
     
     const showModal = () => {
       modalStatus.value = true
     }
+
     const checkApprovalRequestModal = (result) => {
       modalStatus.value = false
       emit('approvalRequestModalResult', result)

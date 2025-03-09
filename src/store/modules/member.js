@@ -55,7 +55,7 @@ const member = {
         return userRef[0]
       }
     },
-    async getUserDoc({commit}, payload) {
+    async getUserByEmail({commit}, payload) {
       const path = `/user`
       const q = query(collection(db, path),
         where('email', '==', payload.email),
@@ -69,6 +69,19 @@ const member = {
     
       return userData
     },
+    async getUserByPhone({ commit }, payload) {
+      const path = "/user";
+      const q = query(collection(db, path), where("phone", "==", payload.phone));
+      const querySnap = await getDocs(q);
+      let userData = null;
+    
+      querySnap.forEach((doc) => {
+        userData = doc.data();
+      });
+    
+      return userData;
+    },
+    
     async approveMember(context, payload) {
       const memberRef = await context.dispatch('getMemberRef', payload)
       const userRef = await context.dispatch('getUserRef', payload)
