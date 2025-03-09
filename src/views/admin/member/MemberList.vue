@@ -73,20 +73,20 @@
             {{ getRegisterButtonDescription(remain.type) }}
           </CButton>
         </template>
-        <template #item-membership="{}">
+        <template #item-membership="{email}">
           <CButton
             color="info"
             size="sm"
-            @click="manageMembership()"
+            @click="manageMembership(email)"
           >
             O
           </CButton>
         </template>
-        <template #item-details="{ index }">
+        <template #item-details="{ email }">
           <CButton
             color="light"
             size="sm"
-            @click="showMemberDetails(index)"
+            @click="showMemberDetails(email)"
           >
             <CIcon name="cil-notes" />
           </CButton>
@@ -96,7 +96,7 @@
   </CCard>
   <approval-request-modal ref="approvalRequestModal"/>
   <register-membership-modal ref="registerMembershipModal"/>
-  <member-details-modal :index="memberDetatilIdx" ref="memberDetailsModal" />
+  <member-details-modal ref="memberDetailsModal" />
   <member-deletion-modal ref="deleteModal" />
   <membership-plan-modal ref="membershipPlanModal" />
   <membership-modal ref="membershipModal" />
@@ -114,7 +114,7 @@ import {
   findMemberById
 } from "@/views/admin/util/member"
 import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue"
-import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue";
+import MemberDetailsModal from "@/views/admin/common/modal/member/MemberDetailsModal.vue";
 import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
 import RegisterMembershipModal from "@/views/admin/common/modal/RegisterMembershipModal.vue";
 import MembershipPlanModal from "@/views/admin/common/modal/membership/MembershipPlanModal.vue";
@@ -212,16 +212,19 @@ export default defineComponent({
       let member = findMemberById(this.members, id)
       this.$refs.deleteModal.showModal(member)
     },
-    manageMembership() {
+    manageMembership(id) {
+      let member = findMemberById(this.members, id)
+      console.log(id)
+      console.log(member)
       this.$refs.membershipModal.showModal()
     },
     renewMembership(id) {
       let member = findMemberById(this.members, id)
       this.$refs.registerMembershipModal.showModal(member)
     },
-    showMemberDetails(idx) {
-      this.$refs.memberDetailsModal.showModal()
-      this.memberDetatilIdx = idx
+    showMemberDetails(id) {
+      let member = findMemberById(this.members, id)
+      this.$refs.memberDetailsModal.showModal(member)
     },
     manageMembershipPlans() {
       this.$refs.membershipPlanModal.showModal()

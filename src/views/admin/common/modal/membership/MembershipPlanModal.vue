@@ -61,8 +61,8 @@
         theme-color="#42A5F5"
         alternating
       >
-      <template #item-type="{ value }">
-        {{ value === "countPass" ? "횟수권" : "기간권" }}
+      <template #item-type="{ type }">
+        {{ type === "countPass" ? "횟수권" : "기간권" }}
       </template>
       <template #item-actions="{ plan }">
         <CButton color="danger" @click="deleteMembershipPlan(plan)">

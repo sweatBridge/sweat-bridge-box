@@ -62,7 +62,7 @@
 </template>
 
 <script>
-import {ref, computed} from "vue"
+import {ref, reactive} from "vue"
 import {useStore} from "vuex"
 import {
   calculateAge,
@@ -72,22 +72,22 @@ import {
   convertTimestampToString,
   getTypeKor
 } from "@/views/admin/util/member"
-import member from "@/store/modules/member";
 
 export default {
   name: "MemberDetailsModal",
   components: {},
-  props: {
-    index: {
-      type: Number,
-      required: true
-    }
-  },
+  // props: {
+  //   index: {
+  //     type: Number,
+  //     required: true
+  //   }
+  // },
   setup(props, {emit}) {
     const store = useStore()
     const modalStatus = ref(false)
-    const member = computed(() => store.state.member.members[props.index - 1])
-    const showModal = () => {
+    const member = ref()
+    const showModal = (user) => {
+      member.value = user
       modalStatus.value = true
     }
 
