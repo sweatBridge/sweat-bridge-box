@@ -62,8 +62,7 @@
 </template>
 
 <script>
-import {ref, reactive} from "vue"
-import {useStore} from "vuex"
+import {ref} from "vue"
 import {
   calculateAge,
   convertGenderToKorean,
@@ -76,14 +75,7 @@ import {
 export default {
   name: "MemberDetailsModal",
   components: {},
-  // props: {
-  //   index: {
-  //     type: Number,
-  //     required: true
-  //   }
-  // },
   setup(props, {emit}) {
-    const store = useStore()
     const modalStatus = ref(false)
     const member = ref()
     const showModal = (user) => {
