@@ -12,6 +12,21 @@ const membership = {
                 price: 0,
             }
         ],
+        // userMembershipHistory: [
+        //     {
+        //         plan: '',
+        //         type: '',
+        //         count: 0,
+        //         duration: 0,
+        //         price: 0,
+        //         assignee: '',
+        //         status: '',
+        //         startDate: null,
+        //         endDate: null,
+        //         createdAt: null,
+        //         updatedAt: null,
+        //     }
+        // ]
     },
     mutations: {
         SET_MEMBERSHIP_PLANS(state, plans) {
