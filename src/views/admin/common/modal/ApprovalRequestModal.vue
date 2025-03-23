@@ -95,6 +95,17 @@
               </CCol>
             </CRow>
             <CRow class="align-items-center g-2 mt-2">
+              <CCol md="2">이메일</CCol>
+              <CCol md="10">
+                <CFormInput 
+                  v-model="manualEmail"
+                  type="text"
+                  id="manualEmailInput"
+                  placeholder="e-mail 입력하세요."
+                />
+              </CCol>
+            </CRow>
+            <CRow class="align-items-center g-2 mt-2">
               <CCol md="2">성별</CCol>
               <CCol md="10">
                 <CButtonGroup>
@@ -109,7 +120,7 @@
             </CRow>
             <CRow class="mt-3">
               <CCol class="text-end">
-                <CButton color="success" @click="addManualUser">
+                <CButton color="success" @click="addManualMember">
                   추가
                 </CButton>
               </CCol>
@@ -135,7 +146,7 @@
           </CListGroup>
         </CCardBody>
         <CCardFooter class="text-end">
-          <CButton color="success" @click="approveMember()" :disabled="isBoxMember()">
+          <CButton color="success" @click="addMember()" :disabled="isBoxMember()">
             추가
           </CButton>
         </CCardFooter>
@@ -168,8 +179,10 @@ export default {
     const activeTab = ref('email');
     const searchEmail = ref("");
     const searchPhone = ref("");
+
     const manualName = ref("");
     const manualPhone = ref("");
+    const manualEmail = ref("");
     const manualGender = ref("");
     const user = ref(null);
 
@@ -203,11 +216,8 @@ export default {
         // Call Vuex action to get user data
         const userData = await store.dispatch("getUserByEmail", { email: searchEmail.value });
 
-        console.log("🔍 Debug: User Data from getUserDoc:", userData);
-
         if (userData) {
-          user.value = userData; // ✅ Assign actual user data
-          console.log("✅ Debug: User Data Set:", user.value);
+          user.value = userData;
         } else {
           user.value = null;
           console.warn("⚠️ Warning: User document does not exist.");
@@ -228,11 +238,8 @@ export default {
         // Call Vuex action to get user data
         const userData = await store.dispatch("getUserByPhone", { phone: searchPhone.value });
 
-        console.log("🔍 Debug: User Data from getUserDoc:", userData);
-
         if (userData) {
-          user.value = userData; // ✅ Assign actual user data
-          console.log("✅ Debug: User Data Set:", user.value);
+          user.value = userData;
         } else {
           user.value = null;
           console.warn("⚠️ Warning: User document does not exist.");
@@ -244,16 +251,8 @@ export default {
       }
     }
 
-    const isBoxMember = () => {
-      console.log(boxName)
-      console.log(user)
-      if (user.value.boxName === boxName.value) {
-        return true;
-      }
+    const isBoxMember = () => user.value.boxName === boxName.value
 
-      return false;
-
-    }
     
     const showModal = () => {
       modalStatus.value = true
@@ -273,6 +272,7 @@ export default {
       setManualGender,
       manualName,
       manualPhone,
+      manualEmail,
       manualGender,
       getAge,
       getGender,
@@ -285,8 +285,19 @@ export default {
     };
   },
   methods: {
-    approveMember() {
-      this.$refs.approvalConfirmationModal.showModal(this.user)
+    addMember() {
+      this.$refs.approvalConfirmationModal.showModal(this.user, 'auto')
+    },
+    addManualMember() {
+      this.$refs.approvalConfirmationModal.showModal({
+        'boxName': this.boxName,
+        'email': this.manualEmail,
+        'gender': this.manualGender,
+        'phone': this.manualPhone,
+        'realName': this.manualName,
+        'nickName': '',
+        'remain': {}
+      }, 'manual')
     },
   }
 };

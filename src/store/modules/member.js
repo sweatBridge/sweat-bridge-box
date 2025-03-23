@@ -1,6 +1,6 @@
-import { getDocs, query, collection, where, updateDoc, deleteDoc } from "firebase/firestore"
+import { getDocs, query, collection, where, updateDoc, setDoc, doc } from "firebase/firestore"
 import { db } from '@/firebase'
-import { calculateRemainingDays, initializeMember, removeDaysFromMember } from "@/views/admin/util/member"
+import { initializeMember, removeDaysFromMember } from "@/views/admin/util/member"
 
 const member = {
   state: {
@@ -27,6 +27,7 @@ const member = {
 
       commit('SET_MEMBERS', members)
     },
+    
     async getMemberRef({commit}, payload) {
       const path = `/box/${payload.box}/member`
       const q = query(collection(db, path),
@@ -80,6 +81,53 @@ const member = {
       });
     
       return userData;
+    },
+
+    async createMember({ commit }, payload) {
+      const box = localStorage.getItem('boxName')
+      try {
+        const path = `/box/${box}/member`
+        const memberData = payload
+
+        // email을 문서 ID로 사용
+        const memberDocRef = doc(collection(db, path), payload.email)
+
+        await setDoc(memberDocRef, memberData)
+
+        console.log('멤버가 추가되었습니다. 문서 ID:', memberDocRef.id)
+        return memberDocRef
+      } catch (error) {
+        console.error('멤버 추가 중 오류 발생:', error)
+        throw error
+      }
+    },
+
+    async updateUser({ commit }, payload) {
+      try {
+        const path = `/user`
+        const q = query(
+          collection(db, path),
+          where('email', '==', payload.email)
+        )
+        const querySnap = await getDocs(q)
+
+        if (querySnap.empty) {
+          console.warn('해당 이메일로 사용자를 찾을 수 없습니다:', payload.email)
+
+          return null
+        }
+
+        // 여러 문서가 있을 수 있지만, 일반적으로는 하나일 것으로 예상
+        querySnap.forEach(async (docSnap) => {
+          await updateDoc(docSnap.ref, payload)
+
+          return payload
+        })
+
+      } catch (error) {
+        console.error('사용자 업데이트 중 오류 발생:', error)
+        throw error
+      }
     },
     
     async approveMember(context, payload) {

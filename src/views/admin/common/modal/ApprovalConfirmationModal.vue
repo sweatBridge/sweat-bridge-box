@@ -13,7 +13,7 @@
       <CButton color="danger" @click="cancel">
         취소
       </CButton>
-      <CButton color="success" @click="approve">
+      <CButton color="success" @click="addMember">
         확인
       </CButton>
     </CModalFooter>
@@ -35,14 +35,53 @@ export default {
     const modalStatus = ref(false)
     const name = ref("")
     const member = reactive({})
+    // addType is either 'auto' or 'manual'
+    const addType = ref("auto")
     const toastMessageRef = ref(null)
     const boxName = ref(localStorage.getItem('boxName') || '');
     
-    const showModal = (user) => {
+    const showModal = (user, type) => {
       modalStatus.value = true
       name.value = user.realName
+      addType.value = type
       member.value = user
     }
+    
+    const addMember = async () => {
+      try {
+        // 1. register box (add boxName field)
+        member.value.boxName = boxName.value;
+
+        // 2. update user doc
+        // if addType is 'auto', update the user doc
+        if (addType.value === 'auto') {
+          await store.dispatch("updateUser", member.value);
+        }
+
+        // 3. create member doc
+        await store.dispatch("createMember", member.value);
+
+        toastMessageRef.value.createToast(
+          {
+            title: '성공',
+            content: '회원 추가 성공',
+            type: 'success'
+          }
+        )
+        setTimeout(() => {
+          location.reload()
+        }, 500);
+      } catch (error) {
+        toastMessageRef.value.createToast(
+          {
+            title: '실패',
+            content: '회원 추가 실패' + error,
+            type: 'danger'
+          }
+        )
+      }
+    }
+
     const approve = () => {
       modalStatus.value = false
       member.value.box = boxName.value
@@ -82,6 +121,7 @@ export default {
       name,
       toastMessageRef,
       showModal,
+      addMember,
       approve,
       cancel
     }
