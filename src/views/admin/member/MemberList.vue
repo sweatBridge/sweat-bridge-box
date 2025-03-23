@@ -9,7 +9,6 @@
               @click="approveMembers"
               class="position-relative header-button" size="sm">
               <strong>회원 추가</strong>
-              <CBadge color="danger" position="top-end" shape="rounded-pill">
             </CButton>
           </CCol>
           <CCol md="6">
