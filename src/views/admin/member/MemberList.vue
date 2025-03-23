@@ -3,13 +3,23 @@
     <CCardHeader class="card-header">
       <strong>회원 관리</strong>
       <div class="float-end">
-        <CButton
-          @click="approveMembers"
-          class="position-relative header-button" size="sm">
-          <strong>회원 추가</strong>
-          <CBadge color="danger" position="top-end" shape="rounded-pill">
-          </CBadge>
-        </CButton>
+        <CRow class="g-3">
+          <CCol md="6">
+            <CButton
+              @click="approveMembers"
+              class="position-relative header-button" size="sm">
+              <strong>회원 추가</strong>
+              <CBadge color="danger" position="top-end" shape="rounded-pill">
+            </CButton>
+          </CCol>
+          <CCol md="6">
+            <CButton
+              @click="manageMembershipPlans"
+              class="position-relative header-button" size="sm">
+              <strong>멤버십</strong>
+            </CButton>
+          </CCol>
+        </CRow>
       </div>
     </CCardHeader>
     <CCardBody>
@@ -80,11 +90,11 @@
   <register-membership-modal ref="registerMembershipModal"/>
   <member-details-modal :index="memberDetatilIdx" ref="memberDetailsModal" />
   <member-deletion-modal ref="deleteModal" />
+  <membership-plan-modal ref="membershipPlanModal" />
 </template>
 
 <script>
 import {ref, defineComponent, onMounted, computed} from "vue"
-import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue"
 import { useStore } from "vuex"
 import {
   calculateAge,
@@ -94,9 +104,11 @@ import {
   getTypeKor,
   findMemberById
 } from "@/views/admin/util/member"
-import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue"
+import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue"
+import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue";
 import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
 import RegisterMembershipModal from "@/views/admin/common/modal/RegisterMembershipModal.vue";
+import MembershipPlanModal from "@/views/admin/common/modal/membership/MembershipPlanModal.vue";
 
 export default defineComponent({
   components: {
@@ -104,6 +116,7 @@ export default defineComponent({
     MemberDeletionModal,
     MemberDetailsModal,
     ApprovalRequestModal,
+    MembershipPlanModal,
   },
   setup() {
     const store = useStore()
@@ -194,7 +207,10 @@ export default defineComponent({
     showMemberDetails(idx) {
       this.$refs.memberDetailsModal.showModal()
       this.memberDetatilIdx = idx
-    }
+    },
+    manageMembershipPlans() {
+      this.$refs.membershipPlanModal.showModal()
+    },
   }
 })
 </script>
