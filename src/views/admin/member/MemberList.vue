@@ -3,22 +3,16 @@
     <CCardHeader class="card-header">
       <strong>회원 관리</strong>
       <div class="float-end">
-        <CRow class="g-3">
-          <CCol>
-            <CButton
-              @click="approveMembers"
-              class="position-relative header-button" size="sm">
-              <strong>회원 추가</strong>
-            </CButton>
-          </CCol>
-          <CCol>
-            <CButton
-              @click="manageMembershipPlans"
-              class="position-relative header-button" size="sm">
-              <strong>멤버십</strong>
-            </CButton>
-          </CCol>
-        </CRow>
+        <CButton
+          @click="approveMembers"
+          class="position-relative header-button" size="sm">
+          <strong>회원추가</strong>
+        </CButton>
+        <CButton
+          @click="manageMembershipPlans"
+          class="position-relative header-button" size="sm">
+          <strong>멤버십</strong>
+        </CButton>
       </div>
     </CCardHeader>
     <CCardBody>
@@ -113,12 +107,12 @@ import {
   getTypeKor,
   findMemberById
 } from "@/views/admin/util/member"
-import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue"
-import MemberDetailsModal from "@/views/admin/common/modal/member/MemberDetailsModal.vue";
-import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
-import RegisterMembershipModal from "@/views/admin/common/modal/RegisterMembershipModal.vue";
-import MembershipPlanModal from "@/views/admin/common/modal/membership/MembershipPlanModal.vue";
-import MembershipModal from "@/views/admin/common/modal/membership/MembershipModal.vue";
+import ApprovalRequestModal from "@/views/admin/member/modal/ApprovalRequestModal.vue";
+import MemberDetailsModal from "@/views/admin/member/modal/MemberDetailsModal.vue";
+import MemberDeletionModal from "@/views/admin/member/modal/MemberDeletionModal.vue";
+import RegisterMembershipModal from "@/views/admin/membership/modal/RegisterMembershipModal.vue";
+import MembershipPlanModal from "@/views/admin/membership/modal/MembershipPlanModal.vue";
+import MembershipModal from "@/views/admin/membership/modal/MembershipModal.vue";
 
 export default defineComponent({
   components: {
