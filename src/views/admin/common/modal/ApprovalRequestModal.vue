@@ -123,6 +123,10 @@
         <CCardHeader class="bg-light fw-bold">검색 결과</CCardHeader>
         <CCardBody>
           <CListGroup flush>
+            <CListGroupItem>
+              <strong>박스:</strong> {{ user.boxName }}
+              <span v-if="isBoxMember()"><strong> [이미 추가된 회원]</strong></span>
+            </CListGroupItem>
             <CListGroupItem><strong>이름:</strong> {{ user.realName }}</CListGroupItem>
             <CListGroupItem><strong>닉네임:</strong> {{ user.nickName }}</CListGroupItem>
             <CListGroupItem><strong>성별:</strong> {{ getGender(user.gender) }}</CListGroupItem>
@@ -131,7 +135,7 @@
           </CListGroup>
         </CCardBody>
         <CCardFooter class="text-end">
-          <CButton color="success" @click="approveMember()">
+          <CButton color="success" @click="approveMember()" :disabled="isBoxMember()">
             추가
           </CButton>
         </CCardFooter>
@@ -157,6 +161,8 @@ import ApprovalConfirmationModal from "@/views/admin/common/modal/ApprovalConfir
 export default {
   components: {ApprovalConfirmationModal},
   setup({emit}) {
+    const boxName = ref(localStorage.getItem('boxName') || '');
+
     const store = useStore();
     const modalStatus = ref(false);
     const activeTab = ref('email');
@@ -166,13 +172,6 @@ export default {
     const manualPhone = ref("");
     const manualGender = ref("");
     const user = ref(null);
-
-    const headers = [
-      { text: "이름", value: "realName" },
-      { text: "닉네임", value: "nickName"},
-      { text: "성별", value: "gender" },
-      { text: "연락처", value: "phone" },
-    ]
 
     const getAge = (birthDate) => {
       return calculateAge(birthDate)
@@ -244,6 +243,17 @@ export default {
         alert("사용자 검색 중 오류가 발생했습니다.");
       }
     }
+
+    const isBoxMember = () => {
+      console.log(boxName)
+      console.log(user)
+      if (user.value.boxName === boxName.value) {
+        return true;
+      }
+
+      return false;
+
+    }
     
     const showModal = () => {
       modalStatus.value = true
@@ -268,8 +278,8 @@ export default {
       getGender,
       searchUserByEmail,
       searchUserByPhone,
+      isBoxMember,
       user,
-      headers,
       showModal,
       checkApprovalRequestModal
     };
