@@ -12,21 +12,21 @@ const membership = {
                 price: 0,
             }
         ],
-        // userMembershipHistory: [
-        //     {
-        //         plan: '',
-        //         type: '',
-        //         count: 0,
-        //         duration: 0,
-        //         price: 0,
-        //         assignee: '',
-        //         status: '',
-        //         startDate: null,
-        //         endDate: null,
-        //         createdAt: null,
-        //         updatedAt: null,
-        //     }
-        // ]
+        userMemberships: [
+            {
+                plan: '',
+                type: '',
+                count: 0,
+                price: 0,
+                assignee: '',
+                startDate: null,
+                endDate: null,
+                holdStartDate: null,
+                holdEndDate: null,
+                createdAt: null,
+                updatedAt: null,
+            }
+        ],
     },
     mutations: {
         SET_MEMBERSHIP_PLANS(state, plans) {
@@ -41,7 +41,13 @@ const membership = {
                 state.plans.splice(index, 1);
             }
         },
-        
+
+        SET_USER_MEMBERSHIPS(state, memberships) {
+            state.userMemberships = memberships
+        },
+        ADD_USER_MEMBERSHIP(state, membership) {
+            state.userMemberships.push(membership)
+        }
     },
     actions: {
         async getMembershipPlans({ commit }) {
@@ -120,7 +126,71 @@ const membership = {
             } catch (error) {
                 console.error("Error deleting membership plan:", error);
             }
+        },
+
+        async getUserMemberships({ commit }, payload) {
+            try {
+                const boxName = localStorage.getItem('boxName')
+                if (!boxName || !payload.email) {
+                    console.warn('boxName 또는 email이 없습니다.')
+                    return
+                }
+
+                const memberDocRef = doc(
+                    db,
+                    `box/${boxName}/member/${payload.email}/membership/membership_doc`
+                )
+
+                const docSnap = await getDoc(memberDocRef)
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data()
+                    const memberships = data.memberships || []
+
+                    commit('SET_USER_MEMBERSHIPS', memberships)
+                    return memberships
+                } else {
+                    console.log('Membership 문서를 찾을 수 없습니다.')
+                    commit('SET_USER_MEMBERSHIPS', [])
+                    return []
+                }
+            } catch (error) {
+                console.error('회원권 정보 불러오기 중 오류 발생:', error)
+                commit('SET_USER_MEMBERSHIPS', [])
+                return []
+            }
+        },
+
+        async addUserMembership({ commit, state }, payload) {
+            try {
+                const boxName = localStorage.getItem('boxName')
+                if (!boxName) {
+                    console.error("Error: boxName is missing")
+                    return
+                }
+
+                if (!payload.email || !payload.membership) {
+                    console.error("Error: email or membership data is missing")
+                    return
+                }
+
+                commit('ADD_USER_MEMBERSHIP', payload.membership)
+
+                const membershipDocRef = doc(
+                    db,
+                    `box/${boxName}/member/${payload.email}/membership/membership_doc`
+                )
+                
+                await setDoc(membershipDocRef, {
+                    memberships: state.userMemberships
+                })
+
+                console.log('Successfully added new user membership:', payload.membership)
+            } catch (error) {
+                console.error('Error adding user membership:', error)
+            }
         }
+
     },
     getters: {
         getMembershipPlans: (state) => state.plans,
