@@ -26,14 +26,14 @@
         
         <CRow v-if="membershipType === 'periodPass'">
           <CInputGroup class="mb-3">
-            <CInputGroupText>기간(일)</CInputGroupText>
+            <CInputGroupText>기간(월)</CInputGroupText>
             <CFormInput v-model="duration" />
           </CInputGroup>
         </CRow>
 
         <CRow v-if="membershipType === 'countPass'">
           <CInputGroup class="mb-3">
-            <CInputGroupText>기간(일)</CInputGroupText>
+            <CInputGroupText>기간(월)</CInputGroupText>
             <CFormInput v-model="duration" />
             <CInputGroupText>횟수</CInputGroupText>
             <CFormInput v-model="count" />
@@ -104,7 +104,7 @@ export default {
       { text: "플랜 이름", value: "plan" },
       { text: "회원권 타입", value: "type" },
       { text: "횟수", value: "count" },
-      { text: "기간(일)", value: "duration" },
+      { text: "기간(월)", value: "duration" },
       { text: "가격", value: "price"},
       { text: "삭제", value: "actions" },
     ];

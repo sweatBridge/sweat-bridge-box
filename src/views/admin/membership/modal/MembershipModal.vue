@@ -38,14 +38,14 @@
 
         <CRow v-if="membershipType === 'periodPass'">
           <CInputGroup class="mb-3">
-            <CInputGroupText>기간(일)</CInputGroupText>
+            <CInputGroupText>기간(월)</CInputGroupText>
             <CFormInput v-model="duration" />
           </CInputGroup>
         </CRow>
 
         <CRow v-if="membershipType === 'countPass'">
           <CInputGroup class="mb-3">
-            <CInputGroupText>기간(일)</CInputGroupText>
+            <CInputGroupText>기간(월)</CInputGroupText>
             <CFormInput v-model="duration" />
             <CInputGroupText>횟수</CInputGroupText>
             <CFormInput v-model="count" />
