@@ -73,7 +73,7 @@
             size="sm"
             @click="manageMembership(email)"
           >
-            O
+            관리
           </CButton>
         </template>
         <template #item-details="{ email }">
@@ -207,10 +207,7 @@ export default defineComponent({
       this.$refs.deleteModal.showModal(member)
     },
     manageMembership(id) {
-      let member = findMemberById(this.members, id)
-      console.log(id)
-      console.log(member)
-      this.$refs.membershipModal.showModal()
+      this.$refs.membershipModal.showModal(id)
     },
     renewMembership(id) {
       let member = findMemberById(this.members, id)

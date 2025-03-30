@@ -122,8 +122,6 @@ export default {
               type: 'danger'
             }
           )
-          setTimeout(() => {
-          }, 500)
         })
       modalStatus.value = false
     }

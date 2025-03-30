@@ -59,9 +59,19 @@
           </CInputGroup>
         </CRow>
 
+        <CRow>
+          <CInputGroup class="mb-3">
+            <CInputGroupText id="basic-addon3">일자</CInputGroupText>
+            <CButton style="display: flex; align-items: center;">
+              <CIcon name="cil-calendar" style="margin-right: 8px;"/>
+              <DatePicker v-model="startDate"/>
+            </CButton>
+          </CInputGroup>
+        </CRow>
+
         <CRow class="justify-content-end">
           <CCol md="auto">
-            <CButton color="success" @click="addMembershipPlan" size="sm">
+            <CButton color="success" @click="addMembership" size="sm">
               추가
             </CButton>
           </CCol>
@@ -74,17 +84,24 @@
       </CButton>
     </CModalFooter>
   </CModal>
+  <toast-message ref="toastMessageRef" />
+
 </template>
 
 <script>
 import { ref, computed } from "vue";
 import { useStore } from "vuex";
+import DatePicker from "vue3-datepicker";
+import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue";
 
 export default {
   name: "MembershipModal",
+  components: {DatePicker, ToastMessage},
   setup() {
     const store = useStore();
     const modalStatus = ref(false);
+
+    const userEmail = ref("");
 
     const membershipPlans = computed(() => store.getters.getMembershipPlans);
     const assignee = ref("");
@@ -95,6 +112,9 @@ export default {
     const count = ref(0);
     const duration = ref(0);
     const price = ref(0);
+    const startDate = ref(null);
+
+    const toastMessageRef = ref(null)
 
     const handlePlanChange = () => {
       if (selectedPlanName.value === 'custom') {
@@ -120,14 +140,69 @@ export default {
       count.value = 0;
     };
 
-    const showModal = async () => {
+    const showModal = async (userId) => {
       await store.dispatch("getMembershipPlans");
+      await store.dispatch("getUserMemberships", {'email': userId});
+      userEmail.value = userId;
       modalStatus.value = true;
     };
+
+    const addMembership = async () => {
+      const start = new Date(startDate.value);
+      const end = new Date(start.getTime());
+
+      const durationInt = parseInt(duration.value, 10);  // 정수 변환
+
+      const totalMonths = start.getMonth() + durationInt;
+      end.setFullYear(start.getFullYear() + Math.floor(totalMonths / 12));
+      end.setMonth(totalMonths % 12);
+
+      const now = new Date();
+      try {
+        const payload = {
+          'email': userEmail.value,
+          'membership': {
+            plan: selectedPlanName.value,
+            type: membershipType.value,
+            count: count.value,
+            price: price.value,
+            assignee: assignee.value,
+            startDate: start,
+            endDate: end,
+            holdStartDate: null,
+            holdEndDate: null,
+            createdAt: now,
+            updatedAt: now,
+          }
+        }
+
+        await store.dispatch("addUserMembership", payload)
+
+        toastMessageRef.value.createToast(
+          {
+            title: '성공',
+            content: '멤버십 추가 성공',
+            type: 'success'
+          }
+        )
+        setTimeout(() => {
+          location.reload()
+        }, 500)
+      } catch (error) {
+        toastMessageRef.value.createToast(
+          {
+            title: '실패',
+            content: '멤버십 추가 실패' + error,
+            type: 'danger'
+          }
+        )
+      }
+    }
 
     return {
       modalStatus,
       showModal,
+      userEmail,
       membershipPlans,
       assignee,
       selectedPlanName,
@@ -135,8 +210,11 @@ export default {
       count,
       duration,
       price,
+      startDate,
       handlePlanChange,
-      handleTypeChange
+      handleTypeChange,
+      addMembership,
+      toastMessageRef,
     };
   }
 };
