@@ -77,6 +77,22 @@
           </CCol>
         </CRow>
       </div>
+      <EasyDataTable
+        :headers="tableHeaders" 
+        :items="memberships"
+        theme-color="#42A5F5"
+        alternating
+      >
+      <template #item-startDate="{ startDate }">
+        {{ getDateStr(startDate) }}
+      </template>
+      <template #item-endDate="{ endDate }">
+        {{ getDateStr(endDate) }}
+      </template>
+      <template #item-type="{ type }">
+        {{ type === "countPass" ? "횟수권" : "기간권" }}
+      </template>
+      </EasyDataTable>
     </CModalBody>
     <CModalFooter>
       <CButton color="danger" @click="() => {modalStatus = false}">
@@ -93,6 +109,7 @@ import { ref, computed } from "vue";
 import { useStore } from "vuex";
 import DatePicker from "vue3-datepicker";
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue";
+import { datetimeToSimpleStr } from "../../util/date";
 
 export default {
   name: "MembershipModal",
@@ -114,7 +131,22 @@ export default {
     const price = ref(0);
     const startDate = ref(null);
 
+    const memberships = ref([]);
+
     const toastMessageRef = ref(null)
+
+    const tableHeaders = [
+      { text: "시작일", value: "startDate" },
+      { text: "종료일", value: "endDate" },
+      { text: "회원권 타입", value: "type" },
+      { text: "가격", value: "price"},
+      { text: "플랜 이름", value: "plan" },
+      { text: "삭제", value: "actions" },
+    ];
+
+    const getDateStr = (date) => {
+      return datetimeToSimpleStr(date);
+    }
 
     const handlePlanChange = () => {
       if (selectedPlanName.value === 'custom') {
@@ -144,6 +176,7 @@ export default {
       await store.dispatch("getMembershipPlans");
       await store.dispatch("getUserMemberships", {'email': userId});
       userEmail.value = userId;
+      memberships.value = store.state.membership.userMemberships;
       modalStatus.value = true;
     };
 
@@ -214,6 +247,9 @@ export default {
       handlePlanChange,
       handleTypeChange,
       addMembership,
+      memberships,
+      tableHeaders,
+      getDateStr,
       toastMessageRef,
     };
   }
