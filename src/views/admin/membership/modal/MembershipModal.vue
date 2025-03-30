@@ -140,7 +140,8 @@ export default {
       { text: "종료일", value: "endDate" },
       { text: "회원권 타입", value: "type" },
       { text: "가격", value: "price"},
-      { text: "플랜 이름", value: "plan" },
+      { text: "플랜", value: "plan" },
+      { text: "담당자", value: "assignee" },
       { text: "삭제", value: "actions" },
     ];
 

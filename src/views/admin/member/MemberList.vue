@@ -51,29 +51,20 @@
         <template #item-gender="{ gender }">
           {{ getGender(gender) }}
         </template>
-        <template #item-operation="{ email, remain }">
+        <template #item-operation="{ email }">
+          <CButton
+            color="info"
+            size="sm"
+            @click="manageMembership(email)"
+          >
+            멤버십
+          </CButton>
           <CButton
             color="danger"
             size="sm"
             @click="deleteMember(email)"
           >
             삭제
-          </CButton>
-          <CButton
-            :color=getRegisterButtonColor(remain.type)
-            size="sm"
-            @click="renewMembership(email)"
-          >
-            {{ getRegisterButtonDescription(remain.type) }}
-          </CButton>
-        </template>
-        <template #item-membership="{email}">
-          <CButton
-            color="info"
-            size="sm"
-            @click="manageMembership(email)"
-          >
-            관리
           </CButton>
         </template>
         <template #item-details="{ email }">
@@ -89,7 +80,6 @@
     </CCardBody>
   </CCard>
   <approval-request-modal ref="approvalRequestModal"/>
-  <register-membership-modal ref="registerMembershipModal"/>
   <member-details-modal ref="memberDetailsModal" />
   <member-deletion-modal ref="deleteModal" />
   <membership-plan-modal ref="membershipPlanModal" />
@@ -110,13 +100,11 @@ import {
 import ApprovalRequestModal from "@/views/admin/member/modal/ApprovalRequestModal.vue";
 import MemberDetailsModal from "@/views/admin/member/modal/MemberDetailsModal.vue";
 import MemberDeletionModal from "@/views/admin/member/modal/MemberDeletionModal.vue";
-import RegisterMembershipModal from "@/views/admin/membership/modal/RegisterMembershipModal.vue";
 import MembershipPlanModal from "@/views/admin/membership/modal/MembershipPlanModal.vue";
 import MembershipModal from "@/views/admin/membership/modal/MembershipModal.vue";
 
 export default defineComponent({
   components: {
-    RegisterMembershipModal,
     MemberDeletionModal,
     MemberDetailsModal,
     ApprovalRequestModal,
@@ -137,7 +125,6 @@ export default defineComponent({
       { text: "잔여 기간(일)", value: "remain.days", sortable: true},
       { text: "잔여 횟수(회)", value: "remainingVisits"},
       { text: "성별", value: "gender" },
-      { text: "멤버십", value: "membership"},
       { text: "기능", value: "operation", width: "150" },
       { text: "상세", value: "details"},
     ]
@@ -145,22 +132,6 @@ export default defineComponent({
     const members = computed(() => store.state.member.members)
 
     const searchValue = ref("")
-
-    const getRegisterButtonDescription = (item) => {
-      if (item === 'periodPass' || item === 'countPass') {
-        return '갱신'
-      } else {
-        return '등록'
-      }
-    }
-    // distinguish button color by type
-    const getRegisterButtonColor = (type) => {
-      if (type === 'periodPass' || type === 'countPass') {
-        return 'secondary'
-      } else {
-        return 'dark'
-      }
-    }
 
     const getType = (item) => {
       return getTypeKor(item.type, item.days)
@@ -188,8 +159,6 @@ export default defineComponent({
       headers,
       members,
       searchValue,
-      getRegisterButtonColor,
-      getRegisterButtonDescription,
       getType,
       getExpiryDateStr,
       getRemainingVisits,
@@ -208,10 +177,6 @@ export default defineComponent({
     },
     manageMembership(id) {
       this.$refs.membershipModal.showModal(id)
-    },
-    renewMembership(id) {
-      let member = findMemberById(this.members, id)
-      this.$refs.registerMembershipModal.showModal(member)
     },
     showMemberDetails(id) {
       let member = findMemberById(this.members, id)
