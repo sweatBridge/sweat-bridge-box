@@ -47,6 +47,11 @@ const membership = {
         },
         ADD_USER_MEMBERSHIP(state, membership) {
             state.userMemberships.push(membership)
+        },
+        REMOVE_USER_MEMBERSHIP(state, index) {
+            if (index !== -1) {
+                state.userMemberships.splice(index, 1);
+            }
         }
     },
     actions: {
@@ -188,6 +193,36 @@ const membership = {
                 console.log('Successfully added new user membership:', payload.membership)
             } catch (error) {
                 console.error('Error adding user membership:', error)
+            }
+        },
+
+        async removeUserMembership({ commit, state }, payload) {
+            try {
+                const boxName = localStorage.getItem('boxName')
+                if (!boxName) {
+                    console.error("Error: boxName is missing")
+                    return
+                }
+
+                if (!payload.index) {
+                    console.error("Error: membership index data is missing")
+                    return
+                }
+
+                commit('REMOVE_USER_MEMBERSHIP', payload.index)
+
+                const membershipDocRef = doc(
+                    db,
+                    `box/${boxName}/member/${payload.email}/membership/membership_doc`
+                )
+                
+                await setDoc(membershipDocRef, {
+                    memberships: state.userMemberships
+                })
+
+                console.log('Successfully removed new user membership:', payload.membership)
+            } catch (error) {
+                console.error('Error removing user membership:', error)
             }
         }
 

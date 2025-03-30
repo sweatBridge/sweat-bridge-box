@@ -81,6 +81,7 @@
         :headers="tableHeaders" 
         :items="memberships"
         theme-color="#42A5F5"
+        show-index
         alternating
       >
       <template #item-startDate="{ startDate }">
@@ -91,6 +92,11 @@
       </template>
       <template #item-type="{ type }">
         {{ type === "countPass" ? "횟수권" : "기간권" }}
+      </template>
+      <template #item-actions="{ index }">
+        <CButton color="danger" @click="deleteMembership(index - 1)">
+          X
+        </CButton>
       </template>
       </EasyDataTable>
     </CModalBody>
@@ -147,6 +153,35 @@ export default {
 
     const getDateStr = (date) => {
       return datetimeToSimpleStr(date);
+    }
+
+    const deleteMembership = async (index) => {
+      try {
+        const payload = {
+          'index': index
+        }
+
+        await store.dispatch("removeUserMembership", payload)
+
+        toastMessageRef.value.createToast(
+          {
+            title: '성공',
+            content: '멤버십 삭제 성공',
+            type: 'success'
+          }
+        )
+        setTimeout(() => {
+          location.reload()
+        }, 500)
+      } catch (error) {
+        toastMessageRef.value.createToast(
+          {
+            title: '실패',
+            content: '멤버십 삭제 실패' + error,
+            type: 'danger'
+          }
+        )
+      }
     }
 
     const handlePlanChange = () => {
@@ -251,6 +286,7 @@ export default {
       memberships,
       tableHeaders,
       getDateStr,
+      deleteMembership,
       toastMessageRef,
     };
   }
