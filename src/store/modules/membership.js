@@ -27,6 +27,7 @@ const membership = {
                 updatedAt: null,
             }
         ],
+        userCurrentMemberships: {},
     },
     mutations: {
         SET_MEMBERSHIP_PLANS(state, plans) {
@@ -52,7 +53,11 @@ const membership = {
             if (index !== -1) {
                 state.userMemberships.splice(index, 1);
             }
-        }
+        },
+
+        SET_USER_CURRENT_MEMBERSHIP(state, membership) {
+            state.userCurrentMembership = membership
+        },
     },
     actions: {
         async getMembershipPlans({ commit }) {
@@ -153,15 +158,43 @@ const membership = {
                     const memberships = data.memberships || []
 
                     commit('SET_USER_MEMBERSHIPS', memberships)
+
+                    const currentMemberships = memberships.filter(membership => {
+                        // startDate와 endDate가 유효한지 확인
+                        const startDate = membership.startDate && membership.startDate.seconds ? new Date(membership.startDate.seconds * 1000) : null
+                        const endDate = membership.endDate && membership.endDate.seconds ? new Date(membership.endDate.seconds * 1000) : null
+                        
+                        // startDate나 endDate가 유효하지 않으면 필터에서 제외
+                        if (!startDate || !endDate) {
+                            console.warn('유효하지 않은 날짜 데이터:', membership)
+                            return false
+                        }
+                    
+                        const today = new Date()
+                        return today >= startDate && today <= endDate
+                    })
+                    
+                    
+
+                    if (currentMemberships.length === 0) {
+                        commit('SET_USER_CURRENT_MEMBERSHIP', {})  // 빈 객체 저장
+                    } else if (currentMemberships.length === 1) {
+                        commit('SET_USER_CURRENT_MEMBERSHIP', currentMemberships[0])  // 첫 번째 원소 저장
+                    } else {
+                        throw new Error('현재 회원권이 2개 이상입니다.')
+                    }
+
                     return memberships
                 } else {
                     console.log('Membership 문서를 찾을 수 없습니다.')
                     commit('SET_USER_MEMBERSHIPS', [])
+                    commit('SET_USER_CURRENT_MEMBERSHIP', {})
                     return []
                 }
             } catch (error) {
                 console.error('회원권 정보 불러오기 중 오류 발생:', error)
                 commit('SET_USER_MEMBERSHIPS', [])
+                commit('SET_USER_CURRENT_MEMBERSHIP', {})
                 return []
             }
         },

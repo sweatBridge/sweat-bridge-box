@@ -79,6 +79,20 @@
       </div>
       <EasyDataTable
         :headers="tableHeaders" 
+        :items="currentMemberships"
+      >
+      <template #item-startDate="{ startDate }">
+        {{ getDateStr(startDate) }}
+      </template>
+      <template #item-endDate="{ endDate }">
+        {{ getDateStr(endDate) }}
+      </template>
+      <template #item-type="{ type }">
+        {{ type === "countPass" ? "횟수권" : "기간권" }}
+      </template>
+      </EasyDataTable>
+      <EasyDataTable
+        :headers="tableHeaders" 
         :items="memberships"
         theme-color="#42A5F5"
         show-index
@@ -138,6 +152,7 @@ export default {
     const startDate = ref(null);
 
     const memberships = ref([]);
+    const currentMemberships = ref([]);
 
     const toastMessageRef = ref(null)
 
@@ -213,6 +228,7 @@ export default {
       await store.dispatch("getUserMemberships", {'email': userId});
       userEmail.value = userId;
       memberships.value = store.state.membership.userMemberships;
+      currentMemberships.value = [store.state.membership.userCurrentMembership];
       modalStatus.value = true;
     };
 
@@ -284,6 +300,7 @@ export default {
       handleTypeChange,
       addMembership,
       memberships,
+      currentMemberships,
       tableHeaders,
       getDateStr,
       deleteMembership,
