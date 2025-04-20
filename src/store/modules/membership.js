@@ -228,8 +228,8 @@ const membership = {
                     return
                 }
 
-                if (!payload.index) {
-                    console.error("Error: membership index data is missing")
+                if (payload.index === undefined || payload.email === undefined) {
+                    console.error("Error: membership index or email is missing")
                     return
                 }
 
@@ -244,9 +244,10 @@ const membership = {
                     memberships: state.userMemberships
                 })
 
-                console.log('Successfully removed new user membership:', payload.membership)
+                console.log('Successfully removed user membership at index:', payload.index)
             } catch (error) {
                 console.error('Error removing user membership:', error)
+                throw error
             }
         }
 

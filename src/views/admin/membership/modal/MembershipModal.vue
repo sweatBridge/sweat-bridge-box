@@ -201,7 +201,8 @@ export default {
     const deleteMembership = async (index) => {
       try {
         const payload = {
-          'index': index
+          'index': index,
+          'email': userEmail.value
         }
 
         await store.dispatch("removeUserMembership", payload)
@@ -213,14 +214,16 @@ export default {
             type: 'success'
           }
         )
-        setTimeout(() => {
-          location.reload()
-        }, 500)
+        
+        // 삭제 후 회원권 목록을 다시 불러옵니다
+        await store.dispatch("getUserMemberships", {'email': userEmail.value});
+        memberships.value = store.state.membership.userMemberships;
       } catch (error) {
+        console.error('Error in deleteMembership:', error);
         toastMessageRef.value.createToast(
           {
             title: '실패',
-            content: '멤버십 삭제 실패' + error,
+            content: '멤버십 삭제 실패: ' + error.message,
             type: 'danger'
           }
         )
