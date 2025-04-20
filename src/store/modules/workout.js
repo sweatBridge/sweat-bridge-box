@@ -55,6 +55,7 @@ const workout = {
       movements: [],
       customMovements: '',
       description: '',
+      records: [],
     },
   },
   mutations: {
@@ -144,7 +145,10 @@ const workout = {
       } else if (target === 'registeredWod') {
         state.registeredWod.description = description
       }
-    }
+    },
+    SET_WOD_RECORDS(state, records) {
+      state.registeredWod.records = records;
+    },
   },
   actions: {
     async addWod({ state }) {
@@ -237,6 +241,23 @@ const workout = {
         }
         calendarApi.addEvent(event)
       })
+    },
+
+    async getWodRecords({ commit }, wodId) {
+      const box = localStorage.getItem('boxName') || '';
+      const path = `/box/${box}/wod/${wodId}/records`;
+      const q = query(collection(db, path));
+      const querySnap = await getDocs(q);
+
+      const records = [];
+      querySnap.forEach((doc) => {
+        records.push({
+          ...doc.data(),
+          id: doc.id
+        });
+      });
+      
+      commit('SET_WOD_RECORDS', records);
     },
   },
   getters: {}

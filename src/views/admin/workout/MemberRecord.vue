@@ -1,79 +1,83 @@
 <template>
   <CBadge class="p-lg-2 header-button">
-    <strong>난이도</strong>
+    <strong>이름</strong>
   </CBadge>
-   :
+  :
   <input type="text" v-model="searchValue">
   <br>
   <br>
   <EasyDataTable
     :headers="headers"
-    :items="records"
-    search-field="level"
+    :items="filteredRecords"
+    search-field="realName"
     :search-value="searchValue"
-    table-class-name="customize-table"
     body-text-direction="center"
     header-text-direction="center"
     buttons-pagination
     :rows-per-page="5"
   >
-    <template #item-name="{ realName }">
+    <template #item-realName="{ realName }">
       {{realName}}
     </template>
-    <template #item-level="{ level }">
-      {{level}}
+    <template #item-nickName="{ nickName }">
+      {{nickName}}
+    </template>
+    <template #item-gender="{ gender }">
+      {{gender}}
+    </template>
+    <template #item-isRxd="{ isRxd }">
+      {{isRxd ? 'Rxd' : 'Scaled'}}
     </template>
     <template #item-score="{ score }">
       {{score}}
     </template>
-    <template #item-detail="">
-      <CButton
-        color="light"
-        size="sm"
-      >
-        <CIcon name="cil-notes" />
-      </CButton>
-    </template>
   </EasyDataTable>
-
 </template>
 
 <script>
-import {ref} from "vue";
+import {ref, computed} from "vue";
+import {useStore} from "vuex";
 
 export default {
   name: "MemberRecord",
   components: {},
-  props: {
-    records: {
-      type: Object,
-      required: true,
-    }
-  },
   setup() {
+    const store = useStore();
+    const searchValue = ref('');
+    
+    const records = computed(() => {
+      const wodRecords = store.state.workout.registeredWod.records || [];
+      return wodRecords.map(record => ({
+        ...record,
+        isRxd: record.isRxd || false
+      }));
+    });
+
+    const filteredRecords = computed(() => {
+      if (!searchValue.value) return records.value;
+      return records.value.filter(record => 
+        record.realName.toLowerCase().includes(searchValue.value.toLowerCase())
+      );
+    });
+    
     const headers = [
       { text: "이름", value: "realName", width: "80" },
-      { text: "난이도", value: "level", sortable: true },
-      { text: "기록", value: "score", sortable: true },
-      { text: "상세", value: "detail" },
+      { text: "닉네임", value: "nickName", width: "80" },
+      { text: "성별", value: "gender", width: "50" },
+      { text: "난이도", value: "isRxd", width: "80" },
+      { text: "기록", value: "score", width: "100" },
     ]
-
-    const searchValue = ref('')
 
     return {
       headers,
       searchValue,
+      filteredRecords
     }
   }
 }
 </script>
 
 <style scoped>
-.customize-table {
-  /*--easy-table-header-item-padding: 1px;*/
-  /*--easy-table-header-font-size: 10px;*/
-  /*--easy-table-header-height: 5px;*/
-}
 
 .header-button {
   background-color: rgb(101, 107, 130);

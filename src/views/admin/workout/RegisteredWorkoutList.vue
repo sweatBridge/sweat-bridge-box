@@ -163,8 +163,7 @@ export default defineComponent({
 
     const handleEventClick = (clickInfo) => {
       store.commit('setRegisteredWod', clickInfo.event)
-      store.dispatch('getRecords', clickInfo.event.id)
-      // const dateStrKor = extractDateInKorean(clickInfo.event.startStr);
+      store.dispatch('getWodRecords', clickInfo.event.id)
       const title = clickInfo.event.title;
       wodTitle.value = title
       eventAlertRef.value.createToast({
