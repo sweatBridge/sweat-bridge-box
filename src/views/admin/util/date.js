@@ -19,6 +19,10 @@ export function formatDateTime(isoString) {
 }
 
 export function datetimeToSimpleStr(date) {
+  if (!date || !date.seconds) {
+    return '';
+  }
+  
   // Firebase Timestamp 객체에서 seconds를 밀리초로 변환하여 Date 생성
   const datetime = new Date(date.seconds * 1000);  // seconds를 밀리초로 변환
 

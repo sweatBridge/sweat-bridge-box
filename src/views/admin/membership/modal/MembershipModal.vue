@@ -167,6 +167,7 @@ export default {
     ];
 
     const getDateStr = (date) => {
+      if (!date) return '';
       return datetimeToSimpleStr(date);
     }
 

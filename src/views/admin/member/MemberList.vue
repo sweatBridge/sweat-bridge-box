@@ -154,6 +154,7 @@ export default defineComponent({
     }
 
     const memberDetatilIdx = ref(0)
+    const membershipModal = ref(null)
 
     return {
       headers,
@@ -165,6 +166,7 @@ export default defineComponent({
       getAge,
       getGender,
       memberDetatilIdx,
+      membershipModal
     }
   },
   methods: {
