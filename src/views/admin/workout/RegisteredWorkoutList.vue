@@ -140,13 +140,11 @@ export default defineComponent({
     const userFeedbackModalRef = ref(null)
     const wodSummaryModalRef = ref(null);
     const eventAlertRef = ref(null)
-    const records = computed(() => store.state.record.records)
+    const records = computed(() => store.state.workout.registeredWod.records || [])
     const feedbacks = computed(() => store.state.record.feedbacks)
     const boxName = ref(localStorage.getItem('boxName') || '')
 
     const moveToModifyPage = () => {
-      // store.commit('setRegisteredWod', clickInfo.event)
-      // router.push("/admin/registerd-wod")
       workoutModifyModalRef.value.showModal()
     }
 
@@ -213,17 +211,8 @@ export default defineComponent({
       initialEvents: INITIAL_REGISTERD_WODS,
       eventClick: handleEventClick,
       select: moveToRegisterPage,
-      /* you can update a remote database when these fire:
-      select: this.handleDateSelect,
-      eventClick: this.handleEventClick,
-      eventsSet: this.handleEvents, // called after events are initialized/added/changed/removed
-      eventAdd:
-      eventChange:
-      eventRemove:
-      */
     })
     return {
-
       fullCalendarRef,
       wodTitle,
       workoutModifyModalRef,
