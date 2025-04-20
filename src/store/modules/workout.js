@@ -63,7 +63,9 @@ const workout = {
     },
     setRegisteredWod(state, event) {
       state.registeredWod = event.extendedProps.data
-      state.registeredWod.date = event.extendedProps.data.date.toDate()
+      state.registeredWod.date = typeof event.extendedProps.data.date.toDate === 'function' 
+        ? event.extendedProps.data.date.toDate() 
+        : event.extendedProps.data.date
       state.registeredWod.id = event.id
     },
     removeMovement(state, { target, index }) {
