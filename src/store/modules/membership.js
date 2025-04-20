@@ -27,7 +27,7 @@ const membership = {
                 updatedAt: null,
             }
         ],
-        userCurrentMemberships: {},
+        userCurrentMemberships: [],
     },
     mutations: {
         SET_MEMBERSHIP_PLANS(state, plans) {
@@ -55,8 +55,8 @@ const membership = {
             }
         },
 
-        SET_USER_CURRENT_MEMBERSHIP(state, membership) {
-            state.userCurrentMembership = membership
+        SET_USER_CURRENT_MEMBERSHIP(state, memberships) {
+            state.userCurrentMemberships = memberships
         },
     },
     actions: {
@@ -174,27 +174,18 @@ const membership = {
                         return today >= startDate && today <= endDate
                     })
                     
-                    
-
-                    if (currentMemberships.length === 0) {
-                        commit('SET_USER_CURRENT_MEMBERSHIP', {})  // 빈 객체 저장
-                    } else if (currentMemberships.length === 1) {
-                        commit('SET_USER_CURRENT_MEMBERSHIP', currentMemberships[0])  // 첫 번째 원소 저장
-                    } else {
-                        throw new Error('현재 회원권이 2개 이상입니다.')
-                    }
-
+                    commit('SET_USER_CURRENT_MEMBERSHIP', currentMemberships)
                     return memberships
                 } else {
                     console.log('Membership 문서를 찾을 수 없습니다.')
                     commit('SET_USER_MEMBERSHIPS', [])
-                    commit('SET_USER_CURRENT_MEMBERSHIP', {})
+                    commit('SET_USER_CURRENT_MEMBERSHIP', [])
                     return []
                 }
             } catch (error) {
                 console.error('회원권 정보 불러오기 중 오류 발생:', error)
                 commit('SET_USER_MEMBERSHIPS', [])
-                commit('SET_USER_CURRENT_MEMBERSHIP', {})
+                commit('SET_USER_CURRENT_MEMBERSHIP', [])
                 return []
             }
         },

@@ -77,20 +77,48 @@
           </CCol>
         </CRow>
       </div>
-      <EasyDataTable
-        :headers="tableHeaders" 
-        :items="currentMemberships"
-      >
-      <template #item-startDate="{ startDate }">
-        {{ getDateStr(startDate) }}
-      </template>
-      <template #item-endDate="{ endDate }">
-        {{ getDateStr(endDate) }}
-      </template>
-      <template #item-type="{ type }">
-        {{ type === "countPass" ? "횟수권" : "기간권" }}
-      </template>
-      </EasyDataTable>
+
+      <!-- 현재 유효한 회원권 표시 -->
+      <CCard class="mb-4">
+        <CCardHeader>
+          <strong>현재 유효한 회원권</strong>
+        </CCardHeader>
+        <CCardBody>
+          <div v-if="userCurrentMemberships.length === 0" class="text-center text-muted">
+            현재 유효한 회원권이 없습니다.
+          </div>
+          <div v-else-if="userCurrentMemberships.length > 1" class="text-center text-muted">
+            현재 유효한 회원권이 {{ userCurrentMemberships.length }}개 있습니다.
+          </div>
+          <div v-else>
+            <CRow class="mb-2">
+              <CCol sm="3"><strong>시작일:</strong></CCol>
+              <CCol>{{ getDateStr(userCurrentMemberships[0].startDate) }}</CCol>
+            </CRow>
+            <CRow class="mb-2">
+              <CCol sm="3"><strong>종료일:</strong></CCol>
+              <CCol>{{ getDateStr(userCurrentMemberships[0].endDate) }}</CCol>
+            </CRow>
+            <CRow class="mb-2">
+              <CCol sm="3"><strong>회원권 타입:</strong></CCol>
+              <CCol>{{ userCurrentMemberships[0].type === "countPass" ? "횟수권" : "기간권" }}</CCol>
+            </CRow>
+            <CRow class="mb-2">
+              <CCol sm="3"><strong>가격:</strong></CCol>
+              <CCol>{{ userCurrentMemberships[0].price }}원</CCol>
+            </CRow>
+            <CRow class="mb-2">
+              <CCol sm="3"><strong>플랜:</strong></CCol>
+              <CCol>{{ userCurrentMemberships[0].plan }}</CCol>
+            </CRow>
+            <CRow class="mb-2">
+              <CCol sm="3"><strong>담당자:</strong></CCol>
+              <CCol>{{ userCurrentMemberships[0].assignee }}</CCol>
+            </CRow>
+          </div>
+        </CCardBody>
+      </CCard>
+
       <EasyDataTable
         :headers="tableHeaders" 
         :items="memberships"
@@ -152,7 +180,7 @@ export default {
     const startDate = ref(null);
 
     const memberships = ref([]);
-    const currentMemberships = ref([]);
+    const userCurrentMemberships = computed(() => store.state.membership.userCurrentMemberships);
 
     const toastMessageRef = ref(null)
 
@@ -167,7 +195,6 @@ export default {
     ];
 
     const getDateStr = (date) => {
-      if (!date) return '';
       return datetimeToSimpleStr(date);
     }
 
@@ -229,7 +256,6 @@ export default {
       await store.dispatch("getUserMemberships", {'email': userId});
       userEmail.value = userId;
       memberships.value = store.state.membership.userMemberships;
-      currentMemberships.value = [store.state.membership.userCurrentMembership];
       modalStatus.value = true;
     };
 
@@ -301,7 +327,7 @@ export default {
       handleTypeChange,
       addMembership,
       memberships,
-      currentMemberships,
+      userCurrentMemberships,
       tableHeaders,
       getDateStr,
       deleteMembership,
@@ -314,10 +340,16 @@ export default {
 
 <style scoped>
 .membership-container {
+  border: 2px solid black;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.current-membership-container {
   border: 2px solid black; /* ✅ 검정색 테두리 */
   border-radius: 8px; /* ✅ 모서리를 둥글게 */
   padding: 16px; /* ✅ 내부 여백 */
   margin-bottom: 16px; /* ✅ 아래 요소와 간격 추가 */
 }
-
 </style>
