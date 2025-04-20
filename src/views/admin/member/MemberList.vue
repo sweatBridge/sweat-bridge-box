@@ -3,22 +3,16 @@
     <CCardHeader class="card-header">
       <strong>회원 관리</strong>
       <div class="float-end">
-        <CRow class="g-3">
-          <CCol md="6">
-            <CButton
-              @click="approveMembers"
-              class="position-relative header-button" size="sm">
-              <strong>회원 추가</strong>
-            </CButton>
-          </CCol>
-          <CCol md="6">
-            <CButton
-              @click="manageMembershipPlans"
-              class="position-relative header-button" size="sm">
-              <strong>멤버십</strong>
-            </CButton>
-          </CCol>
-        </CRow>
+        <CButton
+          @click="approveMembers"
+          class="position-relative header-button" size="sm">
+          <strong>회원추가</strong>
+        </CButton>
+        <CButton
+          @click="manageMembershipPlans"
+          class="position-relative header-button" size="sm">
+          <strong>멤버십</strong>
+        </CButton>
       </div>
     </CCardHeader>
     <CCardBody>
@@ -57,7 +51,14 @@
         <template #item-gender="{ gender }">
           {{ getGender(gender) }}
         </template>
-        <template #item-operation="{ email, remain }">
+        <template #item-operation="{ email }">
+          <CButton
+            color="info"
+            size="sm"
+            @click="manageMembership(email)"
+          >
+            멤버십
+          </CButton>
           <CButton
             color="danger"
             size="sm"
@@ -65,19 +66,12 @@
           >
             삭제
           </CButton>
-          <CButton
-            :color=getRegisterButtonColor(remain.type)
-            size="sm"
-            @click="renewMembership(email)"
-          >
-            {{ getRegisterButtonDescription(remain.type) }}
-          </CButton>
         </template>
-        <template #item-details="{ index }">
+        <template #item-details="{ email }">
           <CButton
             color="light"
             size="sm"
-            @click="showMemberDetails(index)"
+            @click="showMemberDetails(email)"
           >
             <CIcon name="cil-notes" />
           </CButton>
@@ -86,10 +80,10 @@
     </CCardBody>
   </CCard>
   <approval-request-modal ref="approvalRequestModal"/>
-  <register-membership-modal ref="registerMembershipModal"/>
-  <member-details-modal :index="memberDetatilIdx" ref="memberDetailsModal" />
+  <member-details-modal ref="memberDetailsModal" />
   <member-deletion-modal ref="deleteModal" />
   <membership-plan-modal ref="membershipPlanModal" />
+  <membership-modal ref="membershipModal" />
 </template>
 
 <script>
@@ -103,19 +97,19 @@ import {
   getTypeKor,
   findMemberById
 } from "@/views/admin/util/member"
-import ApprovalRequestModal from "@/views/admin/common/modal/ApprovalRequestModal.vue"
-import MemberDetailsModal from "@/views/admin/common/modal/MemberDetailsModal.vue";
-import MemberDeletionModal from "@/views/admin/common/modal/MemberDeletionModal.vue";
-import RegisterMembershipModal from "@/views/admin/common/modal/RegisterMembershipModal.vue";
-import MembershipPlanModal from "@/views/admin/common/modal/membership/MembershipPlanModal.vue";
+import ApprovalRequestModal from "@/views/admin/member/modal/ApprovalRequestModal.vue";
+import MemberDetailsModal from "@/views/admin/member/modal/MemberDetailsModal.vue";
+import MemberDeletionModal from "@/views/admin/member/modal/MemberDeletionModal.vue";
+import MembershipPlanModal from "@/views/admin/membership/modal/MembershipPlanModal.vue";
+import MembershipModal from "@/views/admin/membership/modal/MembershipModal.vue";
 
 export default defineComponent({
   components: {
-    RegisterMembershipModal,
     MemberDeletionModal,
     MemberDetailsModal,
     ApprovalRequestModal,
     MembershipPlanModal,
+    MembershipModal,
   },
   setup() {
     const store = useStore()
@@ -139,22 +133,6 @@ export default defineComponent({
 
     const searchValue = ref("")
 
-    const getRegisterButtonDescription = (item) => {
-      if (item === 'periodPass' || item === 'countPass') {
-        return '갱신'
-      } else {
-        return '등록'
-      }
-    }
-    // distinguish button color by type
-    const getRegisterButtonColor = (type) => {
-      if (type === 'periodPass' || type === 'countPass') {
-        return 'secondary'
-      } else {
-        return 'dark'
-      }
-    }
-
     const getType = (item) => {
       return getTypeKor(item.type, item.days)
     }
@@ -176,19 +154,19 @@ export default defineComponent({
     }
 
     const memberDetatilIdx = ref(0)
+    const membershipModal = ref(null)
 
     return {
       headers,
       members,
       searchValue,
-      getRegisterButtonColor,
-      getRegisterButtonDescription,
       getType,
       getExpiryDateStr,
       getRemainingVisits,
       getAge,
       getGender,
       memberDetatilIdx,
+      membershipModal
     }
   },
   methods: {
@@ -199,13 +177,12 @@ export default defineComponent({
       let member = findMemberById(this.members, id)
       this.$refs.deleteModal.showModal(member)
     },
-    renewMembership(id) {
-      let member = findMemberById(this.members, id)
-      this.$refs.registerMembershipModal.showModal(member)
+    manageMembership(id) {
+      this.$refs.membershipModal.showModal(id)
     },
-    showMemberDetails(idx) {
-      this.$refs.memberDetailsModal.showModal()
-      this.memberDetatilIdx = idx
+    showMemberDetails(id) {
+      let member = findMemberById(this.members, id)
+      this.$refs.memberDetailsModal.showModal(member)
     },
     manageMembershipPlans() {
       this.$refs.membershipPlanModal.showModal()

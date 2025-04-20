@@ -167,7 +167,7 @@
 import {ref} from "vue"
 import { useStore } from "vuex"
 import {calculateAge, convertGenderToKorean} from "@/views/admin/util/member"
-import ApprovalConfirmationModal from "@/views/admin/common/modal/ApprovalConfirmationModal.vue";
+import ApprovalConfirmationModal from "@/views/admin/member/modal/ApprovalConfirmationModal.vue";
 
 export default {
   components: {ApprovalConfirmationModal},

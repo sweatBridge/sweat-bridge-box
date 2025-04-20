@@ -12,6 +12,22 @@ const membership = {
                 price: 0,
             }
         ],
+        userMemberships: [
+            {
+                plan: '',
+                type: '',
+                count: 0,
+                price: 0,
+                assignee: '',
+                startDate: null,
+                endDate: null,
+                holdStartDate: null,
+                holdEndDate: null,
+                createdAt: null,
+                updatedAt: null,
+            }
+        ],
+        userCurrentMemberships: [],
     },
     mutations: {
         SET_MEMBERSHIP_PLANS(state, plans) {
@@ -26,7 +42,22 @@ const membership = {
                 state.plans.splice(index, 1);
             }
         },
-        
+
+        SET_USER_MEMBERSHIPS(state, memberships) {
+            state.userMemberships = memberships
+        },
+        ADD_USER_MEMBERSHIP(state, membership) {
+            state.userMemberships.push(membership)
+        },
+        REMOVE_USER_MEMBERSHIP(state, index) {
+            if (index !== -1) {
+                state.userMemberships.splice(index, 1);
+            }
+        },
+
+        SET_USER_CURRENT_MEMBERSHIP(state, memberships) {
+            state.userCurrentMemberships = memberships
+        },
     },
     actions: {
         async getMembershipPlans({ commit }) {
@@ -105,7 +136,121 @@ const membership = {
             } catch (error) {
                 console.error("Error deleting membership plan:", error);
             }
+        },
+
+        async getUserMemberships({ commit }, payload) {
+            try {
+                const boxName = localStorage.getItem('boxName')
+                if (!boxName || !payload.email) {
+                    console.warn('boxName 또는 email이 없습니다.')
+                    return
+                }
+
+                const memberDocRef = doc(
+                    db,
+                    `box/${boxName}/member/${payload.email}/membership/membership_doc`
+                )
+
+                const docSnap = await getDoc(memberDocRef)
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data()
+                    const memberships = data.memberships || []
+
+                    commit('SET_USER_MEMBERSHIPS', memberships)
+
+                    const currentMemberships = memberships.filter(membership => {
+                        // startDate와 endDate가 유효한지 확인
+                        const startDate = membership.startDate && membership.startDate.seconds ? new Date(membership.startDate.seconds * 1000) : null
+                        const endDate = membership.endDate && membership.endDate.seconds ? new Date(membership.endDate.seconds * 1000) : null
+                        
+                        // startDate나 endDate가 유효하지 않으면 필터에서 제외
+                        if (!startDate || !endDate) {
+                            console.warn('유효하지 않은 날짜 데이터:', membership)
+                            return false
+                        }
+                    
+                        const today = new Date()
+                        return today >= startDate && today <= endDate
+                    })
+                    
+                    commit('SET_USER_CURRENT_MEMBERSHIP', currentMemberships)
+                    return memberships
+                } else {
+                    console.log('Membership 문서를 찾을 수 없습니다.')
+                    commit('SET_USER_MEMBERSHIPS', [])
+                    commit('SET_USER_CURRENT_MEMBERSHIP', [])
+                    return []
+                }
+            } catch (error) {
+                console.error('회원권 정보 불러오기 중 오류 발생:', error)
+                commit('SET_USER_MEMBERSHIPS', [])
+                commit('SET_USER_CURRENT_MEMBERSHIP', [])
+                return []
+            }
+        },
+
+        async addUserMembership({ commit, state }, payload) {
+            try {
+                const boxName = localStorage.getItem('boxName')
+                if (!boxName) {
+                    console.error("Error: boxName is missing")
+                    return
+                }
+
+                if (!payload.email || !payload.membership) {
+                    console.error("Error: email or membership data is missing")
+                    return
+                }
+
+                commit('ADD_USER_MEMBERSHIP', payload.membership)
+
+                const membershipDocRef = doc(
+                    db,
+                    `box/${boxName}/member/${payload.email}/membership/membership_doc`
+                )
+                
+                await setDoc(membershipDocRef, {
+                    memberships: state.userMemberships
+                })
+
+                console.log('Successfully added new user membership:', payload.membership)
+            } catch (error) {
+                console.error('Error adding user membership:', error)
+            }
+        },
+
+        async removeUserMembership({ commit, state }, payload) {
+            try {
+                const boxName = localStorage.getItem('boxName')
+                if (!boxName) {
+                    console.error("Error: boxName is missing")
+                    return
+                }
+
+                if (payload.index === undefined || payload.email === undefined) {
+                    console.error("Error: membership index or email is missing")
+                    return
+                }
+
+                commit('REMOVE_USER_MEMBERSHIP', payload.index)
+
+                const membershipDocRef = doc(
+                    db,
+                    `box/${boxName}/member/${payload.email}/membership/membership_doc`
+                )
+                
+                await setDoc(membershipDocRef, {
+                    memberships: state.userMemberships
+                })
+
+                console.log('Successfully removed user membership at index:', payload.index)
+            } catch (error) {
+                console.error('Error removing user membership:', error)
+                throw error
+            }
         }
+
     },
     getters: {
         getMembershipPlans: (state) => state.plans,
