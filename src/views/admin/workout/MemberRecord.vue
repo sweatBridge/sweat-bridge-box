@@ -74,7 +74,13 @@ export default {
   components: {
     ToastMessage
   },
-  setup() {
+  props: {
+    records: {
+      type: Array,
+      default: () => []
+    }
+  },
+  setup(props) {
     const store = useStore();
     const searchValue = ref('');
     const editingRows = ref({});  // 각 row별 수정 상태
@@ -82,8 +88,7 @@ export default {
     const toastMessageRef = ref(null);
     
     const records = computed(() => {
-      const wodRecords = store.state.workout.registeredWod.records || [];
-      return wodRecords.map(record => ({
+      return props.records.map(record => ({
         ...record,
         isRxd: record.isRxd || false
       }));
