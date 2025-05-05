@@ -16,6 +16,8 @@ import VueTimepicker from 'vue3-timepicker'
 import 'vue3-timepicker/dist/VueTimepicker.css'
 import { useCookies } from 'vue3-cookies';
 
+// Vue 기능 플래그 설정
+window.__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = false;
 
 const app = createApp(App);
 app.use(store);

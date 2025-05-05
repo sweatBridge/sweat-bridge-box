@@ -112,11 +112,10 @@ import interactionPlugin from '@fullcalendar/interaction'
 import {INITIAL_REGISTERD_WODS} from '@/views/admin/class/classCalendarUtils'
 import {useRouter} from "vue-router";
 import {useStore} from "vuex";
-import {extractDateInKorean} from "@/views/admin/util/date";
 import WorkoutModifyModal from "@/views/admin/common/modal/WorkoutModifyModal.vue";
 import EventAlert from "@/views/admin/common/toast/EventAlert.vue";
 import UserFeedbackModal from "@/views/admin/common/modal/UserFeedbackModal.vue";
-import UserRecordModal from "@/views/admin/common/modal/UserRecordModal.vue";
+import UserRecordModal from "@/views/admin/workout/modal/UserRecordModal.vue";
 import WodSummaryModal from "../common/modal/WodSummaryModal.vue"
 export default defineComponent({
   name: "RegisteredWorkoutList",
@@ -135,18 +134,17 @@ export default defineComponent({
     const store = useStore()
     const fullCalendarRef = ref(null)
     const wodTitle = ref("")
+    const currentWodId = ref(null)
     const workoutModifyModalRef = ref(null)
     const userRecordModalRef = ref(null)
     const userFeedbackModalRef = ref(null)
     const wodSummaryModalRef = ref(null);
     const eventAlertRef = ref(null)
-    const records = computed(() => store.state.record.records)
+    const records = computed(() => store.state.workout.registeredWod.records || [])
     const feedbacks = computed(() => store.state.record.feedbacks)
     const boxName = ref(localStorage.getItem('boxName') || '')
 
     const moveToModifyPage = () => {
-      // store.commit('setRegisteredWod', clickInfo.event)
-      // router.push("/admin/registerd-wod")
       workoutModifyModalRef.value.showModal()
     }
 
@@ -163,17 +161,17 @@ export default defineComponent({
 
     const handleEventClick = (clickInfo) => {
       store.commit('setRegisteredWod', clickInfo.event)
-      store.dispatch('getRecords', clickInfo.event.id)
-      // const dateStrKor = extractDateInKorean(clickInfo.event.startStr);
+      store.dispatch('getWodRecords', clickInfo.event.id)
       const title = clickInfo.event.title;
       wodTitle.value = title
+      currentWodId.value = clickInfo.event.id
       eventAlertRef.value.createToast({
         content: `${title} 와드를 선택하셨습니다.`,
       })
     }
 
     const handleRecordClick = () => {
-      userRecordModalRef.value.showModal()
+      userRecordModalRef.value.showModal(currentWodId.value)
     }
 
     const handleFeedbackClick = () => {
@@ -214,19 +212,11 @@ export default defineComponent({
       initialEvents: INITIAL_REGISTERD_WODS,
       eventClick: handleEventClick,
       select: moveToRegisterPage,
-      /* you can update a remote database when these fire:
-      select: this.handleDateSelect,
-      eventClick: this.handleEventClick,
-      eventsSet: this.handleEvents, // called after events are initialized/added/changed/removed
-      eventAdd:
-      eventChange:
-      eventRemove:
-      */
     })
     return {
-
       fullCalendarRef,
       wodTitle,
+      currentWodId,
       workoutModifyModalRef,
       eventAlertRef,
       userRecordModalRef,

@@ -55,6 +55,7 @@ const workout = {
       movements: [],
       customMovements: '',
       description: '',
+      records: [],
     },
   },
   mutations: {
@@ -144,7 +145,10 @@ const workout = {
       } else if (target === 'registeredWod') {
         state.registeredWod.description = description
       }
-    }
+    },
+    SET_WOD_RECORDS(state, records) {
+      state.registeredWod.records = records;
+    },
   },
   actions: {
     async addWod({ state }) {
@@ -237,6 +241,45 @@ const workout = {
         }
         calendarApi.addEvent(event)
       })
+    },
+
+    async getWodRecords({ commit }, wodId) {
+      const box = localStorage.getItem('boxName') || '';
+      const path = `/box/${box}/wod/${wodId}/records`;
+      const q = query(collection(db, path));
+      const querySnap = await getDocs(q);
+
+      const records = [];
+      querySnap.forEach((doc) => {
+        records.push({
+          ...doc.data(),
+          id: doc.id
+        });
+      });
+      
+      commit('SET_WOD_RECORDS', records);
+    },
+
+    async updateWorkoutRecord({ state, dispatch }, { recordId, score }) {
+      try {
+        const box = localStorage.getItem('boxName') || '';
+        const wodId = state.registeredWod.id;
+        if (!wodId) {
+          throw new Error('WOD ID가 없습니다.');
+        }
+
+        const recordRef = doc(db, `box/${box}/wod/${wodId}/records/${recordId}`);
+        await updateDoc(recordRef, {
+          score: score,
+          updatedAt: new Date()
+        });
+
+        // 기록 업데이트 후 목록 다시 불러오기
+        await dispatch('getWodRecords', wodId);
+      } catch (error) {
+        console.error('Error updating workout record:', error);
+        throw error;
+      }
     },
   },
   getters: {}
