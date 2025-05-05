@@ -85,28 +85,6 @@
               </CCol>
             </CRow>
             <CRow class="align-items-center g-2 mt-2">
-              <CCol md="2">닉네임</CCol>
-              <CCol md="10">
-                <CFormInput 
-                  v-model="manualNickname"
-                  type="text"
-                  id="manualNicknameInput"
-                  placeholder="닉네임을 입력하세요."
-                />
-              </CCol>
-            </CRow>
-            <CRow class="align-items-center g-2 mt-2">
-              <CCol md="2">전화번호</CCol>
-              <CCol md="10">
-                <CFormInput 
-                  v-model="manualPhone"
-                  type="text"
-                  id="manualPhoneInput"
-                  placeholder="전화번호를 입력하세요.(- 제외)"
-                />
-              </CCol>
-            </CRow>
-            <CRow class="align-items-center g-2 mt-2">
               <CCol md="2">성별</CCol>
               <CCol md="10">
                 <CButtonGroup>
@@ -117,6 +95,29 @@
                     여
                   </CButton>
                 </CButtonGroup>
+              </CCol>
+            </CRow>
+            <CRow class="align-items-center g-2 mt-2">
+              <CCol md="2">RxD</CCol>
+              <CCol md="10">
+                <CButtonGroup>
+                  <CButton color="primary" :variant="isRxd === true ? '' : 'outline'" @click="isRxd = true">
+                    Yes
+                  </CButton>
+                  <CButton color="primary" :variant="isRxd === false ? '' : 'outline'" @click="isRxd = false">
+                    No
+                  </CButton>
+                </CButtonGroup>
+              </CCol>
+            </CRow>
+            <CRow class="align-items-center g-2 mt-2">
+              <CCol md="2">기록</CCol>
+              <CCol md="10">
+                <CFormInput 
+                  v-model="recordInput"
+                  type="text"
+                  placeholder="기록을 입력하세요"
+                />
               </CCol>
             </CRow>
             <CRow class="mt-3">
@@ -314,7 +315,7 @@ export default {
       }
 
       try {
-        await store.dispatch("updateUserRecord", {
+        await store.dispatch("addUserRecord", {
           wodId: currentWodId.value,
           user: selectedUser.value,
           record: recordInput.value,
@@ -339,15 +340,49 @@ export default {
       }
     }
 
-    const addManualMember = () => {
-      const newUser = {
-        boxName: localStorage.getItem('boxName'),
-        realName: manualName.value,
-        nickName: manualNickname.value,
-        phone: manualPhone.value,
-        gender: manualGender.value
+    const addManualMember = async () => {
+      if (!manualName.value.trim()) {
+        alert("이름을 입력해주세요.")
+        return
       }
-      selectUser(newUser)
+      if (!manualGender.value) {
+        alert("성별을 선택해주세요.")
+        return
+      }
+      if (!recordInput.value.trim()) {
+        alert("기록을 입력해주세요.")
+        return
+      }
+      if (isRxd.value === null) {
+        alert("RxD 여부를 선택해주세요.")
+        return
+      }
+
+      try {
+        await store.dispatch("addManualRecord", {
+          wodId: currentWodId.value,
+          realName: manualName.value,
+          gender: manualGender.value,
+          isRxd: isRxd.value,
+          score: recordInput.value
+        })
+        toastMessageRef.value.createToast({
+          title: '성공',
+          content: '기록이 성공적으로 저장되었습니다.',
+          type: 'success'
+        })
+        setTimeout(() => {
+          location.reload()
+        }, 500)
+        modalStatus.value = false
+      } catch (error) {
+        console.error("Error saving manual record:", error)
+        toastMessageRef.value.createToast({
+          title: '실패',
+          content: '기록 저장 중 오류가 발생했습니다.',
+          type: 'danger'
+        })
+      }
     }
 
     const showModal = (wodId) => {
