@@ -8,7 +8,7 @@
       <CModalTitle>기록 모아보기</CModalTitle>
     </CModalHeader>
     <CModalBody>
-      <member-record :records="records" :rows-per-page="25"/>
+      <member-record :records="records"/>
     </CModalBody>
   </CModal>
 
@@ -26,7 +26,7 @@ export default {
     const store = useStore()
     const modalStatus = ref(false)
     const toastMessageRef = ref(null)
-    const records = computed(() => store.state.record.records)
+    const records = computed(() => store.state.workout.registeredWod.records || [])
     const showModal = () => {
       modalStatus.value = true
     }
