@@ -3,6 +3,7 @@
     :visible="modalStatus"
     @close="() => {modalStatus = false}"
     size="xl"
+    :backdrop="'static'"
   >
     <CModalHeader class="modal-header">
       <CModalTitle>기록 모아보기</CModalTitle>
