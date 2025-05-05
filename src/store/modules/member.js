@@ -145,7 +145,32 @@ const member = {
       let member = removeDaysFromMember(payload)
       await updateDoc(memberRef, member)
       await updateDoc(userRef, member)
-    }
+    },
+    async getUserByRealName({ commit }, payload) {
+      const path = "/user";
+      const q = query(collection(db, path), where("realName", "==", payload.realName));
+      const querySnap = await getDocs(q);
+      const users = [];
+    
+      querySnap.forEach((doc) => {
+        users.push(doc.data());
+      });
+    
+      return users;
+    },
+
+    async getUserByNickName({ commit }, payload) {
+      const path = "/user";
+      const q = query(collection(db, path), where("nickName", "==", payload.nickName));
+      const querySnap = await getDocs(q);
+      const users = [];
+    
+      querySnap.forEach((doc) => {
+        users.push(doc.data());
+      });
+    
+      return users;
+    },
   },
   getters: {}
 }
