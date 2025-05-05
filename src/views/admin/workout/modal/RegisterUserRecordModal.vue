@@ -8,6 +8,7 @@
       <CModalTitle>회원 기록 추가</CModalTitle>
     </CModalHeader>
     <CModalBody>
+      <!-- 검색 섹션 -->
       <CTabs active-tab="name">
         <!-- 탭 네비게이션 -->
         <CNav variant="tabs" class="mb-3">
@@ -130,24 +131,61 @@
       </CTabs>
 
       <!-- 검색 결과 -->
-      <div v-if="searchResults.length > 0" class="mt-3">
-        <CCard v-for="(user, index) in searchResults" :key="index" class="border-dark mb-3">
-          <CCardHeader class="bg-light fw-bold">검색 결과 {{index + 1}}</CCardHeader>
-          <CCardBody>
-            <CListGroup flush>
-              <CListGroupItem><strong>박스:</strong> {{ user.boxName }}</CListGroupItem>
-              <CListGroupItem><strong>이름:</strong> {{ user.realName }}</CListGroupItem>
-              <CListGroupItem><strong>닉네임:</strong> {{ user.nickName }}</CListGroupItem>
-              <CListGroupItem><strong>성별:</strong> {{ getGender(user.gender) }}</CListGroupItem>
-              <CListGroupItem><strong>연락처:</strong> {{ user.phone }}</CListGroupItem>
-            </CListGroup>
-          </CCardBody>
-          <CCardFooter class="text-end">
-            <CButton color="success" @click="selectUser(user)">
-              선택
-            </CButton>
-          </CCardFooter>
-        </CCard>
+      <div v-if="!selectedUser">
+        <div v-if="searchResults.length > 0" class="mt-3">
+          <CCard v-for="(user, index) in searchResults" :key="index" class="border-dark mb-3">
+            <CCardHeader class="bg-light fw-bold">검색 결과 {{index + 1}}</CCardHeader>
+            <CCardBody>
+              <CListGroup flush>
+                <CListGroupItem><strong>박스:</strong> {{ user.boxName }}</CListGroupItem>
+                <CListGroupItem><strong>이름:</strong> {{ user.realName }}</CListGroupItem>
+                <CListGroupItem><strong>닉네임:</strong> {{ user.nickName }}</CListGroupItem>
+                <CListGroupItem><strong>성별:</strong> {{ getGender(user.gender) }}</CListGroupItem>
+                <CListGroupItem><strong>연락처:</strong> {{ user.phone }}</CListGroupItem>
+              </CListGroup>
+            </CCardBody>
+            <CCardFooter class="text-end">
+              <CButton color="success" @click="selectUser(user)">
+                선택
+              </CButton>
+            </CCardFooter>
+          </CCard>
+        </div>
+      </div>
+
+      <!-- 선택된 사용자 기록 입력 섹션 -->
+      <div v-else>
+        <div class="mt-3">
+          <CCard class="border-dark">
+            <CCardHeader class="bg-light fw-bold">기록 입력</CCardHeader>
+            <CCardBody>
+              <CListGroup flush>
+                <CListGroupItem><strong>박스:</strong> {{ selectedUser.boxName }}</CListGroupItem>
+                <CListGroupItem><strong>이름:</strong> {{ selectedUser.realName }}</CListGroupItem>
+                <CListGroupItem><strong>닉네임:</strong> {{ selectedUser.nickName }}</CListGroupItem>
+                <CListGroupItem><strong>성별:</strong> {{ getGender(selectedUser.gender) }}</CListGroupItem>
+                <CListGroupItem><strong>연락처:</strong> {{ selectedUser.phone }}</CListGroupItem>
+              </CListGroup>
+              <CRow class="mt-3">
+                <CCol>
+                  <CFormInput
+                    v-model="recordInput"
+                    type="text"
+                    placeholder="기록을 입력하세요"
+                  />
+                </CCol>
+              </CRow>
+            </CCardBody>
+            <CCardFooter class="text-end">
+              <CButton color="secondary" class="me-2" @click="cancelSelection">
+                취소
+              </CButton>
+              <CButton color="success" @click="saveRecord">
+                저장
+              </CButton>
+            </CCardFooter>
+          </CCard>
+        </div>
       </div>
     </CModalBody>
   </CModal>
@@ -168,6 +206,7 @@ export default {
     const searchNickname = ref("")
     const searchResults = ref([])
     const selectedUser = ref(null)
+    const recordInput = ref("")
 
     // 직접 추가를 위한 필드들
     const manualName = ref("")
@@ -233,7 +272,24 @@ export default {
 
     const selectUser = (user) => {
       selectedUser.value = user
-      // 여기에 선택된 사용자의 기록을 추가하는 로직 구현
+      searchResults.value = []
+    }
+
+    const cancelSelection = () => {
+      selectedUser.value = null
+      recordInput.value = ""
+    }
+
+    const saveRecord = () => {
+      if (!recordInput.value.trim()) {
+        alert("기록을 입력해주세요.")
+        return
+      }
+      // TODO: 기록 저장 로직 구현
+      console.log("저장할 기록:", {
+        user: selectedUser.value,
+        record: recordInput.value
+      })
       modalStatus.value = false
     }
 
@@ -259,6 +315,7 @@ export default {
       searchNickname,
       searchResults,
       selectedUser,
+      recordInput,
       manualName,
       manualNickname,
       manualPhone,
@@ -269,6 +326,8 @@ export default {
       searchUserByName,
       searchUserByNickname,
       selectUser,
+      cancelSelection,
+      saveRecord,
       addManualMember,
       showModal
     }
