@@ -72,7 +72,6 @@ import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue";
 export default {
   name: "MemberRecord",
   components: {
-    CButton,
     ToastMessage
   },
   setup() {
