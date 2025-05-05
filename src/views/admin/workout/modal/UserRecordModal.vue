@@ -8,7 +8,7 @@
       <CModalTitle>기록 모아보기</CModalTitle>
     </CModalHeader>
     <CModalBody>
-      <member-record :records="records"/>
+      <member-record :records="records" :is-modal="true"/>
     </CModalBody>
   </CModal>
 

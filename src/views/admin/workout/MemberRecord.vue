@@ -78,15 +78,39 @@ export default {
     records: {
       type: Array,
       default: () => []
+    },
+    isModal: {
+      type: Boolean,
+      default: false
     }
   },
   setup(props) {
     const store = useStore();
     const searchValue = ref('');
-    const editingRows = ref({});  // 각 row별 수정 상태
-    const editingScores = ref({});  // 각 row별 수정중인 점수
+    const editingRows = ref({});
+    const editingScores = ref({});
     const toastMessageRef = ref(null);
     
+    const previewHeaders = [
+      { text: "이름", value: "realName", width: "80" },
+      { text: "닉네임", value: "nickName", width: "80" },
+      { text: "성별", value: "gender", width: "50" },
+      { text: "난이도", value: "isRxd", width: "80" },
+      { text: "기록", value: "score", width: "100" },
+      { text: "수정", value: "actions", width: "80" }
+    ];
+
+    const modalHeaders = [
+      { text: "이름", value: "realName", width: "120" },
+      { text: "닉네임", value: "nickName", width: "120" },
+      { text: "성별", value: "gender", width: "100" },
+      { text: "난이도", value: "isRxd", width: "200" },
+      { text: "기록", value: "score", width: "150" },
+      { text: "수정", value: "actions", width: "150" }
+    ];
+
+    const headers = computed(() => props.isModal ? modalHeaders : previewHeaders);
+
     const records = computed(() => {
       return props.records.map(record => ({
         ...record,
@@ -136,15 +160,6 @@ export default {
         });
       }
     };
-    
-    const headers = [
-      { text: "이름", value: "realName", width: "80" },
-      { text: "닉네임", value: "nickName", width: "80" },
-      { text: "성별", value: "gender", width: "50" },
-      { text: "난이도", value: "isRxd", width: "80" },
-      { text: "기록", value: "score", width: "100" },
-      { text: "수정", value: "actions", width: "80" }
-    ]
 
     return {
       headers,
