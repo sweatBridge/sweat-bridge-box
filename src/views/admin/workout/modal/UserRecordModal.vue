@@ -37,13 +37,15 @@ export default {
     const modalStatus = ref(false)
     const registerUserRecordModalRef = ref(null)
     const records = computed(() => store.state.workout.registeredWod.records || [])
+    const currentWodId = ref(null)
 
-    const showModal = () => {
+    const showModal = (wodId) => {
+      currentWodId.value = wodId
       modalStatus.value = true
     }
 
     const showRegisterModal = () => {
-      registerUserRecordModalRef.value.showModal()
+      registerUserRecordModalRef.value.showModal(currentWodId.value)
     }
 
     return {
@@ -51,7 +53,8 @@ export default {
       records,
       showModal,
       showRegisterModal,
-      registerUserRecordModalRef
+      registerUserRecordModalRef,
+      currentWodId
     }
   }
 }

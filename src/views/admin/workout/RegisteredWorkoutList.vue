@@ -134,6 +134,7 @@ export default defineComponent({
     const store = useStore()
     const fullCalendarRef = ref(null)
     const wodTitle = ref("")
+    const currentWodId = ref(null)
     const workoutModifyModalRef = ref(null)
     const userRecordModalRef = ref(null)
     const userFeedbackModalRef = ref(null)
@@ -163,13 +164,14 @@ export default defineComponent({
       store.dispatch('getWodRecords', clickInfo.event.id)
       const title = clickInfo.event.title;
       wodTitle.value = title
+      currentWodId.value = clickInfo.event.id
       eventAlertRef.value.createToast({
         content: `${title} 와드를 선택하셨습니다.`,
       })
     }
 
     const handleRecordClick = () => {
-      userRecordModalRef.value.showModal()
+      userRecordModalRef.value.showModal(currentWodId.value)
     }
 
     const handleFeedbackClick = () => {
@@ -214,6 +216,7 @@ export default defineComponent({
     return {
       fullCalendarRef,
       wodTitle,
+      currentWodId,
       workoutModifyModalRef,
       eventAlertRef,
       userRecordModalRef,

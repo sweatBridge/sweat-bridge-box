@@ -175,6 +175,21 @@
                   />
                 </CCol>
               </CRow>
+              <CRow class="mt-3">
+                <CCol>
+                  <div class="d-flex align-items-center">
+                    <span class="me-3">RxD:</span>
+                    <CButtonGroup>
+                      <CButton color="primary" :variant="isRxd === true ? '' : 'outline'" @click="isRxd = true">
+                        Yes
+                      </CButton>
+                      <CButton color="primary" :variant="isRxd === false ? '' : 'outline'" @click="isRxd = false">
+                        No
+                      </CButton>
+                    </CButtonGroup>
+                  </div>
+                </CCol>
+              </CRow>
             </CCardBody>
             <CCardFooter class="text-end">
               <CButton color="secondary" class="me-2" @click="cancelSelection">
@@ -189,15 +204,20 @@
       </div>
     </CModalBody>
   </CModal>
+  <toast-message ref="toastMessageRef" />
 </template>
 
 <script>
 import {useStore} from "vuex";
 import {ref} from "vue";
 import {convertGenderToKorean} from "@/views/admin/util/member";
+import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue";
 
 export default {
   name: "RegisterUserRecordModal",
+  components: {
+    ToastMessage
+  },
   setup() {
     const store = useStore()
     const modalStatus = ref(false)
@@ -207,6 +227,9 @@ export default {
     const searchResults = ref([])
     const selectedUser = ref(null)
     const recordInput = ref("")
+    const isRxd = ref(null)
+    const currentWodId = ref(null)
+    const toastMessageRef = ref(null)
 
     // 직접 추가를 위한 필드들
     const manualName = ref("")
@@ -280,17 +303,40 @@ export default {
       recordInput.value = ""
     }
 
-    const saveRecord = () => {
+    const saveRecord = async () => {
       if (!recordInput.value.trim()) {
         alert("기록을 입력해주세요.")
         return
       }
-      // TODO: 기록 저장 로직 구현
-      console.log("저장할 기록:", {
-        user: selectedUser.value,
-        record: recordInput.value
-      })
-      modalStatus.value = false
+      if (isRxd.value === null) {
+        alert("RxD 여부를 선택해주세요.")
+        return
+      }
+
+      try {
+        await store.dispatch("updateUserRecord", {
+          wodId: currentWodId.value,
+          user: selectedUser.value,
+          record: recordInput.value,
+          isRxd: isRxd.value
+        })
+        toastMessageRef.value.createToast({
+          title: '성공',
+          content: '기록이 성공적으로 저장되었습니다.',
+          type: 'success'
+        })
+        setTimeout(() => {
+          location.reload()
+        }, 500)
+        modalStatus.value = false
+      } catch (error) {
+        console.error("Error saving record:", error)
+        toastMessageRef.value.createToast({
+          title: '실패',
+          content: '기록 저장 중 오류가 발생했습니다.',
+          type: 'danger'
+        })
+      }
     }
 
     const addManualMember = () => {
@@ -304,7 +350,8 @@ export default {
       selectUser(newUser)
     }
 
-    const showModal = () => {
+    const showModal = (wodId) => {
+      currentWodId.value = wodId
       modalStatus.value = true
     }
 
@@ -316,6 +363,9 @@ export default {
       searchResults,
       selectedUser,
       recordInput,
+      isRxd,
+      currentWodId,
+      toastMessageRef,
       manualName,
       manualNickname,
       manualPhone,
