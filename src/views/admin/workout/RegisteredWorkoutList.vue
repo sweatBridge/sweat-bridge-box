@@ -112,11 +112,10 @@ import interactionPlugin from '@fullcalendar/interaction'
 import {INITIAL_REGISTERD_WODS} from '@/views/admin/class/classCalendarUtils'
 import {useRouter} from "vue-router";
 import {useStore} from "vuex";
-import {extractDateInKorean} from "@/views/admin/util/date";
 import WorkoutModifyModal from "@/views/admin/common/modal/WorkoutModifyModal.vue";
 import EventAlert from "@/views/admin/common/toast/EventAlert.vue";
 import UserFeedbackModal from "@/views/admin/common/modal/UserFeedbackModal.vue";
-import UserRecordModal from "@/views/admin/common/modal/UserRecordModal.vue";
+import UserRecordModal from "@/views/admin/workout/modal/UserRecordModal.vue";
 import WodSummaryModal from "../common/modal/WodSummaryModal.vue"
 export default defineComponent({
   name: "RegisteredWorkoutList",
