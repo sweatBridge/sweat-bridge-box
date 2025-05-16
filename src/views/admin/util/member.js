@@ -95,6 +95,23 @@ export function initializeMember(member) {
 export function removeDaysFromMember(member) {
   if (member.remain && member.remain.days !== undefined) {
     delete member.remain.days;
+  }
+  return member;
 }
-return member;
+
+export function getCurrentMemberships(memberships) {
+  return memberships.filter(membership => {
+    // startDate와 endDate가 유효한지 확인
+    const startDate = membership.startDate && membership.startDate.seconds ? new Date(membership.startDate.seconds * 1000) : null
+    const endDate = membership.endDate && membership.endDate.seconds ? new Date(membership.endDate.seconds * 1000) : null
+    
+    // startDate나 endDate가 유효하지 않으면 필터에서 제외
+    if (!startDate || !endDate) {
+      console.warn('유효하지 않은 날짜 데이터:', membership)
+      return false
+    }
+  
+    const today = new Date()
+    return today >= startDate && today <= endDate
+  })
 }

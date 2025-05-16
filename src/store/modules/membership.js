@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from '@/firebase'
+import { getCurrentMemberships } from '@/views/admin/util/member'
 
 const membership = {
     state: {
@@ -158,22 +159,8 @@ const membership = {
                     const memberships = data.memberships || []
 
                     commit('SET_USER_MEMBERSHIPS', memberships)
-
-                    const currentMemberships = memberships.filter(membership => {
-                        // startDate와 endDate가 유효한지 확인
-                        const startDate = membership.startDate && membership.startDate.seconds ? new Date(membership.startDate.seconds * 1000) : null
-                        const endDate = membership.endDate && membership.endDate.seconds ? new Date(membership.endDate.seconds * 1000) : null
-                        
-                        // startDate나 endDate가 유효하지 않으면 필터에서 제외
-                        if (!startDate || !endDate) {
-                            console.warn('유효하지 않은 날짜 데이터:', membership)
-                            return false
-                        }
                     
-                        const today = new Date()
-                        return today >= startDate && today <= endDate
-                    })
-                    
+                    const currentMemberships = getCurrentMemberships(memberships)
                     commit('SET_USER_CURRENT_MEMBERSHIP', currentMemberships)
                     return memberships
                 } else {
