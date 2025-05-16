@@ -39,14 +39,17 @@
         <template #item-nickName="{ nickName }">
           {{nickName}}
         </template>
-        <template #item-type="{ remain }">
-          {{ getType(remain) }}
+        <template #item-type="{ item }">
+          {{item.membershipInfo.type}}
         </template>
-        <template #item-expired="{ remain }">
-          {{ getExpiryDateStr(remain.expired) }}
+        <template #item-expiryDate="{ item }">
+          {{item.membershipInfo.expiryDate}}
         </template>
-        <template #item-remainingVisits="{ remain }">
-          {{ getRemainingVisits(remain) }}
+        <template #item-remainingDays="{ item }">
+          {{item.membershipInfo.remainingDays}}
+        </template>
+        <template #item-remainingVisits="{ item }">
+          {{item.membershipInfo.remainingVisits}}
         </template>
         <template #item-gender="{ gender }">
           {{ getGender(gender) }}
@@ -95,7 +98,8 @@ import {
   convertTimestampToString,
   convertGenderToKorean,
   getTypeKor,
-  findMemberById
+  findMemberById,
+  getMembershipInfo
 } from "@/views/admin/util/member"
 import ApprovalRequestModal from "@/views/admin/member/modal/ApprovalRequestModal.vue";
 import MemberDetailsModal from "@/views/admin/member/modal/MemberDetailsModal.vue";
@@ -120,16 +124,21 @@ export default defineComponent({
     const headers = [
       { text: "이름", value: "realName" },
       { text: "닉네임", value: "nickName" },
-      { text: "등록 타입", value: "type"},
-      { text: "만료 일자", value: "expired"},
-      { text: "잔여 기간(일)", value: "remain.days", sortable: true},
-      { text: "잔여 횟수(회)", value: "remainingVisits"},
+      { text: "등록 타입", value: "membershipInfo.type"},
+      { text: "만료 일자", value: "membershipInfo.expiryDate"},
+      { text: "잔여 기간", value: "membershipInfo.remainingDays"},
+      { text: "잔여 횟수", value: "membershipInfo.remainingVisits"},
       { text: "성별", value: "gender" },
       { text: "기능", value: "operation", width: "150" },
       { text: "상세", value: "details"},
     ]
 
-    const members = computed(() => store.state.member.members)
+    const members = computed(() => {
+      return store.state.member.members.map(member => ({
+        ...member,
+        membershipInfo: getMembershipInfo(member.memberships)
+      }))
+    })
 
     const searchValue = ref("")
 

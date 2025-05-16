@@ -21,7 +21,7 @@ const member = {
       const members = []
 
       for (const memberDoc of querySnap.docs) {
-        let member = initializeMember(memberDoc.data())
+        let member = memberDoc.data();
         
         // membership 정보 가져오기
         const membershipPath = `${path}/${memberDoc.id}/membership/membership_doc`
