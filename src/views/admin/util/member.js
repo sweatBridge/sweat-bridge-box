@@ -95,6 +95,79 @@ export function initializeMember(member) {
 export function removeDaysFromMember(member) {
   if (member.remain && member.remain.days !== undefined) {
     delete member.remain.days;
+  }
+  return member;
 }
-return member;
+
+export function getCurrentMemberships(memberships) {
+  return memberships.filter(membership => {
+    // startDate와 endDate가 유효한지 확인
+    const startDate = membership.startDate && membership.startDate.seconds ? new Date(membership.startDate.seconds * 1000) : null
+    const endDate = membership.endDate && membership.endDate.seconds ? new Date(membership.endDate.seconds * 1000) : null
+    
+    // startDate나 endDate가 유효하지 않으면 필터에서 제외
+    if (!startDate || !endDate) {
+      console.warn('유효하지 않은 날짜 데이터:', membership)
+      return false
+    }
+  
+    const today = new Date()
+    return today >= startDate && today <= endDate
+  })
+}
+
+export function getMembershipInfo(membership) {
+  if (!membership) {
+    return {
+      type: '미등록',
+      expiryDate: 'None',
+      remainingDays: 'None',
+      remainingVisits: 'None'
+    }
+  }
+
+  // 등록 타입
+  let type = '미등록'
+  if (membership.type) {
+    switch(membership.type) {
+      case 'periodPass':
+        type = '기간권'
+        break
+      case 'countPass':
+        type = '횟수권'
+        break
+    }
+  }
+
+  // 만료 일자
+  const expiryDate = membership.endDate ? convertTimestampToString(membership.endDate) : 'None'
+
+  // 잔여 기간
+  let remainingDays = 'None'
+  if (membership.endDate) {
+    const today = new Date()
+    const endDate = new Date(membership.endDate.seconds * 1000)
+    const diff = endDate.getTime() - today.getTime()
+    if (diff > 0) {
+      const days = Math.ceil(diff / (1000 * 3600 * 24))
+      remainingDays = `${days}일`
+    } else {
+      remainingDays = '0일'
+    }
+  }
+
+  // 잔여 횟수
+  let remainingVisits = 'None'
+  if (membership.type === 'periodPass') {
+    remainingVisits = '무제한'
+  } else if (membership.type === 'countPass' && membership.count) {
+    remainingVisits = membership.count
+  }
+
+  return {
+    type,
+    expiryDate,
+    remainingDays,
+    remainingVisits
+  }
 }

@@ -1,6 +1,6 @@
-import { getDocs, query, collection, where, updateDoc, setDoc, doc } from "firebase/firestore"
+import { getDocs, query, collection, where, updateDoc, setDoc, doc, getDoc } from "firebase/firestore"
 import { db } from '@/firebase'
-import { initializeMember, removeDaysFromMember } from "@/views/admin/util/member"
+import { initializeMember, removeDaysFromMember, getCurrentMemberships } from "@/views/admin/util/member"
 
 const member = {
   state: {
@@ -20,10 +20,25 @@ const member = {
       const querySnap = await getDocs(q)
       const members = []
 
-      querySnap.forEach((doc) => {
-        let member = initializeMember(doc.data())
+      for (const memberDoc of querySnap.docs) {
+        let member = memberDoc.data();
+        
+        // membership 정보 가져오기
+        const membershipPath = `${path}/${memberDoc.id}/membership/membership_doc`
+        const membershipDocRef = doc(db, membershipPath)
+        const membershipDoc = await getDoc(membershipDocRef)
+        
+        if (membershipDoc.exists()) {
+          const membershipData = membershipDoc.data()
+          // 현재 유효한 멤버십 중 첫 번째 것만 저장
+          const currentMemberships = getCurrentMemberships(membershipData.memberships || [])
+          member.memberships = currentMemberships.length > 0 ? currentMemberships[0] : null
+        } else {
+          member.memberships = null
+        }
+        
         members.push(member)
-      })
+      }
 
       commit('SET_MEMBERS', members)
     },
