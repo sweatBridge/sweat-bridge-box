@@ -115,3 +115,59 @@ export function getCurrentMemberships(memberships) {
     return today >= startDate && today <= endDate
   })
 }
+
+export function getMembershipInfo(membership) {
+  if (!membership) {
+    return {
+      type: '미등록',
+      expiryDate: 'None',
+      remainingDays: 'None',
+      remainingVisits: 'None'
+    }
+  }
+
+  // 등록 타입
+  let type = '미등록'
+  if (membership.type) {
+    switch(membership.type) {
+      case 'periodPass':
+        type = '기간권'
+        break
+      case 'countPass':
+        type = '횟수권'
+        break
+    }
+  }
+
+  // 만료 일자
+  const expiryDate = membership.endDate ? convertTimestampToString(membership.endDate) : 'None'
+
+  // 잔여 기간
+  let remainingDays = 'None'
+  if (membership.endDate) {
+    const today = new Date()
+    const endDate = new Date(membership.endDate.seconds * 1000)
+    const diff = endDate.getTime() - today.getTime()
+    if (diff > 0) {
+      const days = Math.ceil(diff / (1000 * 3600 * 24))
+      remainingDays = `${days}일`
+    } else {
+      remainingDays = '0일'
+    }
+  }
+
+  // 잔여 횟수
+  let remainingVisits = 'None'
+  if (membership.type === 'periodPass') {
+    remainingVisits = '무제한'
+  } else if (membership.type === 'countPass' && membership.count) {
+    remainingVisits = membership.count
+  }
+
+  return {
+    type,
+    expiryDate,
+    remainingDays,
+    remainingVisits
+  }
+}

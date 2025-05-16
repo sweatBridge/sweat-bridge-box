@@ -30,10 +30,11 @@ const member = {
         
         if (membershipDoc.exists()) {
           const membershipData = membershipDoc.data()
-          // 현재 유효한 멤버십만 필터링하여 저장
-          member.memberships = getCurrentMemberships(membershipData.memberships || [])
+          // 현재 유효한 멤버십 중 첫 번째 것만 저장
+          const currentMemberships = getCurrentMemberships(membershipData.memberships || [])
+          member.memberships = currentMemberships.length > 0 ? currentMemberships[0] : null
         } else {
-          member.memberships = []
+          member.memberships = null
         }
         
         members.push(member)
