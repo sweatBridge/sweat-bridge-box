@@ -16,8 +16,11 @@
         buttons-pagination
         :rows-per-page="5"
       >
-        <template #item-name="{ name }">
-          {{name}}
+        <template #item-realName="{ realName }">
+          {{realName}}
+        </template>
+        <template #item-nickName="{ nickName }">
+          {{nickName}}
         </template>
       </EasyDataTable>
     </CModalBody>
@@ -41,7 +44,8 @@ export default {
   },
   setup() {
     const headers = [
-      { text: "이름", value: "name", width: "80" },
+      { text: "이름", value: "realName", width: "80" },
+      { text: "닉네임", value: "nickName", width: "80" },
     ]
     const store = useStore()
     const modalStatus = ref(false)
