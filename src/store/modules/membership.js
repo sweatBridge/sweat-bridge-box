@@ -192,14 +192,14 @@ const membership = {
 
                 commit('ADD_USER_MEMBERSHIP', payload.membership)
 
-                const membershipDocRef = doc(
+                const memberDocRef = doc(
                     db,
-                    `box/${boxName}/member/${payload.email}/membership/membership_doc`
+                    `box/${boxName}/member/${payload.email}`
                 )
                 
-                await setDoc(membershipDocRef, {
+                await setDoc(memberDocRef, {
                     memberships: state.userMemberships
-                })
+                }, { merge: true })
 
                 console.log('Successfully added new user membership:', payload.membership)
             } catch (error) {
