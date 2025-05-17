@@ -68,7 +68,7 @@
 <script>
 import {defineComponent, ref} from "vue"
 import {extractDateTimeFromDocKey} from "@/views/admin/class/classCalendarUtils";
-import ReservedMemberModal from "@/views/admin/common/modal/ReservedMemberModal.vue";
+import ReservedMemberModal from "@/views/admin/class/modal/ReservedMemberModal.vue";
 import { formatDateTime } from "../../util/date";
 
 export default defineComponent({
@@ -100,8 +100,11 @@ export default defineComponent({
       coach.value = event.extendedProps.coach
       capacity.value = event.extendedProps.cap
       reserved.value = event.extendedProps.reserved.map(reservation => {
-        //TODO: realName으로 변경 예정(현재 id)
-        return { name: reservation.split(',')[0].trim() }
+        const [id, realName, nickName] = reservation.split(',')
+        return { 
+          realName: realName.trim(),
+          nickName: nickName.trim()
+        }
       })
     }
 

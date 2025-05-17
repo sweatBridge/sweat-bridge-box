@@ -23,19 +23,11 @@ const member = {
       for (const memberDoc of querySnap.docs) {
         let member = memberDoc.data();
         
-        // membership 정보 가져오기
-        const membershipPath = `${path}/${memberDoc.id}/membership/membership_doc`
-        const membershipDocRef = doc(db, membershipPath)
-        const membershipDoc = await getDoc(membershipDocRef)
-        
-        if (membershipDoc.exists()) {
-          const membershipData = membershipDoc.data()
-          // 현재 유효한 멤버십 중 첫 번째 것만 저장
-          const currentMemberships = getCurrentMemberships(membershipData.memberships || [])
-          member.memberships = currentMemberships.length > 0 ? currentMemberships[0] : null
-        } else {
-          member.memberships = null
-        }
+        // member 문서에서 직접 memberships 정보 가져오기
+        const memberships = member.memberships || []
+        // 현재 유효한 멤버십 중 첫 번째 것만 저장
+        const currentMemberships = getCurrentMemberships(memberships)
+        member.memberships = currentMemberships.length > 0 ? currentMemberships[0] : null
         
         members.push(member)
       }

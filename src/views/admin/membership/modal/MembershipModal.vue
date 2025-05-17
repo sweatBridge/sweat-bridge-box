@@ -84,7 +84,7 @@
           <strong>현재 유효한 회원권</strong>
         </CCardHeader>
         <CCardBody>
-          <div v-if="userCurrentMemberships.length === 0" class="text-center text-muted">
+          <div v-if="userCurrentMemberships.length === 0" class="text-center text-muted no-membership-message">
             현재 유효한 회원권이 없습니다.
           </div>
           <div v-else-if="userCurrentMemberships.length > 1" class="text-center text-muted">
@@ -350,9 +350,13 @@ export default {
 }
 
 .current-membership-container {
-  border: 2px solid black; /* ✅ 검정색 테두리 */
-  border-radius: 8px; /* ✅ 모서리를 둥글게 */
-  padding: 16px; /* ✅ 내부 여백 */
-  margin-bottom: 16px; /* ✅ 아래 요소와 간격 추가 */
+  border: 2px solid black;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.no-membership-message {
+  padding: 80px 0;  /* 위아래로 4줄의 여백을 주기 위해 80px 설정 */
 }
 </style>
