@@ -39,9 +39,9 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import {INITIAL_EVENTS, extractDateAndTime} from './classCalendarUtils'
 import { defineComponent } from 'vue'
-import SaveClassModal from '@/views/admin/common/modal/SaveClassModal.vue'
+import SaveClassModal from '@/views/admin/class/modal/SaveClassModal.vue'
 import {mapActions} from "vuex";
-import ManageClassModal from "@/views/admin/common/modal/ManageClassModal.vue"
+import ManageClassModal from "@/views/admin/class/modal/ManageClassModal.vue"
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue"
 
 export default defineComponent({

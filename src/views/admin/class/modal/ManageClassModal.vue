@@ -68,7 +68,7 @@
 <script>
 import {defineComponent, ref} from "vue"
 import {extractDateTimeFromDocKey} from "@/views/admin/class/classCalendarUtils";
-import ReservedMemberModal from "@/views/admin/common/modal/ReservedMemberModal.vue";
+import ReservedMemberModal from "@/views/admin/class/modal/ReservedMemberModal.vue";
 import { formatDateTime } from "../../util/date";
 
 export default defineComponent({
