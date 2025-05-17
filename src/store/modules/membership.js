@@ -149,7 +149,7 @@ const membership = {
 
                 const memberDocRef = doc(
                     db,
-                    `box/${boxName}/member/${payload.email}/membership/membership_doc`
+                    `box/${boxName}/member/${payload.email}`
                 )
 
                 const docSnap = await getDoc(memberDocRef)
@@ -159,12 +159,12 @@ const membership = {
                     const memberships = data.memberships || []
 
                     commit('SET_USER_MEMBERSHIPS', memberships)
-                    
+
                     const currentMemberships = getCurrentMemberships(memberships)
                     commit('SET_USER_CURRENT_MEMBERSHIP', currentMemberships)
                     return memberships
                 } else {
-                    console.log('Membership 문서를 찾을 수 없습니다.')
+                    console.log('Member 문서를 찾을 수 없습니다.')
                     commit('SET_USER_MEMBERSHIPS', [])
                     commit('SET_USER_CURRENT_MEMBERSHIP', [])
                     return []
