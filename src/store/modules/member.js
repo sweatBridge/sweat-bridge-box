@@ -15,7 +15,7 @@ const member = {
     async getMembers({commit}, payload) {
       const path = `/box/${payload.box}/member`
       const q = query(collection(db, path),
-        where('boxName', '==', payload.box),
+        where('boxName', '==', payload.box)
       )
       const querySnap = await getDocs(q)
       const members = []
@@ -23,9 +23,9 @@ const member = {
       for (const memberDoc of querySnap.docs) {
         let member = memberDoc.data();
         
-        // member 문서에서 직접 memberships 정보 가져오기
+        if (member.status === 'rejected') continue;
+        
         const memberships = member.memberships || []
-        // 현재 유효한 멤버십 중 첫 번째 것만 저장
         const currentMemberships = getCurrentMemberships(memberships)
         member.memberships = currentMemberships.length > 0 ? currentMemberships[0] : null
         
@@ -96,7 +96,6 @@ const member = {
         const path = `/box/${box}/member`
         const memberData = payload
 
-        // email을 문서 ID로 사용
         const memberDocRef = doc(collection(db, path), payload.email)
 
         await setDoc(memberDocRef, memberData)
@@ -124,7 +123,6 @@ const member = {
           return null
         }
 
-        // 여러 문서가 있을 수 있지만, 일반적으로는 하나일 것으로 예상
         querySnap.forEach(async (docSnap) => {
           await updateDoc(docSnap.ref, payload)
 

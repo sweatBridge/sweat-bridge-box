@@ -59,6 +59,14 @@ export function validateWod(wod) {
     return { valid: false, error: '점수 타입이 필요합니다.' };
   }
 
+  // set과 round가 숫자인지 검증
+  if (wod.isSet && (isNaN(wod.set) || wod.set < 0)) {
+    return { valid: false, error: '세트 수는 0 이상의 숫자여야 합니다.' };
+  }
+  if (wod.round && (isNaN(wod.round) || wod.round < 0)) {
+    return { valid: false, error: '라운드 수는 0 이상의 숫자여야 합니다.' };
+  }
+
   // 시간 제한 검증 (형식: MM:SS)
   const timeCapPattern = /^[0-5][0-9]:[0-5][0-9]$/;
   if (!timeCapPattern.test(wod.timeCap)) {

@@ -34,43 +34,51 @@ export default {
     const store = useStore()
     const modalStatus = ref(false)
     const name = ref("")
-    const member = reactive({})
+    const member = ref({})
     const toastMessageRef = ref(null)
     const boxName = ref(localStorage.getItem('boxName') || '');
 
     const showModal = (user) => {
+      console.log('Received user in showModal:', user)
       modalStatus.value = true
       name.value = user.realName
-      member.value = user
+      member.value = {
+        ...user,
+        email: user.email,
+        box: boxName.value
+      }
+      console.log('Set member.value to:', member.value)
     }
     const reject = () => {
       modalStatus.value = false
-      member.value.box = boxName.value
-      store.dispatch("rejectMember", member.value)
+      console.log('Rejecting member with data:', {
+        member: member.value,
+        boxName: boxName.value,
+        email: member.value?.email
+      })
+      store.dispatch("rejectMember", {
+        email: member.value.email,
+        box: boxName.value
+      })
         .then(() => {
           toastMessageRef.value.createToast(
             {
               title: '성공',
-              content: '요청 거부 성공.',
+              content: '회원 탈퇴 처리가 완료되었습니다.',
               type: 'success'
             }
           )
-          setTimeout(() => {
-            location.reload()
-          }, 1000)
+          store.dispatch("getMembers", { box: boxName.value })
         })
         .catch(error => {
           console.error("An error occurred while rejecting the member:", error)
           toastMessageRef.value.createToast(
             {
               title: '실패',
-              content: '회원 탈퇴 실패',
+              content: '회원 탈퇴 실패: ' + error.message,
               type: 'danger'
             }
           )
-          setTimeout(() => {
-            location.reload()
-          }, 500)
         })
     }
     const cancel = () => {

@@ -263,7 +263,7 @@ export default defineComponent({
     }
 
     const handleTypeChange = () => {
-      wodRegistration.round = "0"
+      wodRegistration.round = 0
       wodRegistration.timeCap = "00:00"
       wodRegistration.customMovements = ""
       
@@ -275,7 +275,7 @@ export default defineComponent({
 
     const handleSetTypeChange = () => {
       wodRegistration.isSet = !wodRegistration.isSet
-      wodRegistration.set = "0"
+      wodRegistration.set = 0
     }
 
     const addMovement = () => {
