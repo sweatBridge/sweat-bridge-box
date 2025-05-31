@@ -150,6 +150,20 @@ export default defineComponent({
     // event 삭제 시 호출
     handleEventRemove(event) {},
     loadSaveModal(selectInfo) {
+      let start = new Date(selectInfo.startStr)
+      let end = new Date(selectInfo.endStr)
+
+      // If time is not included (monthly calendar), add default time
+      if (start.getHours() === 0 && end.getHours() === 0) {
+        start.setHours(9)
+        end = new Date(start)
+        end.setHours(10)
+      }
+
+      // Convert back to ISO strings
+      selectInfo.startStr = start.toISOString()
+      selectInfo.endStr = end.toISOString()
+
       this.$refs.saveModal.showModal(selectInfo)
     },
     loadManageModal(event) {
