@@ -7,7 +7,7 @@
         </CCardHeader>
         <CCardBody>
           <div class="demo-app-main">
-            <FullCalendar class="demo-app-calendar" ref="fullCalendar" :options="calendarOptions" style="width: 100%; height: 650px;">
+            <FullCalendar class="demo-app-calendar" ref="fullCalendar" :options="calendarOptions" style="width: 100%; height: 100%;">
               <template v-slot:eventContent="arg">
                 <b>{{ arg.timeText }}</b>
                 <i>{{ arg.event.title }}</i>
@@ -92,7 +92,7 @@ export default defineComponent({
           timeGridDay: {
             titleFormat: { year: 'numeric', month: '2-digit', day: '2-digit' }
           }
-        },
+        }, 
         buttonText: {
           today: '오늘',
           month: '월',
@@ -122,6 +122,7 @@ export default defineComponent({
         eventAdd: this.handleEventAdd,
         eventChange: this.handleEventChange,
         eventRemove: this.handleEventRemove,
+        height: 'parent'
       },
       currentEvents: [],
       height: 200,
@@ -307,6 +308,8 @@ export default defineComponent({
 }
 
 .demo-app-main {
+  height: calc(80vh);
+  overflow-y: auto;
   flex-grow: 1;
   padding: 3em;
 }

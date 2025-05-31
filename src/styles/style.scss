@@ -15,3 +15,8 @@ $enable-rtl: true;
 
 // If you want to add something do it here
 @import "custom";
+
+body, body *:not(input):not(textarea):not([contenteditable="true"]) {
+  user-select: none !important;
+  caret-color: transparent !important;
+}
