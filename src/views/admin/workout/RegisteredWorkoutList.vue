@@ -251,10 +251,4 @@ export default defineComponent({
   color: rgb(70, 100, 200)
 }
 
-.fc,
-.fc * {
-  user-select: none !important;
-  caret-color: transparent !important;
-}
-
 </style>
