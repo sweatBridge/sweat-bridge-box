@@ -16,8 +16,9 @@
         <CFormInput
           id="basic-url"
           aria-describedby="basic-addon3"
-          v-model="this.startStrKst"
-          readonly
+          type="datetime-local"
+          v-model="startStr"
+          :value="startStr"
         />
       </CInputGroup>
       <CInputGroup class="mb-3">
@@ -25,8 +26,9 @@
         <CFormInput
           id="basic-url"
           aria-describedby="basic-addon3"
-          v-model="this.endStrKst"
-          readonly
+          type="datetime-local"
+          v-model="endStr"
+          :value="endStr"
         />
       </CInputGroup>
       <CInputGroup class="mb-3">
@@ -175,6 +177,8 @@ export default defineComponent({
       coach,
       capacity,
       isMonthlySchedule,
+      startStr,
+      endStr,
       showModal,
       checkSaveModalResult,
     }
