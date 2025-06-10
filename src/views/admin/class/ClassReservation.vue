@@ -21,6 +21,7 @@
   <save-class-modal
     ref="saveModal"
     purpose="ClassReservation"
+    :current-view="calendarOptions.initialView"
     @saveModalResult="checkSaveModalResult"
   />
   <manage-class-modal
