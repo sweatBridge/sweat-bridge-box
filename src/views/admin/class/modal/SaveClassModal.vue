@@ -13,23 +13,43 @@
     <CModalBody>
       <CInputGroup class="mb-3">
         <CInputGroupText id="basic-addon3">시작 시각</CInputGroupText>
-        <CFormInput
-          id="basic-url"
-          aria-describedby="basic-addon3"
-          type="datetime-local"
-          v-model="startStr"
-          :value="startStr"
-        />
+        <template v-if="calendarView === 'dayGridMonth'">
+          <CFormInput
+            id="basic-url"
+            aria-describedby="basic-addon3"
+            type="datetime-local"
+            v-model="startStr"
+            :value="startStr"
+          />
+        </template>
+        <template v-else-if="calendarView === 'timeGridWeek'">
+          <CFormInput
+            id="basic-url"
+            aria-describedby="basic-addon3"
+            v-model="startStrKst"
+            readonly
+          />
+        </template>
       </CInputGroup>
       <CInputGroup class="mb-3">
         <CInputGroupText id="basic-addon3">종료 시각</CInputGroupText>
-        <CFormInput
-          id="basic-url"
-          aria-describedby="basic-addon3"
-          type="datetime-local"
-          v-model="endStr"
-          :value="endStr"
-        />
+        <template v-if="calendarView === 'dayGridMonth'">
+          <CFormInput
+            id="basic-url"
+            aria-describedby="basic-addon3"
+            type="datetime-local"
+            v-model="endStr"
+            :value="endStr"
+          />
+        </template>
+        <template v-else-if="calendarView === 'timeGridWeek'">
+          <CFormInput
+            id="basic-url"
+            aria-describedby="basic-addon3"
+            v-model="endStrKst"
+            readonly
+          />
+        </template>
       </CInputGroup>
       <CInputGroup class="mb-3">
         <CInputGroupText id="basic-addon3">코치</CInputGroupText>
@@ -96,7 +116,7 @@ import {
   CRow,
   CCol,
 } from '@coreui/vue'
-import { computed, defineComponent, ref } from 'vue'
+import { computed, defineComponent, ref, toRefs } from 'vue'
 import { formatDateTime } from '../../util/date';
 
 export default defineComponent({
@@ -118,8 +138,13 @@ export default defineComponent({
     purpose: {
       type: String,
     },
+    currentView: {
+      type: String,
+      default: 'timeGridWeek'
+    }
   },
   setup(props, { emit }) {
+    const { currentView: calendarView } = toRefs(props)
     const modalStatus = ref(false)
     const startStr = ref('')
     const endStr = ref('')
@@ -181,6 +206,7 @@ export default defineComponent({
       endStr,
       showModal,
       checkSaveModalResult,
+      calendarView
     }
   },
 })
