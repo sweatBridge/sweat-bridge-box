@@ -21,7 +21,7 @@
   <save-class-modal
     ref="saveModal"
     purpose="ClassReservation"
-    :current-view="calendarOptions.initialView"
+    :current-view="currentView"
     @saveModalResult="checkSaveModalResult"
   />
   <manage-class-modal
@@ -123,15 +123,20 @@ export default defineComponent({
         eventAdd: this.handleEventAdd,
         eventChange: this.handleEventChange,
         eventRemove: this.handleEventRemove,
-        height: 'parent'
+        height: 'parent',
+        datesSet: this.handleDatesSet
       },
       currentEvents: [],
       height: 200,
       width: 200,
+      currentView: 'timeGridWeek'
     }
   },
   methods: {
     ...mapActions(['getClass', 'setClass', 'getMonthlyClasses', 'update', 'delete']),
+    handleDatesSet(info) {
+      this.currentView = info.view.type
+    },
     handleWeekendsToggle() {
       this.calendarOptions.weekends = !this.calendarOptions.weekends // update a property
     },
