@@ -1,6 +1,7 @@
 import { getDocs, query, collection, where, updateDoc, setDoc, doc, getDoc } from "firebase/firestore"
 import { db } from '@/firebase'
 import { initializeMember, removeDaysFromMember, getCurrentMemberships } from "@/views/admin/util/member"
+import store from ".."
 
 const member = {
   state: {
@@ -49,6 +50,7 @@ const member = {
         return memberRef[0]
       }
     },
+
     async getUserRef({commit}, payload) {
       const path = `/user`
       const q = query(collection(db, path),
@@ -63,6 +65,7 @@ const member = {
         return userRef[0]
       }
     },
+
     async getUserByEmail({commit}, payload) {
       const path = `/user`
       const q = query(collection(db, path),
@@ -77,6 +80,7 @@ const member = {
     
       return userData
     },
+
     async getUserByPhone({ commit }, payload) {
       const path = "/user";
       const q = query(collection(db, path), where("phone", "==", payload.phone));
@@ -89,6 +93,49 @@ const member = {
     
       return userData;
     },
+
+    async getWodUserByName({commit}, payload) {
+      const path = `/box/${payload.boxName}/member`
+      const q = query(collection(db, path),
+        where('realName', '==', payload.realName),
+      )
+      const querySnap = await getDocs(q)
+      const users = []
+      querySnap.forEach((doc) => {
+        users.push(doc.data())
+      })
+
+      return users // 배열로 반환
+    },
+
+    async getWodUserByEmail({commit}, payload) {
+      const path = `/box/${payload.boxName}/member`
+      const q = query(collection(db, path),
+        where('email', '==', payload.email),
+      )
+      const querySnap = await getDocs(q)
+      let userData = null
+    
+      querySnap.forEach((doc) => {
+        userData = doc.data()
+      })
+      return userData
+    },
+
+    async getWodUserByPhone({commit}, payload) {
+      const path = `/box/${payload.boxName}/member`
+      const q = query(collection(db, path),
+        where('phone', '==', payload.phone),
+      )
+      const querySnap = await getDocs(q)
+      let userData = null
+    
+      querySnap.forEach((doc) => {
+        userData = doc.data()
+      })
+      return userData
+    },
+
 
     async createMember({ commit }, payload) {
       const box = localStorage.getItem('boxName')
@@ -177,6 +224,97 @@ const member = {
       });
     
       return users;
+    },
+    
+    async findMembership({ dispatch }, { email, classId, box, isCreate}) {
+      const classDocRef = doc(collection(db, `/box/${box}/class`), classId)
+      const classSnap = await getDoc(classDocRef);
+      const classDateRaw = classSnap.data().date;
+      const classDate = classDateRaw?.toDate?.() ?? new Date(classDateRaw);
+
+      const userDoc = await dispatch('getWodUserByEmail', { email: email, boxName: box })
+      const memberships = userDoc.memberships
+      let membershipIdx = null
+      let membership = null
+
+      if (!memberships) {
+        throw new Error('회원권이 설정되어 있지 않습니다.');
+      }
+
+      for (let i = 0; i < memberships.length; i++) {
+        const m = memberships[i];
+        const start = m.startDate?.toDate?.() ?? new Date(m.startDate);
+        const end = m.endDate?.toDate?.() ?? new Date(m.endDate);
+
+        if (classDate > start && classDate < end) {
+          membershipIdx = i
+          membership = memberships[i]
+        }
+      }
+
+      if (isCreate) {
+        await store.dispatch("makeReservation", {email, box, membership, membershipIdx, userDoc, classSnap, classDocRef})
+      } else {
+        await store.dispatch("cancelReservation", {email, box, membership, membershipIdx, userDoc, classSnap, classDocRef})
+      }
+    },
+    async makeReservation({ dispatch }, { email, box, membership, membershipIdx, userDoc, classSnap, classDocRef}) {
+      if (['countPass', 'periodPass'].includes(membership.type)) {
+        if (!membership) {
+          throw new Error('회원권이 만료되었습니다.');
+        }
+
+        if (membership.type === 'countPass') {
+          if (membership.count <= 0) {
+            throw new Error('횟수권을 모두 사용하였습니다.');
+          }
+          membership.count -= 1;
+          await dispatch('updateMembershipInfo', {updatedMembership: membership, email: email, box: box, idx: membershipIdx});
+        }
+        const reservedEntry = `${userDoc.email},${userDoc.realName},${userDoc.nickName}`;
+        let reservedArray = classSnap.data().reserved || [];
+        reservedArray.push(reservedEntry);
+        await updateDoc(classDocRef, { reserved: reservedArray });
+      } else {
+        throw new Error('회원권에 오류가 발생하였습니다.');
+      }
+    },
+    async cancelReservation({ dispatch }, { email, box, membership, membershipIdx, userDoc, classSnap, classDocRef }) {
+      let reservedArray = classSnap.data().reserved || [];
+      const emailToRemove = email;
+      reservedArray = reservedArray.filter(entry => !entry.startsWith(`${emailToRemove},`));
+      await updateDoc(classDocRef, { reserved: reservedArray });
+      if (membership?.type === 'countPass') {
+        membership.count += 1;
+        await dispatch('updateMembershipInfo', {updatedMembership: membership, email: email, box: box, idx: membershipIdx});
+      }
+    },
+    async updateMembershipInfo({ commit }, payload) {
+      try {
+        const email = payload.email
+        const boxName = payload.box
+        const index = payload.idx
+        const updatedMembership = payload.updatedMembership
+        if (!email || !boxName || index === undefined || !updatedMembership) return;
+
+        // box/[boxName]/member 문서 업데이트
+        const memberRefQuery = query(
+          collection(db, `box/${boxName}/member`),
+          where('email', '==', email)
+        );
+        const memberSnap = await getDocs(memberRefQuery);
+
+        for (const docSnap of memberSnap.docs) {
+          const memberData = docSnap.data();
+          const memberships = memberData.memberships || [];
+          if (index < 0 || index >= memberships.length) continue;
+
+          memberships[index] = updatedMembership;
+          await updateDoc(docSnap.ref, { memberships });
+        }
+      } catch (e) {
+        console.error('Error updating membership info:', e);
+      }
     },
   },
   getters: {}
