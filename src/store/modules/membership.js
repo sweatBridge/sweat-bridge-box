@@ -8,17 +8,17 @@ const membership = {
             {
                 plan: '',
                 type: '',
-                count: 0,
+                count: '0',
                 duration: 0,
-                price: 0,
+                price: '0',
             }
         ],
         userMemberships: [
             {
                 plan: '',
                 type: '',
-                count: 0,
-                price: 0,
+                count: '0',
+                price: '0',
                 assignee: '',
                 startDate: null,
                 endDate: null,
@@ -221,15 +221,16 @@ const membership = {
                 }
 
                 commit('REMOVE_USER_MEMBERSHIP', payload.index)
+                const updatedMemberships = [...state.userMemberships]
 
                 const membershipDocRef = doc(
                     db,
-                    `box/${boxName}/member/${payload.email}/membership/membership_doc`
+                    `box/${boxName}/member/${payload.email}`
                 )
                 
                 await setDoc(membershipDocRef, {
-                    memberships: state.userMemberships
-                })
+                    memberships: updatedMemberships
+                }, { merge: true })
 
                 console.log('Successfully removed user membership at index:', payload.index)
             } catch (error) {
