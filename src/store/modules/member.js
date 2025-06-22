@@ -265,10 +265,10 @@ const member = {
         }
 
         if (membership.type === 'countPass') {
-          if (membership.count <= 0) {
+          if (parseInt(membership.count, 10) <= 0) {
             throw new Error('횟수권을 모두 사용하였습니다.');
           }
-          membership.count -= 1;
+          membership.count = (parseInt(membership.count, 10) - 1).toString();
           await dispatch('updateMembershipInfo', {updatedMembership: membership, email: email, box: box, idx: membershipIdx});
         }
         const reservedEntry = `${userDoc.email},${userDoc.realName},${userDoc.nickName}`;
@@ -285,7 +285,7 @@ const member = {
       reservedArray = reservedArray.filter(entry => !entry.startsWith(`${emailToRemove},`));
       await updateDoc(classDocRef, { reserved: reservedArray });
       if (membership?.type === 'countPass') {
-        membership.count += 1;
+        membership.count = (parseInt(membership.count, 10) + 1).toString();
         await dispatch('updateMembershipInfo', {updatedMembership: membership, email: email, box: box, idx: membershipIdx});
       }
     },
