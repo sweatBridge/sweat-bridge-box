@@ -50,7 +50,7 @@ export default {
         .then(() => {
           toastMessageRef.value.createToast({
             title: '성공',
-            content: '요청 거부 성공.',
+            content: '회원 탈퇴 성공.',
             type: 'success'
           })
           setTimeout(() => location.reload(), 1000)

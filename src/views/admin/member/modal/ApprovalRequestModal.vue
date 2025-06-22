@@ -295,7 +295,7 @@ export default {
         'gender': this.manualGender,
         'phone': this.manualPhone,
         'realName': this.manualName,
-        'nickName': '',
+        'nickName': this.manualName,
         'remain': {}
       }, 'manual')
     },
