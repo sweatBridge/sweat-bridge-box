@@ -13,21 +13,43 @@
     <CModalBody>
       <CInputGroup class="mb-3">
         <CInputGroupText id="basic-addon3">시작 시각</CInputGroupText>
-        <CFormInput
-          id="basic-url"
-          aria-describedby="basic-addon3"
-          v-model="this.startStrKst"
-          readonly
-        />
+        <template v-if="calendarView === 'dayGridMonth'">
+          <CFormInput
+            id="basic-url"
+            aria-describedby="basic-addon3"
+            type="datetime-local"
+            v-model="startStr"
+            :value="startStr"
+          />
+        </template>
+        <template v-else-if="calendarView === 'timeGridWeek'">
+          <CFormInput
+            id="basic-url"
+            aria-describedby="basic-addon3"
+            v-model="startStrKst"
+            readonly
+          />
+        </template>
       </CInputGroup>
       <CInputGroup class="mb-3">
         <CInputGroupText id="basic-addon3">종료 시각</CInputGroupText>
-        <CFormInput
-          id="basic-url"
-          aria-describedby="basic-addon3"
-          v-model="this.endStrKst"
-          readonly
-        />
+        <template v-if="calendarView === 'dayGridMonth'">
+          <CFormInput
+            id="basic-url"
+            aria-describedby="basic-addon3"
+            type="datetime-local"
+            v-model="endStr"
+            :value="endStr"
+          />
+        </template>
+        <template v-else-if="calendarView === 'timeGridWeek'">
+          <CFormInput
+            id="basic-url"
+            aria-describedby="basic-addon3"
+            v-model="endStrKst"
+            readonly
+          />
+        </template>
       </CInputGroup>
       <CInputGroup class="mb-3">
         <CInputGroupText id="basic-addon3">코치</CInputGroupText>
@@ -94,7 +116,7 @@ import {
   CRow,
   CCol,
 } from '@coreui/vue'
-import { computed, defineComponent, ref } from 'vue'
+import { computed, defineComponent, ref, toRefs } from 'vue'
 import { formatDateTime } from '../../util/date';
 
 export default defineComponent({
@@ -116,8 +138,13 @@ export default defineComponent({
     purpose: {
       type: String,
     },
+    currentView: {
+      type: String,
+      default: 'timeGridWeek'
+    }
   },
   setup(props, { emit }) {
+    const { currentView: calendarView } = toRefs(props)
     const modalStatus = ref(false)
     const startStr = ref('')
     const endStr = ref('')
@@ -154,6 +181,18 @@ export default defineComponent({
     }
 
     const checkSaveModalResult = (status) => {
+      if (status && capacity.value <= 0) {
+        if (typeof window !== 'undefined' && window.$toastMessageRef) {
+          window.$toastMessageRef.createToast({
+            title: '오류',
+            content: '정원이 1명 이상이어야 수업 예약이 가능합니다.',
+            type: 'danger'
+          })
+        } else {
+          alert('정원이 1명 이상이어야 수업 예약이 가능합니다.')
+        }
+        return
+      }
       let result = {
         status: status,
         coach: coach.value,
@@ -175,8 +214,11 @@ export default defineComponent({
       coach,
       capacity,
       isMonthlySchedule,
+      startStr,
+      endStr,
       showModal,
       checkSaveModalResult,
+      calendarView
     }
   },
 })

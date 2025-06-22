@@ -7,7 +7,7 @@
         </CCardHeader>
         <CCardBody>
           <div class="demo-app-main">
-            <FullCalendar class="demo-app-calendar" ref="fullCalendar" :options="calendarOptions" style="width: 100%; height: 650px;">
+            <FullCalendar class="demo-app-calendar" ref="fullCalendar" :options="calendarOptions" style="width: 100%; height: 100%;">
               <template v-slot:eventContent="arg">
                 <b>{{ arg.timeText }}</b>
                 <i>{{ arg.event.title }}</i>
@@ -21,6 +21,7 @@
   <save-class-modal
     ref="saveModal"
     purpose="ClassReservation"
+    :current-view="currentView"
     @saveModalResult="checkSaveModalResult"
   />
   <manage-class-modal
@@ -80,7 +81,9 @@ export default defineComponent({
         headerToolbar: {
           left: 'prev,next today',
           center: 'title',
-          right: 'timeGridDay,timeGridWeek,dayGridMonth',
+          // right: 'timeGridDay,timeGridWeek,dayGridMonth',
+          right: 'timeGridWeek,dayGridMonth',
+
         },
         views: {
           dayGridMonth: {
@@ -92,11 +95,11 @@ export default defineComponent({
           timeGridDay: {
             titleFormat: { year: 'numeric', month: '2-digit', day: '2-digit' }
           }
-        },
+        }, 
         buttonText: {
           today: '오늘',
-          month: '월',
-          week: '주',
+          month: '월(Month)',
+          week: '주(Week)',
           day: '일'
         },
         dayHeaderContent: function(arg) {
@@ -122,14 +125,20 @@ export default defineComponent({
         eventAdd: this.handleEventAdd,
         eventChange: this.handleEventChange,
         eventRemove: this.handleEventRemove,
+        height: 'parent',
+        datesSet: this.handleDatesSet
       },
       currentEvents: [],
       height: 200,
       width: 200,
+      currentView: 'timeGridWeek'
     }
   },
   methods: {
     ...mapActions(['getClass', 'setClass', 'getMonthlyClasses', 'update', 'delete']),
+    handleDatesSet(info) {
+      this.currentView = info.view.type
+    },
     handleWeekendsToggle() {
       this.calendarOptions.weekends = !this.calendarOptions.weekends // update a property
     },
@@ -150,6 +159,20 @@ export default defineComponent({
     // event 삭제 시 호출
     handleEventRemove(event) {},
     loadSaveModal(selectInfo) {
+      let start = new Date(selectInfo.startStr)
+      let end = new Date(selectInfo.endStr)
+
+      // If time is not included (monthly calendar), add default time
+      if (start.getHours() === 0 && end.getHours() === 0) {
+        start.setHours(9)
+        end = new Date(start)
+        end.setHours(10)
+      }
+
+      // Convert back to ISO strings
+      selectInfo.startStr = start.toISOString()
+      selectInfo.endStr = end.toISOString()
+
       this.$refs.saveModal.showModal(selectInfo)
     },
     loadManageModal(event) {
@@ -307,6 +330,8 @@ export default defineComponent({
 }
 
 .demo-app-main {
+  height: calc(80vh);
+  overflow-y: auto;
   flex-grow: 1;
   padding: 3em;
 }

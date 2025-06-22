@@ -263,6 +263,10 @@ export default {
     };
 
     const addMembership = async () => {
+      if (!selectedPlanName.value || !membershipType.value || !price.value || !assignee.value || !startDate.value || !duration.value) {
+        alert("입력하지 않은 정보가 있는지 확인해 주세요.")
+        return
+      }
       const start = new Date(startDate.value);
       const end = new Date(start.getTime());
 
