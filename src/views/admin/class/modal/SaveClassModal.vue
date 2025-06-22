@@ -181,6 +181,18 @@ export default defineComponent({
     }
 
     const checkSaveModalResult = (status) => {
+      if (status && capacity.value <= 0) {
+        if (typeof window !== 'undefined' && window.$toastMessageRef) {
+          window.$toastMessageRef.createToast({
+            title: '오류',
+            content: '정원이 1명 이상이어야 수업 예약이 가능합니다.',
+            type: 'danger'
+          })
+        } else {
+          alert('정원이 1명 이상이어야 수업 예약이 가능합니다.')
+        }
+        return
+      }
       let result = {
         status: status,
         coach: coach.value,
