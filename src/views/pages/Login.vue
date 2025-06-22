@@ -117,7 +117,7 @@ export default {
           await store.dispatch('setBoxState', { email: email.value });
           cookies.set("emailCookie", email.value); // vue3-cookies를 통해 쿠키 설정
           setTimeout(() => {
-            router.push('/admin/registered-wod-list');
+            router.push('/admin/member');
           }, 500);
         } catch (error) {
           console.error(error);
