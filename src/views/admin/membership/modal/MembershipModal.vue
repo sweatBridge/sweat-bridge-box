@@ -233,9 +233,9 @@ export default {
     const handlePlanChange = () => {
       if (selectedPlanName.value === 'custom') {
         membershipType.value = '';
-        count.value = 0;
+        count.value = "0";
         duration.value = 0;
-        price.value = 0;
+        price.value = "0";
         return;
       }
 
@@ -243,9 +243,9 @@ export default {
 
       if (selectedPlan) {
         membershipType.value = selectedPlan.type;
-        count.value = selectedPlan.count;
+        count.value = selectedPlan.count.toString();
         duration.value = selectedPlan.duration;
-        price.value = selectedPlan.price;
+        price.value = selectedPlan.price.toString();
       }
     };
 
@@ -283,8 +283,8 @@ export default {
           'membership': {
             plan: selectedPlanName.value,
             type: membershipType.value,
-            count: count.value,
-            price: price.value,
+            count: count.value !== undefined ? count.value.toString() : "0",
+            price: price.value !== undefined ? price.value.toString() : "0",
             assignee: assignee.value,
             startDate: start,
             endDate: end,
