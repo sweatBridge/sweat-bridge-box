@@ -1,4 +1,4 @@
-import { getDocs, query, collection, where, updateDoc, setDoc, doc, getDoc } from "firebase/firestore"
+import { getDocs, query, collection, where, updateDoc, setDoc, doc, getDoc, deleteDoc } from "firebase/firestore"
 import { db } from '@/firebase'
 import { initializeMember, removeDaysFromMember, getCurrentMemberships } from "@/views/admin/util/member"
 import store from ".."
@@ -314,6 +314,37 @@ const member = {
         }
       } catch (e) {
         console.error('Error updating membership info:', e);
+      }
+    },
+    async withdrawMember({ dispatch }, payload) {
+      // 1. 회원 도큐먼트 참조 가져오기
+      const memberRef = await dispatch('getMemberRef', payload);
+      // 2. 유저 도큐먼트 참조 가져오기
+      const userRef = await dispatch('getUserRef', payload);
+
+      // 3. 회원 도큐먼트 데이터 백업
+      let memberData = null;
+      if (memberRef) {
+        const memberSnap = await getDoc(memberRef);
+        memberData = memberSnap.exists() ? memberSnap.data() : null;
+      }
+
+      try {
+        // 4. 회원 도큐먼트 삭제
+        if (memberRef) await deleteDoc(memberRef);
+
+        // 5. 유저 도큐먼트 boxName 필드 빈 문자열로 업데이트
+        if (userRef) await updateDoc(userRef, { boxName: "" });
+
+        // 6. 성공 반환
+        return { success: true };
+      } catch (error) {
+        // 7. 롤백 시도: 회원 도큐먼트 복구
+        if (memberRef && memberData) {
+          await setDoc(memberRef, memberData);
+        }
+        // 8. 에러 반환
+        return { success: false, error };
       }
     },
   },
