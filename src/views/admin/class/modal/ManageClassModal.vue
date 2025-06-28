@@ -1,6 +1,7 @@
 <template>
   <CModal
     :visible="modalStatus"
+    backdrop="static"
     @close="( ) => { modalStatus = false }"
     >
     <CModalHeader>
@@ -44,9 +45,12 @@
         <CFormInput
           id="basic-url"
           aria-describedby="basic-addon3"
-          v-model="reserved.length"
+          :value="reserved.length"
+          readonly
         >
         </CFormInput>
+      </CInputGroup>
+      <CInputGroup class="mb-3">
         <CButton color="dark" shape="rounded-pill" @click="handleShowMember">
           보기
         </CButton>
@@ -61,8 +65,7 @@
       </CButton>
     </CModalFooter>
   </CModal>
-  <reserved-member-modal :members="reserved" ref="reservedMemberModalRef"></reserved-member-modal>
-
+  <reserved-member-modal :members="reserved" ref="reservedMemberModalRef"/>
 </template>
 
 <script>
@@ -84,7 +87,7 @@ export default defineComponent({
     const capacity = ref(0)
     const reserved = ref([])
     const reservedMemberModalRef = ref(null)
-
+    
     const showModal = (event) => {
       const {year, month, day, startHour, startMin, endHour, endMin} = extractDateTimeFromDocKey(event.id)
       let start = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${startHour}:${startMin}:00+09:00`
@@ -101,7 +104,8 @@ export default defineComponent({
       capacity.value = event.extendedProps.cap
       reserved.value = event.extendedProps.reserved.map(reservation => {
         const [id, realName, nickName] = reservation.split(',')
-        return { 
+        return {
+          email: id.trim(),
           realName: realName.trim(),
           nickName: nickName.trim()
         }
@@ -130,7 +134,10 @@ export default defineComponent({
     }
 
     const handleShowMember = () => {
-      reservedMemberModalRef.value.showModal()
+      reservedMemberModalRef.value.showModal(
+        id.value,
+        startStrKst.value
+      )
     }
 
     return {

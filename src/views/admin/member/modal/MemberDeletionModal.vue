@@ -13,7 +13,7 @@
       <CButton color="danger" @click="cancel">
         취소
       </CButton>
-      <CButton color="warning" @click="reject">
+      <CButton color="warning" @click="withdraw">
         탈퇴
       </CButton>
     </CModalFooter>
@@ -43,34 +43,25 @@ export default {
       name.value = user.realName
       member.value = user
     }
-    const reject = () => {
+    const withdraw = () => {
       modalStatus.value = false
       member.value.box = boxName.value
-      store.dispatch("rejectMember", member.value)
+      store.dispatch("withdrawMember", member.value)
         .then(() => {
-          toastMessageRef.value.createToast(
-            {
-              title: '성공',
-              content: '요청 거부 성공.',
-              type: 'success'
-            }
-          )
-          setTimeout(() => {
-            location.reload()
-          }, 1000)
+          toastMessageRef.value.createToast({
+            title: '성공',
+            content: '회원 탈퇴 성공.',
+            type: 'success'
+          })
+          setTimeout(() => location.reload(), 1000)
         })
         .catch(error => {
-          console.error("An error occurred while rejecting the member:", error)
-          toastMessageRef.value.createToast(
-            {
-              title: '실패',
-              content: '회원 탈퇴 실패',
-              type: 'danger'
-            }
-          )
-          setTimeout(() => {
-            location.reload()
-          }, 500)
+          toastMessageRef.value.createToast({
+            title: '실패',
+            content: '회원 탈퇴 실패',
+            type: 'danger'
+          })
+          setTimeout(() => location.reload(), 500)
         })
     }
     const cancel = () => {
@@ -83,7 +74,7 @@ export default {
       name,
       toastMessageRef,
       showModal,
-      reject,
+      withdraw,
       cancel,
     }
   },

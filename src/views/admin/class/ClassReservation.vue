@@ -21,6 +21,7 @@
   <save-class-modal
     ref="saveModal"
     purpose="ClassReservation"
+    :current-view="currentView"
     @saveModalResult="checkSaveModalResult"
   />
   <manage-class-modal
@@ -80,7 +81,9 @@ export default defineComponent({
         headerToolbar: {
           left: 'prev,next today',
           center: 'title',
-          right: 'timeGridDay,timeGridWeek,dayGridMonth',
+          // right: 'timeGridDay,timeGridWeek,dayGridMonth',
+          right: 'timeGridWeek,dayGridMonth',
+
         },
         views: {
           dayGridMonth: {
@@ -95,8 +98,8 @@ export default defineComponent({
         }, 
         buttonText: {
           today: '오늘',
-          month: '월',
-          week: '주',
+          month: '월(Month)',
+          week: '주(Week)',
           day: '일'
         },
         dayHeaderContent: function(arg) {
@@ -122,15 +125,20 @@ export default defineComponent({
         eventAdd: this.handleEventAdd,
         eventChange: this.handleEventChange,
         eventRemove: this.handleEventRemove,
-        height: 'parent'
+        height: 'parent',
+        datesSet: this.handleDatesSet
       },
       currentEvents: [],
       height: 200,
       width: 200,
+      currentView: 'timeGridWeek'
     }
   },
   methods: {
     ...mapActions(['getClass', 'setClass', 'getMonthlyClasses', 'update', 'delete']),
+    handleDatesSet(info) {
+      this.currentView = info.view.type
+    },
     handleWeekendsToggle() {
       this.calendarOptions.weekends = !this.calendarOptions.weekends // update a property
     },
