@@ -116,8 +116,8 @@ export function getCurrentMemberships(memberships) {
   })
 }
 
-export function getMembershipInfo(membership, futureMemberships) {
-  if (futureMemberships && futureMemberships.length > 0) {
+export function getMembershipInfo(currentMembership, futureMemberships) {
+  if (!currentMembership && futureMemberships && futureMemberships.length > 0) {
     return {
       type: '사용 예정',
       expiryDate: '-',
@@ -126,7 +126,7 @@ export function getMembershipInfo(membership, futureMemberships) {
     }
   }
 
-  if (!membership) {
+  if (!currentMembership) {
     return {
       type: '-',
       expiryDate: '-',
@@ -137,8 +137,8 @@ export function getMembershipInfo(membership, futureMemberships) {
 
   // 등록 타입
   let type = '-'
-  if (membership.type) {
-    switch(membership.type) {
+  if (currentMembership.type) {
+    switch(currentMembership.type) {
       case 'periodPass':
         type = '기간권'
         break
@@ -149,13 +149,13 @@ export function getMembershipInfo(membership, futureMemberships) {
   }
 
   // 만료 일자
-  const expiryDate = membership.endDate ? convertTimestampToString(membership.endDate) : '-'
+  const expiryDate = currentMembership.endDate ? convertTimestampToString(currentMembership.endDate) : '-'
 
   // 잔여 기간
   let remainingDays = '-'
-  if (membership.endDate) {
+  if (currentMembership.endDate) {
     const today = new Date()
-    const endDate = new Date(membership.endDate.seconds * 1000)
+    const endDate = new Date(currentMembership.endDate.seconds * 1000)
     const diff = endDate.getTime() - today.getTime()
     if (diff > 0) {
       const days = Math.ceil(diff / (1000 * 3600 * 24))
@@ -167,10 +167,10 @@ export function getMembershipInfo(membership, futureMemberships) {
 
   // 잔여 횟수
   let remainingVisits = '-'
-  if (membership.type === 'periodPass') {
+  if (currentMembership.type === 'periodPass') {
     remainingVisits = '무제한'
-  } else if (membership.type === 'countPass' && membership.count) {
-    remainingVisits = membership.count
+  } else if (currentMembership.type === 'countPass' && currentMembership.count) {
+    remainingVisits = currentMembership.count
   }
 
   return {
