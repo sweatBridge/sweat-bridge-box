@@ -125,6 +125,8 @@
         theme-color="#42A5F5"
         show-index
         alternating
+        :sort-by="'startDate'"
+        :sort-desc="true"
       >
       <template #item-startDate="{ startDate }">
         {{ getDateStr(startDate) }}
