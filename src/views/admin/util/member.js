@@ -14,8 +14,8 @@ export function calculateAge(birthDate) {
 }
 
 export function calculateRemainingDays(expiryDate) {
-  if (expiryDate == 'None') {
-    return 'None'
+  if (expiryDate == '-') {
+    return '-'
   }
 
   const expiryDateStr = convertTimestampToString(expiryDate)
@@ -37,7 +37,7 @@ export function convertTimestampToString(timestamp) {
     const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
     return formattedDate
   } else {
-    return 'None'
+    return '-'
   }
 }
 
@@ -47,7 +47,7 @@ export function convertRemainingVisits(type, remainingVisits) {
   } else if (type === 'countPass') {
     return remainingVisits
   } else {
-    return 'None'
+    return '-'
   }
 }
 
@@ -58,7 +58,7 @@ export function convertGenderToKorean(gender) {
     case 'F':
       return '여'
     default:
-      return 'None'
+      return '-'
   }
 }
 
@@ -72,7 +72,7 @@ export function getTypeKor(type, remainDays) {
     case 'countPass':
       return '횟수권'
     default:
-      return '미등록'
+      return '-'
   }
 }
 
@@ -119,10 +119,10 @@ export function getCurrentMemberships(memberships) {
 export function getMembershipInfo(membership) {
   if (!membership) {
     return {
-      type: '미등록',
-      expiryDate: 'None',
-      remainingDays: 'None',
-      remainingVisits: 'None'
+      type: '-',
+      expiryDate: '-',
+      remainingDays: '-',
+      remainingVisits: '-'
     }
   }
 
@@ -140,10 +140,10 @@ export function getMembershipInfo(membership) {
   }
 
   // 만료 일자
-  const expiryDate = membership.endDate ? convertTimestampToString(membership.endDate) : 'None'
+  const expiryDate = membership.endDate ? convertTimestampToString(membership.endDate) : '-'
 
   // 잔여 기간
-  let remainingDays = 'None'
+  let remainingDays = '-'
   if (membership.endDate) {
     const today = new Date()
     const endDate = new Date(membership.endDate.seconds * 1000)
@@ -157,7 +157,7 @@ export function getMembershipInfo(membership) {
   }
 
   // 잔여 횟수
-  let remainingVisits = 'None'
+  let remainingVisits = '-'
   if (membership.type === 'periodPass') {
     remainingVisits = '무제한'
   } else if (membership.type === 'countPass' && membership.count) {
