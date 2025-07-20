@@ -311,7 +311,7 @@ export default {
         toastMessageRef.value.createToast(
           {
             title: '실패',
-            content: '멤버십 추가 실패' + error,
+            content: error,
             type: 'danger'
           }
         )
