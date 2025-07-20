@@ -44,8 +44,8 @@ const member = {
         })
         
         // 새로운 필드에 과거/미래 멤버십 저장
-        member.pastMemberships = pastMemberships
-        member.futureMemberships = futureMemberships
+        member.pastMemberships = pastMemberships.length > 0 ? pastMemberships : null
+        member.futureMemberships = futureMemberships.length > 0 ? futureMemberships : null
         
         members.push(member)
       }

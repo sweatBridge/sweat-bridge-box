@@ -116,7 +116,16 @@ export function getCurrentMemberships(memberships) {
   })
 }
 
-export function getMembershipInfo(membership) {
+export function getMembershipInfo(membership, futureMemberships) {
+  if (futureMemberships && futureMemberships.length > 0) {
+    return {
+      type: '사용 예정',
+      expiryDate: '-',
+      remainingDays: '-',
+      remainingVisits: '-'
+    }
+  }
+
   if (!membership) {
     return {
       type: '-',
@@ -127,7 +136,7 @@ export function getMembershipInfo(membership) {
   }
 
   // 등록 타입
-  let type = '미등록'
+  let type = '-'
   if (membership.type) {
     switch(membership.type) {
       case 'periodPass':

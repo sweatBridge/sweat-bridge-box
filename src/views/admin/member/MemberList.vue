@@ -136,7 +136,7 @@ export default defineComponent({
     const members = computed(() => {
       return store.state.member.members.map(member => ({
         ...member,
-        membershipInfo: getMembershipInfo(member.memberships)
+        membershipInfo: getMembershipInfo(member.memberships, member.futureMemberships)
       }))
     })
 
