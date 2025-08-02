@@ -1,4 +1,4 @@
-import { getDocs, query, collection, where, updateDoc, setDoc, doc, getDoc, deleteDoc } from "firebase/firestore"
+import { getDocs, query, collection, where, updateDoc, setDoc, doc, getDoc, deleteDoc, deleteField } from "firebase/firestore"
 import { db } from '@/firebase'
 import { initializeMember, removeDaysFromMember, getCurrentMemberships } from "@/views/admin/util/member"
 import store from ".."
@@ -138,21 +138,23 @@ const member = {
 
 
     async createMember({ commit }, payload) {
-      const box = localStorage.getItem('boxName')
+      const box = localStorage.getItem('boxName');
       try {
-        const path = `/box/${box}/member`
-        const memberData = payload
+        const path = `/box/${box}/member`;
+        const memberDocRef = doc(collection(db, path), payload.email);
 
-        // email을 문서 ID로 사용
-        const memberDocRef = doc(collection(db, path), payload.email)
+        // Check if document already exists
+        const docSnapshot = await getDoc(memberDocRef);
+        if (docSnapshot.exists()) {
+          console.log(`Member with email ${payload.email} already exists. Skipping creation.`);
+          return; // Exit the function
+        }
 
-        await setDoc(memberDocRef, memberData)
-
-        console.log('멤버가 추가되었습니다. 문서 ID:', memberDocRef.id)
-        return memberDocRef
+        await setDoc(memberDocRef, payload);
+        console.log('멤버가 추가되었습니다. 문서 ID:', memberDocRef.id);
       } catch (error) {
-        console.error('멤버 추가 중 오류 발생:', error)
-        throw error
+        console.error('멤버 추가 중 오류 발생:', error);
+        throw error;
       }
     },
 
@@ -182,15 +184,6 @@ const member = {
         console.error('사용자 업데이트 중 오류 발생:', error)
         throw error
       }
-    },
-    
-    async approveMember(context, payload) {
-      const memberRef = await context.dispatch('getMemberRef', payload)
-      const userRef = await context.dispatch('getUserRef', payload)
-      payload.boxName = payload.box
-      delete payload.box
-      await updateDoc(memberRef, payload)
-      await updateDoc(userRef, payload)
     },
     async registerMembership(context, payload) {
       const memberRef = await context.dispatch('getMemberRef', payload)
@@ -347,6 +340,67 @@ const member = {
         return { success: false, error };
       }
     },
+
+    async fetchApplicants({ dispatch }, boxName) {
+      if (boxName) {
+        try {
+          // Reference to the single document where applicants are stored as a map
+          const applicantDocRef = doc(db, `box/${boxName}/applied/applieddoc`);
+          const applicantSnap = await getDoc(applicantDocRef);
+
+          const applicants = [];
+          if (applicantSnap.exists()) {
+            const data = applicantSnap.data(); // This is the full map
+            // Iterate through keys (emails) in the map
+            for (const email in data) {
+              if (data.hasOwnProperty(email)) {
+                const applicant = data[email];
+                applicants.push({
+                  name: applicant.realName || '',
+                  email: applicant.email || '',
+                  phone: applicant.phone || '',
+                  boxName: boxName
+                });
+              }
+            }
+          }
+          return applicants;
+        } catch (error) {
+          console.error('Failed to fetch applicants:', error);
+          return [];
+        }
+      }
+    },
+    async rejectApplicant({ dispatch }, { email, boxName }) {
+      try {
+        const applicantDocRef = doc(db, `box/${boxName}/applied/applieddoc`);
+        const userDocRef = doc(db,`user/${email}`)
+        await setDoc(applicantDocRef, {
+          [email]: deleteField()
+        }, { merge: true });
+        await updateDoc(userDocRef, {
+          boxName: ''
+        });
+        console.log(`Applicant ${email} removed successfully`);
+      } catch (error) {
+        console.error('Failed to reject applicant:', error);
+      }
+    },
+    async removeApplication({ dispatch }, { email, boxName }){
+      try {
+        const applicantDocRef = doc(db, `box/${boxName}/applied/applieddoc`);
+        const userDocRef = doc(db,`user/${email}`)
+        await setDoc(applicantDocRef, {
+          [email]: deleteField()
+        }, { merge: true });
+        await updateDoc(userDocRef, {
+          boxName: boxName
+        });
+        console.log(`Applicant ${email} removed successfully`);
+      } catch (error) {
+        console.error('Failed to reject applicant:', error);
+      }
+    }
   },
   getters: {}
 }
