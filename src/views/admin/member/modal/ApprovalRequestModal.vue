@@ -253,7 +253,6 @@ export default {
 
     const isBoxMember = () => user.value.boxName === boxName.value
 
-    
     const showModal = () => {
       modalStatus.value = true
     }

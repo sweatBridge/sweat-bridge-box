@@ -49,16 +49,23 @@ export default {
     
     const addMember = async () => {
       try {
-        // 1. register box (add boxName field)
+        // 기존 지원한 박스 확인
+        boxPlaceholder = member.value.boxName;
         member.value.boxName = boxName.value;
 
-        // 2. update user doc
-        // if addType is 'auto', update the user doc
+        // update user doc
         if (addType.value === 'auto') {
           await store.dispatch("updateUser", member.value);
         }
 
-        // 3. create member doc
+        if (boxPlaceholder?.startsWith('?')) {
+          await store.dispatch("removeApplication", {
+            email: member.value.email,
+            boxName: boxPlaceholder
+          });
+        }
+
+        // create member doc
         await store.dispatch("createMember", member.value);
 
         toastMessageRef.value.createToast(
@@ -82,36 +89,6 @@ export default {
       }
     }
 
-    const approve = () => {
-      modalStatus.value = false
-      member.value.box = boxName.value
-      store.dispatch("approveMember", member.value)
-        .then(() => {
-          toastMessageRef.value.createToast(
-            {
-              title: '성공',
-              content: '회원 추가가 성공.',
-              type: 'success'
-            }
-          )
-          setTimeout(() => {
-            location.reload()
-          }, 1000)
-        })
-        .catch(error => {
-          console.error("An error occurred while rejecting the member:", error)
-          toastMessageRef.value.createToast(
-            {
-              title: '실패',
-              content: '회원 추가가 실패',
-              type: 'danger'
-            }
-          )
-          setTimeout(() => {
-            location.reload()
-          }, 500)
-        })
-    }
     const cancel = () => {
       modalStatus.value = false
     }
@@ -122,7 +99,6 @@ export default {
       toastMessageRef,
       showModal,
       addMember,
-      approve,
       cancel
     }
   }
