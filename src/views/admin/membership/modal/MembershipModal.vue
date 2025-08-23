@@ -54,6 +54,12 @@
 
         <CRow>
           <CInputGroup class="mb-3">
+            <CInputGroupText>결제수단</CInputGroupText>
+            <CFormSelect v-model="paymentType">
+              <option value="">결제수단 선택</option>
+              <option value="cash">현금</option>
+              <option value="card">카드</option>
+            </CFormSelect>
             <CInputGroupText>가격</CInputGroupText>
             <CFormInput v-model="price" />
           </CInputGroup>
@@ -178,6 +184,7 @@ export default {
     const duration = ref(0);
     const price = ref(0);
     const startDate = ref(null);
+    const paymentType = ref("");
 
     const memberships = ref([]);
     const userCurrentMemberships = computed(() => store.state.membership.userCurrentMemberships);
@@ -330,6 +337,7 @@ export default {
       duration,
       price,
       startDate,
+      paymentType,
       handlePlanChange,
       handleTypeChange,
       addMembership,
