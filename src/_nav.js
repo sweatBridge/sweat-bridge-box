@@ -31,6 +31,12 @@ export default [
     to: '/admin/reservation',
     icon: 'cil-calendar',
   },
+    {
+    component: 'CNavItem',
+    name: '회계 관리',
+    to: '/admin/monetary',
+    icon: 'cil-money',
+  },
   {
     component: 'CNavItem',
     name: '마이페이지',

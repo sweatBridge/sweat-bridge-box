@@ -187,7 +187,8 @@ export default defineComponent({
       this.$refs.deleteModal.showModal(member)
     },
     manageMembership(id) {
-      this.$refs.membershipModal.showModal(id)
+      let member = findMemberById(this.members, id)
+      this.$refs.membershipModal.showModal(member)
     },
     showMemberDetails(id) {
       let member = findMemberById(this.members, id)

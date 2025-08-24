@@ -54,6 +54,12 @@
 
         <CRow>
           <CInputGroup class="mb-3">
+            <CInputGroupText>결제수단</CInputGroupText>
+            <CFormSelect v-model="paymentType">
+              <option value="">결제수단 선택</option>
+              <option value="cash">현금</option>
+              <option value="card">카드</option>
+            </CFormSelect>
             <CInputGroupText>가격</CInputGroupText>
             <CFormInput v-model="price" />
           </CInputGroup>
@@ -158,6 +164,7 @@ import { useStore } from "vuex";
 import DatePicker from "vue3-datepicker";
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue";
 import { datetimeToSimpleStr } from "../../util/date";
+import { generateUniqueKey } from "../../util/membership";
 
 export default {
   name: "MembershipModal",
@@ -167,6 +174,7 @@ export default {
     const modalStatus = ref(false);
 
     const userEmail = ref("");
+    const userRealName = ref(""); // 회원 이름 저장 변수 추가
 
     const membershipPlans = computed(() => store.getters.getMembershipPlans);
     const assignee = ref("");
@@ -178,6 +186,7 @@ export default {
     const duration = ref(0);
     const price = ref(0);
     const startDate = ref(null);
+    const paymentType = ref("");
 
     const memberships = ref([]);
     const userCurrentMemberships = computed(() => store.state.membership.userCurrentMemberships);
@@ -254,16 +263,17 @@ export default {
       count.value = 0;
     };
 
-    const showModal = async (userId) => {
+    const showModal = async (member) => {
       await store.dispatch("getMembershipPlans");
-      await store.dispatch("getUserMemberships", {'email': userId});
-      userEmail.value = userId;
+      await store.dispatch("getUserMemberships", {'email': member.email});
+      userEmail.value = member.email
+      userRealName.value = member.realName; // 회원 이름 저장
       memberships.value = store.state.membership.userMemberships;
       modalStatus.value = true;
     };
 
     const addMembership = async () => {
-      if (!selectedPlanName.value || !membershipType.value || !price.value || !assignee.value || !startDate.value || !duration.value) {
+      if (!selectedPlanName.value || !membershipType.value || !price.value || !assignee.value || !startDate.value || !duration.value || !paymentType.value) {
         alert("입력하지 않은 정보가 있는지 확인해 주세요.")
         return
       }
@@ -280,12 +290,15 @@ export default {
       try {
         const payload = {
           'email': userEmail.value,
+          'realName': userRealName.value,
           'membership': {
+            key: generateUniqueKey(userEmail.value),
             plan: selectedPlanName.value,
             type: membershipType.value,
             count: count.value !== undefined ? count.value.toString() : "0",
             price: price.value !== undefined ? price.value.toString() : "0",
             assignee: assignee.value,
+            paymentType: paymentType.value,
             startDate: start,
             endDate: end,
             holdStartDate: null,
@@ -330,6 +343,7 @@ export default {
       duration,
       price,
       startDate,
+      paymentType,
       handlePlanChange,
       handleTypeChange,
       addMembership,
@@ -339,6 +353,7 @@ export default {
       getDateStr,
       deleteMembership,
       toastMessageRef,
+      generateUniqueKey,
     };
   }
 };

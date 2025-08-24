@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from '@/firebase'
 import { getCurrentMemberships } from '@/views/admin/util/member'
+import { arrayUnion } from "firebase/firestore";
 
 const membership = {
     state: {
@@ -177,6 +178,94 @@ const membership = {
             }
         },
 
+        // 매출 데이터 저장 함수
+        async addRevenueData({ commit }, payload) {
+            try {
+                const boxName = localStorage.getItem('boxName')
+                if (!boxName) {
+                    console.error("Error: boxName is missing")
+                    return
+                }
+
+                const yymm = `${new Date().getFullYear().toString().slice(-2)}${(new Date().getMonth() + 1).toString().padStart(2, '0')}`
+                const day = new Date().getDate().toString().padStart(2, '0')
+                
+                const monetaryDocRef = doc(db, `box/${boxName}/monetary/${yymm}`)
+                
+                // 매출 데이터 구조 - undefined 값 체크 및 기본값 설정
+                const revenueData = {
+                    assignee: payload.membership.assignee || '',
+                    createdAt: payload.membership.createdAt || new Date(),
+                    paymentType: payload.membership.paymentType || '',
+                    plan: payload.membership.plan || '',
+                    type: payload.membership.type || '',
+                    price: payload.membership.price || '0',
+                    realName: payload.realName || '',
+                    id: payload.email || ''
+                }
+
+                // undefined 값이 있는지 확인
+                const hasUndefinedValues = Object.values(revenueData).some(value => value === undefined)
+                if (hasUndefinedValues) {
+                    console.error('Revenue data contains undefined values:', revenueData)
+                    throw new Error('Revenue data contains undefined values')
+                }
+
+                // 기존 문서가 있으면 업데이트, 없으면 새로 생성
+                await setDoc(monetaryDocRef, {
+                    [day]: {
+                        [payload.membership.key]: revenueData
+                    }
+                }, { merge: true })
+
+                console.log('Successfully added revenue data for day:', day)
+            } catch (error) {
+                console.error('Error adding revenue data:', error)
+                throw error
+            }
+        },
+
+        // 매출 데이터 삭제 함수
+        async removeRevenueData({ commit }, payload) {
+            try {
+                const boxName = localStorage.getItem('boxName')
+                if (!boxName) {
+                    console.error("Error: boxName is missing")
+                    return
+                }
+
+                // createdAt에서 월과 일 추출
+                const createdAt = payload.membership.createdAt
+                const date = createdAt instanceof Date ? createdAt : createdAt.toDate()
+                const yymm = `${date.getFullYear().toString().slice(-2)}${(date.getMonth() + 1).toString().padStart(2, '0')}`
+                const day = date.getDate().toString().padStart(2, '0')
+                
+                const monetaryDocRef = doc(db, `box/${boxName}/monetary/${yymm}`)
+                
+                // 해당 일의 매출 데이터에서 특정 key를 가진 항목 삭제
+                const docSnap = await getDoc(monetaryDocRef)
+                if (docSnap.exists()) {
+                    const data = docSnap.data()
+                    if (data[day] && data[day][payload.membership.key]) {
+                        // 해당 key를 가진 항목 삭제
+                        delete data[day][payload.membership.key]
+                        
+                        // 빈 객체가 되면 해당 일도 삭제
+                        if (Object.keys(data[day]).length === 0) {
+                            delete data[day]
+                        }
+                        
+                        // 업데이트된 데이터 저장
+                        await setDoc(monetaryDocRef, data)
+                        console.log('Successfully removed revenue data for key:', payload.membership.key)
+                    }
+                }
+            } catch (error) {
+                console.error('Error removing revenue data:', error)
+                throw error
+            }
+        },
+
         async addUserMembership({ commit, state }, payload) {
             try {
                 const boxName = localStorage.getItem('boxName')
@@ -201,7 +290,10 @@ const membership = {
                     memberships: state.userMemberships
                 }, { merge: true })
 
-                console.log('Successfully added new user membership:', payload.membership)
+                // 매출 데이터 저장
+                await this.dispatch("addRevenueData", payload)
+
+                console.log('Successfully added new user membership:', payload)
             } catch (error) {
                 console.error('Error adding user membership:', error)
             }
@@ -220,17 +312,31 @@ const membership = {
                     return
                 }
 
+                // 삭제할 멤버십 정보를 먼저 가져오기
+                const membershipToRemove = state.userMemberships[payload.index]
+                if (!membershipToRemove) {
+                    console.error("Error: membership not found at index:", payload.index)
+                    return
+                }
+
                 commit('REMOVE_USER_MEMBERSHIP', payload.index)
                 const updatedMemberships = [...state.userMemberships]
 
-                const membershipDocRef = doc(
+                const memberDocRef = doc(
                     db,
                     `box/${boxName}/member/${payload.email}`
                 )
                 
-                await setDoc(membershipDocRef, {
+                await setDoc(memberDocRef, {
                     memberships: updatedMemberships
                 }, { merge: true })
+
+                // 매출 데이터 삭제
+                const revenuePayload = {
+                    membership: membershipToRemove,
+                    email: payload.email
+                }
+                await this.dispatch("removeRevenueData", revenuePayload)
 
                 console.log('Successfully removed user membership at index:', payload.index)
             } catch (error) {

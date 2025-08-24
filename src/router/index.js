@@ -54,6 +54,12 @@ const routes = [
             meta: { requiresAuth: true } 
           },
           {
+            path: '/admin/monetary',
+            name: 'Accounting',
+            component: () => import('@/views/admin/monetary/Accounting.vue'),
+            meta: { requiresAuth: true } 
+          },
+          {
             path: '/admin/my-page',
             name: 'MyPage',
             component: () => import('@/views/pages/MyPage.vue'),

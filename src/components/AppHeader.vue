@@ -32,6 +32,12 @@
             수업
           </CNavLink>
         </CNavItem>
+        <CNavItem>
+          <CNavLink href="#/admin/monetary">
+            <CIcon class="mx-2" icon="cil-money"/>
+            회계
+          </CNavLink>
+        </CNavItem>
       </CHeaderNav>
       <CHeaderNav>
         <!-- <CNavItem>
