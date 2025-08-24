@@ -173,6 +173,7 @@ export default {
     const modalStatus = ref(false);
 
     const userEmail = ref("");
+    const userRealName = ref(""); // 회원 이름 저장 변수 추가
 
     const membershipPlans = computed(() => store.getters.getMembershipPlans);
     const assignee = ref("");
@@ -261,16 +262,17 @@ export default {
       count.value = 0;
     };
 
-    const showModal = async (userId) => {
+    const showModal = async (member) => {
       await store.dispatch("getMembershipPlans");
-      await store.dispatch("getUserMemberships", {'email': userId});
-      userEmail.value = userId;
+      await store.dispatch("getUserMemberships", {'email': member.email});
+      userEmail.value = member.email
+      userRealName.value = member.realName; // 회원 이름 저장
       memberships.value = store.state.membership.userMemberships;
       modalStatus.value = true;
     };
 
     const addMembership = async () => {
-      if (!selectedPlanName.value || !membershipType.value || !price.value || !assignee.value || !startDate.value || !duration.value) {
+      if (!selectedPlanName.value || !membershipType.value || !price.value || !assignee.value || !startDate.value || !duration.value || !paymentType.value) {
         alert("입력하지 않은 정보가 있는지 확인해 주세요.")
         return
       }
@@ -287,12 +289,14 @@ export default {
       try {
         const payload = {
           'email': userEmail.value,
+          'realName': userRealName.value,
           'membership': {
             plan: selectedPlanName.value,
             type: membershipType.value,
             count: count.value !== undefined ? count.value.toString() : "0",
             price: price.value !== undefined ? price.value.toString() : "0",
             assignee: assignee.value,
+            paymentType: paymentType.value,
             startDate: start,
             endDate: end,
             holdStartDate: null,
