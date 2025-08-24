@@ -164,6 +164,7 @@ import { useStore } from "vuex";
 import DatePicker from "vue3-datepicker";
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue";
 import { datetimeToSimpleStr } from "../../util/date";
+import { generateUniqueKey } from "../../util/membership";
 
 export default {
   name: "MembershipModal",
@@ -291,6 +292,7 @@ export default {
           'email': userEmail.value,
           'realName': userRealName.value,
           'membership': {
+            key: generateUniqueKey(userEmail.value),
             plan: selectedPlanName.value,
             type: membershipType.value,
             count: count.value !== undefined ? count.value.toString() : "0",
@@ -351,6 +353,7 @@ export default {
       getDateStr,
       deleteMembership,
       toastMessageRef,
+      generateUniqueKey,
     };
   }
 };

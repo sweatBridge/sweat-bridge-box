@@ -213,7 +213,9 @@ const membership = {
 
                 // 기존 문서가 있으면 업데이트, 없으면 새로 생성
                 await setDoc(monetaryDocRef, {
-                    [day]: arrayUnion(revenueData)
+                    [day]: {
+                        [payload.membership.key]: revenueData
+                    }
                 }, { merge: true })
 
                 console.log('Successfully added revenue data for day:', day)
