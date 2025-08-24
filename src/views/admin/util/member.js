@@ -14,8 +14,8 @@ export function calculateAge(birthDate) {
 }
 
 export function calculateRemainingDays(expiryDate) {
-  if (expiryDate == 'None') {
-    return 'None'
+  if (expiryDate == '-') {
+    return '-'
   }
 
   const expiryDateStr = convertTimestampToString(expiryDate)
@@ -37,7 +37,7 @@ export function convertTimestampToString(timestamp) {
     const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
     return formattedDate
   } else {
-    return 'None'
+    return '-'
   }
 }
 
@@ -47,7 +47,7 @@ export function convertRemainingVisits(type, remainingVisits) {
   } else if (type === 'countPass') {
     return remainingVisits
   } else {
-    return 'None'
+    return '-'
   }
 }
 
@@ -58,7 +58,7 @@ export function convertGenderToKorean(gender) {
     case 'F':
       return '여'
     default:
-      return 'None'
+      return '-'
   }
 }
 
@@ -72,7 +72,7 @@ export function getTypeKor(type, remainDays) {
     case 'countPass':
       return '횟수권'
     default:
-      return '미등록'
+      return '-'
   }
 }
 
@@ -116,20 +116,29 @@ export function getCurrentMemberships(memberships) {
   })
 }
 
-export function getMembershipInfo(membership) {
-  if (!membership) {
+export function getMembershipInfo(currentMembership, futureMemberships) {
+  if (!currentMembership && futureMemberships && futureMemberships.length > 0) {
     return {
-      type: '미등록',
-      expiryDate: 'None',
-      remainingDays: 'None',
-      remainingVisits: 'None'
+      type: '사용 예정',
+      expiryDate: '-',
+      remainingDays: '-',
+      remainingVisits: '-'
+    }
+  }
+
+  if (!currentMembership) {
+    return {
+      type: '-',
+      expiryDate: '-',
+      remainingDays: '-',
+      remainingVisits: '-'
     }
   }
 
   // 등록 타입
-  let type = '미등록'
-  if (membership.type) {
-    switch(membership.type) {
+  let type = '-'
+  if (currentMembership.type) {
+    switch(currentMembership.type) {
       case 'periodPass':
         type = '기간권'
         break
@@ -140,13 +149,13 @@ export function getMembershipInfo(membership) {
   }
 
   // 만료 일자
-  const expiryDate = membership.endDate ? convertTimestampToString(membership.endDate) : 'None'
+  const expiryDate = currentMembership.endDate ? convertTimestampToString(currentMembership.endDate) : '-'
 
   // 잔여 기간
-  let remainingDays = 'None'
-  if (membership.endDate) {
+  let remainingDays = '-'
+  if (currentMembership.endDate) {
     const today = new Date()
-    const endDate = new Date(membership.endDate.seconds * 1000)
+    const endDate = new Date(currentMembership.endDate.seconds * 1000)
     const diff = endDate.getTime() - today.getTime()
     if (diff > 0) {
       const days = Math.ceil(diff / (1000 * 3600 * 24))
@@ -157,11 +166,11 @@ export function getMembershipInfo(membership) {
   }
 
   // 잔여 횟수
-  let remainingVisits = 'None'
-  if (membership.type === 'periodPass') {
+  let remainingVisits = '-'
+  if (currentMembership.type === 'periodPass') {
     remainingVisits = '무제한'
-  } else if (membership.type === 'countPass' && membership.count) {
-    remainingVisits = membership.count
+  } else if (currentMembership.type === 'countPass' && currentMembership.count) {
+    remainingVisits = currentMembership.count
   }
 
   return {

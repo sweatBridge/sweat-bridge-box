@@ -125,6 +125,8 @@
         theme-color="#42A5F5"
         show-index
         alternating
+        :sort-by="'startDate'"
+        :sort-desc="true"
       >
       <template #item-startDate="{ startDate }">
         {{ getDateStr(startDate) }}
@@ -311,7 +313,7 @@ export default {
         toastMessageRef.value.createToast(
           {
             title: '실패',
-            content: '멤버십 추가 실패' + error,
+            content: error,
             type: 'danger'
           }
         )
