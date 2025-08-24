@@ -9,32 +9,37 @@
                 <CForm>
                   <h1>로그인</h1>
                   <p class="text-medium-emphasis">관리자 계정으로 로그인</p>
-                  <CInputGroup class="mb-3">
-                    <CInputGroupText>
-                      <CIcon icon="cil-user" />
-                    </CInputGroupText>
-                    <CFormInput
-                      placeholder="아이디"
-                      autocomplete="username"
-                      v-model="email"
-                    />
-                  </CInputGroup>
-                  <CInputGroup class="mb-4">
-                    <CInputGroupText>
-                      <CIcon icon="cil-lock-locked" />
-                    </CInputGroupText>
-                    <CFormInput
-                      type="password"
-                      placeholder="비밀번호"
-                      autocomplete="current-password"
-                      v-model="password"
-                      @keyup.enter="handleLoginClick"
-                    />
-                  </CInputGroup>
                   <CRow>
-                    <CButton color="primary" class="px-1" @click="handleLoginClick" :disabled="isLoading"> 로그인 </CButton>
+                    <CCol :md="9">
+                      <CInputGroup class="mb-3">
+                        <CInputGroupText>
+                          <CIcon icon="cil-user" />
+                        </CInputGroupText>
+                        <CFormInput
+                          placeholder="아이디"
+                          autocomplete="username"
+                          v-model="email"
+                        />
+                      </CInputGroup>
+                      <CInputGroup class="mb-4">
+                        <CInputGroupText>
+                          <CIcon icon="cil-lock-locked" />
+                        </CInputGroupText>
+                        <CFormInput
+                          type="password"
+                          placeholder="비밀번호"
+                          autocomplete="current-password"
+                          v-model="password"
+                          @keyup.enter="handleLoginClick"
+                        />
+                      </CInputGroup>
+                      <small class="text-muted mb-3 d-block">Enter 키를 눌러 로그인하세요</small>
+                    </CCol>
+                    <CCol :md="3" class="d-flex align-items-start justify-content-center">
+                      <CButton color="primary" @click="handleLoginClick" :disabled="isLoading" class="login-button"> 로그인 </CButton>
+                    </CCol>
                   </CRow>
-                  <CRow>
+                  <!-- <CRow>
                     <CCol :xs="4"></CCol>
                     <CCol :xs="4" class="text-right">
                       <CButton color="link" class="px-0">
@@ -46,11 +51,11 @@
                         비밀번호 찾기
                       </CButton>
                     </CCol>
-                  </CRow>
+                  </CRow> -->
                 </CForm>
               </CCardBody>
             </CCard>
-            <CCard class="text-white bg-primary py-5" style="width: 44%">
+            <!-- <CCard class="text-white bg-primary py-5" style="width: 44%">
               <CCardBody class="text-center">
                 <div>
                   <h2>회원가입</h2>
@@ -65,7 +70,7 @@
                   등록
                 </CButton>
               </CCardFooter>
-            </CCard>
+            </CCard> -->
           </CCardGroup>
         </CCol>
       </CRow>
@@ -148,4 +153,10 @@ export default {
 
 <style scoped>
 /* 스타일 정의 */
+.login-button {
+  height: calc(2.5rem + 2.5rem + 1rem); /* 아이디 입력 필드 높이 + 비밀번호 입력 필드 높이 + margin */
+  min-height: 6rem; /* 최소 높이 설정 */
+  width: 80%; /* 버튼 너비를 컬럼의 80%로 설정 */
+  min-width: 100px; /* 최소 너비 설정 */
+}
 </style>

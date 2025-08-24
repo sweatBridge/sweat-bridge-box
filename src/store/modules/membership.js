@@ -190,6 +190,21 @@ const membership = {
                     return
                 }
 
+                // 새로운 멤버십의 시작일과 종료일
+                const newStartDate = payload.membership.startDate?.toDate?.() ?? new Date(payload.membership.startDate)
+                const newEndDate = payload.membership.endDate?.toDate?.() ?? new Date(payload.membership.endDate)
+
+                // 기존 멤버십들과 날짜 겹침 체크
+                for (const existingMembership of state.userMemberships) {
+                    const existingStartDate = existingMembership.startDate?.toDate?.() ?? new Date(existingMembership.startDate)
+                    const existingEndDate = existingMembership.endDate?.toDate?.() ?? new Date(existingMembership.endDate)
+
+                    // 날짜 겹침 체크: (시작일1 <= 종료일2) && (시작일2 <= 종료일1)
+                    if (newStartDate <= existingEndDate && existingStartDate <= newEndDate) {
+                        throw new Error(`일자가 겹치는 다른 회원권이 있습니다. 회원권의 일자를 다시 확인해주세요. 기존 멤버십: ${existingStartDate.toLocaleDateString()} ~ ${existingEndDate.toLocaleDateString()}`)
+                    }
+                }
+
                 commit('ADD_USER_MEMBERSHIP', payload.membership)
 
                 const memberDocRef = doc(
@@ -204,6 +219,7 @@ const membership = {
                 console.log('Successfully added new user membership:', payload.membership)
             } catch (error) {
                 console.error('Error adding user membership:', error)
+                throw error // 에러를 다시 던져서 호출한 곳에서 처리할 수 있도록
             }
         },
 

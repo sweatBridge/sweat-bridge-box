@@ -1,6 +1,6 @@
 import { getDocs, query, collection, where, updateDoc, setDoc, doc, getDoc, deleteDoc } from "firebase/firestore"
 import { db } from '@/firebase'
-import { initializeMember, removeDaysFromMember, getCurrentMemberships } from "@/views/admin/util/member"
+import { removeDaysFromMember, getCurrentMemberships } from "@/views/admin/util/member"
 import store from ".."
 
 const member = {
@@ -25,10 +25,27 @@ const member = {
         let member = memberDoc.data();
         
         // member 문서에서 직접 memberships 정보 가져오기
-        const memberships = member.memberships || []
-        // 현재 유효한 멤버십 중 첫 번째 것만 저장
-        const currentMemberships = getCurrentMemberships(memberships)
+        const allMemberships = member.memberships || []
+        
+        // 현재 유효한 멤버십 중 첫 번째 것만 저장 (기존 memberships 필드에)
+        const currentMemberships = getCurrentMemberships(allMemberships)
         member.memberships = currentMemberships.length > 0 ? currentMemberships[0] : null
+        
+        // 과거/미래 멤버십을 분리해서 새로운 변수에 저장
+        const now = new Date()
+        const pastMemberships = allMemberships.filter(membership => {
+          const endDate = membership.endDate?.toDate?.() ?? new Date(membership.endDate)
+          return endDate < now
+        })
+        
+        const futureMemberships = allMemberships.filter(membership => {
+          const startDate = membership.startDate?.toDate?.() ?? new Date(membership.startDate)
+          return startDate > now
+        })
+        
+        // 새로운 필드에 과거/미래 멤버십 저장
+        member.pastMemberships = pastMemberships.length > 0 ? pastMemberships : null
+        member.futureMemberships = futureMemberships.length > 0 ? futureMemberships : null
         
         members.push(member)
       }
