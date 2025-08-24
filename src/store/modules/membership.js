@@ -225,6 +225,47 @@ const membership = {
             }
         },
 
+        // 매출 데이터 삭제 함수
+        async removeRevenueData({ commit }, payload) {
+            try {
+                const boxName = localStorage.getItem('boxName')
+                if (!boxName) {
+                    console.error("Error: boxName is missing")
+                    return
+                }
+
+                // createdAt에서 월과 일 추출
+                const createdAt = payload.membership.createdAt
+                const date = createdAt instanceof Date ? createdAt : createdAt.toDate()
+                const yymm = `${date.getFullYear().toString().slice(-2)}${(date.getMonth() + 1).toString().padStart(2, '0')}`
+                const day = date.getDate().toString().padStart(2, '0')
+                
+                const monetaryDocRef = doc(db, `box/${boxName}/monetary/${yymm}`)
+                
+                // 해당 일의 매출 데이터에서 특정 key를 가진 항목 삭제
+                const docSnap = await getDoc(monetaryDocRef)
+                if (docSnap.exists()) {
+                    const data = docSnap.data()
+                    if (data[day] && data[day][payload.membership.key]) {
+                        // 해당 key를 가진 항목 삭제
+                        delete data[day][payload.membership.key]
+                        
+                        // 빈 객체가 되면 해당 일도 삭제
+                        if (Object.keys(data[day]).length === 0) {
+                            delete data[day]
+                        }
+                        
+                        // 업데이트된 데이터 저장
+                        await setDoc(monetaryDocRef, data)
+                        console.log('Successfully removed revenue data for key:', payload.membership.key)
+                    }
+                }
+            } catch (error) {
+                console.error('Error removing revenue data:', error)
+                throw error
+            }
+        },
+
         async addUserMembership({ commit, state }, payload) {
             try {
                 const boxName = localStorage.getItem('boxName')
@@ -271,17 +312,31 @@ const membership = {
                     return
                 }
 
+                // 삭제할 멤버십 정보를 먼저 가져오기
+                const membershipToRemove = state.userMemberships[payload.index]
+                if (!membershipToRemove) {
+                    console.error("Error: membership not found at index:", payload.index)
+                    return
+                }
+
                 commit('REMOVE_USER_MEMBERSHIP', payload.index)
                 const updatedMemberships = [...state.userMemberships]
 
-                const membershipDocRef = doc(
+                const memberDocRef = doc(
                     db,
                     `box/${boxName}/member/${payload.email}`
                 )
                 
-                await setDoc(membershipDocRef, {
+                await setDoc(memberDocRef, {
                     memberships: updatedMemberships
                 }, { merge: true })
+
+                // 매출 데이터 삭제
+                const revenuePayload = {
+                    membership: membershipToRemove,
+                    email: payload.email
+                }
+                await this.dispatch("removeRevenueData", revenuePayload)
 
                 console.log('Successfully removed user membership at index:', payload.index)
             } catch (error) {
