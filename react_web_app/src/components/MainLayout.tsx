@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import AppSidebar from './AppSidebar';
 import AppHeader from './AppHeader';
 import Dashboard from '../pages/Dashboard';
+import ClassReservation from '../pages/ClassReservation';
 
 const MainLayout: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -37,18 +38,7 @@ const MainLayout: React.FC = () => {
           </div>
         );
       case 3:
-        return (
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '100%',
-            fontSize: '24px',
-            color: '#64748B'
-          }}>
-            수업 관리
-          </div>
-        );
+        return <ClassReservation />;
       default:
         return <Dashboard />;
     }
