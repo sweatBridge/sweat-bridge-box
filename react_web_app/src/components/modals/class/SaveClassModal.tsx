@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { SaveClassModalProps, SaveClassResult } from '../../../types/class';
 import { formatDateTime } from '../../../utils/classCalendarUtils';
 
-const SaveClassModal: React.FC<SaveClassModalProps> = ({ 
+const SaveClassModal = ({ 
   visible, 
   onClose, 
   onSave,
   selectInfo 
-}) => {
+}: SaveClassModalProps) => {
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [coach, setCoach] = useState('');

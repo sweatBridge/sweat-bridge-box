@@ -11,7 +11,7 @@ import SaveClassModal from '../components/modals/class/SaveClassModal';
 import ManageClassModal from '../components/modals/class/ManageClassModal';
 import ToastMessage from '../components/ToastMessage';
 
-const ClassReservation: React.FC = () => {
+const ClassReservation = () => {
   const calendarRef = useRef<FullCalendar>(null);
   
   // Firebase 연동 훅

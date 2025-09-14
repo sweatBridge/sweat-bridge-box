@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Home, Dumbbell, Settings, LogOut } from 'lucide-react';
 
-const AppHeader: React.FC = () => {
+const AppHeader = () => {
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 

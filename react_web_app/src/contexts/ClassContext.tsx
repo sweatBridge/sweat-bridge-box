@@ -73,7 +73,7 @@ interface ClassProviderProps {
   children: ReactNode;
 }
 
-export const ClassProvider: React.FC<ClassProviderProps> = ({ children }) => {
+export const ClassProvider = ({ children }: ClassProviderProps) => {
   const [state, dispatch] = useReducer(classReducer, initialState);
 
   return (

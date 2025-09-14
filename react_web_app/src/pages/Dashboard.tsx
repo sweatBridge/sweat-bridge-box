@@ -2,7 +2,7 @@ import React from 'react';
 import { Calendar, Users, CheckCircle, TrendingUp } from 'lucide-react';
 import { AppColors } from '../constants/colors';
 
-const Dashboard: React.FC = () => {
+const Dashboard = () => {
   const statsData = [
     {
       title: '오늘 수업',
@@ -49,13 +49,13 @@ const Dashboard: React.FC = () => {
     { name: '최동훈', date: '2024-01-11' },
   ];
 
-  const StatCard: React.FC<{
+  const StatCard = ({ title, value, subtitle, icon: Icon, color }: {
     title: string;
     value: string;
     subtitle: string;
     icon: React.ElementType;
     color: string;
-  }> = ({ title, value, subtitle, icon: Icon, color }) => (
+  }) => (
     <div className="stat-card">
       <div className="stat-card-header">
         <div 

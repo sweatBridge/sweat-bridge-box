@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Dumbbell } from 'lucide-react';
 
-const Login: React.FC = () => {
+const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);

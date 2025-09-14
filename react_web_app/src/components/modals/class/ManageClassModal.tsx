@@ -3,13 +3,13 @@ import { Calendar, Clock, User, Users, Settings, UserCheck } from 'lucide-react'
 import { ManageClassModalProps, UpdateClassResult, DeleteClassResult } from '../../../types/class';
 import { formatDateTime } from '../../../utils/classCalendarUtils';
 
-const ManageClassModal: React.FC<ManageClassModalProps> = ({ 
+const ManageClassModal = ({ 
   visible, 
   event, 
   onClose, 
   onUpdate, 
   onDelete 
-}) => {
+}: ManageClassModalProps) => {
   const [coach, setCoach] = useState('');
   const [cap, setCap] = useState(12);
   const [showReservedMembers, setShowReservedMembers] = useState(false);

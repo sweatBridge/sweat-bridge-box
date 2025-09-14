@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ToastMessageProps, ToastMessage as ToastMessageType } from '../types/class';
 
-const ToastMessage: React.FC<ToastMessageProps> = ({ onCreateToast }) => {
+const ToastMessage = ({ onCreateToast }: ToastMessageProps) => {
   const [toasts, setToasts] = useState<ToastMessageType[]>([]);
 
   const removeToast = useCallback((id: string) => {

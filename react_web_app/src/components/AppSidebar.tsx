@@ -13,7 +13,7 @@ const menuItems = [
   { icon: Calendar, title: '수업 관리', index: 3, path: '/classes' },
 ];
 
-const AppSidebar: React.FC<AppSidebarProps> = ({ selectedIndex }) => {
+const AppSidebar = ({ selectedIndex }: AppSidebarProps) => {
   const navigate = useNavigate();
 
   const handleItemClick = (path: string) => {

@@ -3,7 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import AppSidebar from './AppSidebar';
 import AppHeader from './AppHeader';
 
-const MainLayout: React.FC = () => {
+const MainLayout = () => {
   const location = useLocation();
   
   // URL path에 따라 selectedIndex 결정
