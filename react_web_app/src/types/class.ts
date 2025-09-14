@@ -39,6 +39,7 @@ export interface SaveClassResult {
 export interface UpdateClassResult {
   coach: string;
   cap: number;
+  reserved?: string[];
 }
 
 export interface DeleteClassResult {

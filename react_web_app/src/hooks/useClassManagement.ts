@@ -70,9 +70,12 @@ export const useClassManagement = () => {
         box: state.currentBox,
         coach: updateData.coach,
         cap: updateData.cap,
+        reserved: updateData.reserved,
       };
 
       await ClassService.updateClass(payload);
+
+      console.log('updateData.reserved', updateData.reserved);
 
       dispatch({ 
         type: 'UPDATE_CLASS', 
@@ -82,7 +85,7 @@ export const useClassManagement = () => {
             extendedProps: {
               coach: updateData.coach,
               cap: updateData.cap,
-              reserved: [], // 기존 예약 정보는 유지하도록 별도 처리 필요
+              reserved: updateData.reserved || [],
             }
           }
         }

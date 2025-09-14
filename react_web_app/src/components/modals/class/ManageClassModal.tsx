@@ -26,6 +26,11 @@ const ManageClassModal = ({
     });
   };
 
+  // 파싱된 회원 데이터를 다시 문자열로 변환하는 함수
+  const stringifyReservedMembers = (parsedMembers: { email: string; realName: string; nickName: string }[]) => {
+    return parsedMembers.map(member => `${member.email},${member.realName},${member.nickName}`);
+  };
+
   useEffect(() => {
     if (event && visible) {
       setCoach(event.extendedProps.coach || '');
@@ -34,9 +39,14 @@ const ManageClassModal = ({
   }, [event, visible]);
 
   const handleUpdate = () => {
+    // 현재 예약된 회원들을 파싱한 후 다시 문자열로 변환
+    const parsedMembers = parseReservedMembers(event?.extendedProps?.reserved || []);
+    const reservedStringList = stringifyReservedMembers(parsedMembers);
+    
     const result: UpdateClassResult = {
       coach,
-      cap
+      cap,
+      reserved: reservedStringList
     };
     onUpdate(result);
   };
