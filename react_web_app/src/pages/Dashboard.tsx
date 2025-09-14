@@ -3,10 +3,20 @@ import { Calendar, Users, CheckCircle, TrendingUp } from 'lucide-react';
 import { AppColors } from '../constants/colors';
 import { ClassService } from '../services/classService';
 import { ClassEvent } from '../types/class';
+import { usePageContext } from '../contexts/PageContext';
 
 const Dashboard = () => {
   const [todayClasses, setTodayClasses] = useState<ClassEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const { setPageInfo } = usePageContext();
+
+  // 페이지 정보 설정
+  useEffect(() => {
+    setPageInfo({
+      title: '대시보드',
+      subtitle: '오늘의 박스 현황을 확인하세요'
+    });
+  }, [setPageInfo]);
 
   // 오늘자 수업 데이터 로드
   useEffect(() => {
@@ -95,11 +105,6 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
-      {/* 페이지 제목 */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px', marginBottom: '24px' }}>
-        <h1 className="dashboard-title" style={{ margin: 0 }}>대시보드</h1>
-        <p className="dashboard-subtitle" style={{ margin: 0 }}>오늘의 박스 현황을 확인하세요</p>
-      </div>
       {/* 통계 카드들 */}
       <div className="stats-grid">
         {statsData.map((stat, index) => (

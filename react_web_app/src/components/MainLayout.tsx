@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import AppSidebar from './AppSidebar';
 import AppHeader from './AppHeader';
+import { PageProvider } from '../contexts/PageContext';
 
 const MainLayout = () => {
   const location = useLocation();
@@ -23,23 +24,25 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="main-layout">
-      {/* 사이드바 */}
-      <AppSidebar 
-        selectedIndex={getSelectedIndex()}
-      />
-      
-      {/* 메인 컨텐츠 영역 */}
-      <div className="main-content">
-        {/* 헤더 */}
-        <AppHeader />
+    <PageProvider>
+      <div className="main-layout">
+        {/* 사이드바 */}
+        <AppSidebar 
+          selectedIndex={getSelectedIndex()}
+        />
         
-        {/* 메인 컨텐츠 */}
-        <div className="content-area">
-          <Outlet />
+        {/* 메인 컨텐츠 영역 */}
+        <div className="main-content">
+          {/* 헤더 */}
+          <AppHeader />
+          
+          {/* 메인 컨텐츠 */}
+          <div className="content-area">
+            <Outlet />
+          </div>
         </div>
       </div>
-    </div>
+    </PageProvider>
   );
 };
 

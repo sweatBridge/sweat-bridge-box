@@ -6,8 +6,11 @@ import MemberDetailsModal from '../components/modals/member/MemberDetailsModal';
 import MemberDeletionModal from '../components/modals/member/MemberDeletionModal';
 import ToastMessage from '../components/ToastMessage';
 import { getGenderText, filterMembers } from '../utils/memberUtils';
+import { usePageContext } from '../contexts/PageContext';
 
 const MemberManagement = () => {
+  const { setPageInfo } = usePageContext();
+  
   // Firebase 연동 훅
   const {
     members,
@@ -32,6 +35,14 @@ const MemberManagement = () => {
 
   // Toast message
   const [createToast, setCreateToast] = useState<((toast: ToastMessageType) => void) | null>(null);
+
+  // 페이지 정보 설정
+  useEffect(() => {
+    setPageInfo({
+      title: '회원 관리',
+      subtitle: '회원 정보를 조회하고 관리하세요'
+    });
+  }, [setPageInfo]);
 
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
@@ -147,11 +158,6 @@ const MemberManagement = () => {
 
   return (
     <div className="dashboard">
-      {/* 페이지 제목 */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px', marginBottom: '24px' }}>
-        <h1 className="dashboard-title" style={{ margin: 0 }}>회원 관리</h1>
-        <p className="dashboard-subtitle" style={{ margin: 0 }}>회원 정보를 조회하고 관리하세요</p>
-      </div>
 
       {/* 컨트롤 카드 */}
       <div className="content-card">

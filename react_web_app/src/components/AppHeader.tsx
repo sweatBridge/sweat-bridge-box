@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Home, Dumbbell, Settings, LogOut } from 'lucide-react';
+import { usePageContext } from '../contexts/PageContext';
 
 const AppHeader = () => {
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const { pageInfo } = usePageContext();
 
   const handleSettingsClick = () => {
     setShowSettingsMenu(!showSettingsMenu);
@@ -26,7 +28,12 @@ const AppHeader = () => {
   return (
     <>
       <header className="header">
-        <div></div> {/* 좌측 빈 공간 */}
+        {/* 페이지 정보 */}
+        <div className="page-info">
+          <h1 className="page-title">{pageInfo.title}</h1>
+          <span className="page-separator">•</span>
+          <p className="page-subtitle">{pageInfo.subtitle}</p>
+        </div>
         
         <div className="header-right">
           {/* 박스 이름 */}
@@ -185,6 +192,46 @@ const AppHeader = () => {
           onClick={() => setShowSettingsMenu(false)}
         />
       )}
+
+      <style>{`
+        .page-info {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .page-title {
+          margin: 0;
+          font-size: 24px;
+          font-weight: 700;
+          color: #1f2937;
+          line-height: 1.2;
+        }
+
+        .page-separator {
+          color: #d1d5db;
+          font-size: 16px;
+          font-weight: 500;
+        }
+
+        .page-subtitle {
+          margin: 0;
+          font-size: 14px;
+          color: #6b7280;
+          font-weight: 500;
+          line-height: 1.2;
+        }
+
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px 24px;
+          background: white;
+          border-bottom: 1px solid #e5e7eb;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+      `}</style>
     </>
   );
 };
