@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Calendar, Clock, User, Users, Settings } from 'lucide-react';
 import { ManageClassModalProps, UpdateClassResult, DeleteClassResult } from '../../../types/class';
 import { formatDateTime } from '../../../utils/classCalendarUtils';
 
@@ -48,22 +49,40 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>수업 관리</h3>
+          <div className="header-title">
+            <Settings size={20} className="header-icon" />
+            <h3>수업 관리</h3>
+          </div>
           <button className="close-button" onClick={handleClose}>×</button>
         </div>
         
         <div className="modal-body">
           <div className="class-info">
             <div className="info-row">
-              <strong>수업명:</strong> {event.title}
+              <div className="info-icon">
+                <Calendar size={18} />
+              </div>
+              <div className="info-content">
+                <span className="info-label">수업명</span>
+                <span className="info-value">{event.title}</span>
+              </div>
             </div>
             <div className="info-row">
-              <strong>시간:</strong> {formatDateTime(event.start)} ~ {formatDateTime(event.end)}
+              <div className="info-icon">
+                <Clock size={18} />
+              </div>
+              <div className="info-content">
+                <span className="info-label">시간</span>
+                <span className="info-value">{formatDateTime(event.start)} ~ {formatDateTime(event.end)}</span>
+              </div>
             </div>
           </div>
           
           <div className="form-group">
-            <label>코치</label>
+            <label>
+              <User size={16} className="form-label-icon" />
+              코치
+            </label>
             <input
               type="text"
               value={coach}
@@ -73,7 +92,10 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
           </div>
           
           <div className="form-group">
-            <label>정원</label>
+            <label>
+              <Users size={16} className="form-label-icon" />
+              정원
+            </label>
             <input
               type="number"
               value={cap}
@@ -156,14 +178,28 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
           justify-content: space-between;
           align-items: center;
           padding: 20px;
-          border-bottom: 1px solid #e5e7eb;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-bottom: none;
+          border-radius: 8px 8px 0 0;
+          box-shadow: 0 2px 10px rgba(102, 126, 234, 0.15);
+        }
+
+        .header-title {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .header-icon {
+          color: white;
+          opacity: 0.9;
         }
 
         .modal-header h3 {
           margin: 0;
           font-size: 1.25rem;
           font-weight: 600;
-          color: #1f2937;
+          color: white;
         }
 
         .close-button {
@@ -171,20 +207,22 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
           border: none;
           font-size: 24px;
           cursor: pointer;
-          color: #6b7280;
+          color: white;
+          opacity: 0.8;
           padding: 0;
           width: 30px;
           height: 30px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 4px;
+          border-radius: 50%;
           transition: all 0.2s;
         }
 
         .close-button:hover {
-          background-color: #f3f4f6;
-          color: #374151;
+          background-color: rgba(255, 255, 255, 0.2);
+          opacity: 1;
+          transform: scale(1.1);
         }
 
         .modal-body {
@@ -192,39 +230,96 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
         }
 
         .class-info {
-          background-color: #f9fafb;
-          border: 1px solid #e5e7eb;
-          border-radius: 6px;
-          padding: 16px;
-          margin-bottom: 20px;
+          background: linear-gradient(135deg, #f0f9ff 0%, #f8fafc 100%);
+          border: 1px solid #e1e7ef;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 24px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
 
         .info-row {
-          margin-bottom: 8px;
+          display: flex;
+          align-items: center;
+          margin-bottom: 16px;
+          padding: 12px;
+          background-color: rgba(255, 255, 255, 0.7);
+          border-radius: 8px;
+          transition: all 0.2s ease;
+        }
+
+        .info-row:hover {
+          background-color: rgba(255, 255, 255, 0.9);
+          transform: translateY(-1px);
         }
 
         .info-row:last-child {
           margin-bottom: 0;
         }
 
+        .info-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          background-color: #3b82f6;
+          color: white;
+          border-radius: 8px;
+          margin-right: 12px;
+          flex-shrink: 0;
+        }
+
+        .info-content {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+        }
+
+        .info-label {
+          font-size: 12px;
+          font-weight: 500;
+          color: #6b7280;
+          margin-bottom: 2px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .info-value {
+          font-size: 14px;
+          font-weight: 600;
+          color: #1f2937;
+        }
+
         .form-group {
+          display: flex;
+          align-items: center;
           margin-bottom: 16px;
+          gap: 12px;
         }
 
         .form-group label {
-          display: block;
-          margin-bottom: 6px;
+          display: flex;
+          align-items: center;
           font-weight: 500;
           color: #374151;
+          font-size: 14px;
+          min-width: 80px;
+          flex-shrink: 0;
+        }
+
+        .form-label-icon {
+          margin-right: 6px;
+          color: #3b82f6;
         }
 
         .form-group input {
-          width: 100%;
-          padding: 8px 12px;
+          flex: 1;
+          padding: 10px 12px;
           border: 1px solid #d1d5db;
           border-radius: 6px;
           font-size: 14px;
-          transition: border-color 0.2s;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
         .form-group input:focus {

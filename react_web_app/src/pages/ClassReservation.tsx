@@ -103,7 +103,7 @@ const ClassReservation: React.FC = () => {
     eventClick: handleEventClick,
     eventsSet: handleEvents,
     height: 'auto',
-    datesSet: handleDatesSet,
+    // datesSet: handleDatesSet,
   };
 
   function handleDatesSet(info: any) {
