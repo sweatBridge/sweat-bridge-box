@@ -31,6 +31,62 @@ export interface ClassPayload {
 
 export class ClassService {
   /**
+   * 오늘자 수업 데이터 가져오기
+   */
+  static async getTodayClasses(box: string): Promise<ClassEvent[]> {
+    try {
+      const today = new Date();
+      const startOfDay = new Date(today);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(today);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      const path = `/box/${box}/class`;
+      const q = query(
+        collection(db, path),
+        where('date', '>=', Timestamp.fromDate(startOfDay)),
+        where('date', '<=', Timestamp.fromDate(endOfDay))
+      );
+      
+      const querySnap = await getDocs(q);
+      const events: ClassEvent[] = [];
+      
+      querySnap.forEach((docSnap) => {
+        try {
+          const docKey = docSnap.id;
+          const data = docSnap.data() as FirebaseClassData;
+          
+          const { year, month, day, startHour, startMin, endHour, endMin } = 
+            extractDateTimeFromDocKey(docKey);
+          
+          const event: ClassEvent = {
+            id: docKey,
+            title: `${box} WOD`,
+            start: `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${startHour}:${startMin}:00+09:00`,
+            end: `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}T${endHour}:${endMin}:00+09:00`,
+            extendedProps: {
+              coach: data.coach,
+              cap: data.cap,
+              reserved: data.reserved || [],
+            }
+          };
+          
+          events.push(event);
+        } catch (error) {
+          console.error('Error processing document:', docSnap.id, error);
+        }
+      });
+      
+      // 시간순으로 정렬
+      return events.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+    } catch (error) {
+      console.error('Error fetching today classes:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 월별 수업 데이터 가져오기
    */
   static async getMonthlyClasses(box: string): Promise<ClassEvent[]> {
