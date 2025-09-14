@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Calendar, Clock, User, Users, Plus } from 'lucide-react';
 import { SaveClassModalProps, SaveClassResult } from '../../../types/class';
 import { formatDateTime } from '../../../utils/classCalendarUtils';
 
@@ -56,65 +57,93 @@ const SaveClassModal = ({
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>수업 등록</h3>
+          <div className="header-title">
+            <Plus size={20} className="header-icon" />
+            <h3>수업 등록</h3>
+          </div>
           <button className="close-button" onClick={handleClose}>×</button>
         </div>
         
         <div className="modal-body">
           {selectInfo && (
-            <div className="selected-date">
-              <strong>선택된 날짜:</strong> {formatDateTime(selectInfo.startStr)}
+            <div className="selected-date-card">
+              <div className="date-icon">
+                <Calendar size={18} />
+              </div>
+              <div className="date-info">
+                <span className="date-label">선택된 날짜</span>
+                <span className="date-value">{formatDateTime(selectInfo.startStr)}</span>
+              </div>
             </div>
           )}
           
-          <div className="form-group">
-            <label>시작 시간</label>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>종료 시간</label>
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>코치</label>
-            <input
-              type="text"
-              value={coach}
-              onChange={(e) => setCoach(e.target.value)}
-              placeholder="코치명을 입력하세요"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>정원</label>
-            <input
-              type="number"
-              value={cap}
-              onChange={(e) => setCap(Number(e.target.value))}
-              min="1"
-              max="30"
-            />
-          </div>
-          
-          <div className="form-group checkbox-group">
-            <label className="checkbox-label">
+          <div className="form-section">
+            <div className="form-group">
+              <label>
+                <Clock size={16} className="form-label-icon" />
+                시작 시간
+              </label>
               <input
-                type="checkbox"
-                checked={applyToFourWeeks}
-                onChange={(e) => setApplyToFourWeeks(e.target.checked)}
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="form-input"
               />
-              4주간 동일하게 적용
-            </label>
+            </div>
+            
+            <div className="form-group">
+              <label>
+                <Clock size={16} className="form-label-icon" />
+                종료 시간
+              </label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="form-input"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>
+                <User size={16} className="form-label-icon" />
+                코치
+              </label>
+              <input
+                type="text"
+                value={coach}
+                onChange={(e) => setCoach(e.target.value)}
+                placeholder="코치명을 입력하세요"
+                className="form-input"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>
+                <Users size={16} className="form-label-icon" />
+                정원
+              </label>
+              <input
+                type="number"
+                value={cap}
+                onChange={(e) => setCap(Number(e.target.value))}
+                min="1"
+                max="30"
+                className="form-input"
+              />
+            </div>
+            
+            <div className="checkbox-section">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={applyToFourWeeks}
+                  onChange={(e) => setApplyToFourWeeks(e.target.checked)}
+                  className="checkbox-input"
+                />
+                <span className="checkbox-text">4주간 동일하게 적용</span>
+              </label>
+            </div>
           </div>
         </div>
         
@@ -157,14 +186,28 @@ const SaveClassModal = ({
           justify-content: space-between;
           align-items: center;
           padding: 20px;
-          border-bottom: 1px solid #e5e7eb;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-bottom: none;
+          border-radius: 8px 8px 0 0;
+          box-shadow: 0 2px 10px rgba(102, 126, 234, 0.15);
+        }
+
+        .header-title {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .header-icon {
+          color: white;
+          opacity: 0.9;
         }
 
         .modal-header h3 {
           margin: 0;
           font-size: 1.25rem;
           font-weight: 600;
-          color: #1f2937;
+          color: white;
         }
 
         .close-button {
@@ -172,77 +215,137 @@ const SaveClassModal = ({
           border: none;
           font-size: 24px;
           cursor: pointer;
-          color: #6b7280;
+          color: white;
+          opacity: 0.8;
           padding: 0;
           width: 30px;
           height: 30px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 4px;
+          border-radius: 50%;
           transition: all 0.2s;
         }
 
         .close-button:hover {
-          background-color: #f3f4f6;
-          color: #374151;
+          background-color: rgba(255, 255, 255, 0.2);
+          opacity: 1;
+          transform: scale(1.1);
         }
 
         .modal-body {
           padding: 20px;
         }
 
-        .selected-date {
-          background-color: #f0f9ff;
+        .selected-date-card {
+          display: flex;
+          align-items: center;
+          padding: 16px;
+          background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
           border: 1px solid #bae6fd;
-          border-radius: 6px;
-          padding: 12px;
-          margin-bottom: 20px;
+          border-radius: 12px;
+          margin-bottom: 24px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .date-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          background-color: #0ea5e9;
+          color: white;
+          border-radius: 8px;
+          margin-right: 12px;
+          flex-shrink: 0;
+        }
+
+        .date-info {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .date-label {
+          font-size: 12px;
+          font-weight: 500;
           color: #0369a1;
+          margin-bottom: 2px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .date-value {
+          font-size: 14px;
+          font-weight: 600;
+          color: #0c4a6e;
+        }
+
+        .form-section {
+          margin-bottom: 20px;
         }
 
         .form-group {
-          margin-bottom: 16px;
+          margin-bottom: 20px;
         }
 
         .form-group label {
-          display: block;
-          margin-bottom: 6px;
-          font-weight: 500;
-          color: #374151;
-        }
-
-        .form-group input {
-          width: 100%;
-          padding: 8px 12px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          font-size: 14px;
-          transition: border-color 0.2s;
-        }
-
-        .form-group input:focus {
-          outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .checkbox-group {
           display: flex;
           align-items: center;
+          margin-bottom: 8px;
+          font-weight: 500;
+          color: #374151;
+          font-size: 14px;
+        }
+
+        .form-label-icon {
+          margin-right: 6px;
+          color: #667eea;
+        }
+
+        .form-input {
+          width: 100%;
+          padding: 12px 16px;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          background-color: #fafbfc;
+        }
+
+        .form-input:focus {
+          outline: none;
+          border-color: #667eea;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+          background-color: white;
+        }
+
+        .checkbox-section {
+          margin-top: 24px;
+          padding: 16px;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
         }
 
         .checkbox-label {
           display: flex;
           align-items: center;
           cursor: pointer;
-          margin-bottom: 0 !important;
+          margin: 0;
         }
 
-        .checkbox-label input[type="checkbox"] {
-          width: auto;
-          margin-right: 8px;
-          margin-bottom: 0;
+        .checkbox-input {
+          width: 18px;
+          height: 18px;
+          margin-right: 12px;
+          accent-color: #667eea;
+        }
+
+        .checkbox-text {
+          font-size: 14px;
+          font-weight: 500;
+          color: #374151;
         }
 
         .modal-footer {
