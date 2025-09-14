@@ -31,7 +31,7 @@ export const useMemberManagement = () => {
   }, []);
 
   // 회원 목록 로드
-  const loadMembers = useCallback(async (box: string = 'default') => {
+  const loadMembers = useCallback(async (box: string = 'SWEAT') => {
     setLoading(true);
     setError(null);
     

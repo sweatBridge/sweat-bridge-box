@@ -5,6 +5,7 @@ import { useMemberManagement } from '../hooks/useMemberManagement';
 import MemberDetailsModal from '../components/modals/member/MemberDetailsModal';
 import MemberDeletionModal from '../components/modals/member/MemberDeletionModal';
 import ToastMessage from '../components/ToastMessage';
+import { getGenderText, filterMembers } from '../utils/memberUtils';
 
 const MemberManagement = () => {
   // Firebase 연동 훅
@@ -45,22 +46,7 @@ const MemberManagement = () => {
   }, [error, createToast, clearError]);
 
   // 검색된 회원 필터링
-  const filteredMembers = members.filter(member =>
-    member.realName.toLowerCase().includes(searchValue.toLowerCase()) ||
-    member.nickName.toLowerCase().includes(searchValue.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchValue.toLowerCase())
-  );
-
-  // 성별 텍스트 변환
-  const getGenderText = (gender: string) => {
-    return gender === 'male' ? '남성' : '여성';
-  };
-
-  // 전화번호 포맷팅
-  const formatPhoneNumber = (phone: string) => {
-    if (!phone) return '-';
-    return phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
-  };
+  const filteredMembers = filterMembers(members, searchValue);
 
   // 회원 상세 보기
   const handleShowDetails = useCallback((member: Member) => {

@@ -1,18 +1,10 @@
 import React from 'react';
 import { User, Mail, Phone, Calendar, Users, Clock, CreditCard } from 'lucide-react';
 import { MemberDetailsModalProps } from '../../../types/member';
+import { getGenderText, formatPhoneNumber } from '../../../utils/memberUtils';
 
 const MemberDetailsModal = ({ visible, member, onClose }: MemberDetailsModalProps) => {
   if (!visible || !member) return null;
-
-  const getGenderText = (gender: string) => {
-    return gender === 'male' ? '남성' : '여성';
-  };
-
-  const formatPhoneNumber = (phone: string) => {
-    if (!phone) return '-';
-    return phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
-  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
