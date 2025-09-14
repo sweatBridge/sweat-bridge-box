@@ -6,6 +6,7 @@ import MainLayout from './components/MainLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ClassReservation from './pages/ClassReservation';
+import MemberManagement from './pages/MemberManagement';
 
 function App() {
   const [isLoggedIn] = useState(true); // 개발용으로 true 설정
@@ -27,7 +28,7 @@ function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="wod" element={<div style={{padding: '20px'}}>와드 관리 페이지</div>} />
-              <Route path="members" element={<div style={{padding: '20px'}}>회원 관리 페이지 </div>} />
+              <Route path="members" element={<MemberManagement />} />
               <Route path="classes" element={<ClassReservation />} />
             </Route>
           </Routes>
