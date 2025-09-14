@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Member } from '../types/member';
+import { getCurrentMemberships, getFutureMemberships, getMembershipInfo, MembershipData } from '../utils/membershipUtils';
 
 export interface FirebaseMemberData {
   email: string;
@@ -18,8 +19,8 @@ export interface FirebaseMemberData {
   gender: 'male' | 'female';
   birthDate: string;
   phoneNumber: string;
-  memberships: any[];
-  futureMemberships: any[];
+  memberships: MembershipData[];
+  futureMemberships: MembershipData[];
 }
 
 export class MemberService {
@@ -36,7 +37,10 @@ export class MemberService {
         const data = doc.data() as FirebaseMemberData;
         members.push({
           ...data,
-          membershipInfo: this.calculateMembershipInfo(data.memberships, data.futureMemberships)
+          membershipInfo: this.calculateMembershipInfo(
+            data.memberships || [], 
+            data.futureMemberships || []
+          )
         });
       });
       
@@ -89,15 +93,18 @@ export class MemberService {
   /**
    * 멤버십 정보 계산
    */
-  private static calculateMembershipInfo(memberships: any[], futureMemberships: any[]) {
-    // 임시 구현 - 실제로는 복잡한 멤버십 계산 로직이 필요
-    const currentMembership = memberships?.[0];
+  private static calculateMembershipInfo(memberships: MembershipData[], futureMemberships: MembershipData[]) {
+    // 안전하게 배열 처리
+    const safeMemberships = memberships || [];
+    const safeFutureMemberships = futureMemberships || [];
     
-    return {
-      type: currentMembership?.type || '없음',
-      expiryDate: currentMembership?.expiryDate || '만료됨',
-      remainingDays: currentMembership?.remainingDays || 0,
-      remainingVisits: currentMembership?.remainingVisits || 0
-    };
+    // 현재 유효한 멤버십들을 필터링
+    const currentMemberships = getCurrentMemberships(safeMemberships);
+    
+    // 미래 멤버십들을 필터링 (필요한 경우)
+    const filteredFutureMemberships = getFutureMemberships(safeFutureMemberships);
+    
+    // 멤버십 정보 계산
+    return getMembershipInfo(currentMemberships, filteredFutureMemberships);
   }
 } 

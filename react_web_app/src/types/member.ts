@@ -1,8 +1,8 @@
 export interface MembershipInfo {
   type: string;
   expiryDate: string;
-  remainingDays: number;
-  remainingVisits: number;
+  remainingDays: string | number;
+  remainingVisits: string | number;
 }
 
 export interface Member {

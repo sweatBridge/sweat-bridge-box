@@ -78,4 +78,22 @@ export const filterMembers = (members: any[], searchValue: string) => {
     member.nickName.toLowerCase().includes(searchLower) ||
     member.email.toLowerCase().includes(searchLower)
   );
+};
+
+/**
+ * 멤버십 타입을 한국어로 변환
+ */
+export const getMembershipTypeKorean = (type: string): string => {
+  switch(type) {
+    case 'periodPass':
+      return '기간권';
+    case 'countPass':
+      return '횟수권';
+    case '사용 예정':
+      return '사용 예정';
+    case '없음':
+      return '없음';
+    default:
+      return type || '-';
+  }
 }; 
