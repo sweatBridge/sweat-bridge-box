@@ -597,6 +597,22 @@ const ClassReservation = () => {
         .fc .fc-timegrid-body {
           min-height: auto !important;
         }
+
+        /* 시간 슬롯 높이 조정 */
+        .fc .fc-timegrid-slot {
+          height: 5px !important;
+          min-height: 5px !important;
+        }
+
+        .fc .fc-timegrid-slot-minor {
+          height: 5px !important;
+          min-height: 5px !important;
+        }
+
+        .fc .fc-timegrid-slot-label {
+          height: 5px !important;
+          vertical-align: middle !important;
+        }
       `}</style>
     </div>
   );

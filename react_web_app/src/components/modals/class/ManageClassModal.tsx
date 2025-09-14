@@ -11,7 +11,7 @@ const ManageClassModal = ({
   onDelete 
 }: ManageClassModalProps) => {
   const [coach, setCoach] = useState('');
-  const [cap, setCap] = useState(12);
+  const [cap, setCap] = useState(10);
   const [showReservedMembers, setShowReservedMembers] = useState(false);
 
   // 예약된 회원 데이터 파싱 함수
