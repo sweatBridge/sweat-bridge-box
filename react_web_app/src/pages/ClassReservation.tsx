@@ -7,8 +7,8 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { DateSelectArg, EventClickArg, EventApi } from '@fullcalendar/core';
 import { INITIAL_EVENTS, createEventId } from '../utils/classCalendarUtils';
 import { ClassEvent, SaveClassResult, UpdateClassResult, DeleteClassResult, ToastMessageType } from '../types/class';
-import SaveClassModal from '../components/SaveClassModal';
-import ManageClassModal from '../components/ManageClassModal';
+import SaveClassModal from '../components/modals/class/SaveClassModal';
+import ManageClassModal from '../components/modals/class/ManageClassModal';
 import ToastMessage from '../components/ToastMessage';
 
 const ClassReservation: React.FC = () => {

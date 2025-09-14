@@ -1,88 +1,65 @@
 import React, { useState, useEffect } from 'react';
-import { SaveClassModalProps, SaveClassResult } from '../types/class';
-import { formatDateTime } from '../utils/classCalendarUtils';
+import { ManageClassModalProps, UpdateClassResult, DeleteClassResult } from '../../../types/class';
+import { formatDateTime } from '../../../utils/classCalendarUtils';
 
-const SaveClassModal: React.FC<SaveClassModalProps> = ({ 
+const ManageClassModal: React.FC<ManageClassModalProps> = ({ 
   visible, 
+  event, 
   onClose, 
-  onSave,
-  selectInfo 
+  onUpdate, 
+  onDelete 
 }) => {
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('10:00');
   const [coach, setCoach] = useState('');
   const [cap, setCap] = useState(12);
-  const [applyToFourWeeks, setApplyToFourWeeks] = useState(false);
+  const [showReservedMembers, setShowReservedMembers] = useState(false);
 
   useEffect(() => {
-    if (selectInfo && visible) {
-      const start = new Date(selectInfo.start);
-      const end = new Date(selectInfo.end);
-      
-      const startHours = start.getHours().toString().padStart(2, '0');
-      const startMinutes = start.getMinutes().toString().padStart(2, '0');
-      const endHours = end.getHours().toString().padStart(2, '0');
-      const endMinutes = end.getMinutes().toString().padStart(2, '0');
-      
-      setStartTime(`${startHours}:${startMinutes}`);
-      setEndTime(`${endHours}:${endMinutes}`);
+    if (event && visible) {
+      setCoach(event.extendedProps.coach || '');
+      setCap(event.extendedProps.cap || 12);
     }
-  }, [selectInfo, visible]);
+  }, [event, visible]);
 
-  const handleSave = () => {
-    const result: SaveClassResult = {
-      startTime,
-      endTime,
+  const handleUpdate = () => {
+    const result: UpdateClassResult = {
       coach,
-      cap,
-      applyToFourWeeks
+      cap
     };
-    onSave(result);
+    onUpdate(result);
+  };
+
+  const handleDelete = () => {
+    if (window.confirm('정말로 이 수업을 삭제하시겠습니까?')) {
+      const result: DeleteClassResult = {
+        confirmed: true
+      };
+      onDelete(result);
+    }
   };
 
   const handleClose = () => {
-    // 모달을 닫을 때 상태 초기화
-    setStartTime('09:00');
-    setEndTime('10:00');
-    setCoach('');
-    setCap(12);
-    setApplyToFourWeeks(false);
+    setShowReservedMembers(false);
     onClose();
   };
 
-  if (!visible) return null;
+  if (!visible || !event) return null;
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>수업 등록</h3>
+          <h3>수업 관리</h3>
           <button className="close-button" onClick={handleClose}>×</button>
         </div>
         
         <div className="modal-body">
-          {selectInfo && (
-            <div className="selected-date">
-              <strong>선택된 날짜:</strong> {formatDateTime(selectInfo.startStr)}
+          <div className="class-info">
+            <div className="info-row">
+              <strong>수업명:</strong> {event.title}
             </div>
-          )}
-          
-          <div className="form-group">
-            <label>시작 시간</label>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>종료 시간</label>
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-            />
+            <div className="info-row">
+              <strong>시간:</strong> {formatDateTime(event.start)} ~ {formatDateTime(event.end)}
+            </div>
           </div>
           
           <div className="form-group">
@@ -105,26 +82,48 @@ const SaveClassModal: React.FC<SaveClassModalProps> = ({
               max="30"
             />
           </div>
-          
-          <div className="form-group checkbox-group">
-            <label className="checkbox-label">
-              <input
-                type="checkbox"
-                checked={applyToFourWeeks}
-                onChange={(e) => setApplyToFourWeeks(e.target.checked)}
-              />
-              4주간 동일하게 적용
-            </label>
+
+          <div className="reserved-section">
+            <div className="reserved-header">
+              <span>예약된 회원 ({event.extendedProps.reserved.length}명)</span>
+              <button 
+                className="btn btn-outline"
+                onClick={() => setShowReservedMembers(!showReservedMembers)}
+              >
+                {showReservedMembers ? '숨기기' : '보기'}
+              </button>
+            </div>
+            
+            {showReservedMembers && (
+              <div className="reserved-list">
+                {event.extendedProps.reserved.length > 0 ? (
+                  <ul>
+                    {event.extendedProps.reserved.map((member, index) => (
+                      <li key={index} className="reserved-member">
+                        {member}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="no-members">예약된 회원이 없습니다.</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
         
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={handleClose}>
-            취소
+          <button className="btn btn-danger" onClick={handleDelete}>
+            삭제
           </button>
-          <button className="btn btn-primary" onClick={handleSave}>
-            저장
-          </button>
+          <div className="button-group">
+            <button className="btn btn-secondary" onClick={handleClose}>
+              취소
+            </button>
+            <button className="btn btn-primary" onClick={handleUpdate}>
+              수정
+            </button>
+          </div>
         </div>
       </div>
 
@@ -192,13 +191,20 @@ const SaveClassModal: React.FC<SaveClassModalProps> = ({
           padding: 20px;
         }
 
-        .selected-date {
-          background-color: #f0f9ff;
-          border: 1px solid #bae6fd;
+        .class-info {
+          background-color: #f9fafb;
+          border: 1px solid #e5e7eb;
           border-radius: 6px;
-          padding: 12px;
+          padding: 16px;
           margin-bottom: 20px;
-          color: #0369a1;
+        }
+
+        .info-row {
+          margin-bottom: 8px;
+        }
+
+        .info-row:last-child {
+          margin-bottom: 0;
         }
 
         .form-group {
@@ -227,31 +233,59 @@ const SaveClassModal: React.FC<SaveClassModalProps> = ({
           box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
-        .checkbox-group {
-          display: flex;
-          align-items: center;
+        .reserved-section {
+          border-top: 1px solid #e5e7eb;
+          padding-top: 20px;
+          margin-top: 20px;
         }
 
-        .checkbox-label {
+        .reserved-header {
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          cursor: pointer;
-          margin-bottom: 0 !important;
+          margin-bottom: 12px;
         }
 
-        .checkbox-label input[type="checkbox"] {
-          width: auto;
-          margin-right: 8px;
+        .reserved-list ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+
+        .reserved-member {
+          padding: 8px 12px;
+          background-color: #f3f4f6;
+          border: 1px solid #e5e7eb;
+          border-radius: 4px;
+          margin-bottom: 6px;
+        }
+
+        .reserved-member:last-child {
           margin-bottom: 0;
+        }
+
+        .no-members {
+          color: #6b7280;
+          font-style: italic;
+          text-align: center;
+          padding: 20px;
+          background-color: #f9fafb;
+          border-radius: 4px;
+          margin: 0;
         }
 
         .modal-footer {
           display: flex;
-          justify-content: flex-end;
-          gap: 12px;
+          justify-content: space-between;
+          align-items: center;
           padding: 20px;
           border-top: 1px solid #e5e7eb;
           background-color: #f9fafb;
+        }
+
+        .button-group {
+          display: flex;
+          gap: 12px;
         }
 
         .btn {
@@ -284,9 +318,33 @@ const SaveClassModal: React.FC<SaveClassModalProps> = ({
           background-color: #2563eb;
           border-color: #2563eb;
         }
+
+        .btn-danger {
+          background-color: #dc2626;
+          border-color: #dc2626;
+          color: white;
+        }
+
+        .btn-danger:hover {
+          background-color: #b91c1c;
+          border-color: #b91c1c;
+        }
+
+        .btn-outline {
+          background-color: transparent;
+          border-color: #d1d5db;
+          color: #374151;
+          font-size: 12px;
+          padding: 4px 8px;
+        }
+
+        .btn-outline:hover {
+          background-color: #f3f4f6;
+          border-color: #9ca3af;
+        }
       `}</style>
     </div>
   );
 };
 
-export default SaveClassModal; 
+export default ManageClassModal; 
