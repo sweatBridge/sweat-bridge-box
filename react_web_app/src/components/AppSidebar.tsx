@@ -1,25 +1,31 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dumbbell, LayoutDashboard, Users, Calendar } from 'lucide-react';
 
 interface AppSidebarProps {
   selectedIndex: number;
-  onItemSelected: (index: number) => void;
 }
 
 const menuItems = [
-  { icon: LayoutDashboard, title: '대시보드', index: 0 },
-  { icon: Dumbbell, title: '와드 관리', index: 1 },
-  { icon: Users, title: '회원 관리', index: 2 },
-  { icon: Calendar, title: '수업 관리', index: 3 },
+  { icon: LayoutDashboard, title: '대시보드', index: 0, path: '/dashboard' },
+  { icon: Dumbbell, title: '와드 관리', index: 1, path: '/wod' },
+  { icon: Users, title: '회원 관리', index: 2, path: '/members' },
+  { icon: Calendar, title: '수업 관리', index: 3, path: '/classes' },
 ];
 
-const AppSidebar: React.FC<AppSidebarProps> = ({ selectedIndex, onItemSelected }) => {
+const AppSidebar: React.FC<AppSidebarProps> = ({ selectedIndex }) => {
+  const navigate = useNavigate();
+
+  const handleItemClick = (path: string) => {
+    navigate(path);
+  };
+
   return (
     <div className="sidebar">
       {/* 로고 영역 */}
       <div className="sidebar-logo">
         <Dumbbell className="sidebar-logo-icon" />
-        <span className="sidebar-logo-text">Sweat Bridge Box</span>
+        <span className="sidebar-logo-text">SweatBridge</span>
       </div>
       
       {/* 메뉴 항목들 */}
@@ -32,7 +38,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({ selectedIndex, onItemSelected }
             <div
               key={item.index}
               className={`sidebar-nav-item ${isSelected ? 'active' : ''}`}
-              onClick={() => onItemSelected(item.index)}
+              onClick={() => handleItemClick(item.path)}
             >
               <IconComponent className="sidebar-nav-icon" />
               <span>{item.title}</span>

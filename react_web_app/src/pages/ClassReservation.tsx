@@ -112,7 +112,7 @@ const ClassReservation: React.FC = () => {
         // 새로운 제목을 span 요소로 추가
         const titleSpan = document.createElement('span');
         titleSpan.textContent = customTitle;
-        titleSpan.style.fontSize = '1.25rem';
+        titleSpan.style.fontSize = '1.5rem';
         titleSpan.style.fontWeight = '600';
         titleEl.appendChild(titleSpan);
       }

@@ -1,46 +1,24 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import AppSidebar from './AppSidebar';
 import AppHeader from './AppHeader';
-import Dashboard from '../pages/Dashboard';
-import ClassReservation from '../pages/ClassReservation';
 
 const MainLayout: React.FC = () => {
-  const [selectedIndex, setSelectedIndex] = useState(0);
-
-  const renderContent = () => {
-    switch (selectedIndex) {
-      case 0:
-        return <Dashboard />;
-      case 1:
-        return (
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '100%',
-            fontSize: '24px',
-            color: '#64748B'
-          }}>
-            와드 관리
-          </div>
-        );
-      case 2:
-        return (
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '100%',
-            fontSize: '24px',
-            color: '#64748B'
-          }}>
-            회원 관리
-          </div>
-        );
-      case 3:
-        return <ClassReservation />;
+  const location = useLocation();
+  
+  // URL path에 따라 selectedIndex 결정
+  const getSelectedIndex = () => {
+    switch (location.pathname) {
+      case '/dashboard':
+        return 0;
+      case '/wod':
+        return 1;
+      case '/members':
+        return 2;
+      case '/classes':
+        return 3;
       default:
-        return <Dashboard />;
+        return 0;
     }
   };
 
@@ -48,8 +26,7 @@ const MainLayout: React.FC = () => {
     <div className="main-layout">
       {/* 사이드바 */}
       <AppSidebar 
-        selectedIndex={selectedIndex}
-        onItemSelected={setSelectedIndex}
+        selectedIndex={getSelectedIndex()}
       />
       
       {/* 메인 컨텐츠 영역 */}
@@ -59,7 +36,7 @@ const MainLayout: React.FC = () => {
         
         {/* 메인 컨텐츠 */}
         <div className="content-area">
-          {renderContent()}
+          <Outlet />
         </div>
       </div>
     </div>
