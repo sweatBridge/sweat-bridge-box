@@ -1,18 +1,31 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 // FullCalendar CSS는 패키지에서 자동으로 로드됩니다
 import { DateSelectArg, EventClickArg, EventApi } from '@fullcalendar/core';
-import { INITIAL_EVENTS, createEventId } from '../utils/classCalendarUtils';
 import { ClassEvent, SaveClassResult, UpdateClassResult, DeleteClassResult, ToastMessageType } from '../types/class';
+import { useClassManagement } from '../hooks/useClassManagement';
 import SaveClassModal from '../components/modals/class/SaveClassModal';
 import ManageClassModal from '../components/modals/class/ManageClassModal';
 import ToastMessage from '../components/ToastMessage';
 
 const ClassReservation: React.FC = () => {
   const calendarRef = useRef<FullCalendar>(null);
+  
+  // Firebase 연동 훅
+  const {
+    classes,
+    loading,
+    error,
+    loadMonthlyClasses,
+    createClass,
+    updateClass,
+    deleteClass,
+    createRecurringClasses,
+    clearError
+  } = useClassManagement();
   
   // Modal states
   const [saveModalVisible, setSaveModalVisible] = useState(false);
@@ -22,6 +35,22 @@ const ClassReservation: React.FC = () => {
   
   // Toast message
   const [createToast, setCreateToast] = useState<((toast: ToastMessageType) => void) | null>(null);
+
+  // 컴포넌트 마운트 시 데이터 로드
+  useEffect(() => {
+    loadMonthlyClasses();
+  }, [loadMonthlyClasses]);
+
+  // 에러 처리
+  useEffect(() => {
+    if (error && createToast) {
+      createToast({
+        type: 'danger',
+        message: error
+      });
+      clearError();
+    }
+  }, [error, createToast, clearError]);
 
   const calendarOptions = {
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -64,7 +93,7 @@ const ClassReservation: React.FC = () => {
       return dateStr;
     },
     initialView: 'timeGridWeek',
-    initialEvents: INITIAL_EVENTS,
+    events: classes,
     editable: true,
     selectable: true,
     selectMirror: true,
@@ -170,43 +199,32 @@ const ClassReservation: React.FC = () => {
   }
 
   const saveClass = useCallback(async (result: SaveClassResult) => {
-    const calendarApi = calendarRef.current?.getApi();
-
     try {
-      // selectInfo에서 날짜 정보를 가져와서 시간과 결합
       if (!selectInfo) return;
 
       const selectedDate = new Date(selectInfo.start);
-      const [startHour, startMinute] = result.startTime.split(':').map(Number);
-      const [endHour, endMinute] = result.endTime.split(':').map(Number);
 
-      const startDateTime = new Date(selectedDate);
-      startDateTime.setHours(startHour, startMinute, 0, 0);
-
-      const endDateTime = new Date(selectedDate);
-      endDateTime.setHours(endHour, endMinute, 0, 0);
-
-      // 캘린더에 이벤트 추가
-      calendarApi?.addEvent({
-        id: createEventId(),
-        title: `CrossFit WOD`,
-        start: startDateTime.toISOString(),
-        end: endDateTime.toISOString(),
-        extendedProps: {
-          coach: result.coach,
-          cap: result.cap,
-          reserved: [],
+      if (result.applyToFourWeeks) {
+        // 4주간 반복 생성
+        await createRecurringClasses(selectedDate, result);
+        if (createToast) {
+          createToast({
+            type: 'success',
+            message: '4주간 수업 등록 성공'
+          });
         }
-      });
-
-      if (createToast) {
-        createToast({
-          type: 'success',
-          message: '수업 등록 성공'
-        });
+      } else {
+        // 단일 수업 생성
+        await createClass(selectedDate, result);
+        if (createToast) {
+          createToast({
+            type: 'success',
+            message: '수업 등록 성공'
+          });
+        }
       }
     } catch (error) {
-      console.error('Failed to set class', error);
+      console.error('Failed to save class', error);
       if (createToast) {
         createToast({
           type: 'danger',
@@ -214,7 +232,7 @@ const ClassReservation: React.FC = () => {
         });
       }
     }
-  }, [createToast, selectInfo]);
+  }, [createToast, selectInfo, createClass, createRecurringClasses]);
 
   const handleSaveModalResult = useCallback(async (modalResult: SaveClassResult) => {
     if (modalResult.applyToFourWeeks) {
@@ -230,8 +248,9 @@ const ClassReservation: React.FC = () => {
 
   const handleUpdateClass = useCallback(async (result: UpdateClassResult) => {
     try {
-      // 실제 API 호출 대신 시뮬레이션
-      console.log('Updating class:', result);
+      if (!selectedEvent) return;
+      
+      await updateClass(selectedEvent.id, result);
       
       if (createToast) {
         createToast({
@@ -239,10 +258,6 @@ const ClassReservation: React.FC = () => {
           message: '수업 정보 변경 성공'
         });
       }
-      
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
     } catch (error) {
       console.error('Failed to update class', error);
       if (createToast) {
@@ -254,12 +269,13 @@ const ClassReservation: React.FC = () => {
     }
     
     setManageModalVisible(false);
-  }, [createToast]);
+  }, [selectedEvent, updateClass, createToast]);
 
   const handleDeleteClass = useCallback(async (result: DeleteClassResult) => {
     try {
-      // 실제 API 호출 대신 시뮬레이션
-      console.log('Deleting class:', result);
+      if (!selectedEvent || !result.confirmed) return;
+      
+      await deleteClass(selectedEvent.id);
       
       if (createToast) {
         createToast({
@@ -267,10 +283,6 @@ const ClassReservation: React.FC = () => {
           message: '수업 삭제 성공'
         });
       }
-      
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
     } catch (error) {
       console.error('Failed to delete class', error);
       if (createToast) {
@@ -282,7 +294,7 @@ const ClassReservation: React.FC = () => {
     }
     
     setManageModalVisible(false);
-  }, [createToast]);
+  }, [selectedEvent, deleteClass, createToast]);
 
   return (
     <div className="dashboard">

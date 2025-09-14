@@ -36,12 +36,27 @@ src/
 ### 계획된 기능
 - 와드(운동) 관리 페이지
 - 회원 관리 페이지
-- 수업 스케줄 관리 페이지
-- React Router 도입
-- 상태 관리 라이브러리 도입 (Redux Toolkit 또는 Zustand)
-- API 연동
+- ✅ 수업 스케줄 관리 페이지 (Firebase 연동)
+- ✅ React Router 도입
+- ✅ 상태 관리 (React Context + useReducer)
+- ✅ Firebase 연동 (Firestore)
 
 ## 실행 방법
+
+### Firebase 설정
+1. Firebase 콘솔에서 새 프로젝트 생성
+2. Firestore Database 활성화
+3. 웹 앱 등록 후 구성 정보 복사
+4. 프로젝트 루트에 `.env` 파일 생성:
+
+```env
+REACT_APP_FIREBASE_API_KEY=your-api-key-here
+REACT_APP_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=your-project-id
+REACT_APP_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=123456789
+REACT_APP_FIREBASE_APP_ID=1:123456789:web:abcdef123456
+```
 
 ### 개발 환경 설정
 ```bash

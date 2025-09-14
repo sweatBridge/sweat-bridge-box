@@ -71,4 +71,26 @@ export function formatDateTime(dateTimeString: string) {
 //   const date = new Date(dateStr + 'T00:00:00');
 //   date.setDate(date.getDate() + days);
 //   return date.toISOString().replace(/T.*$/, '');
-// } 
+// }
+
+// docKey에서 날짜와 시간 정보 추출
+export function extractDateTimeFromDocKey(docKey: string) {
+  // docKey 형식: YYYYMMDDHHMMHHMM (예: 202309081000110)
+  const year = docKey.substring(0, 4);
+  const month = docKey.substring(4, 6);
+  const day = docKey.substring(6, 8);
+  const startHour = docKey.substring(8, 10);
+  const startMin = docKey.substring(10, 12);
+  const endHour = docKey.substring(12, 14);
+  const endMin = docKey.substring(14, 16);
+
+  return {
+    year,
+    month,
+    day,
+    startHour,
+    startMin,
+    endHour,
+    endMin
+  };
+} 
