@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Users, UserPlus, CreditCard, Eye, Trash2, Settings } from 'lucide-react';
+import { Search, Users, UserPlus, CreditCard, Eye, Trash2, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Member, ToastMessageType } from '../types/member';
 import { useMemberManagement } from '../hooks/useMemberManagement';
 import MemberDetailsModal from '../components/modals/member/MemberDetailsModal';
@@ -25,6 +25,10 @@ const MemberManagement = () => {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [deletionModalVisible, setDeletionModalVisible] = useState(false);
+  
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Toast message
   const [createToast, setCreateToast] = useState<((toast: ToastMessageType) => void) | null>(null);
@@ -47,6 +51,17 @@ const MemberManagement = () => {
 
   // 검색된 회원 필터링
   const filteredMembers = filterMembers(members, searchValue);
+  
+  // 페이지네이션 계산
+  const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentMembers = filteredMembers.slice(startIndex, endIndex);
+  
+  // 검색어가 변경되면 첫 페이지로 이동
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchValue]);
 
   // 회원 상세 보기
   const handleShowDetails = useCallback((member: Member) => {
@@ -111,6 +126,25 @@ const MemberManagement = () => {
     }
   }, [createToast]);
 
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // 이전 페이지
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // 다음 페이지
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
   return (
     <div className="dashboard">
       {/* 페이지 제목 */}
@@ -124,7 +158,7 @@ const MemberManagement = () => {
         <div className="card-header">
           <div className="header-left">
             <Users size={20} />
-            <span>전체 회원: {members.length}명</span>
+            <span>전체 회원: {members.length}명 | 검색 결과: {filteredMembers.length}명</span>
           </div>
           <div className="header-actions">
             <button className="btn btn-outline" onClick={handleAddMember}>
@@ -181,7 +215,7 @@ const MemberManagement = () => {
                   <p>{searchValue ? '검색 조건에 맞는 회원이 없습니다.' : '등록된 회원이 없습니다.'}</p>
                 </div>
               ) : (
-                filteredMembers.map((member, index) => (
+                currentMembers.map((member, index) => (
                   <div key={member.email} className="table-row">
                     <div className="table-cell">
                       <div className="member-name-cell">
@@ -234,6 +268,47 @@ const MemberManagement = () => {
                 ))
               )}
             </div>
+            
+            {/* 페이지네이션 */}
+            {filteredMembers.length > 0 && totalPages > 1 && (
+              <div className="pagination-container">
+                <div className="pagination-info">
+                  <span>
+                    {startIndex + 1}-{Math.min(endIndex, filteredMembers.length)} / {filteredMembers.length}명
+                  </span>
+                </div>
+                
+                <div className="pagination-controls">
+                  <button 
+                    className="pagination-btn" 
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  
+                  <div className="page-numbers">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        className={`page-number ${page === currentPage ? 'active' : ''}`}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <button 
+                    className="pagination-btn" 
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -516,6 +591,87 @@ const MemberManagement = () => {
           margin: 0;
           color: #6b7280;
           font-size: 14px;
+        }
+
+        .pagination-container {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 16px 20px;
+          border-top: 1px solid #e5e7eb;
+          background-color: #f9fafb;
+        }
+
+        .pagination-info {
+          font-size: 14px;
+          color: #6b7280;
+        }
+
+        .pagination-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .pagination-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border: 1px solid #d1d5db;
+          background-color: white;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s;
+          color: #6b7280;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+          background-color: #f3f4f6;
+          border-color: #9ca3af;
+        }
+
+        .pagination-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          background-color: #f9fafb;
+        }
+
+        .page-numbers {
+          display: flex;
+          gap: 4px;
+        }
+
+        .page-number {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border: 1px solid #d1d5db;
+          background-color: white;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s;
+          color: #374151;
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .page-number:hover {
+          background-color: #f3f4f6;
+          border-color: #9ca3af;
+        }
+
+        .page-number.active {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border-color: #667eea;
+          color: white;
+        }
+
+        .page-number.active:hover {
+          background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
         }
       `}</style>
     </div>
