@@ -74,9 +74,10 @@ const Dashboard: React.FC = () => {
   return (
     <div className="dashboard">
       {/* 페이지 제목 */}
-      <h1 className="dashboard-title">대시보드</h1>
-      <p className="dashboard-subtitle">오늘의 박스 현황을 확인하세요</p>
-      
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px', marginBottom: '24px' }}>
+        <h1 className="dashboard-title" style={{ margin: 0 }}>대시보드</h1>
+        <p className="dashboard-subtitle" style={{ margin: 0 }}>오늘의 박스 현황을 확인하세요</p>
+      </div>
       {/* 통계 카드들 */}
       <div className="stats-grid">
         {statsData.map((stat, index) => (

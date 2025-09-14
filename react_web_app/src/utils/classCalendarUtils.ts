@@ -11,8 +11,8 @@ export const INITIAL_EVENTS: ClassEvent[] = [
   {
     id: createEventId(),
     title: 'CrossFit WOD',
-    start: '2024-12-09T09:00:00',
-    end: '2024-12-09T10:00:00',
+    start: '2025-09-15T09:00:00',
+    end: '2025-09-15T10:00:00',
     extendedProps: {
       coach: '김코치',
       cap: 12,
@@ -22,8 +22,8 @@ export const INITIAL_EVENTS: ClassEvent[] = [
   {
     id: createEventId(),
     title: 'Olympic Lifting',
-    start: '2024-12-09T18:00:00',
-    end: '2024-12-09T19:00:00',
+    start: '2025-09-16T09:00:00',
+    end: '2025-09-16T10:00:00',
     extendedProps: {
       coach: '박코치',
       cap: 8,

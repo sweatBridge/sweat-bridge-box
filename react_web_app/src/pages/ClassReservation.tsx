@@ -285,35 +285,18 @@ const ClassReservation: React.FC = () => {
   }, [createToast]);
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Card Header */}
-      <div
-        style={{
-          backgroundColor: 'rgb(70, 100, 200)',
-          color: 'white',
-          padding: '16px 24px',
-          borderRadius: '12px 12px 0 0',
-          marginBottom: '0'
-        }}
-      >
-        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>
-          수업 등록
-        </h2>
+    <div className="dashboard">
+      {/* 페이지 제목 */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px', marginBottom: '24px' }}>
+        <h1 className="dashboard-title" style={{ margin: 0 }}>수업 관리</h1>
+        <p className="dashboard-subtitle" style={{ margin: 0 }}>수업 일정을 등록하고 관리하세요</p>
       </div>
-
-      {/* Card Body */}
-      <div
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '0 0 12px 12px',
-          padding: '24px',
-          flex: 1,
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-        }}
-      >
+      
+      {/* 캘린더 카드 */}
+      <div className="content-card" style={{ marginTop: '24px', flex: 1 }}>
         <div
           style={{
-            height: 'calc(80vh - 120px)',
+            height: 'calc(85vh - 160px)',
             minHeight: '600px',
           }}
         >

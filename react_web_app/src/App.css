@@ -459,3 +459,111 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* FullCalendar 스타일 개선 */
+.fc {
+  font-family: inherit;
+}
+
+.fc-toolbar {
+  margin-bottom: 1.5rem !important;
+}
+
+.fc-toolbar-title {
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  color: #1E293B !important;
+  position: relative !important;
+}
+
+.fc-button {
+  background-color: #3B82F6 !important;
+  border: 1px solid #3B82F6 !important;
+  color: white !important;
+  border-radius: 6px !important;
+  padding: 0.5rem 1rem !important;
+  font-weight: 500 !important;
+  transition: all 0.2s !important;
+}
+
+.fc-button:hover {
+  background-color: #2563EB !important;
+  border-color: #2563EB !important;
+}
+
+.fc-button:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+.fc-button-active {
+  background-color: #1D4ED8 !important;
+  border-color: #1D4ED8 !important;
+}
+
+.fc-daygrid-day, .fc-timegrid-slot {
+  border-color: #E5E7EB !important;
+}
+
+.fc-col-header-cell {
+  background-color: #F8FAFC !important;
+  border-color: #E5E7EB !important;
+  font-weight: 600 !important;
+  color: #374151 !important;
+}
+
+.fc-event {
+  border-radius: 4px !important;
+  border: none !important;
+  background-color: #3B82F6 !important;
+  color: white !important;
+  font-weight: 500 !important;
+  padding: 2px 6px !important;
+}
+
+.fc-event:hover {
+  background-color: #2563EB !important;
+  cursor: pointer !important;
+}
+
+.fc-daygrid-event {
+  margin: 1px 2px !important;
+}
+
+.fc-timegrid-event {
+  border-radius: 4px !important;
+}
+
+.fc-scrollgrid {
+  border-color: #E5E7EB !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+.fc-theme-standard td, .fc-theme-standard th {
+  border-color: #E5E7EB !important;
+}
+
+.fc-timegrid-axis {
+  color: #6B7280 !important;
+  font-size: 0.875rem !important;
+}
+
+.fc-timegrid-slot-label {
+  color: #6B7280 !important;
+  font-size: 0.875rem !important;
+}
+
+.fc-day-today {
+  background-color: #FEF3C7 !important;
+}
+
+.fc-highlight {
+  background-color: #DBEAFE !important;
+}
+
+/* 선택 영역 스타일 */
+.fc-select-mirror {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  border: 2px solid #3B82F6 !important;
+  border-radius: 4px !important;
+}
