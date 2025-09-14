@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Users, Settings } from 'lucide-react';
+import { Calendar, Clock, User, Users, Settings, UserCheck } from 'lucide-react';
 import { ManageClassModalProps, UpdateClassResult, DeleteClassResult } from '../../../types/class';
 import { formatDateTime } from '../../../utils/classCalendarUtils';
 
@@ -13,6 +13,18 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
   const [coach, setCoach] = useState('');
   const [cap, setCap] = useState(12);
   const [showReservedMembers, setShowReservedMembers] = useState(false);
+
+  // 예약된 회원 데이터 파싱 함수
+  const parseReservedMembers = (reservedList: string[]) => {
+    return reservedList.map(memberString => {
+      const [email, realName, nickName] = memberString.split(',');
+      return {
+        email: email?.trim() || '',
+        realName: realName?.trim() || '',
+        nickName: nickName?.trim() || ''
+      };
+    });
+  };
 
   useEffect(() => {
     if (event && visible) {
@@ -119,15 +131,24 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
             {showReservedMembers && (
               <div className="reserved-list">
                 {event.extendedProps.reserved.length > 0 ? (
-                  <ul>
-                    {event.extendedProps.reserved.map((member, index) => (
-                      <li key={index} className="reserved-member">
-                        {member}
-                      </li>
+                  <div className="members-grid">
+                    {parseReservedMembers(event.extendedProps.reserved).map((member, index) => (
+                      <div key={index} className="reserved-member-card">
+                        <div className="member-avatar">
+                          <UserCheck size={16} />
+                        </div>
+                        <div className="member-info">
+                          <div className="member-name">{member.realName}</div>
+                          <div className="member-nickname">@{member.nickName}</div>
+                        </div>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 ) : (
-                  <p className="no-members">예약된 회원이 없습니다.</p>
+                  <div className="no-members">
+                    <User size={24} className="no-members-icon" />
+                    <p>예약된 회원이 없습니다.</p>
+                  </div>
                 )}
               </div>
             )}
@@ -341,32 +362,90 @@ const ManageClassModal: React.FC<ManageClassModalProps> = ({
           margin-bottom: 12px;
         }
 
-        .reserved-list ul {
-          list-style: none;
-          padding: 0;
-          margin: 0;
+        .members-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: 12px;
+          margin-top: 12px;
         }
 
-        .reserved-member {
-          padding: 8px 12px;
-          background-color: #f3f4f6;
-          border: 1px solid #e5e7eb;
-          border-radius: 4px;
-          margin-bottom: 6px;
+        .reserved-member-card {
+          display: flex;
+          align-items: center;
+          padding: 12px;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
-        .reserved-member:last-child {
-          margin-bottom: 0;
+        .reserved-member-card:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          border-color: #cbd5e1;
+        }
+
+        .member-avatar {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border-radius: 50%;
+          margin-right: 12px;
+          flex-shrink: 0;
+        }
+
+        .member-info {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .member-name {
+          font-weight: 600;
+          color: #1e293b;
+          font-size: 14px;
+          margin-bottom: 2px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .member-nickname {
+          font-size: 12px;
+          color: #64748b;
+          font-weight: 500;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .no-members {
-          color: #6b7280;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 30px 20px;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          border: 2px dashed #cbd5e1;
+          border-radius: 12px;
+          margin: 12px 0 0 0;
+        }
+
+        .no-members-icon {
+          color: #94a3b8;
+          margin-bottom: 8px;
+        }
+
+        .no-members p {
+          color: #64748b;
           font-style: italic;
           text-align: center;
-          padding: 20px;
-          background-color: #f9fafb;
-          border-radius: 4px;
           margin: 0;
+          font-size: 14px;
         }
 
         .modal-footer {
