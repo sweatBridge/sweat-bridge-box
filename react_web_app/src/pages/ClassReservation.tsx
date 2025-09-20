@@ -1,11 +1,11 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 // FullCalendar CSS는 패키지에서 자동으로 로드됩니다
 import { DateSelectArg, EventClickArg, EventApi } from '@fullcalendar/core';
-import { Calendar, Plus, BarChart3, RefreshCw } from 'lucide-react';
+import { Calendar, BarChart3, RefreshCw } from 'lucide-react';
 import { ClassEvent, SaveClassResult, UpdateClassResult, DeleteClassResult, ToastMessageType } from '../types/class';
 import { useClassManagement } from '../hooks/useClassManagement';
 import SaveClassModal from '../components/modals/class/SaveClassModal';
@@ -21,7 +21,6 @@ const ClassReservation = () => {
   // Firebase 연동 훅
   const {
     classes,
-    loading,
     error,
     loadMonthlyClasses,
     createClass,
@@ -118,47 +117,47 @@ const ClassReservation = () => {
     // datesSet: handleDatesSet,
   };
 
-  function handleDatesSet(info: any) {
-    // 제목 형식을 변경
-    setTimeout(() => {
-      const titleEl = document.querySelector('.fc-toolbar-title');
-      if (titleEl && info.view) {
-        const start = new Date(info.start);
-        const end = new Date(info.end);
+  // function handleDatesSet(info: any) {
+  //   // 제목 형식을 변경
+  //   setTimeout(() => {
+  //     const titleEl = document.querySelector('.fc-toolbar-title');
+  //     if (titleEl && info.view) {
+  //       const start = new Date(info.start);
+  //       const end = new Date(info.end);
         
-        // 기존 내용을 완전히 지우고 새로운 제목 설정
-        titleEl.innerHTML = '';
+  //       // 기존 내용을 완전히 지우고 새로운 제목 설정
+  //       titleEl.innerHTML = '';
         
-        let customTitle = '';
-        if (info.view.type === 'dayGridMonth') {
-          // 월 보기: 2025.09
-          const year = start.getFullYear();
-          const month = String(start.getMonth() + 1).padStart(2, '0');
-          customTitle = `${year}.${month}`;
-        } else if (info.view.type === 'timeGridWeek') {
-          // 주 보기: 2025.09.07 - 2025.09.13
-          const endDate = new Date(end);
-          endDate.setDate(endDate.getDate() - 1); // FullCalendar는 종료일을 다음날로 설정하므로
+  //       let customTitle = '';
+  //       if (info.view.type === 'dayGridMonth') {
+  //         // 월 보기: 2025.09
+  //         const year = start.getFullYear();
+  //         const month = String(start.getMonth() + 1).padStart(2, '0');
+  //         customTitle = `${year}.${month}`;
+  //       } else if (info.view.type === 'timeGridWeek') {
+  //         // 주 보기: 2025.09.07 - 2025.09.13
+  //         const endDate = new Date(end);
+  //         endDate.setDate(endDate.getDate() - 1); // FullCalendar는 종료일을 다음날로 설정하므로
           
-          const formatDate = (d: Date) => {
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}.${month}.${day}`;
-          };
+  //         const formatDate = (d: Date) => {
+  //           const year = d.getFullYear();
+  //           const month = String(d.getMonth() + 1).padStart(2, '0');
+  //           const day = String(d.getDate()).padStart(2, '0');
+  //           return `${year}.${month}.${day}`;
+  //         };
           
-          customTitle = `${formatDate(start)} - ${formatDate(endDate)}`;
-        }
+  //         customTitle = `${formatDate(start)} - ${formatDate(endDate)}`;
+  //       }
         
-        // 새로운 제목을 span 요소로 추가
-        const titleSpan = document.createElement('span');
-        titleSpan.textContent = customTitle;
-        titleSpan.style.fontSize = '1.5rem';
-        titleSpan.style.fontWeight = '600';
-        titleEl.appendChild(titleSpan);
-      }
-    }, 10); // 약간 더 긴 딜레이로 확실히 DOM이 업데이트된 후 실행
-  }
+  //       // 새로운 제목을 span 요소로 추가
+  //       const titleSpan = document.createElement('span');
+  //       titleSpan.textContent = customTitle;
+  //       titleSpan.style.fontSize = '1.5rem';
+  //       titleSpan.style.fontWeight = '600';
+  //       titleEl.appendChild(titleSpan);
+  //     }
+  //   }, 10); // 약간 더 긴 딜레이로 확실히 DOM이 업데이트된 후 실행
+  // }
 
   function handleDateSelect(selectInfo: DateSelectArg) {
     loadSaveModal(selectInfo);

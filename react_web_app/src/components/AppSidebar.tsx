@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dumbbell, LayoutDashboard, Users, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface AppSidebarProps {
   selectedIndex: number;

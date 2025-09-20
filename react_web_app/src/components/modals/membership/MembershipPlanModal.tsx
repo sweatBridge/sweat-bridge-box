@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Gradients } from '../../../constants/gradients';
 import { X, Plus, Trash2, CreditCard } from 'lucide-react';
 import { MembershipPlan } from '../../../types/membership';
@@ -24,14 +24,7 @@ const MembershipPlanModal = ({ visible, onClose, onSuccess, onError }: Membershi
     price: 0
   });
 
-  // 모달이 열릴 때 데이터 로드
-  useEffect(() => {
-    if (visible) {
-      loadMembershipPlans();
-    }
-  }, [visible]);
-
-  const loadMembershipPlans = async () => {
+  const loadMembershipPlans = useCallback(async () => {
     try {
       setLoading(true);
       const membershipPlans = await MembershipService.getMembershipPlans();
@@ -44,7 +37,14 @@ const MembershipPlanModal = ({ visible, onClose, onSuccess, onError }: Membershi
     } finally {
       setLoading(false);
     }
-  };
+  }, [onError]);
+
+  // 모달이 열릴 때 데이터 로드
+  useEffect(() => {
+    if (visible) {
+      loadMembershipPlans();
+    }
+  }, [visible, loadMembershipPlans]);
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({

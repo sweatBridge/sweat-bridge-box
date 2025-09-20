@@ -1,12 +1,10 @@
 import { 
   getDocs, 
   collection, 
-  query, 
   doc, 
   deleteDoc,
   updateDoc,
-  addDoc,
-  where 
+  addDoc
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Member } from '../types/member';

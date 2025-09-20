@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Building, MapPin, User, Phone, Mail, Users, Plus, Trash2, Search, Save, RefreshCw } from 'lucide-react';
 import { BoxInfo, Coach } from '../types/box';
 import { useBoxManagement } from '../hooks/useBoxManagement';
 import { usePageContext } from '../contexts/PageContext';
-import { useAuth } from '../contexts/AuthContext';
 import { getPhoneMask } from '../utils/phoneUtils';
 import ToastMessage from '../components/ToastMessage';
 import { ToastMessageType } from '../types/member';
@@ -27,7 +26,6 @@ declare global {
 
 const BoxSettings = () => {
   const { setPageInfo } = usePageContext();
-  const { user } = useAuth();
   const {
     boxInfo,
     loading,

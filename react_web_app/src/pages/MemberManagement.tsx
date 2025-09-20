@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Users, UserPlus, CreditCard, Eye, Trash2, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Member, ToastMessageType } from '../types/member';
 import { useMemberManagement } from '../hooks/useMemberManagement';
@@ -20,8 +20,6 @@ const MemberManagement = () => {
     error,
     loadMembers,
     deleteMember,
-    updateMemberMembership,
-    addMember,
     clearError
   } = useMemberManagement();
 
