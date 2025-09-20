@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { Home, Dumbbell, Settings, LogOut } from 'lucide-react';
 import { usePageContext } from '../contexts/PageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const AppHeader = () => {
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
   const { pageInfo } = usePageContext();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleSettingsClick = () => {
     setShowSettingsMenu(!showSettingsMenu);
@@ -15,10 +21,18 @@ const AppHeader = () => {
     setShowLogoutDialog(true);
   };
 
-  const handleLogoutConfirm = () => {
-    // 로그아웃 처리
-    console.log('로그아웃 처리');
-    setShowLogoutDialog(false);
+  const handleLogoutConfirm = async () => {
+    try {
+      setIsLoggingOut(true);
+      await logout();
+      setShowLogoutDialog(false);
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      alert('로그아웃에 실패했습니다.');
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const handleLogoutCancel = () => {
@@ -39,7 +53,7 @@ const AppHeader = () => {
           {/* 박스 이름 */}
           <div className="box-name">
             <Home className="box-name-icon" />
-            <span className="box-name-text">CrossFit Box</span>
+            <span className="box-name-text">{user?.boxName || 'CrossFit Box'}</span>
           </div>
           
           {/* 박스 로고 */}
@@ -72,8 +86,15 @@ const AppHeader = () => {
                   marginTop: '4px'
                 }}
               >
+                <div className="settings-menu-header">
+                  <div className="user-info">
+                    <div className="user-name">{user?.realName || '관리자'}</div>
+                    <div className="user-email">{user?.email}</div>
+                  </div>
+                </div>
+                <div className="settings-menu-divider"></div>
                 <div 
-                  style={{ padding: '8px 16px', cursor: 'pointer', fontSize: '14px' }}
+                  className="settings-menu-item"
                   onClick={() => {
                     console.log('프로필 설정');
                     setShowSettingsMenu(false);
@@ -82,7 +103,7 @@ const AppHeader = () => {
                   프로필 설정
                 </div>
                 <div 
-                  style={{ padding: '8px 16px', cursor: 'pointer', fontSize: '14px' }}
+                  className="settings-menu-item"
                   onClick={() => {
                     console.log('박스 설정');
                     setShowSettingsMenu(false);
@@ -91,7 +112,7 @@ const AppHeader = () => {
                   박스 설정
                 </div>
                 <div 
-                  style={{ padding: '8px 16px', cursor: 'pointer', fontSize: '14px' }}
+                  className="settings-menu-item"
                   onClick={() => {
                     console.log('시스템 설정');
                     setShowSettingsMenu(false);
@@ -162,16 +183,31 @@ const AppHeader = () => {
               </button>
               <button
                 onClick={handleLogoutConfirm}
+                disabled={isLoggingOut}
                 style={{
                   padding: '8px 16px',
                   border: 'none',
                   borderRadius: '6px',
                   backgroundColor: '#2563EB',
                   color: 'white',
-                  cursor: 'pointer'
+                  cursor: isLoggingOut ? 'not-allowed' : 'pointer',
+                  opacity: isLoggingOut ? 0.7 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}
               >
-                로그아웃
+                {isLoggingOut && (
+                  <div style={{
+                    width: '12px',
+                    height: '12px',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    borderTop: '2px solid white',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }}></div>
+                )}
+                {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
               </button>
             </div>
           </div>
@@ -230,6 +266,51 @@ const AppHeader = () => {
           background: white;
           border-bottom: 1px solid #e5e7eb;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .settings-menu-header {
+          padding: 16px;
+          background-color: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .user-info {
+          text-align: left;
+        }
+
+        .user-name {
+          font-weight: 600;
+          color: #1f2937;
+          font-size: 14px;
+          margin-bottom: 4px;
+        }
+
+        .user-email {
+          font-size: 12px;
+          color: #6b7280;
+        }
+
+        .settings-menu-divider {
+          height: 1px;
+          background-color: #e2e8f0;
+          margin: 0;
+        }
+
+        .settings-menu-item {
+          padding: 12px 16px;
+          cursor: pointer;
+          font-size: 14px;
+          color: #374151;
+          transition: background-color 0.2s;
+        }
+
+        .settings-menu-item:hover {
+          background-color: #f3f4f6;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `}</style>
     </>
