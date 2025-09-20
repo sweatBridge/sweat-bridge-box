@@ -84,9 +84,9 @@ const MemberDetailsModal = ({ visible, member, onClose }: MemberDetailsModalProp
             </div>
           </div>
 
-          {/* 멤버십 정보 섹션 */}
+          {/* 회원권 정보 섹션 */}
           <div className="info-section">
-            <h4 className="section-title">멤버십 정보</h4>
+            <h4 className="section-title">회원권 정보</h4>
             <div className="membership-card">
               <div className="membership-header">
                 <CreditCard size={20} />

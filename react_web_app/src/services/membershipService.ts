@@ -1,86 +1,72 @@
-import { 
-  getDoc, 
-  doc, 
-  updateDoc 
-} from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { getCurrentMemberships, MembershipData } from '../utils/membershipUtils';
+import { MembershipPlan } from '../types/membership';
 
 export class MembershipService {
-  /**
-   * 특정 회원의 멤버십 정보 조회
-   */
-  static async getUserMemberships(box: string, email: string): Promise<MembershipData[]> {
+  private static getBoxName(): string {
+    return localStorage.getItem('boxName') || 'SWEAT';
+  }
+
+  static async getMembershipPlans(): Promise<MembershipPlan[]> {
     try {
-      if (!box || !email) {
-        console.warn('boxName 또는 email이 없습니다.');
-        return [];
-      }
-
-      const memberDocRef = doc(db, `box/${box}/member/${email}`);
-      const docSnap = await getDoc(memberDocRef);
-
+      const boxName = this.getBoxName();
+      const membershipDocRef = doc(db, `box/${boxName}/membership`, "plansDoc");
+      
+      const docSnap = await getDoc(membershipDocRef);
+      
       if (docSnap.exists()) {
         const data = docSnap.data();
-        const memberships = data.memberships || [];
-        return memberships;
+        return data.plans || [];
       } else {
-        console.log('Member 문서를 찾을 수 없습니다.');
+        console.log("No membership document found, returning empty array.");
         return [];
       }
     } catch (error) {
-      console.error('회원권 정보 불러오기 중 오류 발생:', error);
-      return [];
-    }
-  }
-
-  /**
-   * 특정 회원의 현재 유효한 멤버십 정보 조회
-   */
-  static async getUserCurrentMemberships(box: string, email: string): Promise<MembershipData[]> {
-    try {
-      const memberships = await this.getUserMemberships(box, email);
-      return getCurrentMemberships(memberships);
-    } catch (error) {
-      console.error('현재 멤버십 정보 불러오기 중 오류 발생:', error);
-      return [];
-    }
-  }
-
-  /**
-   * 회원의 멤버십 정보 업데이트
-   */
-  static async updateUserMembership(
-    box: string, 
-    email: string, 
-    memberships: MembershipData[]
-  ): Promise<void> {
-    try {
-      const memberDocRef = doc(db, `box/${box}/member/${email}`);
-      await updateDoc(memberDocRef, {
-        memberships: memberships
-      });
-    } catch (error) {
-      console.error('멤버십 정보 업데이트 중 오류 발생:', error);
+      console.error("Error fetching membership plans:", error);
       throw error;
     }
   }
 
-  /**
-   * 회원에게 새 멤버십 추가
-   */
-  static async addMembershipToUser(
-    box: string, 
-    email: string, 
-    newMembership: MembershipData
-  ): Promise<void> {
+  static async setMembershipPlans(plans: MembershipPlan[]): Promise<void> {
     try {
-      const currentMemberships = await this.getUserMemberships(box, email);
-      const updatedMemberships = [...currentMemberships, newMembership];
-      
-      await this.updateUserMembership(box, email, updatedMemberships);
+      const boxName = this.getBoxName();
+      const membershipDocRef = doc(db, `box/${boxName}/membership`, "plansDoc");
+
+      const docSnap = await getDoc(membershipDocRef);
+
+      if (!docSnap.exists()) {
+        await setDoc(membershipDocRef, { plans: plans });
+        console.log("Created new membership plan document.");
+      } else {
+        await setDoc(membershipDocRef, { plans: plans }, { merge: true });
+        console.log("Updated existing membership plan document.");
+      }
     } catch (error) {
-      console.error('멤버십 추가 중 오류 발생:', error);
+      console.error("Error setting membership plans:", error);
+      throw error;
+    }
+  }
+
+  static async addMembershipPlan(plan: MembershipPlan): Promise<void> {
+    try {
+      const existingPlans = await this.getMembershipPlans();
+      const updatedPlans = [...existingPlans, plan];
+      await this.setMembershipPlans(updatedPlans);
+      console.log("Successfully added new membership plan:", plan);
+    } catch (error) {
+      console.error("Error adding membership plan:", error);
+      throw error;
+    }
+  }
+
+  static async deleteMembershipPlan(planName: string): Promise<void> {
+    try {
+      const existingPlans = await this.getMembershipPlans();
+      const updatedPlans = existingPlans.filter(plan => plan.plan !== planName);
+      await this.setMembershipPlans(updatedPlans);
+      console.log("Successfully deleted membership plan:", planName);
+    } catch (error) {
+      console.error("Error deleting membership plan:", error);
       throw error;
     }
   }

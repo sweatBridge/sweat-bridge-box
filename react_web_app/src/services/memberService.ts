@@ -65,7 +65,7 @@ export class MemberService {
   }
 
   /**
-   * 회원 멤버십 업데이트
+   * 회원 회원권 업데이트
    */
   static async updateMemberMembership(box: string, email: string, membershipData: any): Promise<void> {
     try {
@@ -91,20 +91,20 @@ export class MemberService {
   }
 
   /**
-   * 멤버십 정보 계산
+   * 회원권 정보 계산
    */
   private static calculateMembershipInfo(memberships: MembershipData[], futureMemberships: MembershipData[]) {
     // 안전하게 배열 처리
     const safeMemberships = memberships || [];
     const safeFutureMemberships = futureMemberships || [];
     
-    // 현재 유효한 멤버십들을 필터링
+    // 현재 유효한 회원권들을 필터링
     const currentMemberships = getCurrentMemberships(safeMemberships);
     
-    // 미래 멤버십들을 필터링 (필요한 경우)
+    // 미래 회원권들을 필터링 (필요한 경우)
     const filteredFutureMemberships = getFutureMemberships(safeFutureMemberships);
     
-    // 멤버십 정보 계산
+    // 회원권 정보 계산
     return getMembershipInfo(currentMemberships, filteredFutureMemberships);
   }
 } 

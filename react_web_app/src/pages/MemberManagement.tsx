@@ -4,6 +4,7 @@ import { Member, ToastMessageType } from '../types/member';
 import { useMemberManagement } from '../hooks/useMemberManagement';
 import MemberDetailsModal from '../components/modals/member/MemberDetailsModal';
 import MemberDeletionModal from '../components/modals/member/MemberDeletionModal';
+import MembershipPlanModal from '../components/modals/membership/MembershipPlanModal';
 import ToastMessage from '../components/ToastMessage';
 import { getGenderText, filterMembers } from '../utils/memberUtils';
 import { usePageContext } from '../contexts/PageContext';
@@ -28,6 +29,7 @@ const MemberManagement = () => {
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [deletionModalVisible, setDeletionModalVisible] = useState(false);
+  const [membershipPlanModalVisible, setMembershipPlanModalVisible] = useState(false);
   
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
@@ -107,12 +109,12 @@ const MemberManagement = () => {
     }
   }, [deleteMember, createToast]);
 
-  // 멤버십 관리 (임시 구현)
+  // 회원권 관리 (임시 구현)
   const handleManageMembership = useCallback((member: Member) => {
     if (createToast) {
       createToast({
         type: 'info',
-        message: '멤버십 관리 기능은 준비 중입니다.'
+        message: '회원권 관리 기능은 준비 중입니다.'
       });
     }
   }, [createToast]);
@@ -127,15 +129,10 @@ const MemberManagement = () => {
     }
   }, [createToast]);
 
-  // 멤버십 플랜 관리 (임시 구현)
+  // 회원권 플랜 관리
   const handleManageMembershipPlans = useCallback(() => {
-    if (createToast) {
-      createToast({
-        type: 'info',
-        message: '멤버십 플랜 관리 기능은 준비 중입니다.'
-      });
-    }
-  }, [createToast]);
+    setMembershipPlanModalVisible(true);
+  }, []);
 
   // 페이지 변경 핸들러
   const handlePageChange = (page: number) => {
@@ -173,7 +170,7 @@ const MemberManagement = () => {
             </button>
             <button className="btn btn-outline" onClick={handleManageMembershipPlans}>
               <CreditCard size={16} />
-              멤버십
+              회원권
             </button>
           </div>
         </div>
@@ -248,7 +245,7 @@ const MemberManagement = () => {
                         <button 
                           className="btn btn-sm btn-info"
                           onClick={() => handleManageMembership(member)}
-                          title="멤버십 관리"
+                          title="회원권 관리"
                         >
                           <Settings size={14} />
                         </button>
@@ -331,6 +328,27 @@ const MemberManagement = () => {
         member={selectedMember}
         onClose={() => setDeletionModalVisible(false)}
         onDelete={handleConfirmDelete}
+      />
+
+      <MembershipPlanModal
+        visible={membershipPlanModalVisible}
+        onClose={() => setMembershipPlanModalVisible(false)}
+        onSuccess={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'success',
+              message
+            });
+          }
+        }}
+        onError={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'danger',
+              message
+            });
+          }
+        }}
       />
 
       {/* Toast Messages */}

@@ -32,7 +32,7 @@ export const calculateAge = (birthDate: string): number => {
 };
 
 /**
- * 멤버십 상태 체크
+ * 회원권 상태 체크
  */
 export const getMembershipStatus = (remainingDays: number): 'active' | 'warning' | 'expired' => {
   if (remainingDays <= 0) return 'expired';
@@ -41,7 +41,7 @@ export const getMembershipStatus = (remainingDays: number): 'active' | 'warning'
 };
 
 /**
- * 멤버십 만료일 포맷팅
+ * 회원권 만료일 포맷팅
  */
 export const formatExpiryDate = (dateString: string): string => {
   if (!dateString || dateString === '만료됨') return '만료됨';
@@ -81,7 +81,7 @@ export const filterMembers = (members: any[], searchValue: string) => {
 };
 
 /**
- * 멤버십 타입을 한국어로 변환
+ * 회원권 타입을 한국어로 변환
  */
 export const getMembershipTypeKorean = (type: string): string => {
   switch(type) {

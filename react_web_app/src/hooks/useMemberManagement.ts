@@ -63,7 +63,7 @@ export const useMemberManagement = () => {
     }
   }, [setLoading, setError]);
 
-  // 회원 멤버십 업데이트
+      // 회원 회원권 업데이트
   const updateMemberMembership = useCallback(async (
     email: string, 
     membershipData: any, 

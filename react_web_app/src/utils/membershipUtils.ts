@@ -16,7 +16,7 @@ export interface MembershipInfo {
 }
 
 /**
- * 현재 유효한 멤버십들을 필터링
+ * 현재 유효한 회원권들을 필터링
  */
 export function getCurrentMemberships(memberships: MembershipData[]): MembershipData[] {
   if (!memberships || !Array.isArray(memberships)) {
@@ -58,7 +58,7 @@ export function convertTimestampToString(timestamp: Timestamp | { seconds: numbe
 }
 
 /**
- * 멤버십 정보를 계산하여 반환
+ * 회원권 정보를 계산하여 반환
  */
 export function getMembershipInfo(
   currentMemberships: MembershipData[], 
@@ -66,7 +66,7 @@ export function getMembershipInfo(
 ): MembershipInfo {
   const currentMembership = currentMemberships?.[0];
   
-  // 현재 멤버십이 없고 미래 멤버십이 있는 경우
+  // 현재 회원권이 없고 미래 회원권이 있는 경우
   if (!currentMembership && futureMemberships && futureMemberships.length > 0) {
     return {
       type: '사용 예정',
@@ -76,7 +76,7 @@ export function getMembershipInfo(
     };
   }
 
-  // 현재 멤버십이 없는 경우
+  // 현재 회원권이 없는 경우
   if (!currentMembership) {
     return {
       type: '없음',
@@ -138,7 +138,7 @@ export function getMembershipInfo(
 }
 
 /**
- * 미래 멤버십들을 필터링 (시작일이 미래인 것들)
+ * 미래 회원권들을 필터링 (시작일이 미래인 것들)
  */
 export function getFutureMemberships(memberships: MembershipData[]): MembershipData[] {
   if (!memberships || !Array.isArray(memberships)) {
@@ -160,7 +160,7 @@ export function getFutureMemberships(memberships: MembershipData[]): MembershipD
 }
 
 /**
- * 만료된 멤버십들을 필터링
+ * 만료된 회원권들을 필터링
  */
 export function getExpiredMemberships(memberships: MembershipData[]): MembershipData[] {
   if (!memberships || !Array.isArray(memberships)) {

@@ -41,14 +41,14 @@ const MemberDeletionModal = ({ visible, member, onClose, onDelete }: MemberDelet
               <div className="member-name">{member.realName}</div>
               <div className="member-email">{member.email}</div>
               <div className="member-membership">
-                멤버십: {member.membershipInfo.type}
+                회원권: {member.membershipInfo.type}
               </div>
             </div>
           </div>
           
           <div className="warning-note">
             <p>
-              <strong>주의:</strong> 회원을 삭제하면 관련된 모든 데이터(멤버십 정보, 예약 기록 등)가 
+              <strong>주의:</strong> 회원을 삭제하면 관련된 모든 데이터(회원권 정보, 예약 기록 등)가 
               함께 삭제됩니다. 이 작업은 복구할 수 없습니다.
             </p>
           </div>
