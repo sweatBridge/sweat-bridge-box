@@ -8,7 +8,7 @@ interface AppSidebarProps {
 
 const menuItems = [
   { icon: LayoutDashboard, title: '대시보드', index: 0, path: '/dashboard' },
-  { icon: Dumbbell, title: '와드 관리', index: 1, path: '/wod' },
+  // { icon: Dumbbell, title: '와드 관리', index: 1, path: '/wod' },
   { icon: Users, title: '회원 관리', index: 2, path: '/members' },
   { icon: Calendar, title: '수업 관리', index: 3, path: '/classes' },
 ];

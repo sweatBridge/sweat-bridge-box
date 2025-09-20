@@ -93,7 +93,7 @@ const AppHeader = () => {
                   </div>
                 </div>
                 <div className="settings-menu-divider"></div>
-                <div 
+                {/* <div 
                   className="settings-menu-item"
                   onClick={() => {
                     console.log('프로필 설정');
@@ -101,11 +101,11 @@ const AppHeader = () => {
                   }}
                 >
                   프로필 설정
-                </div>
+                </div> */}
                 <div 
                   className="settings-menu-item"
                   onClick={() => {
-                    console.log('박스 설정');
+                    navigate('/settings');
                     setShowSettingsMenu(false);
                   }}
                 >
