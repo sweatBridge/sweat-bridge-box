@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Gradients } from '../../../constants/gradients';
 import { X, Plus, Trash2, CreditCard } from 'lucide-react';
 import { MembershipPlan } from '../../../types/membership';
 import { MembershipService } from '../../../services/membershipService';
@@ -335,7 +336,7 @@ const MembershipPlanModal = ({ visible, onClose, onSuccess, onError }: Membershi
             justify-content: space-between;
             align-items: center;
             padding: 20px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: ${Gradients.primary};
             color: white;
           }
 
@@ -521,13 +522,13 @@ const MembershipPlanModal = ({ visible, onClose, onSuccess, onError }: Membershi
           }
 
           .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: ${Gradients.primary};
             border-color: #667eea;
             color: white;
           }
 
           .btn-primary:hover:not(:disabled) {
-            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+            background: ${Gradients.primaryHover};
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
           }

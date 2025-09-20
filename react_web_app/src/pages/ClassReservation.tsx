@@ -12,6 +12,7 @@ import SaveClassModal from '../components/modals/class/SaveClassModal';
 import ManageClassModal from '../components/modals/class/ManageClassModal';
 import ToastMessage from '../components/ToastMessage';
 import { usePageContext } from '../contexts/PageContext';
+import { Gradients } from '../constants/gradients';
 
 const ClassReservation = () => {
   const calendarRef = useRef<FullCalendar>(null);
@@ -416,7 +417,7 @@ const ClassReservation = () => {
           justify-content: space-between;
           align-items: center;
           padding: 16px 20px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: ${Gradients.primary};
           color: white;
           border-radius: 8px 8px 0 0;
           margin: -20px -20px 20px -20px;
@@ -520,7 +521,7 @@ const ClassReservation = () => {
         }
 
         .fc .fc-button-primary {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+          background: ${Gradients.primary} !important;
           border: none !important;
           border-radius: 6px !important;
           padding: 6px 12px !important;
@@ -540,7 +541,7 @@ const ClassReservation = () => {
         }
 
         .fc .fc-event {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+          background: ${Gradients.primary} !important;
           border: none !important;
           border-radius: 6px !important;
           padding: 2px 6px !important;
@@ -581,12 +582,12 @@ const ClassReservation = () => {
         }
 
         .calendar-container::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: ${Gradients.primary};
           border-radius: 4px;
         }
 
         .calendar-container::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+          background: ${Gradients.primaryHover};
         }
 
         /* 달력 내부 스크롤 영역 조정 */

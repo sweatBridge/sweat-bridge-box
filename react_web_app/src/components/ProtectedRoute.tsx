@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Gradients } from '../constants/gradients';
 
 const ProtectedRoute = () => {
   const { isAuthenticated, loading } = useAuth();
@@ -19,7 +20,7 @@ const ProtectedRoute = () => {
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: ${Gradients.primary};
             color: white;
           }
 

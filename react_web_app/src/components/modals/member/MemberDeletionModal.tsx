@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, User } from 'lucide-react';
 import { MemberDeletionModalProps } from '../../../types/member';
+import { Gradients } from '../../../constants/gradients';
 
 const MemberDeletionModal = ({ visible, member, onClose, onDelete }: MemberDeletionModalProps) => {
   if (!visible || !member) return null;
@@ -119,7 +120,7 @@ const MemberDeletionModal = ({ visible, member, onClose, onDelete }: MemberDelet
           justify-content: center;
           width: 48px;
           height: 48px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: ${Gradients.primary};
           color: white;
           border-radius: 50%;
           margin-right: 16px;

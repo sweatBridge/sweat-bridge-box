@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dumbbell, User, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Gradients } from '../constants/gradients';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -192,7 +193,7 @@ const Login = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: ${Gradients.primary};
           padding: 20px;
         }
 
@@ -345,7 +346,7 @@ const Login = () => {
 
         .login-button {
           width: 100%;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: ${Gradients.primary};
           color: white;
           border: none;
           padding: 16px;

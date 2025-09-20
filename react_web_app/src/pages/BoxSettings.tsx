@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPhoneMask } from '../utils/phoneUtils';
 import ToastMessage from '../components/ToastMessage';
 import { ToastMessageType } from '../types/member';
+import { Gradients } from '../constants/gradients';
 
 // Daum 우편번호 서비스 타입 정의
 declare global {
@@ -525,7 +526,7 @@ const BoxSettings = () => {
           justify-content: space-between;
           align-items: center;
           padding: 16px 20px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: ${Gradients.primary};
           color: white;
           border-radius: 8px 8px 0 0;
           margin: -20px -20px 20px -20px;
@@ -726,7 +727,7 @@ const BoxSettings = () => {
           justify-content: center;
           width: 24px;
           height: 24px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: ${Gradients.primary};
           color: white;
           border-radius: 50%;
           flex-shrink: 0;

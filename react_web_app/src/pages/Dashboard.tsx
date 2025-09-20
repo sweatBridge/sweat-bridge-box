@@ -4,6 +4,7 @@ import { AppColors } from '../constants/colors';
 import { ClassService } from '../services/classService';
 import { ClassEvent } from '../types/class';
 import { usePageContext } from '../contexts/PageContext';
+import { Gradients } from '../constants/gradients';
 
 const Dashboard = () => {
   const [todayClasses, setTodayClasses] = useState<ClassEvent[]>([]);
@@ -230,7 +231,7 @@ const Dashboard = () => {
           justify-content: space-between;
           align-items: center;
           padding: 16px 20px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: ${Gradients.primary};
           color: white;
           border-radius: 8px 8px 0 0;
           margin: -20px -20px 20px -20px;
@@ -303,7 +304,7 @@ const Dashboard = () => {
         }
 
         .time-badge {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: ${Gradients.primary};
           color: white;
           padding: 6px 12px;
           border-radius: 8px;

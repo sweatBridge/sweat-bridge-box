@@ -31,7 +31,7 @@ const AppSidebar = ({ selectedIndex }: AppSidebarProps) => {
       <div className="sidebar-logo">
         {!isCollapsed && (
           <>
-            <Dumbbell className="sidebar-logo-icon" />
+            <img src="/sb_icon.jpg" alt="SweatBridge" className="sidebar-logo-icon" />
             <span className="sidebar-logo-text">SweatBridge</span>
           </>
         )}
@@ -93,6 +93,8 @@ const AppSidebar = ({ selectedIndex }: AppSidebarProps) => {
           width: 32px;
           height: 32px;
           flex-shrink: 0;
+          border-radius: 6px;
+          object-fit: cover;
         }
 
         .sidebar-logo-text {

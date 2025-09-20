@@ -8,6 +8,7 @@ import MembershipPlanModal from '../components/modals/membership/MembershipPlanM
 import ToastMessage from '../components/ToastMessage';
 import { getGenderText, filterMembers } from '../utils/memberUtils';
 import { usePageContext } from '../contexts/PageContext';
+import { Gradients } from '../constants/gradients';
 
 const MemberManagement = () => {
   const { setPageInfo } = usePageContext();
@@ -362,7 +363,7 @@ const MemberManagement = () => {
           justify-content: space-between;
           align-items: center;
           padding: 16px 20px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: ${Gradients.primary};
           color: white;
           border-radius: 8px 8px 0 0;
           margin: -20px -20px 20px -20px;
@@ -481,7 +482,7 @@ const MemberManagement = () => {
           justify-content: center;
           width: 28px;
           height: 28px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: ${Gradients.primary};
           color: white;
           border-radius: 50%;
           flex-shrink: 0;
@@ -689,13 +690,13 @@ const MemberManagement = () => {
         }
 
         .page-number.active {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border-color: #667eea;
+          background: ${Gradients.primary};
+          border-color: #2563EB;
           color: white;
         }
 
         .page-number.active:hover {
-          background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+          background: ${Gradients.primaryHover};
         }
       `}</style>
     </div>

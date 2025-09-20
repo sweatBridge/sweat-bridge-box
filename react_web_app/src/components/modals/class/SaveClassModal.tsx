@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Gradients } from '../../../constants/gradients';
 import { Calendar, Clock, User, Users, Plus } from 'lucide-react';
 import { SaveClassModalProps, SaveClassResult } from '../../../types/class';
 import { formatDateTime } from '../../../utils/classCalendarUtils';
@@ -186,7 +187,7 @@ const SaveClassModal = ({
           justify-content: space-between;
           align-items: center;
           padding: 20px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: ${Gradients.primary};
           border-bottom: none;
           border-radius: 8px 8px 0 0;
           box-shadow: 0 2px 10px rgba(102, 126, 234, 0.15);
