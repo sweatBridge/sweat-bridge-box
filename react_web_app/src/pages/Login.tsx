@@ -84,7 +84,7 @@ const Login = () => {
       <div className="login-card">
         {/* 로고 */}
         <div className="login-logo">
-          <Dumbbell className="login-logo-icon" />
+          <img src="/sb_icon.jpg" alt="SweatBridge" className="login-logo-icon" />
         </div>
         
         {/* 제목 */}
@@ -214,9 +214,10 @@ const Login = () => {
         }
 
         .login-logo-icon {
-          width: 64px;
-          height: 64px;
-          color: #667eea;
+          width: 90px;
+          height: 90px;
+          border-radius: 8px;
+          object-fit: cover;
         }
 
         .login-title {
