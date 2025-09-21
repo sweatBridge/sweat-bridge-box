@@ -14,7 +14,7 @@ export interface FirebaseMemberData {
   email: string;
   realName: string;
   nickName: string;
-  gender: 'male' | 'female';
+  gender: 'M' | 'F';
   birthDate: string;
   phoneNumber: string;
   memberships: MembershipData[];

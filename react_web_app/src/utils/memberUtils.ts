@@ -2,7 +2,14 @@
  * 성별 텍스트 변환
  */
 export const getGenderText = (gender: string): string => {
-  return gender === 'male' ? '남성' : '여성';
+  switch(gender) {
+    case 'M':
+      return '남성';
+    case 'F':
+      return '여성';
+    default:
+      return '-';
+  }
 };
 
 /**

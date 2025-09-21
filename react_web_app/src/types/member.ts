@@ -9,7 +9,7 @@ export interface Member {
   email: string;
   realName: string;
   nickName: string;
-  gender: 'male' | 'female';
+  gender: 'M' | 'F';
   birthDate: string;
   phoneNumber: string;
   membershipInfo: MembershipInfo;

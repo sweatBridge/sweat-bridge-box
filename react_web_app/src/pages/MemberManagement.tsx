@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { Search, Users, UserPlus, CreditCard, Eye, Trash2, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Member, ToastMessageType } from '../types/member';
 import { useMemberManagement } from '../hooks/useMemberManagement';
-import MemberDetailsModal from '../components/modals/member/MemberDetailsModal';
 import MemberDeletionModal from '../components/modals/member/MemberDeletionModal';
 import MembershipPlanModal from '../components/modals/membership/MembershipPlanModal';
+import MemberManagementModal from '../components/modals/member/MemberManagementModal';
 import ToastMessage from '../components/ToastMessage';
 import { getGenderText, filterMembers } from '../utils/memberUtils';
 import { usePageContext } from '../contexts/PageContext';
@@ -27,7 +27,7 @@ const MemberManagement = () => {
   // 상태 관리
   const [searchValue, setSearchValue] = useState('');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const [memberManagementModalVisible, setMemberManagementModalVisible] = useState(false);
   const [deletionModalVisible, setDeletionModalVisible] = useState(false);
   const [membershipPlanModalVisible, setMembershipPlanModalVisible] = useState(false);
   
@@ -76,10 +76,10 @@ const MemberManagement = () => {
     setCurrentPage(1);
   }, [searchValue]);
 
-  // 회원 상세 보기
+  // 회원 상세 보기 및 회원권 관리
   const handleShowDetails = useCallback((member: Member) => {
     setSelectedMember(member);
-    setDetailsModalVisible(true);
+    setMemberManagementModalVisible(true);
   }, []);
 
   // 회원 삭제
@@ -109,15 +109,11 @@ const MemberManagement = () => {
     }
   }, [deleteMember, createToast]);
 
-  // 회원권 관리 (임시 구현)
+  // 회원권 관리
   const handleManageMembership = useCallback((member: Member) => {
-    if (createToast) {
-      createToast({
-        type: 'info',
-        message: '회원권 관리 기능은 준비 중입니다.'
-      });
-    }
-  }, [createToast]);
+    setSelectedMember(member);
+    setMemberManagementModalVisible(true);
+  }, []);
 
   // 회원 추가 (임시 구현)
   const handleAddMember = useCallback(() => {
@@ -317,10 +313,26 @@ const MemberManagement = () => {
       </div>
 
       {/* Modals */}
-      <MemberDetailsModal
-        visible={detailsModalVisible}
+      <MemberManagementModal
+        visible={memberManagementModalVisible}
         member={selectedMember}
-        onClose={() => setDetailsModalVisible(false)}
+        onClose={() => setMemberManagementModalVisible(false)}
+        onSuccess={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'success',
+              message
+            });
+          }
+        }}
+        onError={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'danger',
+              message
+            });
+          }
+        }}
       />
 
       <MemberDeletionModal

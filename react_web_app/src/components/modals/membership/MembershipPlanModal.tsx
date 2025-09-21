@@ -95,9 +95,9 @@ const MembershipPlanModal = ({ visible, onClose, onSuccess, onError }: Membershi
       const newPlan: MembershipPlan = {
         plan: formData.plan.trim(),
         type: formData.membershipType as 'periodPass' | 'countPass',
-        count: formData.membershipType === 'countPass' ? formData.count : 0,
+        count: formData.membershipType === 'countPass' ? formData.count.toString() : '0',
         duration: formData.duration,
-        price: formData.price
+        price: formData.price.toString()
       };
 
       await MembershipService.addMembershipPlan(newPlan);
