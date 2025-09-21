@@ -9,6 +9,7 @@ import ToastMessage from '../components/ToastMessage';
 import { getGenderText, filterMembers } from '../utils/memberUtils';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
+import { AppColors } from '../constants/colors';
 
 const MemberManagement = () => {
   const { setPageInfo } = usePageContext();
@@ -689,7 +690,7 @@ const MemberManagement = () => {
 
         .page-number.active {
           background: ${Gradients.primary};
-          border-color: #2563EB;
+          border-color: ${AppColors.primary};
           color: white;
         }
 

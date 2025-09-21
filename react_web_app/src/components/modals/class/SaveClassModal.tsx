@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Gradients } from '../../../constants/gradients';
+import { AppColors } from '../../../constants/colors';
 import { Calendar, Clock, User, Users, Plus } from 'lucide-react';
 import { SaveClassModalProps, SaveClassResult } from '../../../types/class';
 import { formatDateTime } from '../../../utils/classCalendarUtils';
@@ -255,7 +256,7 @@ const SaveClassModal = ({
           justify-content: center;
           width: 36px;
           height: 36px;
-          background-color: #0ea5e9;
+          background-color: ${AppColors.primary};
           color: white;
           border-radius: 8px;
           margin-right: 12px;
@@ -301,7 +302,7 @@ const SaveClassModal = ({
 
         .form-label-icon {
           margin-right: 6px;
-          color: #667eea;
+          color: ${AppColors.primary};
         }
 
         .form-input {
@@ -316,8 +317,8 @@ const SaveClassModal = ({
 
         .form-input:focus {
           outline: none;
-          border-color: #667eea;
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+          border-color: ${AppColors.primary};
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
           background-color: white;
         }
 
@@ -340,7 +341,7 @@ const SaveClassModal = ({
           width: 18px;
           height: 18px;
           margin-right: 12px;
-          accent-color: #667eea;
+          accent-color: ${AppColors.primary};
         }
 
         .checkbox-text {
@@ -385,8 +386,8 @@ const SaveClassModal = ({
         }
 
         .btn-primary:hover {
-          background-color: #2563eb;
-          border-color: #2563eb;
+          background-color: ${AppColors.primary};
+          border-color: ${AppColors.primary};
         }
       `}</style>
     </div>

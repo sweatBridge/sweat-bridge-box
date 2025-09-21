@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AppColors } from '../constants/colors';
 
 interface AppSidebarProps {
   selectedIndex: number;
@@ -69,7 +70,7 @@ const AppSidebar = ({ selectedIndex }: AppSidebarProps) => {
       <style>{`
         .sidebar {
           width: 280px;
-          background: #2563EB;
+          background: ${AppColors.primary};
           color: white;
           height: 100vh;
           position: relative;

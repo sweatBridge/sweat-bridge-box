@@ -3,6 +3,7 @@ import { Home, Dumbbell, Settings, LogOut } from 'lucide-react';
 import { usePageContext } from '../contexts/PageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { AppColors } from '../constants/colors';
 
 const AppHeader = () => {
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
@@ -188,7 +189,7 @@ const AppHeader = () => {
                   padding: '8px 16px',
                   border: 'none',
                   borderRadius: '6px',
-                  backgroundColor: '#2563EB',
+                  backgroundColor: AppColors.primary,
                   color: 'white',
                   cursor: isLoggingOut ? 'not-allowed' : 'pointer',
                   opacity: isLoggingOut ? 0.7 : 1,

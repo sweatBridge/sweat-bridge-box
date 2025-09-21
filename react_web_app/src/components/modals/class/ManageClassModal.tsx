@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Gradients } from '../../../constants/gradients';
+import { AppColors } from '../../../constants/colors';
 import { Calendar, Clock, User, Users, Settings, UserCheck } from 'lucide-react';
 import { ManageClassModalProps, UpdateClassResult, DeleteClassResult } from '../../../types/class';
 import { formatDateTime } from '../../../utils/classCalendarUtils';
@@ -295,7 +296,7 @@ const ManageClassModal = ({
           justify-content: center;
           width: 36px;
           height: 36px;
-          background-color: #3b82f6;
+          background-color: ${AppColors.primary};
           color: white;
           border-radius: 8px;
           margin-right: 12px;
@@ -342,7 +343,7 @@ const ManageClassModal = ({
 
         .form-label-icon {
           margin-right: 6px;
-          color: #3b82f6;
+          color: ${AppColors.primary};
         }
 
         .form-group input {
@@ -356,8 +357,8 @@ const ManageClassModal = ({
 
         .form-group input:focus {
           outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          border-color: ${AppColors.primary};
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .reserved-section {
@@ -500,8 +501,8 @@ const ManageClassModal = ({
         }
 
         .btn-primary:hover {
-          background-color: #2563eb;
-          border-color: #2563eb;
+          background-color: ${AppColors.primary};
+          border-color: ${AppColors.primary};
         }
 
         .btn-danger {

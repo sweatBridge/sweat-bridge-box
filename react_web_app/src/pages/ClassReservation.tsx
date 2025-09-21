@@ -13,6 +13,7 @@ import ManageClassModal from '../components/modals/class/ManageClassModal';
 import ToastMessage from '../components/ToastMessage';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
+import { AppColors } from '../constants/colors';
 
 const ClassReservation = () => {
   const calendarRef = useRef<FullCalendar>(null);
@@ -520,7 +521,7 @@ const ClassReservation = () => {
         }
 
         .fc .fc-button-primary {
-          background: ${Gradients.primary} !important;
+          background: ${AppColors.primary} !important;
           border: none !important;
           border-radius: 6px !important;
           padding: 6px 12px !important;
@@ -540,7 +541,7 @@ const ClassReservation = () => {
         }
 
         .fc .fc-event {
-          background: ${Gradients.primary} !important;
+          background: ${AppColors.primary} !important;
           border: none !important;
           border-radius: 6px !important;
           padding: 2px 6px !important;

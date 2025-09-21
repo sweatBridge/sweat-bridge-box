@@ -7,6 +7,7 @@ import { getPhoneMask } from '../utils/phoneUtils';
 import ToastMessage from '../components/ToastMessage';
 import { ToastMessageType } from '../types/member';
 import { Gradients } from '../constants/gradients';
+import { AppColors } from '../constants/colors';
 
 // Daum 우편번호 서비스 타입 정의
 declare global {
@@ -782,8 +783,8 @@ const BoxSettings = () => {
         }
 
         .btn-primary:hover:not(:disabled) {
-          background-color: #2563eb;
-          border-color: #2563eb;
+          background-color: ${AppColors.primary};
+          border-color: ${AppColors.primary};
         }
 
         .btn-danger {
