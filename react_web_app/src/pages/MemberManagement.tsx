@@ -6,7 +6,7 @@ import MemberDeletionModal from '../components/modals/member/MemberDeletionModal
 import MembershipPlanModal from '../components/modals/membership/MembershipPlanModal';
 import MemberManagementModal from '../components/modals/member/MemberManagementModal';
 import ToastMessage from '../components/ToastMessage';
-import { getGenderText, filterMembers } from '../utils/memberUtils';
+import { getGenderText, filterMembers, getActiveMembersCount } from '../utils/memberUtils';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
@@ -64,6 +64,9 @@ const MemberManagement = () => {
 
   // 검색된 회원 필터링
   const filteredMembers = filterMembers(members, searchValue);
+  
+  // 유효한 회원권을 가진 회원 수 계산
+  const activeMembersCount = getActiveMembersCount(members);
   
   // 페이지네이션 계산
   const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
@@ -157,7 +160,26 @@ const MemberManagement = () => {
         <div className="card-header">
           <div className="header-left">
             <Users size={20} />
-            <span>전체 회원: {members.length}명 | 검색 결과: {filteredMembers.length}명</span>
+            <div className="member-stats">
+              <div className="stat-item">
+                <span className="stat-label">등록 회원</span>
+                <span className="stat-value">{members.length}명</span>
+              </div>
+              <div className="stat-divider">|</div>
+              <div className="stat-item">
+                <span className="stat-label">유효 회원권</span>
+                <span className="stat-value">{activeMembersCount}명</span>
+              </div>
+              {searchValue && (
+                <>
+                  <div className="stat-divider">|</div>
+                  <div className="stat-item">
+                    <span className="stat-label">검색 결과</span>
+                    <span className="stat-value">{filteredMembers.length}명</span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           <div className="header-actions">
             <button className="btn btn-outline" onClick={handleAddMember}>
@@ -383,8 +405,37 @@ const MemberManagement = () => {
         .header-left {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 12px;
           font-weight: 600;
+        }
+
+        .member-stats {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .stat-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+        }
+
+        .stat-label {
+          font-size: 12px;
+          opacity: 0.8;
+          font-weight: 400;
+        }
+
+        .stat-value {
+          font-size: 16px;
+          font-weight: 700;
+        }
+
+        .stat-divider {
+          color: rgba(255, 255, 255, 0.5);
+          font-size: 14px;
         }
 
         .header-actions {

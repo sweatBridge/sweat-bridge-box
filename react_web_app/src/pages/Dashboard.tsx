@@ -5,11 +5,19 @@ import { ClassService } from '../services/classService';
 import { ClassEvent } from '../types/class';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
+import { useMemberManagement } from '../hooks/useMemberManagement';
+import { getActiveMembersCount } from '../utils/memberUtils';
 
 const Dashboard = () => {
   const [todayClasses, setTodayClasses] = useState<ClassEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const { setPageInfo } = usePageContext();
+  
+  // 회원 관리 훅
+  const {
+    members,
+    loadMembers
+  } = useMemberManagement();
 
   // 페이지 정보 설정
   useEffect(() => {
@@ -19,25 +27,35 @@ const Dashboard = () => {
     });
   }, [setPageInfo]);
 
-  // 오늘자 수업 데이터 로드
+  // 데이터 로드
   useEffect(() => {
-    const loadTodayClasses = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
+        
+        // 병렬로 데이터 로드
         const box = localStorage.getItem('boxName') || 'SWEAT';
-        const classes = await ClassService.getTodayClasses(box);
+        const [classes] = await Promise.all([
+          ClassService.getTodayClasses(box),
+          loadMembers() // 회원 데이터도 로드
+        ]);
+        
         setTodayClasses(classes);
       } catch (error) {
-        console.error('Failed to load today classes:', error);
+        console.error('Failed to load dashboard data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadTodayClasses();
-  }, []);
+    loadData();
+  }, [loadMembers]);
 
-  // 통계 데이터 (오늘 수업 개수 반영)
+  // 회원 통계 계산
+  const totalMembers = members.length;
+  const activeMembersCount = getActiveMembersCount(members);
+
+  // 통계 데이터
   const statsData = [
     {
       title: '오늘 수업',
@@ -52,9 +70,9 @@ const Dashboard = () => {
       color: AppColors.primary,
     },
     {
-      title: '등록 회원',
-      value: '124',
-      subtitle: '이번 달 +12명',
+      title: '유효 회원',
+      value: activeMembersCount.toString(),
+      subtitle: `총 회원: ${totalMembers}명`,
       icon: Users,
       color: AppColors.success,
     },

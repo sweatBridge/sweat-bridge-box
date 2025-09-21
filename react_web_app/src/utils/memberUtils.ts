@@ -103,4 +103,16 @@ export const getMembershipTypeKorean = (type: string): string => {
     default:
       return type || '-';
   }
+};
+
+/**
+ * 유효한 회원권을 가진 회원 수 계산
+ */
+export const getActiveMembersCount = (members: any[]): number => {
+  return members.filter(member => {
+    const remainingDays = typeof member.membershipInfo.remainingDays === 'string' 
+      ? parseInt(member.membershipInfo.remainingDays) 
+      : member.membershipInfo.remainingDays;
+    return remainingDays > 0;
+  }).length;
 }; 
