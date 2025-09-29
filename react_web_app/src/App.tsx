@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import ClassReservation from './pages/ClassReservation';
 import MemberManagement from './pages/MemberManagement';
 import BoxSettings from './pages/BoxSettings';
+import RevenueManagement from './pages/RevenueManagement';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
                   <Route path="wod" element={<div style={{padding: '20px'}}>와드 관리 페이지</div>} />
                   <Route path="members" element={<MemberManagement />} />
                   <Route path="classes" element={<ClassReservation />} />
+                  <Route path="revenue" element={<RevenueManagement />} />
                   <Route path="settings" element={<BoxSettings />} />
                 </Route>
               </Route>

@@ -124,7 +124,7 @@ export function getMembershipInfo(
   // 잔여 횟수 계산
   let remainingVisits: string | number = '-';
   if (currentMembership.type === 'periodPass') {
-    remainingVisits = '무제한';
+    remainingVisits = '∞';
   } else if (currentMembership.type === 'countPass' && currentMembership.count !== undefined) {
     remainingVisits = currentMembership.count;
   }
