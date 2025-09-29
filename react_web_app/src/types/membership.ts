@@ -7,6 +7,7 @@ export interface MembershipPlan {
 }
 
 export interface UserMembership {
+  key: string;
   plan: string;
   type: 'periodPass' | 'countPass';
   count: string;
