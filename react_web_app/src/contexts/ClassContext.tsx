@@ -24,7 +24,7 @@ const initialState: ClassState = {
   classes: [],
   loading: false,
   error: null,
-  currentBox: 'SWEAT', // 기본 박스명
+  currentBox: localStorage.getItem('boxName') || 'SWEAT', // localStorage에서 박스명 가져오기
 };
 
 // 리듀서 함수

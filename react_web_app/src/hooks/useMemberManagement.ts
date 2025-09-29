@@ -31,12 +31,13 @@ export const useMemberManagement = () => {
   }, []);
 
   // 회원 목록 로드
-  const loadMembers = useCallback(async (box: string = 'SWEAT') => {
+  const loadMembers = useCallback(async (box?: string) => {
+    const boxName = box || localStorage.getItem('boxName') || 'SWEAT';
     setLoading(true);
     setError(null);
     
     try {
-      const members = await MemberService.getMembers(box);
+      const members = await MemberService.getMembers(boxName);
       setState(prev => ({ ...prev, members, loading: false }));
     } catch (error) {
       setError((error as Error).message);
@@ -45,12 +46,13 @@ export const useMemberManagement = () => {
   }, [setLoading, setError]);
 
   // 회원 삭제
-  const deleteMember = useCallback(async (email: string, box: string = 'default') => {
+  const deleteMember = useCallback(async (email: string, box?: string) => {
+    const boxName = box || localStorage.getItem('boxName') || 'SWEAT';
     setLoading(true);
     setError(null);
     
     try {
-      await MemberService.deleteMember(box, email);
+      await MemberService.deleteMember(boxName, email);
       setState(prev => ({
         ...prev,
         members: prev.members.filter(member => member.email !== email),
@@ -67,15 +69,16 @@ export const useMemberManagement = () => {
   const updateMemberMembership = useCallback(async (
     email: string, 
     membershipData: any, 
-    box: string = 'default'
+    box?: string
   ) => {
+    const boxName = box || localStorage.getItem('boxName') || 'SWEAT';
     setLoading(true);
     setError(null);
     
     try {
-      await MemberService.updateMemberMembership(box, email, membershipData);
+      await MemberService.updateMemberMembership(boxName, email, membershipData);
       // 회원 목록 다시 로드
-      await loadMembers(box);
+      await loadMembers(boxName);
     } catch (error) {
       setError((error as Error).message);
       setLoading(false);
@@ -84,14 +87,15 @@ export const useMemberManagement = () => {
   }, [setLoading, setError, loadMembers]);
 
   // 새 회원 추가
-  const addMember = useCallback(async (memberData: any, box: string = 'default') => {
+  const addMember = useCallback(async (memberData: any, box?: string) => {
+    const boxName = box || localStorage.getItem('boxName') || 'SWEAT';
     setLoading(true);
     setError(null);
     
     try {
-      await MemberService.addMember(box, memberData);
+      await MemberService.addMember(boxName, memberData);
       // 회원 목록 다시 로드
-      await loadMembers(box);
+      await loadMembers(boxName);
     } catch (error) {
       setError((error as Error).message);
       setLoading(false);
