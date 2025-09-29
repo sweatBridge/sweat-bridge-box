@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { MembershipPlan, UserMembership } from '../types/membership';
+import { RevenueService } from './revenueService';
 
 export class MembershipService {
   private static getBoxName(): string {
@@ -122,17 +123,17 @@ export class MembershipService {
   }
 
   /**
-   * 사용자 회원권 추가
+   * 사용자 회원권 추가 (매출 데이터도 함께 저장)
    */
-  static async addUserMembership(email: string, membership: UserMembership): Promise<void> {
+  static async addUserMembership(email: string, membership: UserMembership, memberRealName: string): Promise<void> {
     try {
       const boxName = localStorage.getItem('boxName');
       if (!boxName) {
         throw new Error('박스 이름이 없습니다.');
       }
 
-      if (!email || !membership) {
-        throw new Error('이메일 또는 회원권 데이터가 없습니다.');
+      if (!email || !membership || !memberRealName) {
+        throw new Error('이메일, 회원권 데이터 또는 회원 이름이 없습니다.');
       }
 
       // 기존 회원권들을 가져와서 날짜 겹침 체크
@@ -156,8 +157,16 @@ export class MembershipService {
       
       const memberDocRef = doc(db, `box/${boxName}/member/${email}`);
       await setDoc(memberDocRef, { memberships: updatedMemberships }, { merge: true });
+
+      // 회원권 추가 성공 후 매출 데이터 저장
+      try {
+        await RevenueService.addUserMembership(membership, email, memberRealName);
+      } catch (revenueError) {
+        console.error('Failed to add revenue data, but membership was added successfully:', revenueError);
+        // 매출 데이터 저장 실패해도 회원권 추가는 성공으로 처리
+        // 필요시 여기서 별도 알림 처리 가능
+      }
       
-      console.log('Successfully added new user membership:', membership);
     } catch (error) {
       console.error('Error adding user membership:', error);
       throw error;
@@ -165,7 +174,7 @@ export class MembershipService {
   }
 
   /**
-   * 사용자 회원권 삭제
+   * 사용자 회원권 삭제 (매출 데이터도 함께 삭제)
    */
   static async removeUserMembership(email: string, index: number): Promise<void> {
     try {
@@ -184,12 +193,30 @@ export class MembershipService {
         throw new Error('유효하지 않은 회원권 인덱스입니다.');
       }
 
+      // 삭제할 회원권의 키 저장
+      const membershipToDelete = existingMemberships[index];
+      const membershipKey = membershipToDelete.key;
+
       const updatedMemberships = existingMemberships.filter((_, i) => i !== index);
       
       const memberDocRef = doc(db, `box/${boxName}/member/${email}`);
       await setDoc(memberDocRef, { memberships: updatedMemberships }, { merge: true });
       
       console.log('Successfully removed user membership at index:', index);
+
+      // 회원권 삭제 성공 후 매출 데이터에서도 삭제
+      if (membershipKey) {
+        try {
+          await RevenueService.removeUserMembership(membershipKey);
+          console.log('Successfully removed revenue data for membership:', membershipKey);
+        } catch (revenueError) {
+          console.error('Failed to remove revenue data, but membership was removed successfully:', revenueError);
+          // 매출 데이터 삭제 실패해도 회원권 삭제는 성공으로 처리
+        }
+      } else {
+        console.log('No membership key found, skipping revenue data removal');
+      }
+
     } catch (error) {
       console.error('Error removing user membership:', error);
       throw error;
