@@ -107,7 +107,14 @@ const MemberManagementModal = ({
 
     const startDate = new Date(formData.startDate);
     const endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + formData.duration);
+    
+    // 월 단위로 안전하게 더하기
+    const currentMonth = endDate.getMonth();
+    const currentYear = endDate.getFullYear();
+    const totalMonths = currentMonth + formData.duration;
+    
+    endDate.setFullYear(currentYear + Math.floor(totalMonths / 12));
+    endDate.setMonth(totalMonths % 12);
 
     const now = new Date();
     const newMembership: UserMembership = {
