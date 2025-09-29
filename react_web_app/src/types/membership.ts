@@ -11,6 +11,7 @@ export interface UserMembership {
   type: 'periodPass' | 'countPass';
   count: string;
   price: string;
+  paymentType: 'cash' | 'card';
   assignee: string;
   startDate: Date;
   endDate: Date;
