@@ -5,6 +5,11 @@ export interface DailyRevenue {
   otherRevenue: number; // 기타 매출
   membershipCount: number; // 회원권 판매 건수
   otherCount: number; // 기타 판매 건수
+  // 결제수단별 분리
+  cashRevenue: number; // 현금 매출
+  cardRevenue: number; // 카드 매출
+  cashCount: number; // 현금 결제 건수
+  cardCount: number; // 카드 결제 건수
 }
 
 export interface MonthlyRevenue {

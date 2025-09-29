@@ -28,13 +28,29 @@ export class RevenueService {
         const membershipRevenue = Math.floor(Math.random() * 500000) + 50000;
         const otherRevenue = Math.floor(Math.random() * 200000);
         
+        // 현금/카드 비율 랜덤 생성 (현금 30-70%, 카드 30-70%)
+        const cashRatio = 0.3 + Math.random() * 0.4; // 30-70%
+        const totalRevenue = membershipRevenue + otherRevenue;
+        const cashRevenue = Math.floor(totalRevenue * cashRatio);
+        const cardRevenue = totalRevenue - cashRevenue;
+        
+        const membershipCount = Math.floor(membershipRevenue / 120000);
+        const otherCount = Math.floor(otherRevenue / 50000);
+        const totalCount = membershipCount + otherCount;
+        const cashCount = Math.floor(totalCount * cashRatio);
+        const cardCount = totalCount - cashCount;
+        
         dailyData.push({
           date,
           membershipRevenue,
           otherRevenue,
-          totalRevenue: membershipRevenue + otherRevenue,
-          membershipCount: Math.floor(membershipRevenue / 120000),
-          otherCount: Math.floor(otherRevenue / 50000)
+          totalRevenue,
+          membershipCount,
+          otherCount,
+          cashRevenue,
+          cardRevenue,
+          cashCount,
+          cardCount
         });
       }
 

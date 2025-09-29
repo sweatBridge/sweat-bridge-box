@@ -168,6 +168,14 @@ const RevenueManagement = () => {
                 <div className="legend-color other"></div>
                 <span>기타 매출</span>
               </div>
+              <div className="legend-item">
+                <div className="legend-color cash"></div>
+                <span>현금 매출</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color card"></div>
+                <span>카드 매출</span>
+              </div>
             </div>
           </div>
           
@@ -247,9 +255,40 @@ const RevenueManagement = () => {
                     </div>
                   </div>
                 </div>
+
+                <div className="breakdown-item">
+                  <div className="breakdown-header">
+                    <div className="breakdown-color cash"></div>
+                    <span className="breakdown-label">현금 매출</span>
+                  </div>
+                  <div className="breakdown-content">
+                    <div className="breakdown-amount">
+                      {selectedDayRevenue.cashRevenue.toLocaleString()}원
+                    </div>
+                    <div className="breakdown-count">
+                      {selectedDayRevenue.cashCount}건
+                    </div>
+                  </div>
+                </div>
+
+                <div className="breakdown-item">
+                  <div className="breakdown-header">
+                    <div className="breakdown-color card"></div>
+                    <span className="breakdown-label">카드 매출</span>
+                  </div>
+                  <div className="breakdown-content">
+                    <div className="breakdown-amount">
+                      {selectedDayRevenue.cardRevenue.toLocaleString()}원
+                    </div>
+                    <div className="breakdown-count">
+                      {selectedDayRevenue.cardCount}건
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="revenue-chart">
+                <div className="chart-title">매출 구성 비율</div>
                 <div className="chart-bar">
                   <div 
                     className="chart-segment membership"
@@ -261,6 +300,22 @@ const RevenueManagement = () => {
                     className="chart-segment other"
                     style={{ 
                       width: `${(selectedDayRevenue.otherRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
+                    }}
+                  ></div>
+                </div>
+                
+                <div className="chart-title">결제수단 비율</div>
+                <div className="chart-bar">
+                  <div 
+                    className="chart-segment cash"
+                    style={{ 
+                      width: `${(selectedDayRevenue.cashRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
+                    }}
+                  ></div>
+                  <div 
+                    className="chart-segment card"
+                    style={{ 
+                      width: `${(selectedDayRevenue.cardRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
                     }}
                   ></div>
                 </div>
@@ -401,6 +456,14 @@ const RevenueManagement = () => {
 
         .legend-color.other {
           background: #10b981;
+        }
+
+        .legend-color.cash {
+          background: #f59e0b;
+        }
+
+        .legend-color.card {
+          background: #8b5cf6;
         }
 
         .calendar-container {
@@ -597,12 +660,20 @@ const RevenueManagement = () => {
           border-left: 4px solid transparent;
         }
 
-        .breakdown-item:first-child {
-          border-left-color: #3b82f6;
+        .breakdown-item:nth-child(1) {
+          border-left-color: #3b82f6; /* 회원권 매출 */
         }
 
-        .breakdown-item:last-child {
-          border-left-color: #10b981;
+        .breakdown-item:nth-child(2) {
+          border-left-color: #10b981; /* 기타 매출 */
+        }
+
+        .breakdown-item:nth-child(3) {
+          border-left-color: #f59e0b; /* 현금 매출 */
+        }
+
+        .breakdown-item:nth-child(4) {
+          border-left-color: #8b5cf6; /* 카드 매출 */
         }
 
         .breakdown-header {
@@ -623,6 +694,14 @@ const RevenueManagement = () => {
 
         .breakdown-color.other {
           background: #10b981;
+        }
+
+        .breakdown-color.cash {
+          background: #f59e0b;
+        }
+
+        .breakdown-color.card {
+          background: #8b5cf6;
         }
 
         .breakdown-label {
@@ -664,6 +743,26 @@ const RevenueManagement = () => {
 
         .chart-segment.other {
           background: #10b981;
+        }
+
+        .chart-segment.cash {
+          background: #f59e0b;
+        }
+
+        .chart-segment.card {
+          background: #8b5cf6;
+        }
+
+        .chart-title {
+          font-size: 12px;
+          font-weight: 500;
+          color: #6b7280;
+          margin-bottom: 8px;
+          margin-top: 16px;
+        }
+
+        .chart-title:first-child {
+          margin-top: 0;
         }
 
         .no-revenue {
