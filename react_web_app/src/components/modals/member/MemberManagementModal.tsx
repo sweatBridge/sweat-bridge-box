@@ -137,7 +137,7 @@ const MemberManagementModal = ({
 
     try {
       setLoading(true);
-      await MembershipService.addUserMembership(member.email, newMembership);
+      await MembershipService.addUserMembership(member.email, newMembership, member.realName);
       
       if (onSuccess) {
         onSuccess('회원권이 성공적으로 추가되었습니다.');
