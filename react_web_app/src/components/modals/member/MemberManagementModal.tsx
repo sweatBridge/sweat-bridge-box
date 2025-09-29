@@ -106,15 +106,16 @@ const MemberManagementModal = ({
     }
 
     const startDate = new Date(formData.startDate);
-    const endDate = new Date(startDate);
     
-    // 월 단위로 안전하게 더하기
-    const currentMonth = endDate.getMonth();
-    const currentYear = endDate.getFullYear();
-    const totalMonths = currentMonth + formData.duration;
+    // duration이 숫자인지 확인하고 변환
+    const duration = typeof formData.duration === 'string' ? parseInt(formData.duration) : formData.duration;
     
-    endDate.setFullYear(currentYear + Math.floor(totalMonths / 12));
-    endDate.setMonth(totalMonths % 12);
+    // 더 안전한 날짜 계산 방법
+    const endDate = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth() + duration,
+      startDate.getDate()
+    );
 
     const now = new Date();
     const newMembership: UserMembership = {
@@ -122,6 +123,7 @@ const MemberManagementModal = ({
       type: formData.membershipType,
       count: formData.count,
       price: formData.price,
+      paymentType: formData.paymentType,
       assignee: formData.assignee,
       startDate: startDate,
       endDate: endDate,
