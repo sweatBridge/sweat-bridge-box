@@ -26,6 +26,7 @@ const MemberManagementModal = ({
     duration: 1,
     count: '0',
     price: '0',
+    paymentType: 'cash',
     assignee: '',
     startDate: new Date()
   });
@@ -138,6 +139,7 @@ const MemberManagementModal = ({
         duration: 1,
         count: '0',
         price: '0',
+        paymentType: 'cash',
         assignee: '',
         startDate: new Date()
       });
@@ -397,29 +399,43 @@ const MemberManagementModal = ({
                     </select>
                   </div>
 
-                  <div className="form-group">
-                    <label>기간(월)</label>
-                    <input
-                      type="number"
-                      value={formData.duration}
-                      onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) || 1 }))}
-                      className="form-input"
-                      min="1"
-                    />
-                  </div>
-
-                  {formData.membershipType === 'countPass' && (
+                  <div className="form-row">
                     <div className="form-group">
-                      <label>횟수</label>
+                      <label>기간(월)</label>
                       <input
-                        type="text"
-                        value={formData.count}
-                        onChange={(e) => setFormData(prev => ({ ...prev, count: e.target.value }))}
+                        type="number"
+                        value={formData.duration}
+                        onChange={(e) => setFormData(prev => ({ ...prev, duration: parseInt(e.target.value) || 1 }))}
                         className="form-input"
-                        placeholder="횟수"
+                        min="1"
                       />
                     </div>
-                  )}
+
+                    {formData.membershipType === 'countPass' && (
+                      <div className="form-group">
+                        <label>횟수</label>
+                        <input
+                          type="text"
+                          value={formData.count}
+                          onChange={(e) => setFormData(prev => ({ ...prev, count: e.target.value }))}
+                          className="form-input"
+                          placeholder="횟수"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label>결제수단</label>
+                    <select
+                      value={formData.paymentType || 'cash'}
+                      onChange={(e) => setFormData(prev => ({ ...prev, paymentType: e.target.value as 'cash' | 'card' }))}
+                      className="form-input"
+                    >
+                      <option value="cash">현금</option>
+                      <option value="card">카드</option>
+                    </select>
+                  </div>
 
                   <div className="form-group">
                     <label>가격</label>
@@ -1028,6 +1044,16 @@ const MemberManagementModal = ({
           .table-cell {
             padding: 8px 0;
           }
+        }
+
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+        }
+
+        .form-row .form-group {
+          margin-bottom: 0;
         }
       `}</style>
     </div>

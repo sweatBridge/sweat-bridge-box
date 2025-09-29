@@ -43,6 +43,7 @@ export interface AddMembershipData {
   duration: number;
   count: string;
   price: string;
+  paymentType: 'cash' | 'card';
   assignee: string;
   startDate: Date;
 } 
