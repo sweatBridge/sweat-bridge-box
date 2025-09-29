@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2 } from 'lucide-react';
 import { MemberManagementModalProps, MembershipPlan, UserMembership, AddMembershipData } from '../../../types/membership';
 import { getGenderText, formatPhoneNumber } from '../../../utils/memberUtils';
+import { generateMembershipKey } from '../../../utils/keyGenerator';
 import { MembershipService } from '../../../services/membershipService';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
@@ -119,6 +120,7 @@ const MemberManagementModal = ({
 
     const now = new Date();
     const newMembership: UserMembership = {
+      key: generateMembershipKey(),
       plan: formData.selectedPlanName,
       type: formData.membershipType,
       count: formData.count,
