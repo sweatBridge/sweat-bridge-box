@@ -18,6 +18,8 @@ const MainLayout = () => {
         return 2;
       case '/classes':
         return 3;
+      case '/lockers':
+        return 4;
       default:
         return 0;
     }
