@@ -201,7 +201,7 @@ const membership = {
 
                     // 날짜 겹침 체크: (시작일1 <= 종료일2) && (시작일2 <= 종료일1)
                     if (newStartDate <= existingEndDate && existingStartDate <= newEndDate) {
-                        throw new Error(`일자가 겹치는 다른 회원권이 있습니다. 회원권의 일자를 다시 확인해주세요. 기존 멤버십: ${existingStartDate.toLocaleDateString()} ~ ${existingEndDate.toLocaleDateString()}`)
+                        throw new Error(`일자가 겹치는 다른 회원권이 있습니다. 회원권의 일자를 다시 확인해주세요. 기존 회원권: ${existingStartDate.toLocaleDateString()} ~ ${existingEndDate.toLocaleDateString()}`)
                     }
                 }
 

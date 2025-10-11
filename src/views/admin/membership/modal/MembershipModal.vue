@@ -12,7 +12,7 @@
         <CRow>
           <!-- ✅ 플랜 선택 드롭다운 -->
           <CInputGroup class="mb-3">
-            <CInputGroupText>멤버십 플랜</CInputGroupText>
+            <CInputGroupText>회원권 플랜</CInputGroupText>
             <CFormSelect v-model="selectedPlanName" @update:modelValue="handlePlanChange">
               <option value="">플랜 선택</option>
               <option v-for="plan in membershipPlans" :key="plan.plan" :value="plan.plan">
@@ -120,28 +120,58 @@
       </CCard>
 
       <EasyDataTable
-        :headers="tableHeaders" 
-        :items="memberships"
+        :headers="tableHeaders"
+        :items="tableItems"
+        item-key="__rowId"
         theme-color="#42A5F5"
-        show-index
         alternating
         :sort-by="'startDate'"
         :sort-desc="true"
+        body-text-direction="center"
+        header-text-direction="center"
       >
-      <template #item-startDate="{ startDate }">
-        {{ getDateStr(startDate) }}
-      </template>
-      <template #item-endDate="{ endDate }">
-        {{ getDateStr(endDate) }}
-      </template>
-      <template #item-type="{ type }">
-        {{ type === "countPass" ? "횟수권" : "기간권" }}
-      </template>
-      <template #item-actions="{ index }">
-        <CButton color="danger" @click="deleteMembership(index - 1)">
-          X
-        </CButton>
-      </template>
+        <template #item-rowNo="slot">
+          <div class="rowno">{{ slot.isRefundRow ? '' : (slot.__idx + 1) }}</div>
+        </template>
+
+        <template #item-startDate="slot">
+          {{ getDateStr(slot.startDate) }}
+        </template>
+
+        <template #item-endDate="slot">
+          {{ getDateStr(slot.endDate) }}
+        </template>
+
+        <template #item-type="slot">
+          <span v-if="slot.isRefundRow">환불</span>
+          <span v-else>{{ slot.type === 'countPass' ? '횟수권' : '기간권' }}</span>
+        </template>
+
+        <template #item-assignee="slot">
+          <span v-if="slot.isRefundRow">{{ slot.assignee }}</span>
+          <span v-else>{{ slot.assignee }}</span>
+        </template>
+
+        <template #item-price="slot">
+          <span v-if="slot.isRefundRow">{{ slot.price }}</span>
+          <span v-else>{{ slot.price }}</span>
+        </template>
+
+        <template #item-plan="slot">
+          <span>{{ slot.plan }}</span>
+        </template>
+
+        <template #item-actions="slot">
+          <div v-if="!slot.isRefundRow" class="actions-cell">
+            <CDropdown variant="btn-group">
+              <CDropdownToggle class="actions-toggle">선택</CDropdownToggle>
+              <CDropdownMenu>
+                <CDropdownItem @click="openDelete(slot.__idx)">삭제</CDropdownItem>
+                <CDropdownItem @click="openRefund(slot.__idx)">환불</CDropdownItem>
+              </CDropdownMenu>
+            </CDropdown>
+          </div>
+        </template>
       </EasyDataTable>
     </CModalBody>
     <CModalFooter>
@@ -151,6 +181,12 @@
     </CModalFooter>
   </CModal>
   <toast-message ref="toastMessageRef" />
+  <MembershipExtraModal
+    ref="extraModalRef"
+    @deleted="afterDelete"
+    @failed="afterDeleteFail"
+    @refunded="afterRefund"
+  />
 
 </template>
 
@@ -160,13 +196,15 @@ import { useStore } from "vuex";
 import DatePicker from "vue3-datepicker";
 import ToastMessage from "@/views/admin/common/toast/ToastMessage.vue";
 import { datetimeToSimpleStr } from "../../util/date";
+import MembershipExtraModal from './MembershipExtraModal.vue'
 
 export default {
   name: "MembershipModal",
-  components: {DatePicker, ToastMessage},
+  components: {DatePicker, ToastMessage, MembershipExtraModal},
   setup() {
     const store = useStore();
     const modalStatus = ref(false);
+    const boxName = localStorage.getItem('boxName');
 
     const userEmail = ref("");
 
@@ -185,50 +223,137 @@ export default {
     const userCurrentMemberships = computed(() => store.state.membership.userCurrentMemberships);
 
     const toastMessageRef = ref(null)
+    const findRowIndex = (rowItem) => memberships.value.findIndex(m => m === rowItem)
 
     const tableHeaders = [
+      { text: "#", value: "rowNo" }, 
       { text: "시작일", value: "startDate" },
       { text: "종료일", value: "endDate" },
       { text: "회원권 타입", value: "type" },
       { text: "가격", value: "price"},
       { text: "플랜", value: "plan" },
       { text: "담당자", value: "assignee" },
-      { text: "삭제", value: "actions" },
+      { text: "작업", value: "actions" },
     ];
 
     const getDateStr = (date) => {
       return datetimeToSimpleStr(date);
     }
 
-    const deleteMembership = async (index) => {
+    const extraModalRef = ref(null)
+
+    function openDelete(rowIdx) {
+      extraModalRef.value?.open({ index: rowIdx, email: userEmail.value, mode: 'delete' })
+    }
+
+    function openRefund(rowIdx) {
+      extraModalRef.value?.open({ index: rowIdx, email: userEmail.value, mode: 'refund' })
+    }
+
+    const tableItems = computed(() => {
+      const out = []
+      const list = Array.isArray(memberships.value) ? memberships.value : []
+      for (let i = 0; i < list.length; i++) {
+        const m = list[i]
+
+        // normal row
+        out.push({
+          ...m,
+          isRefundRow: false,
+          __idx: i,
+          __rowId: `m-${i}`, // unique key
+        })
+
+        // optional refund row (latest only)
+        const refunds = Array.isArray(m.refund) ? m.refund : []
+        if (refunds.length) {
+          console.log("break1")
+          const latest = refunds[refunds.length - 1]
+          out.push({
+            isRefundRow: true,
+            __idx: i,
+            __rowId: `m-${i}-refund`, // unique key different from parent
+            startDate: m.startDate,
+            endDate: m.endDate,
+            assignee: latest?.assignee ?? '',
+            price: latest?.amount ?? 0,
+            refund: latest,
+          })
+        }
+      }
+      return out
+    })
+
+
+    async function refreshMemberships() {
+      await store.dispatch('getUserMemberships', { email: userEmail.value })
+      memberships.value = store.state.membership.userMemberships
+    }
+
+    async function afterDelete() {
       try {
-        const payload = {
-          'index': index,
-          'email': userEmail.value
+        await refreshMemberships()
+        toastMessageRef.value?.createToast({
+          title: '성공',
+          content: '회원권 삭제 성공',
+          type: 'success',
+        })
+      } catch (error) {
+        toastMessageRef.value?.createToast({
+          title: '실패',
+          content: '삭제 후 목록 갱신 실패: ' + (error?.message ?? String(error)),
+          type: 'danger',
+        })
+      }
+    }
+
+    function afterDeleteFail(error) {
+      toastMessageRef.value?.createToast({
+        title: '실패',
+        content: '회원권 삭제 실패: ' + (error?.message ?? String(error)),
+        type: 'danger',
+      })
+    }
+
+    async function afterRefund({ index, email, reason, amount, assignee }) {
+      try {
+        const orig = memberships.value[index]
+        if (!orig) throw new Error('Membership not found at index')
+
+        const now = new Date()
+
+        // Build a NEW object to send (no local mutation)
+        const updatedMembership = {
+          ...orig,
+          endDate: now,          // NOW at push time
+          updatedAt: now,
+          refund: [
+            ...(Array.isArray(orig.refund) ? orig.refund : []),
+            { reason, amount: Number(amount || 0), assignee}
+          ],
         }
 
-        await store.dispatch("removeUserMembership", payload)
+        await store.dispatch('updateMembershipInfo', {
+          email: email || userEmail.value,
+          box: boxName,
+          idx: index,
+          updatedMembership,
+        })
 
-        toastMessageRef.value.createToast(
-          {
-            title: '성공',
-            content: '멤버십 삭제 성공',
-            type: 'success'
-          }
-        )
-        
-        // 삭제 후 회원권 목록을 다시 불러옵니다
-        await store.dispatch("getUserMemberships", {'email': userEmail.value});
-        memberships.value = store.state.membership.userMemberships;
+        // Pull fresh data from backend (keeps UI canonical)
+        await refreshMemberships()
+
+        toastMessageRef.value?.createToast({
+          title: '성공',
+          content: `환불 처리 완료: 금액 ${Number(amount)}원, 담당자 ${assignee}`,
+          type: 'success',
+        })
       } catch (error) {
-        console.error('Error in deleteMembership:', error);
-        toastMessageRef.value.createToast(
-          {
-            title: '실패',
-            content: '멤버십 삭제 실패: ' + error.message,
-            type: 'danger'
-          }
-        )
+        toastMessageRef.value?.createToast({
+          title: '실패',
+          content: '환불 처리 실패: ' + (error?.message ?? String(error)),
+          type: 'danger',
+        })
       }
     }
 
@@ -302,7 +427,7 @@ export default {
         toastMessageRef.value.createToast(
           {
             title: '성공',
-            content: '멤버십 추가 성공',
+            content: '회원권 추가 성공',
             type: 'success'
           }
         )
@@ -339,8 +464,15 @@ export default {
       userCurrentMemberships,
       tableHeaders,
       getDateStr,
-      deleteMembership,
       toastMessageRef,
+      extraModalRef,
+      openDelete,
+      afterDelete,
+      afterDeleteFail,
+      openRefund,
+      afterRefund,
+      findRowIndex,
+      tableItems
     };
   }
 };
@@ -364,5 +496,14 @@ export default {
 
 .no-membership-message {
   padding: 80px 0;  /* 위아래로 4줄의 여백을 주기 위해 80px 설정 */
+}
+
+.actions-cell { display: inline-flex; align-items: center; }
+
+:deep(.actions-toggle) {
+  font-size: inherit;       /* 테이블 셀 폰트 크기 상속 */
+  line-height: inherit;     /* 행 라인하이트 상속(수직정렬 깔끔) */
+  padding: 0.25rem 0.5rem;  /* 버튼 너무 크지 않게 */
+  height: auto;             /* 셀 높이와 자연스럽게 맞춤 */
 }
 </style>

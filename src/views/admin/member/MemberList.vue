@@ -11,7 +11,7 @@
         <CButton
           @click="manageMembershipPlans"
           class="position-relative header-button" size="sm">
-          <strong>멤버십</strong>
+          <strong>회원권</strong>
         </CButton>
       </div>
     </CCardHeader>
@@ -60,7 +60,7 @@
             size="sm"
             @click="manageMembership(email)"
           >
-            멤버십
+            회원권
           </CButton>
           <CButton
             color="danger"

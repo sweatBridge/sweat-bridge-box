@@ -5,7 +5,7 @@
     size="xl"
   >
     <CModalHeader>
-      <CModalTitle>멤버십(회원권) 플랜</CModalTitle>
+      <CModalTitle>회원권 플랜</CModalTitle>
     </CModalHeader>
     <CModalBody>
       <div class="membership-container">
