@@ -1,18 +1,19 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, Plus, Info } from 'lucide-react';
 import { Gradients } from '../constants/gradients';
+import { AppColors } from '../constants/colors';
 import { LockerService } from '../services/lockerService';
 import type { Lockers as LockerItem } from '../types/locker';
 import { usePageContext } from '../contexts/PageContext';
 
-type LockerState = 'used' | 'unused' | 'na';
+type LockerState = 'used' | 'unused' | 'na' | 'deleted';
 type LockerBox = { number: number; users: string[]; state: LockerState };
 
-const stateRank: Record<LockerState, number> = { na: 2, used: 1, unused: 0 };
+const stateRank: Record<LockerState, number> = { na: 3, deleted: 2, used: 1, unused: 0 };
 const coalesceState = (a: LockerState, b: LockerState): LockerState =>
-  stateRank[a] >= stateRank[b] ? a : b; // na > used > unused
+  stateRank[a] >= stateRank[b] ? a : b; // na > deleted > used > unused
 
-const BOX_NAME = 'SWEAT'; // 필요 시 교체/컨텍스트로 이동
+const BOX_NAME = localStorage.getItem('boxName') || 'SWEAT';
 
 const Locker: React.FC = () => {
   const { setPageInfo } = usePageContext();
@@ -30,9 +31,18 @@ const Locker: React.FC = () => {
   // 개별 편집 모달 상태
   const [showEdit, setShowEdit] = useState(false);
   const [selectedNo, setSelectedNo] = useState<number | null>(null);
+  const [selectedState, setSelectedState] = useState<LockerState>('unused');
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editDate, setEditDate] = useState(''); // YYYY-MM-DD
+  const [deleting, setDeleting] = useState(false);
+  
+  // 삭제 확인 모달 상태
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  // 락커 해지 모달 상태
+  const [showReleaseConfirm, setShowReleaseConfirm] = useState(false);
+  const [releasing, setReleasing] = useState(false);
 
   const loadLockers = useCallback(async () => {
     setLoading(true);
@@ -64,7 +74,9 @@ const Locker: React.FC = () => {
     for (const l of raw) {
       const num = l.number;
       const nextState: LockerState =
-        l.state === 'used' || l.state === 'unused' || l.state === 'na' ? l.state : 'unused';
+        l.state === 'used' || l.state === 'unused' || l.state === 'na' || l.state === 'deleted' 
+          ? l.state 
+          : 'unused';
       const name = (l.userName || l.user || '').trim();
 
       if (!map.has(num)) {
@@ -75,7 +87,10 @@ const Locker: React.FC = () => {
         if (name && !cur.users.includes(name)) cur.users.push(name);
       }
     }
-    return Array.from(map.values()).sort((a, b) => a.number - b.number);
+    // deleted 상태인 락커는 화면에 표시하지 않음
+    return Array.from(map.values())
+      .filter(box => box.state !== 'deleted')
+      .sort((a, b) => a.number - b.number);
   }, [raw]);
 
   const onOpenAdd = () => {
@@ -91,7 +106,12 @@ const Locker: React.FC = () => {
     const firstWithName = candidates.find(c => (c.userName || c.user || '').trim().length > 0);
     const base = firstWithName ?? candidates[0]; // 없으면 첫 항목 참조(없을 수도 있음)
 
+    // boxes에서 해당 락커의 상태 찾기
+    const lockerBox = boxes.find(b => b.number === number);
+    const lockerState = lockerBox?.state || 'unused';
+
     setSelectedNo(number);
+    setSelectedState(lockerState);
     setEditName((base?.userName || base?.user || '').trim());
     setEditPhone(base?.phoneNumber || '');
     setEditDate(''); // 아직 저장 미구현이므로 공란
@@ -121,6 +141,48 @@ const Locker: React.FC = () => {
       setAddError(err?.message ?? String(err));
     } finally {
       setAdding(false);
+    }
+  };
+
+  const onDeleteLocker = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const onConfirmDelete = async () => {
+    if (selectedNo === null) return;
+
+    setDeleting(true);
+    try {
+      await LockerService.deleteLocker(BOX_NAME, selectedNo);
+      alert('락커가 삭제되었습니다.');
+      setShowDeleteConfirm(false);
+      setShowEdit(false);
+      await loadLockers();
+    } catch (err: any) {
+      alert(`삭제 실패: ${err?.message ?? String(err)}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const onReleaseLocker = () => {
+    setShowReleaseConfirm(true);
+  };
+
+  const onConfirmRelease = async () => {
+    if (selectedNo === null) return;
+
+    setReleasing(true);
+    try {
+      await LockerService.releaseLocker(BOX_NAME, selectedNo);
+      alert('락커가 해지되었습니다.');
+      setShowReleaseConfirm(false);
+      setShowEdit(false);
+      await loadLockers();
+    } catch (err: any) {
+      alert(`해지 실패: ${err?.message ?? String(err)}`);
+    } finally {
+      setReleasing(false);
     }
   };
 
@@ -164,7 +226,7 @@ const Locker: React.FC = () => {
                   {users.length > 0 ? users.join(', ') : <span className="muted">—</span>}
                 </div>
                 <div className={`status-chip ${state}`}>
-                  {state === 'used' ? '사용중' : state === 'unused' ? '사용 가능' : '고장'}
+                  {state === 'used' ? '사용중' : state === 'unused' ? '사용 가능' : state === 'na' ? '고장' : '삭제됨'}
                 </div>
               </div>
             ))}
@@ -174,38 +236,59 @@ const Locker: React.FC = () => {
 
       {/* 일괄 추가 모달 */}
       {showAdd && (
-        <div className="modal-backdrop" onClick={() => !adding && setShowAdd(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>락커 일괄 추가</h3>
-            <div className="field">
-              <label>시작 번호</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={1}
-                value={startNo}
-                onChange={(e) => setStartNo(e.target.value)}
-                placeholder="예: 1"
-                disabled={adding}
-              />
+        <div className="modal-overlay" onClick={() => !adding && setShowAdd(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="header-title">
+                <Plus size={20} className="header-icon" />
+                <h3>락커 일괄 추가</h3>
+              </div>
+              <button className="close-button" onClick={() => !adding && setShowAdd(false)}>×</button>
             </div>
-            <div className="field">
-              <label>끝 번호</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={1}
-                value={endNo}
-                onChange={(e) => setEndNo(e.target.value)}
-                placeholder="예: 100"
-                disabled={adding}
-              />
+            
+            <div className="modal-body">
+              <div className="form-section">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>시작 번호</label>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      step={1}
+                      value={startNo}
+                      onChange={(e) => setStartNo(e.target.value)}
+                      placeholder="예: 201"
+                      disabled={adding}
+                      className="form-input"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>끝 번호</label>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      step={1}
+                      value={endNo}
+                      onChange={(e) => setEndNo(e.target.value)}
+                      placeholder="예: 220"
+                      disabled={adding}
+                      className="form-input"
+                    />
+                  </div>
+                </div>
+                
+                <div className="info-box">
+                  예시: 201~220 입력 시 201, 202, ... 220까지 20개의 락커가 생성됩니다.
+                </div>
+
+                {addError && <div className="form-error">{addError}</div>}
+              </div>
             </div>
-            {addError && <div className="form-error">{addError}</div>}
-            <div className="modal-actions">
-              <button className="btn" onClick={() => setShowAdd(false)} disabled={adding}>취소</button>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowAdd(false)} disabled={adding}>취소</button>
               <button className="btn btn-primary" onClick={onConfirmAdd} disabled={adding}>
                 {adding ? '추가 중…' : '추가'}
               </button>
@@ -216,40 +299,143 @@ const Locker: React.FC = () => {
 
       {/* 개별 편집 모달 (저장 동작은 아직 없음) */}
       {showEdit && selectedNo !== null && (
-        <div className="modal-backdrop" onClick={() => setShowEdit(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <h3>락커 #{selectedNo} 정보</h3>
-            <div className="field">
-              <label>회원 이름</label>
-              <input
-                type="text"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                placeholder="예: 홍길동"
-              />
+        <div className="modal-overlay" onClick={() => setShowEdit(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="header-title">
+                <Info size={20} className="header-icon" />
+                <h3>락커 #{selectedNo} 정보</h3>
+              </div>
+              <button className="close-button" onClick={() => setShowEdit(false)}>×</button>
             </div>
-            <div className="field">
-              <label>회원 전화 번호</label>
-              <input
-                type="tel"
-                inputMode="tel"
-                value={editPhone}
-                onChange={(e) => setEditPhone(e.target.value)}
-                placeholder="예: 010-1234-5678"
-              />
-            </div>
-            <div className="field">
-              <label>사용 기한</label>
-              <input
-                type="date"
-                value={editDate}
-                onChange={(e) => setEditDate(e.target.value)}
-              />
+            
+            <div className="modal-body">
+              {/* 액션 버튼 */}
+              <div className="action-buttons">
+                <button className="btn btn-action" onClick={() => {}}>수정</button>
+                {!editName.trim() ? (
+                  <button 
+                    className="btn btn-action" 
+                    onClick={() => {}}
+                    disabled={selectedState === 'na'}
+                  >
+                    락커 배정
+                  </button>
+                ) : (
+                  <button 
+                    className="btn btn-action" 
+                    onClick={onReleaseLocker}
+                    disabled={releasing}
+                  >
+                    {releasing ? '해지 중...' : '락커 해지'}
+                  </button>
+                )}
+                <button 
+                  className="btn btn-action" 
+                  onClick={onDeleteLocker}
+                  disabled={deleting}
+                >
+                  {deleting ? '삭제 중...' : '락커 삭제'}
+                </button>
+              </div>
+
+              <div className="form-section">
+                <div className="form-group">
+                  <label>회원 이름</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="예: 홍길동"
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>회원 전화 번호</label>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    placeholder="예: 010-1234-5678"
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>사용 기한</label>
+                  <input
+                    type="date"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="modal-actions">
-              <button className="btn" onClick={() => setShowEdit(false)}>닫기</button>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowEdit(false)}>닫기</button>
               <button className="btn btn-primary" disabled title="아직 미구현입니다.">저장 (준비중)</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 삭제 확인 모달 */}
+      {showDeleteConfirm && selectedNo !== null && (
+        <div className="modal-overlay" onClick={() => !deleting && setShowDeleteConfirm(false)}>
+          <div className="modal-content delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="header-title">
+                <Info size={20} className="header-icon" />
+                <h3>락커 삭제 확인</h3>
+              </div>
+              <button className="close-button" onClick={() => !deleting && setShowDeleteConfirm(false)}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="delete-message">
+                <p className="delete-title">락커 #{selectedNo}를 삭제하시겠습니까?</p>
+                <div className="delete-info-box">
+                  <Info size={16} />
+                  <span>락커 삭제 시에도 회원 히스토리/결제 기록은 유지됩니다.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>취소</button>
+              <button className="btn btn-danger" onClick={onConfirmDelete} disabled={deleting}>
+                {deleting ? '삭제 중…' : '삭제'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 락커 해지 확인 모달 */}
+      {showReleaseConfirm && selectedNo !== null && (
+        <div className="modal-overlay" onClick={() => !releasing && setShowReleaseConfirm(false)}>
+          <div className="modal-content release-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="header-title">
+                <Info size={20} className="header-icon" />
+                <h3>락커 해지 확인</h3>
+              </div>
+              <button className="close-button" onClick={() => !releasing && setShowReleaseConfirm(false)}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="release-message">
+                <p className="release-title">회원의 락커를 해지하시겠습니까?</p>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowReleaseConfirm(false)} disabled={releasing}>취소</button>
+              <button className="btn btn-primary" onClick={onConfirmRelease} disabled={releasing}>
+                {releasing ? '해지 중…' : '해지'}
+              </button>
             </div>
           </div>
         </div>
@@ -277,24 +463,66 @@ const Locker: React.FC = () => {
         .header-actions { display: flex; gap: 8px; }
 
         .btn {
-          padding: 8px 12px;
-          border-radius: 8px;
-          border: 1px solid rgba(255,255,255,0.6);
-          background: transparent;
-          color: #fff;
-          font-weight: 600;
+          padding: 8px 16px;
+          border-radius: 6px;
+          border: 1px solid;
           cursor: pointer;
+          font-weight: 500;
+          transition: all 0.2s;
         }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn:disabled { 
+          opacity: 0.6; 
+          cursor: not-allowed; 
+        }
         .btn-white {
           background: #fff;
           color: #111827;
           border: 1px solid #e5e7eb;
         }
         .btn-primary {
-          background: #4f46e5;
-          color: #fff;
-          border: 1px solid #4338ca;
+          background-color: #3b82f6;
+          border-color: #3b82f6;
+          color: white;
+        }
+        .btn-primary:hover {
+          background-color: ${AppColors.primary};
+          border-color: ${AppColors.primary};
+        }
+        .btn-secondary {
+          background-color: #ffffff;
+          border-color: #d1d5db;
+          color: #374151;
+        }
+        .btn-secondary:hover {
+          background-color: #f9fafb;
+          border-color: #9ca3af;
+        }
+        .btn-action {
+          background: #ffffff;
+          color: #374151;
+          border-color: #d1d5db;
+          padding: 10px 16px;
+          border-radius: 8px;
+          font-weight: 600;
+          flex: 1;
+        }
+        .btn-action:hover {
+          background: #f9fafb;
+          border-color: #9ca3af;
+        }
+        .btn-action:disabled {
+          background: #e5e7eb;
+          color: #9ca3af;
+          border: 1px solid #d1d5db;
+          cursor: not-allowed;
+        }
+
+        .action-buttons {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 24px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #e5e7eb;
         }
 
         .loading, .error {
@@ -311,8 +539,43 @@ const Locker: React.FC = () => {
 
         .locker-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          grid-template-columns: repeat(2, 1fr); /* 기본: 2개 (모바일) */
           gap: 12px;
+        }
+        
+        /* 타블렛: 4개 */
+        @media (min-width: 768px) {
+          .locker-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
+        }
+        
+        /* 중간 데스크탑: 6개 */
+        @media (min-width: 1024px) {
+          .locker-grid {
+            grid-template-columns: repeat(6, 1fr);
+          }
+        }
+        
+        /* 데스크탑: 8개 */
+        @media (min-width: 1280px) {
+          .locker-grid {
+            grid-template-columns: repeat(8, 1fr);
+          }
+        }
+        
+        /* 큰 데스크탑: 10개 */
+        @media (min-width: 1536px) {
+          .locker-grid {
+            grid-template-columns: repeat(10, 1fr);
+          }
+        }
+        
+        /* 초대형 화면: 12개 */
+        @media (min-width: 1920px) {
+          .locker-grid {
+            grid-template-columns: repeat(12, 1fr);
+          }
         }
         .locker-card {
           position: relative;
@@ -330,6 +593,7 @@ const Locker: React.FC = () => {
         .locker-card.used   { background: #dcfce7; } /* light green */
         .locker-card.unused { background: #e0f2fe; } /* light blue */
         .locker-card.na     { background: #fee2e2; } /* red */
+        .locker-card.deleted { background: #f3f4f6; } /* gray */
         .locker-number {
           font-weight: 800;
           font-size: 18px;
@@ -357,41 +621,226 @@ const Locker: React.FC = () => {
         .status-chip.used   { color: #065f46; }
         .status-chip.unused { color: #075985; }
         .status-chip.na     { color: #991b1b; }
+        .status-chip.deleted { color: #6b7280; }
 
         /* modal */
-        .modal-backdrop {
+        .modal-overlay {
           position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.35);
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
+
+        .modal-content {
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+          width: 90%;
+          max-width: 750px;
+          max-height: 90vh;
+          overflow-y: auto;
+        }
+
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px;
+          background: ${Gradients.primary};
+          border-bottom: none;
+          border-radius: 8px 8px 0 0;
+          box-shadow: 0 2px 10px rgba(102, 126, 234, 0.15);
+        }
+
+        .header-title {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .header-icon {
+          color: white;
+          opacity: 0.9;
+        }
+
+        .modal-header h3 {
+          margin: 0;
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: white;
+        }
+
+        .close-button {
+          background: none;
+          border: none;
+          font-size: 24px;
+          cursor: pointer;
+          color: white;
+          opacity: 0.8;
+          padding: 0;
+          width: 30px;
+          height: 30px;
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 50;
+          border-radius: 50%;
+          transition: all 0.2s;
         }
-        .modal {
-          background: #fff;
-          width: 100%;
-          max-width: 380px;
-          border-radius: 12px;
-          padding: 18px;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+
+        .close-button:hover {
+          background-color: rgba(255, 255, 255, 0.2);
+          opacity: 1;
+          transform: scale(1.1);
         }
-        .modal h3 {
-          margin: 0 0 12px;
-          font-size: 18px;
-          color: #111827;
+
+        .modal-body {
+          padding: 20px;
         }
-        .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-        .field label { font-size: 13px; color: #374151; }
-        .field input {
-          padding: 10px 12px;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
+
+        .form-section {
+          margin-bottom: 20px;
+        }
+
+        .form-row {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+
+        .form-row .form-group {
+          flex: 1;
+          margin-bottom: 0;
+        }
+
+        .form-group {
+          margin-bottom: 20px;
+        }
+
+        .form-group label {
+          display: flex;
+          align-items: center;
+          margin-bottom: 8px;
+          font-weight: 500;
+          color: #374151;
           font-size: 14px;
         }
-        .form-error { color: #b91c1c; font-size: 13px; margin-top: 4px; }
-        .modal-actions {
-          display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;
+
+        .info-box {
+          padding: 12px 16px;
+          background-color: #e0f2fe;
+          border: 1px solid #bae6fd;
+          border-radius: 8px;
+          color: #0c4a6e;
+          font-size: 14px;
+          line-height: 1.5;
+          margin-bottom: 16px;
+        }
+
+        .form-input {
+          width: 100%;
+          padding: 12px 16px;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          background-color: #fafbfc;
+        }
+
+        .form-input:focus {
+          outline: none;
+          border-color: ${AppColors.primary};
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+          background-color: white;
+        }
+
+        .form-error { 
+          color: #b91c1c; 
+          font-size: 13px; 
+          margin-top: 8px; 
+        }
+
+        .modal-footer {
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          padding: 20px;
+          border-top: 1px solid #e5e7eb;
+          background-color: #f9fafb;
+        }
+
+        /* 삭제 확인 모달 스타일 */
+        .delete-confirm-modal {
+          max-width: 500px;
+        }
+
+        .delete-message {
+          text-align: center;
+          padding: 12px 0;
+        }
+
+        .delete-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: #111827;
+          margin-bottom: 20px;
+        }
+
+        .delete-info-box {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 14px 18px;
+          background-color: #fef3c7;
+          border: 1px solid #fde68a;
+          border-radius: 8px;
+          color: #92400e;
+          font-size: 14px;
+          line-height: 1.5;
+          text-align: left;
+        }
+
+        .delete-info-box svg {
+          flex-shrink: 0;
+          color: #f59e0b;
+        }
+
+        .btn-danger {
+          background-color: #dc2626;
+          border-color: #dc2626;
+          color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+          background-color: #b91c1c;
+          border-color: #b91c1c;
+        }
+
+        .btn-danger:disabled {
+          background-color: #fca5a5;
+          border-color: #fca5a5;
+        }
+
+        /* 락커 해지 확인 모달 스타일 */
+        .release-confirm-modal {
+          max-width: 500px;
+        }
+
+        .release-message {
+          text-align: center;
+          padding: 12px 0;
+        }
+
+        .release-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: #111827;
+          margin: 0;
         }
       `}</style>
     </div>
@@ -399,3 +848,4 @@ const Locker: React.FC = () => {
 };
 
 export default Locker;
+

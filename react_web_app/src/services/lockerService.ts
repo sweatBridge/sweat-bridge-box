@@ -29,7 +29,11 @@ export class LockerService {
       });
 
       if (Array.isArray(value)) {
-        for (const item of value) out.push(toLocker(item));
+        // 배열인 경우 마지막 항목만 사용 (최신 상태)
+        if (value.length > 0) {
+          const latestItem = value[value.length - 1];
+          out.push(toLocker(latestItem));
+        }
       } else if (value && typeof value === 'object') {
         out.push(toLocker(value as any));
       }
@@ -58,20 +62,49 @@ export class LockerService {
 
       for (let n = lo; n <= hi; n++) {
         const key = String(n);
-        if (Object.prototype.hasOwnProperty.call(existing, key)) {
-          skipped.push(n);
-          continue;
-        }
+        
         const defaultEntry: Lockers = {
           number: n,
-          state: 'unused',   // per spec
+          state: 'unused',
           user: '',
           userName: '',
           phoneNumber: ''
         };
-        // store as an array of Lockers
-        toSet[key] = [defaultEntry];
-        added.push(n);
+        
+        // 키가 존재하는지 확인
+        if (Object.prototype.hasOwnProperty.call(existing, key)) {
+          const existingValue = existing[key];
+          let isDeleted = false;
+          
+          // 배열인 경우와 객체인 경우 모두 확인
+          if (Array.isArray(existingValue)) {
+            // 배열의 마지막 항목이 deleted 상태인지 확인
+            const lastItem = existingValue[existingValue.length - 1];
+            isDeleted = lastItem?.state === 'deleted';
+            
+            if (isDeleted) {
+              // deleted 상태면 배열에 새 항목 추가
+              toSet[key] = [...existingValue, defaultEntry];
+              added.push(n);
+            } else {
+              skipped.push(n);
+            }
+          } else if (existingValue && typeof existingValue === 'object') {
+            isDeleted = (existingValue as any)?.state === 'deleted';
+            
+            if (isDeleted) {
+              // 객체를 배열로 변환하고 새 항목 추가
+              toSet[key] = [existingValue, defaultEntry];
+              added.push(n);
+            } else {
+              skipped.push(n);
+            }
+          }
+        } else {
+          // 키가 존재하지 않으면 새 배열로 추가
+          toSet[key] = [defaultEntry];
+          added.push(n);
+        }
       }
 
       if (added.length > 0) {
@@ -79,6 +112,105 @@ export class LockerService {
       }
 
       return { added, skipped };
+    });
+  }
+
+  static async deleteLocker(box: string, lockerNumber: number): Promise<void> {
+    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
+
+    return runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) {
+        throw new Error('락커 문서를 찾을 수 없습니다.');
+      }
+
+      const data = snap.data() as Record<string, unknown>;
+      const key = String(lockerNumber);
+
+      if (!Object.prototype.hasOwnProperty.call(data, key)) {
+        throw new Error('해당 락커 번호를 찾을 수 없습니다.');
+      }
+
+      const existingValue = data[key];
+      const deletedEntry: Lockers = {
+        number: lockerNumber,
+        state: 'deleted',
+        user: '',
+        userName: '',
+        phoneNumber: ''
+      };
+
+      let newValue: any;
+
+      if (Array.isArray(existingValue)) {
+        const lastItem = existingValue[existingValue.length - 1];
+        const hasName = (lastItem?.userName || lastItem?.user || '').trim().length > 0;
+
+        if (hasName) {
+          // 이름이 있으면 배열에 새로운 deleted 항목 추가
+          newValue = [...existingValue, deletedEntry];
+        } else {
+          // 이름이 없으면 마지막 항목의 상태만 deleted로 변경
+          const updated = [...existingValue];
+          updated[updated.length - 1] = { ...lastItem, state: 'deleted' };
+          newValue = updated;
+        }
+      } else if (existingValue && typeof existingValue === 'object') {
+        const hasName = ((existingValue as any)?.userName || (existingValue as any)?.user || '').trim().length > 0;
+
+        if (hasName) {
+          // 이름이 있으면 배열로 변환하고 deleted 항목 추가
+          newValue = [existingValue, deletedEntry];
+        } else {
+          // 이름이 없으면 상태만 deleted로 변경
+          newValue = { ...existingValue, state: 'deleted' };
+        }
+      } else {
+        throw new Error('잘못된 락커 데이터 형식입니다.');
+      }
+
+      tx.set(ref, { [key]: newValue }, { merge: true });
+    });
+  }
+
+  static async releaseLocker(box: string, lockerNumber: number): Promise<void> {
+    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
+
+    return runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) {
+        throw new Error('락커 문서를 찾을 수 없습니다.');
+      }
+
+      const data = snap.data() as Record<string, unknown>;
+      const key = String(lockerNumber);
+
+      if (!Object.prototype.hasOwnProperty.call(data, key)) {
+        throw new Error('해당 락커 번호를 찾을 수 없습니다.');
+      }
+
+      const existingValue = data[key];
+      const unusedEntry: Lockers = {
+        number: lockerNumber,
+        state: 'unused',
+        user: '',
+        userName: '',
+        phoneNumber: ''
+      };
+
+      let newValue: any;
+
+      if (Array.isArray(existingValue)) {
+        // 배열에 새로운 unused 항목 추가
+        newValue = [...existingValue, unusedEntry];
+      } else if (existingValue && typeof existingValue === 'object') {
+        // 객체를 배열로 변환하고 unused 항목 추가
+        newValue = [existingValue, unusedEntry];
+      } else {
+        throw new Error('잘못된 락커 데이터 형식입니다.');
+      }
+
+      tx.set(ref, { [key]: newValue }, { merge: true });
     });
   }
 }
