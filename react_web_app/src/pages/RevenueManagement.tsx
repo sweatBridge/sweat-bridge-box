@@ -21,7 +21,7 @@ const RevenueManagement = () => {
     loading,
     error,
     loadMonthlyRevenue,
-    loadRevenueStats,
+    loadInitialData,
     clearError
   } = useRevenueManagement();
 
@@ -37,12 +37,11 @@ const RevenueManagement = () => {
     });
   }, [setPageInfo]);
 
-  // 컴포넌트 마운트 시 데이터 로드
+  // 컴포넌트 마운트 시 초기 데이터 로드
   useEffect(() => {
     const now = new Date();
-    loadMonthlyRevenue(now.getFullYear(), now.getMonth() + 1);
-    loadRevenueStats();
-  }, [loadMonthlyRevenue, loadRevenueStats]);
+    loadInitialData(now.getFullYear(), now.getMonth() + 1);
+  }, [loadInitialData]);
 
   // 월 변경 시 데이터 로드
   useEffect(() => {
@@ -115,6 +114,57 @@ const RevenueManagement = () => {
 
   const selectedDayRevenue = getSelectedDayRevenue();
 
+  // 초기 로딩 중일 때 전체 로딩 화면 표시
+  if (loading && !monthlyRevenue) {
+    return (
+      <div className="dashboard">
+        <div className="initial-loading-container">
+          <div className="loading-spinner large"></div>
+          <h3>매출 데이터를 불러오는 중입니다...</h3>
+          <p>잠시만 기다려주세요</p>
+        </div>
+        <style>{`
+          .initial-loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            text-align: center;
+          }
+
+          .loading-spinner.large {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid ${AppColors.primary};
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 24px;
+          }
+
+          .initial-loading-container h3 {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #374151;
+          }
+
+          .initial-loading-container p {
+            margin: 0;
+            font-size: 14px;
+            color: #6b7280;
+          }
+
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard">
       {/* 통계 카드 */}
@@ -179,7 +229,7 @@ const RevenueManagement = () => {
             </div>
           </div>
           
-          {loading ? (
+          {loading && monthlyRevenue ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
               <p>매출 데이터를 불러오는 중...</p>

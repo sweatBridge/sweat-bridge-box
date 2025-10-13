@@ -2,6 +2,18 @@ import { DailyRevenue, MonthlyRevenue, RevenueStats } from '../types/revenue';
 import { UserMembership } from '../types/membership';
 import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { Timestamp } from 'firebase/firestore';
+
+interface MembershipRevenueData {
+  assignee: string;
+  createdAt: Timestamp;
+  id: string;
+  paymentType: 'card' | 'cash';
+  plan: string;
+  price: string;
+  realName: string;
+  type: string;
+}
 
 export class RevenueService {
   private static getBoxName(): string {
@@ -10,50 +22,98 @@ export class RevenueService {
 
   /**
    * 월별 매출 데이터 조회
-   * TODO: Firebase 연동 필요
    */
   static async getMonthlyRevenue(year: number, month: number): Promise<MonthlyRevenue> {
     try {
       const boxName = this.getBoxName();
+      const revenueDocRef = doc(db, `box/${boxName}/revenue/${year}`);
       
-      // TODO: Firebase에서 실제 데이터 가져오기
-      // const path = `/box/${boxName}/revenue/${year}/${month}`;
+      // Firebase에서 해당 연도 문서 가져오기
+      const revenueDoc = await getDoc(revenueDocRef);
       
-      // 임시 더미 데이터
-      const daysInMonth = new Date(year, month, 0).getDate();
-      const dailyData: DailyRevenue[] = [];
-      
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-        const membershipRevenue = Math.floor(Math.random() * 500000) + 50000;
-        const otherRevenue = Math.floor(Math.random() * 200000);
-        
-        // 현금/카드 비율 랜덤 생성 (현금 30-70%, 카드 30-70%)
-        const cashRatio = 0.3 + Math.random() * 0.4; // 30-70%
-        const totalRevenue = membershipRevenue + otherRevenue;
-        const cashRevenue = Math.floor(totalRevenue * cashRatio);
-        const cardRevenue = totalRevenue - cashRevenue;
-        
-        const membershipCount = Math.floor(membershipRevenue / 120000);
-        const otherCount = Math.floor(otherRevenue / 50000);
-        const totalCount = membershipCount + otherCount;
-        const cashCount = Math.floor(totalCount * cashRatio);
-        const cardCount = totalCount - cashCount;
-        
-        dailyData.push({
-          date,
-          membershipRevenue,
-          otherRevenue,
-          totalRevenue,
-          membershipCount,
-          otherCount,
-          cashRevenue,
-          cardRevenue,
-          cashCount,
-          cardCount
-        });
+      if (!revenueDoc.exists()) {
+        // 데이터가 없으면 빈 결과 반환
+        return {
+          year,
+          month,
+          totalRevenue: 0,
+          membershipRevenue: 0,
+          otherRevenue: 0,
+          dailyData: []
+        };
       }
 
+      const yearData = revenueDoc.data();
+      const monthData = yearData[month.toString()] || {};
+
+      // 일별 매출 데이터를 담을 Map
+      const dailyRevenueMap = new Map<string, {
+        membershipRevenue: number;
+        membershipCount: number;
+        otherRevenue: number;
+        otherCount: number;
+        cashRevenue: number;
+        cashCount: number;
+        cardRevenue: number;
+        cardCount: number;
+      }>();
+
+      // 각 회원권 데이터를 일별로 집계
+      Object.entries(monthData).forEach(([membershipKey, data]) => {
+        const membershipData = data as MembershipRevenueData;
+        
+        // createdAt을 Date로 변환하고 날짜 문자열 생성
+        const createdDate = membershipData.createdAt.toDate();
+        const dateStr = createdDate.toISOString().split('T')[0];
+        
+        // 해당 날짜의 데이터가 없으면 초기화
+        if (!dailyRevenueMap.has(dateStr)) {
+          dailyRevenueMap.set(dateStr, {
+            membershipRevenue: 0,
+            membershipCount: 0,
+            otherRevenue: 0,
+            otherCount: 0,
+            cashRevenue: 0,
+            cashCount: 0,
+            cardRevenue: 0,
+            cardCount: 0
+          });
+        }
+
+        const dailyData = dailyRevenueMap.get(dateStr)!;
+        const price = parseInt(membershipData.price) || 0;
+
+        // 회원권 매출 집계
+        dailyData.membershipRevenue += price;
+        dailyData.membershipCount += 1;
+
+        // 결제 수단별 집계
+        if (membershipData.paymentType === 'cash') {
+          dailyData.cashRevenue += price;
+          dailyData.cashCount += 1;
+        } else if (membershipData.paymentType === 'card') {
+          dailyData.cardRevenue += price;
+          dailyData.cardCount += 1;
+        }
+      });
+
+      // Map을 배열로 변환하고 날짜순 정렬
+      const dailyData: DailyRevenue[] = Array.from(dailyRevenueMap.entries())
+        .map(([date, data]) => ({
+          date,
+          membershipRevenue: data.membershipRevenue,
+          membershipCount: data.membershipCount,
+          otherRevenue: data.otherRevenue,
+          otherCount: data.otherCount,
+          totalRevenue: data.membershipRevenue + data.otherRevenue,
+          cashRevenue: data.cashRevenue,
+          cashCount: data.cashCount,
+          cardRevenue: data.cardRevenue,
+          cardCount: data.cardCount
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      // 월별 총계 계산
       const totalRevenue = dailyData.reduce((sum, day) => sum + day.totalRevenue, 0);
       const membershipRevenue = dailyData.reduce((sum, day) => sum + day.membershipRevenue, 0);
       const otherRevenue = dailyData.reduce((sum, day) => sum + day.otherRevenue, 0);
@@ -74,21 +134,91 @@ export class RevenueService {
 
   /**
    * 매출 통계 조회
-   * TODO: Firebase 연동 필요
    */
   static async getRevenueStats(): Promise<RevenueStats> {
     try {
       const boxName = this.getBoxName();
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+      const today = now.toISOString().split('T')[0];
+
+      // revenue 컬렉션의 모든 문서 가져오기
+      const revenueCollectionRef = collection(db, `box/${boxName}/revenue`);
+      const revenueSnapshot = await getDocs(revenueCollectionRef);
+
+      let totalRevenue = 0;
+      let thisMonthRevenue = 0;
+      let todayRevenue = 0;
+      let totalDays = 0;
+
+      // 모든 연도의 데이터 순회
+      for (const yearDoc of revenueSnapshot.docs) {
+        const yearData = yearDoc.data();
+        const year = parseInt(yearDoc.id);
+
+        // 각 월 데이터 순회
+        for (const monthKey in yearData) {
+          const monthData = yearData[monthKey];
+          const month = parseInt(monthKey);
+
+          if (monthData && typeof monthData === 'object') {
+            // 각 회원권 데이터 순회
+            Object.entries(monthData).forEach(([membershipKey, data]) => {
+              const membershipData = data as MembershipRevenueData;
+              const price = parseInt(membershipData.price) || 0;
+              const createdDate = membershipData.createdAt.toDate();
+              const dateStr = createdDate.toISOString().split('T')[0];
+
+              // 총 매출 누적
+              totalRevenue += price;
+
+              // 이번 달 매출 체크
+              if (year === currentYear && month === currentMonth) {
+                thisMonthRevenue += price;
+              }
+
+              // 오늘 매출 체크
+              if (dateStr === today) {
+                todayRevenue += price;
+              }
+            });
+          }
+        }
+      }
+
+      // 일평균 매출 계산 (현재 연도의 1월 1일부터 오늘까지)
+      const startOfYear = new Date(currentYear, 0, 1);
+      const daysSinceStartOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)) + 1;
       
-      // TODO: Firebase에서 실제 통계 데이터 가져오기
-      // const path = `/box/${boxName}/revenue/stats`;
+      // 현재 연도의 매출만 가져와서 일평균 계산
+      let currentYearRevenue = 0;
+      const currentYearDocRef = doc(db, `box/${boxName}/revenue/${currentYear}`);
+      const currentYearDoc = await getDoc(currentYearDocRef);
       
-      // 임시 더미 데이터
+      if (currentYearDoc.exists()) {
+        const currentYearData = currentYearDoc.data();
+        for (const monthKey in currentYearData) {
+          const monthData = currentYearData[monthKey];
+          if (monthData && typeof monthData === 'object') {
+            Object.entries(monthData).forEach(([_, data]) => {
+              const membershipData = data as MembershipRevenueData;
+              const price = parseInt(membershipData.price) || 0;
+              currentYearRevenue += price;
+            });
+          }
+        }
+      }
+
+      const averageDailyRevenue = daysSinceStartOfYear > 0 
+        ? Math.floor(currentYearRevenue / daysSinceStartOfYear) 
+        : 0;
+
       return {
-        totalRevenue: 12280000,
-        thisMonthRevenue: 1750000,
-        todayRevenue: 270000,
-        averageDailyRevenue: 58000
+        totalRevenue,
+        thisMonthRevenue,
+        todayRevenue,
+        averageDailyRevenue
       };
     } catch (error) {
       console.error('Error fetching revenue stats:', error);
