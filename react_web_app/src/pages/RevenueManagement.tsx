@@ -174,7 +174,7 @@ const RevenueManagement = () => {
             <DollarSign size={20} />
             <div className="revenue-stats">
               <div className="stat-item">
-                <span className="stat-label">총 매출</span>
+                <span className="stat-label">올해 매출</span>
                 <span className="stat-value">{(stats.totalRevenue / 10000).toLocaleString()}만원</span>
               </div>
               <div className="stat-divider">|</div>
@@ -189,7 +189,7 @@ const RevenueManagement = () => {
               </div>
               <div className="stat-divider">|</div>
               <div className="stat-item">
-                <span className="stat-label">일평균 매출</span>
+                <span className="stat-label">월평균 매출</span>
                 <span className="stat-value">{(stats.averageDailyRevenue / 10000).toLocaleString()}만원</span>
               </div>
             </div>
