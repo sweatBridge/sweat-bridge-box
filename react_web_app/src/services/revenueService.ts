@@ -150,7 +150,6 @@ export class RevenueService {
       let totalRevenue = 0;
       let thisMonthRevenue = 0;
       let todayRevenue = 0;
-      let totalDays = 0;
 
       // 모든 연도의 데이터 순회
       for (const yearDoc of revenueSnapshot.docs) {
@@ -170,8 +169,10 @@ export class RevenueService {
               const createdDate = membershipData.createdAt.toDate();
               const dateStr = createdDate.toISOString().split('T')[0];
 
-              // 총 매출 누적
-              totalRevenue += price;
+              // 이번 해 매출 누적
+              if (year === currentYear) {
+                totalRevenue += price;
+              }
 
               // 이번 달 매출 체크
               if (year === currentYear && month === currentMonth) {
@@ -187,31 +188,10 @@ export class RevenueService {
         }
       }
 
-      // 일평균 매출 계산 (현재 연도의 1월 1일부터 오늘까지)
-      const startOfYear = new Date(currentYear, 0, 1);
-      const daysSinceStartOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      
-      // 현재 연도의 매출만 가져와서 일평균 계산
-      let currentYearRevenue = 0;
-      const currentYearDocRef = doc(db, `box/${boxName}/revenue/${currentYear}`);
-      const currentYearDoc = await getDoc(currentYearDocRef);
-      
-      if (currentYearDoc.exists()) {
-        const currentYearData = currentYearDoc.data();
-        for (const monthKey in currentYearData) {
-          const monthData = currentYearData[monthKey];
-          if (monthData && typeof monthData === 'object') {
-            Object.entries(monthData).forEach(([_, data]) => {
-              const membershipData = data as MembershipRevenueData;
-              const price = parseInt(membershipData.price) || 0;
-              currentYearRevenue += price;
-            });
-          }
-        }
-      }
-
-      const averageDailyRevenue = daysSinceStartOfYear > 0 
-        ? Math.floor(currentYearRevenue / daysSinceStartOfYear) 
+      // 월평균 매출 계산 (올해 1월부터 현재 월까지)
+      // currentMonth는 1~12 사이의 값
+      const averageDailyRevenue = currentMonth > 0 
+        ? Math.floor(totalRevenue / currentMonth) 
         : 0;
 
       return {
