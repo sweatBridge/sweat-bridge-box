@@ -4,7 +4,7 @@ import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Timestamp } from 'firebase/firestore';
 
-interface MembershipRevenueData {
+interface RevenueData {
   assignee: string;
   createdAt: Timestamp;
   id: string;
@@ -58,12 +58,12 @@ export class RevenueService {
         cardCount: number;
       }>();
 
-      // 각 회원권 데이터를 일별로 집계
-      Object.entries(monthData).forEach(([membershipKey, data]) => {
-        const membershipData = data as MembershipRevenueData;
+      // 각 매출 데이터를 일별로 집계
+      Object.entries(monthData).forEach(([revenueKey, data]) => {
+        const revenueData = data as RevenueData;
         
         // createdAt을 Date로 변환하고 날짜 문자열 생성
-        const createdDate = membershipData.createdAt.toDate();
+        const createdDate = revenueData.createdAt.toDate();
         const dateStr = createdDate.toISOString().split('T')[0];
         
         // 해당 날짜의 데이터가 없으면 초기화
@@ -81,17 +81,25 @@ export class RevenueService {
         }
 
         const dailyData = dailyRevenueMap.get(dateStr)!;
-        const price = parseInt(membershipData.price) || 0;
+        const price = parseInt(revenueData.price) || 0;
 
-        // 회원권 매출 집계
-        dailyData.membershipRevenue += price;
-        dailyData.membershipCount += 1;
+        // 회원권과 기타 매출 구분
+        // type이 countPass 또는 periodPass면 회원권, 그 외는 기타
+        const isMembership = revenueData.type === 'countPass' || revenueData.type === 'periodPass';
+        
+        if (isMembership) {
+          dailyData.membershipRevenue += price;
+          dailyData.membershipCount += 1;
+        } else {
+          dailyData.otherRevenue += price;
+          dailyData.otherCount += 1;
+        }
 
         // 결제 수단별 집계
-        if (membershipData.paymentType === 'cash') {
+        if (revenueData.paymentType === 'cash') {
           dailyData.cashRevenue += price;
           dailyData.cashCount += 1;
-        } else if (membershipData.paymentType === 'card') {
+        } else if (revenueData.paymentType === 'card') {
           dailyData.cardRevenue += price;
           dailyData.cardCount += 1;
         }
@@ -162,11 +170,11 @@ export class RevenueService {
           const month = parseInt(monthKey);
 
           if (monthData && typeof monthData === 'object') {
-            // 각 회원권 데이터 순회
-            Object.entries(monthData).forEach(([membershipKey, data]) => {
-              const membershipData = data as MembershipRevenueData;
-              const price = parseInt(membershipData.price) || 0;
-              const createdDate = membershipData.createdAt.toDate();
+            // 각 매출 데이터 순회
+            Object.entries(monthData).forEach(([revenueKey, data]) => {
+              const revenueData = data as RevenueData;
+              const price = parseInt(revenueData.price) || 0;
+              const createdDate = revenueData.createdAt.toDate();
               const dateStr = createdDate.toISOString().split('T')[0];
 
               // 이번 해 매출 누적
