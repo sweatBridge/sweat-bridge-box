@@ -229,28 +229,26 @@ const RevenueManagement = () => {
             </div>
           </div>
           
-          {loading && monthlyRevenue ? (
-            <div className="loading-container">
-              <div className="loading-spinner"></div>
-              <p>매출 데이터를 불러오는 중...</p>
-            </div>
-          ) : (
-            <div className="calendar-container">
-              <Calendar
-                onChange={handleDateChange}
-                value={selectedDate}
-                onActiveStartDateChange={handleActiveStartDateChange}
-                tileContent={tileContent}
-                locale="ko-KR"
-                formatDay={(locale, date) => date.getDate().toString()}
-                showNeighboringMonth={false}
-                next2Label={null}
-                prev2Label={null}
-                nextLabel={<ChevronRight size={16} />}
-                prevLabel={<ChevronLeft size={16} />}
-              />
-            </div>
-          )}
+          <div className="calendar-container" style={{ position: 'relative' }}>
+            {loading && monthlyRevenue && (
+              <div className="calendar-loading-overlay">
+                <div className="loading-spinner"></div>
+              </div>
+            )}
+            <Calendar
+              onChange={handleDateChange}
+              value={selectedDate}
+              onActiveStartDateChange={handleActiveStartDateChange}
+              tileContent={tileContent}
+              locale="ko-KR"
+              formatDay={(locale, date) => date.getDate().toString()}
+              showNeighboringMonth={false}
+              next2Label={null}
+              prev2Label={null}
+              nextLabel={<ChevronRight size={16} />}
+              prevLabel={<ChevronLeft size={16} />}
+            />
+          </div>
         </div>
 
         {/* 상세 정보 섹션 */}
@@ -520,6 +518,20 @@ const RevenueManagement = () => {
           flex: 1;
           display: flex;
           justify-content: center;
+        }
+
+        .calendar-loading-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(255, 255, 255, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+          border-radius: 8px;
         }
 
         /* React Calendar 커스터마이징 */
