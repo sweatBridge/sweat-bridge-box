@@ -167,41 +167,56 @@ const RevenueManagement = () => {
 
   return (
     <div className="dashboard">
-      {/* 통계 카드 */}
-      <div className="content-card">
-        <div className="card-header">
-          <div className="header-left">
-            <DollarSign size={20} />
-            <div className="revenue-stats">
-              <div className="stat-item">
-                <span className="stat-label">올해 매출</span>
-                <span className="stat-value">{(stats.totalRevenue / 10000).toLocaleString()}만원</span>
-              </div>
-              <div className="stat-divider">|</div>
-              <div className="stat-item">
-                <span className="stat-label">이번 달 매출</span>
-                <span className="stat-value">{(stats.thisMonthRevenue / 10000).toLocaleString()}만원</span>
-              </div>
-              <div className="stat-divider">|</div>
-              <div className="stat-item">
-                <span className="stat-label">오늘 매출</span>
-                <span className="stat-value">{(stats.todayRevenue / 10000).toLocaleString()}만원</span>
-              </div>
-              <div className="stat-divider">|</div>
-              <div className="stat-item">
-                <span className="stat-label">월평균 매출</span>
-                <span className="stat-value">{(stats.averageDailyRevenue / 10000).toLocaleString()}만원</span>
-              </div>
-            </div>
+      {/* 통계 카드들 */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-card-icon">
+            <DollarSign size={24} />
           </div>
-          <div className="header-actions">
-            <button className="btn btn-outline" onClick={handleExcelDownload}>
-              <Download size={16} />
-              엑셀 다운로드
-            </button>
+          <div className="stat-card-content">
+            <div className="stat-card-label">올해 매출</div>
+            <div className="stat-card-value">{(stats.totalRevenue / 10000).toLocaleString()}만원</div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-card-icon">
+            <CalendarIcon size={24} />
+          </div>
+          <div className="stat-card-content">
+            <div className="stat-card-label">이번 달 매출</div>
+            <div className="stat-card-value">{(stats.thisMonthRevenue / 10000).toLocaleString()}만원</div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-card-icon">
+            <TrendingUp size={24} />
+          </div>
+          <div className="stat-card-content">
+            <div className="stat-card-label">오늘 매출</div>
+            <div className="stat-card-value">{(stats.todayRevenue / 10000).toLocaleString()}만원</div>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-card-icon">
+            <DollarSign size={24} />
+          </div>
+          <div className="stat-card-content">
+            <div className="stat-card-label">월평균 매출</div>
+            <div className="stat-card-value">{(stats.averageDailyRevenue / 10000).toLocaleString()}만원</div>
           </div>
         </div>
       </div>
+
+      {/* 엑셀 다운로드 버튼 */}
+      {/* <div className="actions-bar">
+        <button className="btn btn-primary" onClick={handleExcelDownload}>
+          <Download size={16} />
+          엑셀 다운로드
+        </button>
+      </div> */}
 
       {/* 캘린더와 상세 정보 */}
       <div className="revenue-content">
@@ -380,75 +395,84 @@ const RevenueManagement = () => {
       </div>
 
       <style>{`
-        .card-header {
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+
+        .stat-card {
+          background: white;
+          border-radius: 12px;
+          padding: 24px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          padding: 16px 20px;
+          gap: 16px;
+          transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+          transform: translateY(-2px);
+        }
+
+        .stat-card-icon {
+          width: 56px;
+          height: 56px;
+          border-radius: 12px;
           background: ${Gradients.primary};
+          display: flex;
+          align-items: center;
+          justify-content: center;
           color: white;
-          border-radius: 8px 8px 0 0;
-          margin: -20px -20px 20px -20px;
+          flex-shrink: 0;
         }
 
-        .header-left {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          font-weight: 600;
+        .stat-card-content {
+          flex: 1;
         }
 
-        .revenue-stats {
-          display: flex;
-          align-items: center;
-          gap: 12px;
+        .stat-card-label {
+          font-size: 14px;
+          color: #6b7280;
+          margin-bottom: 8px;
+          font-weight: 500;
         }
 
-        .stat-item {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 2px;
-        }
-
-        .stat-label {
-          font-size: 12px;
-          opacity: 0.8;
-          font-weight: 400;
-        }
-
-        .stat-value {
-          font-size: 16px;
+        .stat-card-value {
+          font-size: 24px;
           font-weight: 700;
+          color: #374151;
         }
 
-        .stat-divider {
-          color: rgba(255, 255, 255, 0.5);
-          font-size: 14px;
-        }
-
-        .header-actions {
+        .actions-bar {
           display: flex;
-          gap: 8px;
+          justify-content: flex-end;
+          margin-bottom: 20px;
         }
 
-        .btn-outline {
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.3);
+        .btn-primary {
+          background: ${Gradients.primary};
+          border: none;
           color: white;
           font-size: 14px;
-          padding: 6px 12px;
+          font-weight: 500;
+          padding: 10px 20px;
           display: flex;
           align-items: center;
-          gap: 6px;
-          border-radius: 6px;
+          gap: 8px;
+          border-radius: 8px;
           cursor: pointer;
           transition: all 0.2s;
+          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
         }
 
-        .btn-outline:hover {
-          background: rgba(255, 255, 255, 0.2);
-          border-color: rgba(255, 255, 255, 0.5);
+        .btn-primary:hover {
+          background: ${Gradients.primaryHover};
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+          transform: translateY(-1px);
         }
 
         .revenue-content {
@@ -883,6 +907,10 @@ const RevenueManagement = () => {
         }
 
         @media (max-width: 1024px) {
+          .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+
           .revenue-content {
             grid-template-columns: 1fr;
             gap: 20px;
@@ -890,6 +918,25 @@ const RevenueManagement = () => {
           
           .details-section {
             order: -1;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .stats-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .stat-card {
+            padding: 20px;
+          }
+
+          .stat-card-icon {
+            width: 48px;
+            height: 48px;
+          }
+
+          .stat-card-value {
+            font-size: 20px;
           }
         }
       `}</style>
