@@ -58,6 +58,29 @@ export const useRevenueManagement = () => {
     }
   }, [setLoading, setError]);
 
+  // 초기 데이터 로드 (월별 매출 + 통계)
+  const loadInitialData = useCallback(async (year: number, month: number) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const [monthlyRevenue, stats] = await Promise.all([
+        RevenueService.getMonthlyRevenue(year, month),
+        RevenueService.getRevenueStats()
+      ]);
+      
+      setState(prev => ({ 
+        ...prev, 
+        monthlyRevenue, 
+        stats, 
+        loading: false 
+      }));
+    } catch (error) {
+      setError((error as Error).message);
+      setLoading(false);
+    }
+  }, [setLoading, setError]);
+
   // 일별 매출 데이터 업데이트
   const updateDailyRevenue = useCallback(async (dailyRevenue: DailyRevenue) => {
     setLoading(true);
@@ -83,6 +106,7 @@ export const useRevenueManagement = () => {
     error: state.error,
     loadMonthlyRevenue,
     loadRevenueStats,
+    loadInitialData,
     updateDailyRevenue,
     clearError
   };
