@@ -5,8 +5,9 @@ import { useMemberManagement } from '../hooks/useMemberManagement';
 import MemberDeletionModal from '../components/modals/member/MemberDeletionModal';
 import MembershipPlanModal from '../components/modals/membership/MembershipPlanModal';
 import MemberManagementModal from '../components/modals/member/MemberManagementModal';
+import WarningMembersModal from '../components/modals/member/WarningMembersModal';
 import ToastMessage from '../components/ToastMessage';
-import { getGenderText, filterMembers, getActiveMembersCount } from '../utils/memberUtils';
+import { getGenderText, filterMembers, getActiveMembersCount, getWarningMembers, getWarningMembersCount } from '../utils/memberUtils';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
@@ -30,6 +31,7 @@ const MemberManagement = () => {
   const [memberManagementModalVisible, setMemberManagementModalVisible] = useState(false);
   const [deletionModalVisible, setDeletionModalVisible] = useState(false);
   const [membershipPlanModalVisible, setMembershipPlanModalVisible] = useState(false);
+  const [warningMembersModalVisible, setWarningMembersModalVisible] = useState(false);
   const [memberListModalVisible, setMemberListModalVisible] = useState(false);
   const [memberListType, setMemberListType] = useState<'warning' | 'new'>('warning');
   
@@ -69,6 +71,10 @@ const MemberManagement = () => {
   
   // 유효한 회원권을 가진 회원 수 계산
   const activeMembersCount = getActiveMembersCount(members);
+  
+  // 주의 회원 수 및 목록 계산
+  const warningMembersCount = getWarningMembersCount(members);
+  const warningMembers = getWarningMembers(members);
   
   // 페이지네이션 계산
   const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
@@ -154,14 +160,24 @@ const MemberManagement = () => {
     }
   };
 
-  // 회원 리스트 모달 열기
+  // 회원 리스트 모달 열기 (신규 회원용)
   const handleOpenMemberList = (type: 'warning' | 'new') => {
-    setMemberListType(type);
-    setMemberListModalVisible(true);
+    if (type === 'warning') {
+      setWarningMembersModalVisible(true);
+    } else {
+      setMemberListType(type);
+      setMemberListModalVisible(true);
+    }
+  };
+
+  // 주의 회원 모달에서 회원 클릭 시
+  const handleWarningMemberClick = (member: Member) => {
+    setWarningMembersModalVisible(false);
+    setSelectedMember(member);
+    setMemberManagementModalVisible(true);
   };
 
   // 임시 통계 데이터 (추후 실제 데이터로 대체)
-  const warningMembersCount = 3; // 주의 회원 (만료 임박 등)
   const newMembersCount = 5; // 신규 회원 (이번 달 등록)
 
   return (
@@ -416,19 +432,25 @@ const MemberManagement = () => {
         }}
       />
 
-      {/* 회원 리스트 모달 */}
+      {/* 주의 회원 모달 */}
+      <WarningMembersModal
+        visible={warningMembersModalVisible}
+        members={warningMembers}
+        onClose={() => setWarningMembersModalVisible(false)}
+        onMemberClick={handleWarningMemberClick}
+      />
+
+      {/* 신규 회원 리스트 모달 (임시) */}
       {memberListModalVisible && (
         <div className="modal-overlay" onClick={() => setMemberListModalVisible(false)}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{memberListType === 'warning' ? '주의 회원 목록' : '신규 회원 목록'}</h3>
+              <h3>신규 회원 목록</h3>
               <button className="modal-close" onClick={() => setMemberListModalVisible(false)}>×</button>
             </div>
             <div className="modal-body">
               <p className="text-muted">
-                {memberListType === 'warning' 
-                  ? '회원권 만료가 임박한 회원 목록입니다.' 
-                  : '최근 등록된 신규 회원 목록입니다.'}
+                최근 등록된 신규 회원 목록입니다.
               </p>
               <div className="member-list-placeholder">
                 <Users size={48} className="placeholder-icon" />
