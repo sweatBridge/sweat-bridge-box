@@ -30,6 +30,8 @@ const MemberManagement = () => {
   const [memberManagementModalVisible, setMemberManagementModalVisible] = useState(false);
   const [deletionModalVisible, setDeletionModalVisible] = useState(false);
   const [membershipPlanModalVisible, setMembershipPlanModalVisible] = useState(false);
+  const [memberListModalVisible, setMemberListModalVisible] = useState(false);
+  const [memberListType, setMemberListType] = useState<'warning' | 'new'>('warning');
   
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
@@ -152,46 +154,75 @@ const MemberManagement = () => {
     }
   };
 
+  // 회원 리스트 모달 열기
+  const handleOpenMemberList = (type: 'warning' | 'new') => {
+    setMemberListType(type);
+    setMemberListModalVisible(true);
+  };
+
+  // 임시 통계 데이터 (추후 실제 데이터로 대체)
+  const warningMembersCount = 3; // 주의 회원 (만료 임박 등)
+  const newMembersCount = 5; // 신규 회원 (이번 달 등록)
+
   return (
     <div className="dashboard">
+      {/* 액션 버튼들 */}
+      <div className="actions-bar">
+        <button className="btn btn-primary" onClick={handleAddMember}>
+          <UserPlus size={16} />
+          회원추가
+        </button>
+        <button className="btn btn-secondary" onClick={handleManageMembershipPlans}>
+          <CreditCard size={16} />
+          회원권 관리
+        </button>
+      </div>
 
-      {/* 컨트롤 카드 */}
-      <div className="content-card">
-        <div className="card-header">
-          <div className="header-left">
+      {/* 통계 카드들 */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-card-icon">
             <Users size={20} />
-            <div className="member-stats">
-              <div className="stat-item">
-                <span className="stat-label">등록 회원</span>
-                <span className="stat-value">{members.length}명</span>
-              </div>
-              <div className="stat-divider">|</div>
-              <div className="stat-item">
-                <span className="stat-label">유효 회원권</span>
-                <span className="stat-value">{activeMembersCount}명</span>
-              </div>
-              {searchValue && (
-                <>
-                  <div className="stat-divider">|</div>
-                  <div className="stat-item">
-                    <span className="stat-label">검색 결과</span>
-                    <span className="stat-value">{filteredMembers.length}명</span>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
-          <div className="header-actions">
-            <button className="btn btn-outline" onClick={handleAddMember}>
-              <UserPlus size={16} />
-              회원추가
-            </button>
-            <button className="btn btn-outline" onClick={handleManageMembershipPlans}>
-              <CreditCard size={16} />
-              회원권
-            </button>
+          <div className="stat-card-content">
+            <div className="stat-card-label">총 회원</div>
+            <div className="stat-card-value">{members.length}명</div>
           </div>
         </div>
+
+        <div className="stat-card">
+          <div className="stat-card-icon active">
+            <Users size={20} />
+          </div>
+          <div className="stat-card-content">
+            <div className="stat-card-label">활성 회원</div>
+            <div className="stat-card-value">{activeMembersCount}명</div>
+          </div>
+        </div>
+
+        <div className="stat-card clickable" onClick={() => handleOpenMemberList('warning')}>
+          <div className="stat-card-icon warning">
+            <Users size={20} />
+          </div>
+          <div className="stat-card-content">
+            <div className="stat-card-label">주의 회원</div>
+            <div className="stat-card-value">{warningMembersCount}명</div>
+          </div>
+        </div>
+
+        <div className="stat-card clickable" onClick={() => handleOpenMemberList('new')}>
+          <div className="stat-card-icon new">
+            <UserPlus size={20} />
+          </div>
+          <div className="stat-card-content">
+            <div className="stat-card-label">신규 회원</div>
+            <div className="stat-card-value">{newMembersCount}명</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 검색 및 테이블 카드 */}
+      <div className="content-card">
 
         <div className="search-section">
           <div className="search-container">
@@ -385,78 +416,155 @@ const MemberManagement = () => {
         }}
       />
 
+      {/* 회원 리스트 모달 */}
+      {memberListModalVisible && (
+        <div className="modal-overlay" onClick={() => setMemberListModalVisible(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{memberListType === 'warning' ? '주의 회원 목록' : '신규 회원 목록'}</h3>
+              <button className="modal-close" onClick={() => setMemberListModalVisible(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p className="text-muted">
+                {memberListType === 'warning' 
+                  ? '회원권 만료가 임박한 회원 목록입니다.' 
+                  : '최근 등록된 신규 회원 목록입니다.'}
+              </p>
+              <div className="member-list-placeholder">
+                <Users size={48} className="placeholder-icon" />
+                <p>기능 준비 중입니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast Messages */}
       <ToastMessage
         onCreateToast={(createToastFn: (toast: ToastMessageType) => void) => setCreateToast(() => createToastFn)}
       />
 
       <style>{`
-        .card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+
+        .stat-card {
+          background: white;
+          border-radius: 12px;
           padding: 16px 20px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+          transform: translateY(-2px);
+        }
+
+        .stat-card.clickable {
+          cursor: pointer;
+        }
+
+        .stat-card.clickable:active {
+          transform: translateY(0);
+        }
+
+        .stat-card-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 10px;
           background: ${Gradients.primary};
+          display: flex;
+          align-items: center;
+          justify-content: center;
           color: white;
-          border-radius: 8px 8px 0 0;
-          margin: -20px -20px 20px -20px;
+          flex-shrink: 0;
         }
 
-        .header-left {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          font-weight: 600;
+        .stat-card-icon.active {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         }
 
-        .member-stats {
-          display: flex;
-          align-items: center;
-          gap: 12px;
+        .stat-card-icon.warning {
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
         }
 
-        .stat-item {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 2px;
+        .stat-card-icon.new {
+          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
         }
 
-        .stat-label {
-          font-size: 12px;
-          opacity: 0.8;
-          font-weight: 400;
+        .stat-card-content {
+          flex: 1;
         }
 
-        .stat-value {
-          font-size: 16px;
+        .stat-card-label {
+          font-size: 13px;
+          color: #6b7280;
+          margin-bottom: 6px;
+          font-weight: 500;
+        }
+
+        .stat-card-value {
+          font-size: 20px;
           font-weight: 700;
+          color: #374151;
         }
 
-        .stat-divider {
-          color: rgba(255, 255, 255, 0.5);
-          font-size: 14px;
-        }
-
-        .header-actions {
+        .actions-bar {
           display: flex;
-          gap: 8px;
+          justify-content: flex-end;
+          gap: 12px;
+          margin-bottom: 20px;
         }
 
-        .btn-outline {
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.3);
+        .btn-primary {
+          background: ${Gradients.primary};
+          border: none;
           color: white;
           font-size: 14px;
-          padding: 6px 12px;
+          font-weight: 500;
+          padding: 10px 20px;
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
         }
 
-        .btn-outline:hover {
-          background: rgba(255, 255, 255, 0.2);
-          border-color: rgba(255, 255, 255, 0.5);
+        .btn-primary:hover {
+          background: ${Gradients.primaryHover};
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+          transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+          background: white;
+          border: 2px solid ${AppColors.primary};
+          color: ${AppColors.primary};
+          font-size: 14px;
+          font-weight: 500;
+          padding: 10px 20px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+          background: ${AppColors.primary};
+          color: white;
+          transform: translateY(-1px);
         }
 
         .search-section {
@@ -759,6 +867,135 @@ const MemberManagement = () => {
 
         .page-number.active:hover {
           background: ${Gradients.primaryHover};
+        }
+
+        /* 모달 스타일 */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          padding: 20px;
+        }
+
+        .modal-container {
+          background: white;
+          border-radius: 12px;
+          width: 100%;
+          max-width: 600px;
+          max-height: 80vh;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px 24px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-header h3 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .modal-close {
+          background: none;
+          border: none;
+          font-size: 28px;
+          color: #9ca3af;
+          cursor: pointer;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 6px;
+          transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+          background: #f3f4f6;
+          color: #374151;
+        }
+
+        .modal-body {
+          padding: 24px;
+          overflow-y: auto;
+        }
+
+        .text-muted {
+          color: #6b7280;
+          font-size: 14px;
+          margin-bottom: 20px;
+        }
+
+        .member-list-placeholder {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 60px 20px;
+          color: #9ca3af;
+        }
+
+        .placeholder-icon {
+          margin-bottom: 16px;
+        }
+
+        .member-list-placeholder p {
+          margin: 0;
+          font-size: 14px;
+        }
+
+        @media (max-width: 1024px) {
+          .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 640px) {
+          .stats-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .stat-card {
+            padding: 14px 18px;
+          }
+
+          .stat-card-icon {
+            width: 40px;
+            height: 40px;
+          }
+
+          .stat-card-label {
+            font-size: 12px;
+          }
+
+          .stat-card-value {
+            font-size: 18px;
+          }
+
+          .actions-bar {
+            flex-direction: column;
+          }
+
+          .btn-primary,
+          .btn-secondary {
+            width: 100%;
+            justify-content: center;
+          }
         }
       `}</style>
     </div>
