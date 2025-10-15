@@ -16,8 +16,7 @@ export interface FirebaseMemberData {
   nickName: string;
   gender: 'M' | 'F';
   birthDate: string;
-  phone?: string;  // Firebase에서 실제 필드명
-  phoneNumber?: string;  // 호환성을 위해 유지
+  phone: string;
   memberships: MembershipData[];
   futureMemberships: MembershipData[];
 }
@@ -36,8 +35,6 @@ export class MemberService {
         const data = doc.data() as FirebaseMemberData;
         members.push({
           ...data,
-          phone: data.phone || data.phoneNumber || '',
-          phoneNumber: data.phone || data.phoneNumber || '',  // phone 필드를 phoneNumber로 매핑
           membershipInfo: this.calculateMembershipInfo(
             data.memberships || [], 
             data.futureMemberships || []

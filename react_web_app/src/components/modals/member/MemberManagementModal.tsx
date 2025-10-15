@@ -270,7 +270,7 @@ const MemberManagementModal = ({
                     </div>
                     <div className="info-content">
                       <span className="info-label">전화번호</span>
-                      <span className="info-value">{formatPhoneNumber(member.phoneNumber)}</span>
+                      <span className="info-value">{formatPhoneNumber(member.phone)}</span>
                     </div>
                   </div>
                   
