@@ -25,7 +25,11 @@ export class LockerService {
         state: v?.state ?? '',
         user: v?.user ?? '',
         userName: v?.userName ?? '',
-        phoneNumber: v?.phoneNumber ?? ''
+        phoneNumber: v?.phoneNumber ?? '',
+        assignee: v?.assignee ?? '',
+        note: v?.note ?? '',
+        startDate: v?.startDate ?? '',
+        endDate: v?.endDate ?? ''
       });
 
       if (Array.isArray(value)) {
@@ -68,7 +72,11 @@ export class LockerService {
           state: 'unused',
           user: '',
           userName: '',
-          phoneNumber: ''
+          phoneNumber: '',
+          assignee: '',
+          note: '',
+          startDate: '',
+          endDate: ''
         };
         
         // 키가 존재하는지 확인
@@ -137,7 +145,11 @@ export class LockerService {
         state: 'deleted',
         user: '',
         userName: '',
-        phoneNumber: ''
+        phoneNumber: '',
+        assignee: '',
+        note: '',
+        startDate: '',
+        endDate: ''
       };
 
       let newValue: any;
@@ -195,7 +207,11 @@ export class LockerService {
         state: 'unused',
         user: '',
         userName: '',
-        phoneNumber: ''
+        phoneNumber: '',
+        assignee: '',
+        note: '',
+        startDate: '',
+        endDate: ''
       };
 
       let newValue: any;
@@ -206,6 +222,211 @@ export class LockerService {
       } else if (existingValue && typeof existingValue === 'object') {
         // 객체를 배열로 변환하고 unused 항목 추가
         newValue = [existingValue, unusedEntry];
+      } else {
+        throw new Error('잘못된 락커 데이터 형식입니다.');
+      }
+
+      tx.set(ref, { [key]: newValue }, { merge: true });
+    });
+  }
+
+  static async updateLocker(
+    box: string,
+    lockerNumber: number,
+    state: 'unused' | 'na',
+    note: string,
+    assignee: string
+  ): Promise<void> {
+    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
+
+    return runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) {
+        throw new Error('락커 문서를 찾을 수 없습니다.');
+      }
+
+      const data = snap.data() as Record<string, unknown>;
+      const key = String(lockerNumber);
+
+      if (!Object.prototype.hasOwnProperty.call(data, key)) {
+        throw new Error('해당 락커 번호를 찾을 수 없습니다.');
+      }
+
+      const existingValue = data[key];
+      
+      // 현재 사용자가 할당되어 있는지 확인
+      let hasUser = false;
+      if (Array.isArray(existingValue)) {
+        const lastItem = existingValue[existingValue.length - 1];
+        hasUser = (lastItem?.userName || lastItem?.user || '').trim().length > 0;
+      } else if (existingValue && typeof existingValue === 'object') {
+        hasUser = ((existingValue as any)?.userName || (existingValue as any)?.user || '').trim().length > 0;
+      }
+
+      if (hasUser) {
+        throw new Error('회원을 먼저 해지하시기 바랍니다.');
+      }
+
+      const updatedEntry: Lockers = {
+        number: lockerNumber,
+        state,
+        user: '',
+        userName: '',
+        phoneNumber: '',
+        assignee,
+        note,
+        startDate: '',
+        endDate: ''
+      };
+
+      let newValue: any;
+      const hasNote = note.trim().length > 0;
+
+      if (Array.isArray(existingValue)) {
+        if (hasNote) {
+          // note가 있으면 배열에 새 항목 추가
+          newValue = [...existingValue, updatedEntry];
+        } else {
+          // note가 없으면 마지막 항목 업데이트
+          const updated = [...existingValue];
+          updated[updated.length - 1] = updatedEntry;
+          newValue = updated;
+        }
+      } else if (existingValue && typeof existingValue === 'object') {
+        if (hasNote) {
+          // note가 있으면 객체를 배열로 변환하고 새 항목 추가
+          newValue = [existingValue, updatedEntry];
+        } else {
+          // note가 없으면 객체를 업데이트
+          newValue = updatedEntry;
+        }
+      } else {
+        throw new Error('잘못된 락커 데이터 형식입니다.');
+      }
+
+      tx.set(ref, { [key]: newValue }, { merge: true });
+    });
+  }
+
+  static async getLockerHistory(box: string, lockerNumber: number): Promise<Lockers[]> {
+    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) {
+      return [];
+    }
+
+    const data = snap.data() as Record<string, unknown>;
+    const key = String(lockerNumber);
+
+    if (!Object.prototype.hasOwnProperty.call(data, key)) {
+      return [];
+    }
+
+    const value = data[key];
+    const history: Lockers[] = [];
+
+    const toLocker = (v: any): Lockers => ({
+      number: lockerNumber,
+      state: v?.state ?? '',
+      user: v?.user ?? '',
+      userName: v?.userName ?? '',
+      phoneNumber: v?.phoneNumber ?? '',
+      assignee: v?.assignee ?? '',
+      note: v?.note ?? '',
+      startDate: v?.startDate ?? '',
+      endDate: v?.endDate ?? ''
+    });
+
+    if (Array.isArray(value)) {
+      // 배열인 경우 모든 항목을 히스토리로 반환
+      for (const item of value) {
+        history.push(toLocker(item));
+      }
+    } else if (value && typeof value === 'object') {
+      // 객체인 경우 단일 항목
+      history.push(toLocker(value));
+    }
+
+    return history;
+  }
+
+  static async assignLocker(
+    box: string,
+    lockerNumber: number,
+    userName: string,
+    phoneNumber: string,
+    startDate: string,
+    endDate: string
+  ): Promise<void> {
+    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
+
+    return runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) {
+        throw new Error('락커 문서를 찾을 수 없습니다.');
+      }
+
+      const data = snap.data() as Record<string, unknown>;
+      const key = String(lockerNumber);
+
+      if (!Object.prototype.hasOwnProperty.call(data, key)) {
+        throw new Error('해당 락커 번호를 찾을 수 없습니다.');
+      }
+
+      const existingValue = data[key];
+      
+      // 현재 사용자가 할당되어 있는지 확인
+      let hasUser = false;
+      if (Array.isArray(existingValue)) {
+        const lastItem = existingValue[existingValue.length - 1];
+        hasUser = (lastItem?.userName || lastItem?.user || '').trim().length > 0;
+      } else if (existingValue && typeof existingValue === 'object') {
+        hasUser = ((existingValue as any)?.userName || (existingValue as any)?.user || '').trim().length > 0;
+      }
+
+      if (hasUser) {
+        throw new Error('이미 회원이 배정되어 있습니다. 먼저 해지해주세요.');
+      }
+
+      const assignedEntry: Lockers = {
+        number: lockerNumber,
+        state: 'used',
+        user: userName,  // realName으로 설정
+        userName: userName,  // realName으로 설정
+        phoneNumber: phoneNumber || '',  // undefined 방지
+        assignee: '',
+        note: '',
+        startDate: startDate || '',  // undefined 방지
+        endDate: endDate || ''  // undefined 방지
+      };
+
+      let newValue: any;
+
+      if (Array.isArray(existingValue)) {
+        const lastItem = existingValue[existingValue.length - 1];
+        const isUnusedWithNoNote = lastItem?.state === 'unused' && (!lastItem?.note || lastItem.note.trim() === '');
+        
+        if (isUnusedWithNoNote) {
+          // 사용 가능 상태이고 note가 없으면 마지막 항목 덮어쓰기
+          const updated = [...existingValue];
+          updated[updated.length - 1] = assignedEntry;
+          newValue = updated;
+        } else {
+          // 그렇지 않으면 새 항목 추가
+          newValue = [...existingValue, assignedEntry];
+        }
+      } else if (existingValue && typeof existingValue === 'object') {
+        const isUnusedWithNoNote = (existingValue as any)?.state === 'unused' && 
+                                     (!(existingValue as any)?.note || (existingValue as any).note.trim() === '');
+        
+        if (isUnusedWithNoNote) {
+          // 사용 가능 상태이고 note가 없으면 객체 덮어쓰기
+          newValue = assignedEntry;
+        } else {
+          // 그렇지 않으면 배열로 변환하고 새 항목 추가
+          newValue = [existingValue, assignedEntry];
+        }
       } else {
         throw new Error('잘못된 락커 데이터 형식입니다.');
       }

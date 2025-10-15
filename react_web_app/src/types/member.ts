@@ -11,7 +11,8 @@ export interface Member {
   nickName: string;
   gender: 'M' | 'F';
   birthDate: string;
-  phoneNumber: string;
+  phone?: string;  // Firebase에서 실제 필드명
+  phoneNumber: string;  // 호환성을 위해 유지
   membershipInfo: MembershipInfo;
   memberships: any[];
   futureMemberships: any[];

@@ -3,7 +3,9 @@ import { Calendar, Plus, Info } from 'lucide-react';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
 import { LockerService } from '../services/lockerService';
+import { MemberService } from '../services/memberService';
 import type { Lockers as LockerItem } from '../types/locker';
+import type { Member } from '../types/member';
 import { usePageContext } from '../contexts/PageContext';
 
 type LockerState = 'used' | 'unused' | 'na' | 'deleted';
@@ -34,7 +36,8 @@ const Locker: React.FC = () => {
   const [selectedState, setSelectedState] = useState<LockerState>('unused');
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
-  const [editDate, setEditDate] = useState(''); // YYYY-MM-DD
+  const [editStartDate, setEditStartDate] = useState(''); // YYYY-MM-DD
+  const [editEndDate, setEditEndDate] = useState(''); // YYYY-MM-DD
   const [deleting, setDeleting] = useState(false);
   
   // 삭제 확인 모달 상태
@@ -43,6 +46,27 @@ const Locker: React.FC = () => {
   // 락커 해지 모달 상태
   const [showReleaseConfirm, setShowReleaseConfirm] = useState(false);
   const [releasing, setReleasing] = useState(false);
+
+  // 락커 수정 모달 상태
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateState, setUpdateState] = useState<'unused' | 'na'>('unused');
+  const [updateNote, setUpdateNote] = useState('');
+  const [updateAssignee, setUpdateAssignee] = useState('');
+  const [updating, setUpdating] = useState(false);
+
+  // 락커 히스토리 모달 상태
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyData, setHistoryData] = useState<LockerItem[]>([]);
+
+  // 락커 배정 모달 상태
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignSearchText, setAssignSearchText] = useState('');
+  const [assignSearchResults, setAssignSearchResults] = useState<Member[]>([]);
+  const [assignSelectedMember, setAssignSelectedMember] = useState<Member | null>(null);
+  const [assignStartDate, setAssignStartDate] = useState('');
+  const [assignEndDate, setAssignEndDate] = useState('');
+  const [assigning, setAssigning] = useState(false);
+  const [searching, setSearching] = useState(false);
 
   const loadLockers = useCallback(async () => {
     setLoading(true);
@@ -73,11 +97,17 @@ const Locker: React.FC = () => {
     const map = new Map<number, LockerBox>();
     for (const l of raw) {
       const num = l.number;
-      const nextState: LockerState =
-        l.state === 'used' || l.state === 'unused' || l.state === 'na' || l.state === 'deleted' 
-          ? l.state 
-          : 'unused';
       const name = (l.userName || l.user || '').trim();
+      
+      // userName이나 user가 있으면 'used' 상태로 판단
+      let nextState: LockerState;
+      if (name) {
+        nextState = 'used';
+      } else if (l.state === 'used' || l.state === 'unused' || l.state === 'na' || l.state === 'deleted') {
+        nextState = l.state;
+      } else {
+        nextState = 'unused';
+      }
 
       if (!map.has(num)) {
         map.set(num, { number: num, users: name ? [name] : [], state: nextState });
@@ -114,7 +144,8 @@ const Locker: React.FC = () => {
     setSelectedState(lockerState);
     setEditName((base?.userName || base?.user || '').trim());
     setEditPhone(base?.phoneNumber || '');
-    setEditDate(''); // 아직 저장 미구현이므로 공란
+    setEditStartDate(base?.startDate || '');
+    setEditEndDate(base?.endDate || '');
     setShowEdit(true);
   };
 
@@ -174,7 +205,27 @@ const Locker: React.FC = () => {
 
     setReleasing(true);
     try {
+      // 해당 락커에 배정된 회원의 이메일을 찾기 위해 현재 데이터 확인
+      const candidates = raw.filter(r => r.number === selectedNo);
+      const currentLocker = candidates.find(c => (c.userName || c.user || '').trim().length > 0);
+      
       await LockerService.releaseLocker(BOX_NAME, selectedNo);
+      
+      // 회원의 locker 필드 제거 (이메일로 찾아야 함)
+      // 현재는 userName만 있으므로 회원 전체를 검색해서 해당 락커를 가진 회원 찾기
+      if (currentLocker) {
+        try {
+          const allMembers = await MemberService.getMembers(BOX_NAME);
+          const member = allMembers.find(m => m.realName === (currentLocker.userName || currentLocker.user));
+          if (member) {
+            await MemberService.unassignLockerFromMember(BOX_NAME, member.email);
+          }
+        } catch (err) {
+          console.error('회원 락커 해제 실패:', err);
+          // 락커는 해지되었으므로 계속 진행
+        }
+      }
+      
       alert('락커가 해지되었습니다.');
       setShowReleaseConfirm(false);
       setShowEdit(false);
@@ -183,6 +234,131 @@ const Locker: React.FC = () => {
       alert(`해지 실패: ${err?.message ?? String(err)}`);
     } finally {
       setReleasing(false);
+    }
+  };
+
+  const onOpenUpdateModal = () => {
+    if (editName.trim()) {
+      alert('회원을 먼저 해지하시기 바랍니다.');
+      return;
+    }
+
+    // 현재 상태를 기본값으로 설정
+    const currentState = selectedState === 'na' ? 'na' : 'unused';
+    setUpdateState(currentState);
+    
+    // 입력 필드를 초기화
+    setUpdateNote('');
+    setUpdateAssignee('');
+    
+    setShowUpdateModal(true);
+  };
+
+  const onConfirmUpdate = async () => {
+    if (selectedNo === null) return;
+
+    setUpdating(true);
+    try {
+      await LockerService.updateLocker(BOX_NAME, selectedNo, updateState, updateNote, updateAssignee);
+      alert('락커가 수정되었습니다.');
+      setShowUpdateModal(false);
+      setShowEdit(false);
+      await loadLockers();
+    } catch (err: any) {
+      alert(`수정 실패: ${err?.message ?? String(err)}`);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const onOpenHistory = async () => {
+    if (selectedNo === null) return;
+
+    try {
+      // 해당 락커 번호의 모든 히스토리 가져오기
+      const history = await LockerService.getLockerHistory(BOX_NAME, selectedNo);
+      setHistoryData(history);
+      setShowHistory(true);
+    } catch (err: any) {
+      alert(`히스토리 조회 실패: ${err?.message ?? String(err)}`);
+    }
+  };
+
+  const onOpenAssignModal = () => {
+    // 초기화
+    setAssignSearchText('');
+    setAssignSearchResults([]);
+    setAssignSelectedMember(null);
+    setAssignStartDate('');
+    setAssignEndDate('');
+    setShowAssignModal(true);
+  };
+
+  const onSearchMembers = async () => {
+    if (!assignSearchText.trim()) {
+      setAssignSearchResults([]);
+      return;
+    }
+
+    setSearching(true);
+    try {
+      const results = await MemberService.searchMembersByName(BOX_NAME, assignSearchText);
+      setAssignSearchResults(results);
+    } catch (err: any) {
+      alert(`검색 실패: ${err?.message ?? String(err)}`);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const onSelectMember = (member: Member) => {
+    setAssignSelectedMember(member);
+    setAssignSearchResults([]);
+  };
+
+  const onConfirmAssign = async () => {
+    if (selectedNo === null) return;
+    
+    if (!assignSelectedMember) {
+      alert('회원을 선택해주세요.');
+      return;
+    }
+
+    if (!assignStartDate || !assignEndDate) {
+      alert('시작 날짜와 종료 날짜를 입력해주세요.');
+      return;
+    }
+
+    setAssigning(true);
+    try {
+      // phone 또는 phoneNumber 필드 사용 (phone 우선)
+      const phone = assignSelectedMember.phone || assignSelectedMember.phoneNumber || '';
+      
+      // 락커에 회원 배정
+      await LockerService.assignLocker(
+        BOX_NAME,
+        selectedNo,
+        assignSelectedMember.realName,
+        phone,
+        assignStartDate,
+        assignEndDate
+      );
+      
+      // 회원에게 락커 번호 추가
+      await MemberService.assignLockerToMember(
+        BOX_NAME,
+        assignSelectedMember.email,
+        selectedNo
+      );
+      
+      alert('락커가 배정되었습니다.');
+      setShowAssignModal(false);
+      setShowEdit(false);
+      await loadLockers();
+    } catch (err: any) {
+      alert(`배정 실패: ${err?.message ?? String(err)}`);
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -312,11 +488,11 @@ const Locker: React.FC = () => {
             <div className="modal-body">
               {/* 액션 버튼 */}
               <div className="action-buttons">
-                <button className="btn btn-action" onClick={() => {}}>수정</button>
+                <button className="btn btn-action" onClick={onOpenUpdateModal}>수정</button>
                 {!editName.trim() ? (
                   <button 
                     className="btn btn-action" 
-                    onClick={() => {}}
+                    onClick={onOpenAssignModal}
                     disabled={selectedState === 'na'}
                   >
                     락커 배정
@@ -333,7 +509,7 @@ const Locker: React.FC = () => {
                 <button 
                   className="btn btn-action" 
                   onClick={onDeleteLocker}
-                  disabled={deleting}
+                  disabled={deleting || editName.trim().length > 0}
                 >
                   {deleting ? '삭제 중...' : '락커 삭제'}
                 </button>
@@ -345,8 +521,8 @@ const Locker: React.FC = () => {
                   <input
                     type="text"
                     value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="예: 홍길동"
+                    readOnly
+                    placeholder="—"
                     className="form-input"
                   />
                 </div>
@@ -356,17 +532,26 @@ const Locker: React.FC = () => {
                     type="tel"
                     inputMode="tel"
                     value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                    placeholder="예: 010-1234-5678"
+                    readOnly
+                    placeholder="—"
                     className="form-input"
                   />
                 </div>
                 <div className="form-group">
-                  <label>사용 기한</label>
+                  <label>사용 시작</label>
                   <input
                     type="date"
-                    value={editDate}
-                    onChange={(e) => setEditDate(e.target.value)}
+                    value={editStartDate}
+                    readOnly
+                    className="form-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>사용 종료</label>
+                  <input
+                    type="date"
+                    value={editEndDate}
+                    readOnly
                     className="form-input"
                   />
                 </div>
@@ -374,8 +559,7 @@ const Locker: React.FC = () => {
             </div>
 
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowEdit(false)}>닫기</button>
-              <button className="btn btn-primary" disabled title="아직 미구현입니다.">저장 (준비중)</button>
+              <button className="btn btn-primary" onClick={onOpenHistory}>히스토리</button>
             </div>
           </div>
         </div>
@@ -435,6 +619,254 @@ const Locker: React.FC = () => {
               <button className="btn btn-secondary" onClick={() => setShowReleaseConfirm(false)} disabled={releasing}>취소</button>
               <button className="btn btn-primary" onClick={onConfirmRelease} disabled={releasing}>
                 {releasing ? '해지 중…' : '해지'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 락커 수정 모달 */}
+      {showUpdateModal && selectedNo !== null && (
+        <div className="modal-overlay" onClick={() => !updating && setShowUpdateModal(false)}>
+          <div className="modal-content update-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="header-title">
+                <Info size={20} className="header-icon" />
+                <h3>락커 #{selectedNo} 수정</h3>
+              </div>
+              <button className="close-button" onClick={() => !updating && setShowUpdateModal(false)}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="form-section">
+                <div className="form-group">
+                  <label>상태</label>
+                  <select
+                    className="form-input"
+                    value={updateState}
+                    onChange={(e) => setUpdateState(e.target.value as 'unused' | 'na')}
+                    disabled={updating}
+                  >
+                    <option value="unused" disabled={selectedState === 'unused'}>사용 가능</option>
+                    <option value="na" disabled={selectedState === 'na'}>고장</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>사유</label>
+                  <textarea
+                    className="form-input form-textarea"
+                    value={updateNote}
+                    onChange={(e) => setUpdateNote(e.target.value)}
+                    placeholder="사유를 입력하세요"
+                    disabled={updating}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>담당자</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={updateAssignee}
+                    onChange={(e) => setUpdateAssignee(e.target.value)}
+                    placeholder="담당자를 입력하세요"
+                    disabled={updating}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowUpdateModal(false)} disabled={updating}>취소</button>
+              <button className="btn btn-primary" onClick={onConfirmUpdate} disabled={updating}>
+                {updating ? '수정 중…' : '저장'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 락커 히스토리 모달 */}
+      {showHistory && selectedNo !== null && (
+        <div className="modal-overlay" onClick={() => setShowHistory(false)}>
+          <div className="modal-content history-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="header-title">
+                <Calendar size={20} className="header-icon" />
+                <h3>락커 #{selectedNo} 히스토리</h3>
+              </div>
+              <button className="close-button" onClick={() => setShowHistory(false)}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              {historyData.length === 0 ? (
+                <div className="empty-history">히스토리가 없습니다.</div>
+              ) : (
+                <div className="history-list">
+                  {historyData.map((item, index) => (
+                    <div key={index} className="history-item">
+                      <div className="history-header">
+                        <span className="history-index">#{historyData.length - index}</span>
+                        <span className={`history-state-badge ${item.state}`}>
+                          {item.state === 'used' ? '사용중' : 
+                           item.state === 'unused' ? '사용 가능' : 
+                           item.state === 'na' ? '고장' : '삭제됨'}
+                        </span>
+                      </div>
+                      
+                      <div className="history-details">
+                        {(item.userName || item.user) && (
+                          <div className="history-row">
+                            <span className="history-label">회원:</span>
+                            <span className="history-value">{item.userName || item.user}</span>
+                          </div>
+                        )}
+                        {item.phoneNumber && (
+                          <div className="history-row">
+                            <span className="history-label">전화번호:</span>
+                            <span className="history-value">{item.phoneNumber}</span>
+                          </div>
+                        )}
+                        {item.startDate && (
+                          <div className="history-row">
+                            <span className="history-label">시작일:</span>
+                            <span className="history-value">{item.startDate}</span>
+                          </div>
+                        )}
+                        {item.endDate && (
+                          <div className="history-row">
+                            <span className="history-label">종료일:</span>
+                            <span className="history-value">{item.endDate}</span>
+                          </div>
+                        )}
+                        {item.note && (
+                          <div className="history-row">
+                            <span className="history-label">사유:</span>
+                            <span className="history-value">{item.note}</span>
+                          </div>
+                        )}
+                        {item.assignee && (
+                          <div className="history-row">
+                            <span className="history-label">담당자:</span>
+                            <span className="history-value">{item.assignee}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowHistory(false)}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 락커 배정 모달 */}
+      {showAssignModal && selectedNo !== null && (
+        <div className="modal-overlay" onClick={() => !assigning && setShowAssignModal(false)}>
+          <div className="modal-content assign-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="header-title">
+                <Plus size={20} className="header-icon" />
+                <h3>락커 #{selectedNo} 배정</h3>
+              </div>
+              <button className="close-button" onClick={() => !assigning && setShowAssignModal(false)}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="form-section">
+                {/* 회원 검색 */}
+                <div className="form-group">
+                  <label>이름 검색</label>
+                  <div className="search-input-wrapper">
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={assignSearchText}
+                      onChange={(e) => setAssignSearchText(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && onSearchMembers()}
+                      placeholder="회원 이름을 입력하세요"
+                      disabled={assigning}
+                    />
+                    <button 
+                      className="btn btn-primary search-btn" 
+                      onClick={onSearchMembers}
+                      disabled={searching || assigning}
+                    >
+                      {searching ? '검색 중...' : '검색'}
+                    </button>
+                  </div>
+
+                  {/* 선택된 회원 표시 */}
+                  {assignSelectedMember && (
+                    <div className="selected-member">
+                      <div className="member-info">
+                        <strong>{assignSelectedMember.realName}</strong>
+                        <span className="member-detail">{assignSelectedMember.phone || assignSelectedMember.phoneNumber}</span>
+                      </div>
+                      <button 
+                        className="clear-btn" 
+                        onClick={() => setAssignSelectedMember(null)}
+                        disabled={assigning}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+
+                  {/* 검색 결과 */}
+                  {assignSearchResults.length > 0 && !assignSelectedMember && (
+                    <div className="search-results">
+                      {assignSearchResults.map((member) => (
+                        <div 
+                          key={member.email} 
+                          className="search-result-item"
+                          onClick={() => onSelectMember(member)}
+                        >
+                          <div className="member-name">{member.realName}</div>
+                          <div className="member-phone">{member.phone || member.phoneNumber}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 시작 날짜 */}
+                <div className="form-group">
+                  <label>시작 날짜</label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={assignStartDate}
+                    onChange={(e) => setAssignStartDate(e.target.value)}
+                    disabled={assigning}
+                  />
+                </div>
+
+                {/* 종료 날짜 */}
+                <div className="form-group">
+                  <label>종료 날짜</label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={assignEndDate}
+                    onChange={(e) => setAssignEndDate(e.target.value)}
+                    disabled={assigning}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowAssignModal(false)} disabled={assigning}>취소</button>
+              <button className="btn btn-primary" onClick={onConfirmAssign} disabled={assigning}>
+                {assigning ? '배정 중…' : '배정'}
               </button>
             </div>
           </div>
@@ -759,6 +1191,19 @@ const Locker: React.FC = () => {
           background-color: white;
         }
 
+        .form-input:read-only {
+          background-color: #f3f4f6;
+          color: #6b7280;
+          cursor: not-allowed;
+          border-color: #e5e7eb;
+        }
+
+        .form-input:read-only:focus {
+          border-color: #e5e7eb;
+          box-shadow: none;
+          background-color: #f3f4f6;
+        }
+
         .form-error { 
           color: #b91c1c; 
           font-size: 13px; 
@@ -841,6 +1286,223 @@ const Locker: React.FC = () => {
           font-weight: 600;
           color: #111827;
           margin: 0;
+        }
+
+        /* 락커 수정 모달 스타일 */
+        .update-modal {
+          max-width: 500px;
+        }
+
+        .form-textarea {
+          resize: vertical;
+          min-height: 80px;
+          font-family: inherit;
+        }
+
+        .form-input option:disabled {
+          color: #9ca3af;
+          background-color: #f3f4f6;
+        }
+
+        select.form-input {
+          cursor: pointer;
+        }
+
+        select.form-input:disabled {
+          cursor: not-allowed;
+        }
+
+        /* 락커 히스토리 모달 스타일 */
+        .history-modal {
+          max-width: 600px;
+        }
+
+        .empty-history {
+          text-align: center;
+          padding: 40px 20px;
+          color: #9ca3af;
+          font-size: 16px;
+        }
+
+        .history-list {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .history-item {
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          padding: 16px;
+          background-color: #fafbfc;
+          transition: all 0.2s;
+        }
+
+        .history-item:hover {
+          background-color: #f3f4f6;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .history-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .history-index {
+          font-weight: 700;
+          font-size: 14px;
+          color: #6b7280;
+        }
+
+        .history-state-badge {
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 600;
+        }
+
+        .history-state-badge.used {
+          background-color: #dcfce7;
+          color: #065f46;
+        }
+
+        .history-state-badge.unused {
+          background-color: #e0f2fe;
+          color: #075985;
+        }
+
+        .history-state-badge.na {
+          background-color: #fee2e2;
+          color: #991b1b;
+        }
+
+        .history-state-badge.deleted {
+          background-color: #f3f4f6;
+          color: #6b7280;
+        }
+
+        .history-details {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .history-row {
+          display: flex;
+          gap: 8px;
+          font-size: 14px;
+        }
+
+        .history-label {
+          font-weight: 600;
+          color: #6b7280;
+          min-width: 80px;
+          flex-shrink: 0;
+        }
+
+        .history-value {
+          color: #111827;
+          word-break: break-word;
+        }
+
+        /* 락커 배정 모달 스타일 */
+        .assign-modal {
+          max-width: 500px;
+        }
+
+        .search-input-wrapper {
+          display: flex;
+          gap: 8px;
+        }
+
+        .search-input-wrapper .form-input {
+          flex: 1;
+        }
+
+        .search-btn {
+          padding: 12px 20px;
+          white-space: nowrap;
+        }
+
+        .selected-member {
+          margin-top: 12px;
+          padding: 12px;
+          background-color: #e0f2fe;
+          border: 1px solid #bae6fd;
+          border-radius: 8px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .member-info {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .member-detail {
+          font-size: 13px;
+          color: #64748b;
+        }
+
+        .clear-btn {
+          background: none;
+          border: none;
+          font-size: 24px;
+          color: #64748b;
+          cursor: pointer;
+          padding: 0 8px;
+          line-height: 1;
+          transition: color 0.2s;
+        }
+
+        .clear-btn:hover:not(:disabled) {
+          color: #dc2626;
+        }
+
+        .clear-btn:disabled {
+          cursor: not-allowed;
+          opacity: 0.5;
+        }
+
+        .search-results {
+          margin-top: 8px;
+          max-height: 200px;
+          overflow-y: auto;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          background: white;
+        }
+
+        .search-result-item {
+          padding: 12px;
+          cursor: pointer;
+          border-bottom: 1px solid #f3f4f6;
+          transition: background-color 0.2s;
+        }
+
+        .search-result-item:last-child {
+          border-bottom: none;
+        }
+
+        .search-result-item:hover {
+          background-color: #f9fafb;
+        }
+
+        .member-name {
+          font-weight: 600;
+          color: #111827;
+          margin-bottom: 4px;
+        }
+
+        .member-phone {
+          font-size: 13px;
+          color: #6b7280;
         }
       `}</style>
     </div>

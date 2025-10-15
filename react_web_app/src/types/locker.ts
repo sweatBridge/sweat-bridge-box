@@ -4,4 +4,8 @@ export interface Lockers{
     user: string;
     userName: string;
     phoneNumber: string;
+    assignee: string;
+    note: string;
+    startDate: string;
+    endDate: string;
 }
