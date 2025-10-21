@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { DollarSign, TrendingUp, Calendar as CalendarIcon, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { DollarSign, TrendingUp, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { useRevenueManagement } from '../hooks/useRevenueManagement';
@@ -106,11 +106,11 @@ const RevenueManagement = () => {
     return null;
   };
 
-  // 엑셀 다운로드 핸들러 (TODO: 구현 필요)
-  const handleExcelDownload = useCallback(() => {
-    // TODO: 엑셀 다운로드 기능 구현
-    console.log('TODO: Excel download functionality');
-  }, []);
+  // // 엑셀 다운로드 핸들러 (TODO: 구현 필요)
+  // const handleExcelDownload = useCallback(() => {
+  //   // TODO: 엑셀 다운로드 기능 구현
+  //   console.log('TODO: Excel download functionality');
+  // }, []);
 
   const selectedDayRevenue = getSelectedDayRevenue();
 
