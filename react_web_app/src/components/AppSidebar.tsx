@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Calendar, ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, ChevronLeft, ChevronRight, LockIcon, DollarSign } from 'lucide-react';
 import { AppColors } from '../constants/colors';
 
 interface AppSidebarProps {
@@ -12,7 +12,8 @@ const menuItems = [
   // { icon: Dumbbell, title: '와드 관리', index: 1, path: '/wod' },
   { icon: Users, title: '회원 관리', index: 2, path: '/members' },
   { icon: Calendar, title: '수업 관리', index: 3, path: '/classes' },
-  { icon: DollarSign, title: '매출 관리', index: 4, path: '/revenue' },
+  { icon: LockIcon, title: '락커 관리', index: 4, path: '/lockers' },
+  { icon: DollarSign, title: '매출 관리', index: 5, path: '/revenue' },
 ];
 
 const AppSidebar = ({ selectedIndex }: AppSidebarProps) => {

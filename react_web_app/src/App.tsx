@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './components/MainLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Locker from './pages/Locker';
 import ClassReservation from './pages/ClassReservation';
 import MemberManagement from './pages/MemberManagement';
 import BoxSettings from './pages/BoxSettings';
@@ -27,6 +28,7 @@ function App() {
                 <Route path="/" element={<MainLayout />}>
                   <Route index element={<Navigate to="/dashboard" replace />} />
                   <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="lockers" element={<Locker />} />
                   <Route path="wod" element={<div style={{padding: '20px'}}>와드 관리 페이지</div>} />
                   <Route path="members" element={<MemberManagement />} />
                   <Route path="classes" element={<ClassReservation />} />

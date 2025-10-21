@@ -16,7 +16,8 @@ export interface FirebaseMemberData {
   nickName: string;
   gender: 'M' | 'F';
   birthDate: string;
-  phoneNumber: string;
+  phone?: string;  // Firebase에서 실제 필드명
+  phoneNumber?: string;  // 호환성을 위해 유지
   memberships: MembershipData[];
   futureMemberships: MembershipData[];
 }
@@ -35,6 +36,8 @@ export class MemberService {
         const data = doc.data() as FirebaseMemberData;
         members.push({
           ...data,
+          phone: data.phone || data.phoneNumber || '',
+          phoneNumber: data.phone || data.phoneNumber || '',  // phone 필드를 phoneNumber로 매핑
           membershipInfo: this.calculateMembershipInfo(
             data.memberships || [], 
             data.futureMemberships || []
@@ -84,6 +87,57 @@ export class MemberService {
       await addDoc(collection(db, path), memberData);
     } catch (error) {
       console.error('Error adding member:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 이름으로 회원 검색
+   */
+  static async searchMembersByName(box: string, searchName: string): Promise<Member[]> {
+    try {
+      const allMembers = await this.getMembers(box);
+      const searchTerm = searchName.trim().toLowerCase();
+      
+      if (!searchTerm) {
+        return allMembers;
+      }
+      
+      return allMembers.filter(member => 
+        member.realName.toLowerCase().includes(searchTerm)
+      );
+    } catch (error) {
+      console.error('Error searching members:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 회원에게 락커 번호 할당
+   */
+  static async assignLockerToMember(box: string, email: string, lockerNumber: number): Promise<void> {
+    try {
+      const path = `/box/${box}/member`;
+      await updateDoc(doc(db, path, email), {
+        locker: lockerNumber
+      });
+    } catch (error) {
+      console.error('Error assigning locker to member:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 회원의 락커 할당 해제
+   */
+  static async unassignLockerFromMember(box: string, email: string): Promise<void> {
+    try {
+      const path = `/box/${box}/member`;
+      await updateDoc(doc(db, path, email), {
+        locker: null
+      });
+    } catch (error) {
+      console.error('Error unassigning locker from member:', error);
       throw error;
     }
   }

@@ -18,6 +18,10 @@ const MainLayout = () => {
         return 2;
       case '/classes':
         return 3;
+      case '/lockers':
+        return 4;
+      case '/revenue':
+        return 5;
       default:
         return 0;
     }
