@@ -171,7 +171,7 @@ export class RevenueService {
 
           if (monthData && typeof monthData === 'object') {
             // 각 매출 데이터 순회
-            Object.entries(monthData).forEach(([revenueKey, data]) => {
+            for (const [, data] of Object.entries(monthData)) {
               const revenueData = data as RevenueData;
               const price = parseInt(revenueData.price) || 0;
               const createdDate = revenueData.createdAt.toDate();
@@ -191,7 +191,7 @@ export class RevenueService {
               if (dateStr === today) {
                 todayRevenue += price;
               }
-            });
+            }
           }
         }
       }

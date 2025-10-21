@@ -20,6 +20,8 @@ const MainLayout = () => {
         return 3;
       case '/lockers':
         return 4;
+      case '/revenue':
+        return 5;
       default:
         return 0;
     }
