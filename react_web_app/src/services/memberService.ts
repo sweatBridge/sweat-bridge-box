@@ -4,7 +4,12 @@ import {
   doc, 
   deleteDoc,
   updateDoc,
-  addDoc
+  addDoc,
+  query,
+  where,
+  getDoc,
+  setDoc,
+  deleteField
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Member } from '../types/member';
@@ -135,6 +140,215 @@ export class MemberService {
       });
     } catch (error) {
       console.error('Error unassigning locker from member:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * user 컬렉션에서 이메일로 사용자 조회
+   */
+  static async getUserByEmail(email: string): Promise<any> {
+    try {
+      const path = '/user';
+      const q = query(collection(db, path), where('email', '==', email));
+      const querySnapshot = await getDocs(q);
+      
+      let userData = null;
+      querySnapshot.forEach((doc) => {
+        userData = doc.data();
+      });
+      
+      return userData;
+    } catch (error) {
+      console.error('Error fetching user by email:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * user 컬렉션에서 전화번호로 사용자 조회
+   */
+  static async getUserByPhone(phone: string): Promise<any> {
+    try {
+      const path = '/user';
+      const q = query(collection(db, path), where('phone', '==', phone));
+      const querySnapshot = await getDocs(q);
+      
+      let userData = null;
+      querySnapshot.forEach((doc) => {
+        userData = doc.data();
+      });
+      
+      return userData;
+    } catch (error) {
+      console.error('Error fetching user by phone:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * user 컬렉션에서 실명으로 사용자 조회
+   */
+  static async getUserByRealName(realName: string): Promise<any[]> {
+    try {
+      const path = '/user';
+      const q = query(collection(db, path), where('realName', '==', realName));
+      const querySnapshot = await getDocs(q);
+      
+      const users: any[] = [];
+      querySnapshot.forEach((doc) => {
+        users.push(doc.data());
+      });
+      
+      return users;
+    } catch (error) {
+      console.error('Error fetching users by realName:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * user 컬렉션에서 닉네임으로 사용자 조회
+   */
+  static async getUserByNickName(nickName: string): Promise<any[]> {
+    try {
+      const path = '/user';
+      const q = query(collection(db, path), where('nickName', '==', nickName));
+      const querySnapshot = await getDocs(q);
+      
+      const users: any[] = [];
+      querySnapshot.forEach((doc) => {
+        users.push(doc.data());
+      });
+      
+      return users;
+    } catch (error) {
+      console.error('Error fetching users by nickName:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 회원 생성 (email을 문서 ID로 사용)
+   */
+  static async createMember(box: string, memberData: any): Promise<void> {
+    try {
+      const path = `/box/${box}/member`;
+      const memberDocRef = doc(collection(db, path), memberData.email);
+      
+      // 이미 존재하는지 확인
+      const docSnapshot = await getDoc(memberDocRef);
+      if (docSnapshot.exists()) {
+        console.log(`Member with email ${memberData.email} already exists. Skipping creation.`);
+        return;
+      }
+      
+      await setDoc(memberDocRef, memberData);
+      console.log('멤버가 추가되었습니다. 문서 ID:', memberDocRef.id);
+    } catch (error) {
+      console.error('멤버 추가 중 오류 발생:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * user 도큐먼트 업데이트
+   */
+  static async updateUser(email: string, userData: any): Promise<any> {
+    try {
+      const path = '/user';
+      const q = query(collection(db, path), where('email', '==', email));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        console.warn('해당 이메일로 사용자를 찾을 수 없습니다:', email);
+        return null;
+      }
+      
+      // 여러 문서가 있을 수 있지만, 일반적으로는 하나일 것으로 예상
+      for (const docSnap of querySnapshot.docs) {
+        await updateDoc(docSnap.ref, userData);
+      }
+      
+      return userData;
+    } catch (error) {
+      console.error('사용자 업데이트 중 오류 발생:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 신청자 목록 가져오기
+   */
+  static async fetchApplicants(boxName: string): Promise<any[]> {
+    try {
+      const applicantDocRef = doc(db, `box/${boxName}/applied/applieddoc`);
+      const applicantSnap = await getDoc(applicantDocRef);
+      
+      const applicants: any[] = [];
+      if (applicantSnap.exists()) {
+        const data = applicantSnap.data();
+        for (const email in data) {
+          if (data.hasOwnProperty(email)) {
+            const applicant = data[email];
+            applicants.push({
+              name: applicant.realName || '',
+              email: applicant.email || '',
+              phone: applicant.phone || '',
+              boxName: boxName
+            });
+          }
+        }
+      }
+      return applicants;
+    } catch (error) {
+      console.error('Failed to fetch applicants:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 신청 거절
+   */
+  static async rejectApplicant(email: string, boxName: string): Promise<void> {
+    try {
+      const applicantDocRef = doc(db, `box/${boxName}/applied/applieddoc`);
+      const userDocRef = doc(db, `user/${email}`);
+      
+      await setDoc(applicantDocRef, {
+        [email]: deleteField()
+      }, { merge: true });
+      
+      await updateDoc(userDocRef, {
+        boxName: ''
+      });
+      
+      console.log(`Applicant ${email} removed successfully`);
+    } catch (error) {
+      console.error('Failed to reject applicant:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 신청 제거 (승인 시)
+   */
+  static async removeApplication(email: string, boxName: string): Promise<void> {
+    try {
+      const applicantDocRef = doc(db, `box/${boxName}/applied/applieddoc`);
+      const userDocRef = doc(db, `user/${email}`);
+      
+      await setDoc(applicantDocRef, {
+        [email]: deleteField()
+      }, { merge: true });
+      
+      await updateDoc(userDocRef, {
+        boxName: boxName
+      });
+      
+      console.log(`Applicant ${email} removed successfully`);
+    } catch (error) {
+      console.error('Failed to remove application:', error);
       throw error;
     }
   }

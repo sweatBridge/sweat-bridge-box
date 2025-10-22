@@ -6,6 +6,8 @@ import MemberDeletionModal from '../components/modals/member/MemberDeletionModal
 import MembershipPlanModal from '../components/modals/membership/MembershipPlanModal';
 import MemberManagementModal from '../components/modals/member/MemberManagementModal';
 import WarningMembersModal from '../components/modals/member/WarningMembersModal';
+import AddMemberModal from '../components/modals/member/AddMemberModal';
+import ApplyRequestModal from '../components/modals/member/ApplyRequestModal';
 import ToastMessage from '../components/ToastMessage';
 import { getGenderText, filterMembers, getActiveMembersCount, getWarningMembers, getWarningMembersCount } from '../utils/memberUtils';
 import { usePageContext } from '../contexts/PageContext';
@@ -33,6 +35,8 @@ const MemberManagement = () => {
   const [membershipPlanModalVisible, setMembershipPlanModalVisible] = useState(false);
   const [warningMembersModalVisible, setWarningMembersModalVisible] = useState(false);
   const [memberListModalVisible, setMemberListModalVisible] = useState(false);
+  const [addMemberModalVisible, setAddMemberModalVisible] = useState(false);
+  const [applyRequestModalVisible, setApplyRequestModalVisible] = useState(false);
   
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
@@ -125,15 +129,10 @@ const MemberManagement = () => {
     setMemberManagementModalVisible(true);
   }, []);
 
-  // 회원 추가 (임시 구현)
+  // 회원 추가
   const handleAddMember = useCallback(() => {
-    if (createToast) {
-      createToast({
-        type: 'info',
-        message: '회원 추가 기능은 준비 중입니다.'
-      });
-    }
-  }, [createToast]);
+    setAddMemberModalVisible(true);
+  }, []);
 
   // 회원권 플랜 관리
   const handleManageMembershipPlans = useCallback(() => {
@@ -182,6 +181,10 @@ const MemberManagement = () => {
     <div className="dashboard">
       {/* 액션 버튼들 */}
       <div className="actions-bar">
+        <button className="btn btn-info" onClick={() => setApplyRequestModalVisible(true)}>
+          <Users size={16} />
+          승인 대기 목록
+        </button>
         <button className="btn btn-primary" onClick={handleAddMember}>
           <UserPlus size={16} />
           회원추가
@@ -438,6 +441,58 @@ const MemberManagement = () => {
         onMemberClick={handleWarningMemberClick}
       />
 
+      {/* 회원 추가 모달 */}
+      <AddMemberModal
+        visible={addMemberModalVisible}
+        onClose={() => {
+          setAddMemberModalVisible(false);
+          loadMembers(); // 회원 목록 새로고침
+        }}
+        onSuccess={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'success',
+              message
+            });
+          }
+          loadMembers(); // 회원 목록 새로고침
+        }}
+        onError={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'danger',
+              message
+            });
+          }
+        }}
+      />
+
+      {/* 승인 대기 목록 모달 */}
+      <ApplyRequestModal
+        visible={applyRequestModalVisible}
+        onClose={() => {
+          setApplyRequestModalVisible(false);
+          loadMembers(); // 회원 목록 새로고침
+        }}
+        onSuccess={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'success',
+              message
+            });
+          }
+          loadMembers(); // 회원 목록 새로고침
+        }}
+        onError={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'danger',
+              message
+            });
+          }
+        }}
+      />
+
       {/* 신규 회원 리스트 모달 (임시) */}
       {memberListModalVisible && (
         <div className="modal-overlay" onClick={() => setMemberListModalVisible(false)}>
@@ -566,26 +621,47 @@ const MemberManagement = () => {
           transform: translateY(-1px);
         }
 
-        .btn-secondary {
-          background: white;
-          border: 2px solid ${AppColors.primary};
-          color: ${AppColors.primary};
-          font-size: 14px;
-          font-weight: 500;
-          padding: 10px 20px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
+          .btn-secondary {
+            background: white;
+            border: 2px solid ${AppColors.primary};
+            color: ${AppColors.primary};
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
 
-        .btn-secondary:hover {
-          background: ${AppColors.primary};
-          color: white;
-          transform: translateY(-1px);
-        }
+          .btn-secondary:hover {
+            background: ${AppColors.primary};
+            color: white;
+            transform: translateY(-1px);
+          }
+
+          .btn-info {
+            background: white;
+            border: 2px solid #3b82f6;
+            color: #3b82f6;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .btn-info:hover {
+            background: #3b82f6;
+            color: white;
+            transform: translateY(-1px);
+          }
 
         .search-section {
           margin-bottom: 0;
