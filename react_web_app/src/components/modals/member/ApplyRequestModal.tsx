@@ -220,6 +220,8 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             flex: 1;
             overflow-y: auto;
             padding: 24px;
+            width: 100%;
+            box-sizing: border-box;
           }
 
           .loading-container {
@@ -266,14 +268,15 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
           }
 
           .applicants-table {
-            border: 1px solid #e2e8f0;
+            background: white;
             border-radius: 8px;
+            border: 1px solid #e2e8f0;
             overflow: hidden;
           }
 
           .table-header {
-            display: grid;
-            grid-template-columns: 1fr 2fr 1.5fr 140px;
+            display: grid !important;
+            grid-template-columns: 2fr 3fr 2fr 100px !important;
             gap: 16px;
             padding: 16px;
             background-color: #f8fafc;
@@ -281,15 +284,17 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             font-weight: 600;
             color: #374151;
             font-size: 14px;
+            width: 100%;
           }
 
           .table-row {
-            display: grid;
-            grid-template-columns: 1fr 2fr 1.5fr 140px;
+            display: grid !important;
+            grid-template-columns: 2fr 3fr 2fr 100px !important;
             gap: 16px;
             padding: 16px;
             border-bottom: 1px solid #e5e7eb;
             transition: background-color 0.2s;
+            width: 100%;
           }
 
           .table-row:hover {
@@ -308,6 +313,7 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            min-width: 0;
           }
 
           .actions-cell {
