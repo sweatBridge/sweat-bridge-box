@@ -331,8 +331,7 @@ const Locker: React.FC = () => {
 
     setAssigning(true);
     try {
-      // phone 또는 phoneNumber 필드 사용 (phone 우선)
-      const phone = assignSelectedMember.phone || assignSelectedMember.phoneNumber || '';
+      const phone = assignSelectedMember.phone || '';
       
       // 락커에 회원 배정
       await LockerService.assignLocker(
@@ -808,7 +807,7 @@ const Locker: React.FC = () => {
                     <div className="selected-member">
                       <div className="member-info">
                         <strong>{assignSelectedMember.realName}</strong>
-                        <span className="member-detail">{assignSelectedMember.phone || assignSelectedMember.phoneNumber}</span>
+                        <span className="member-detail">{assignSelectedMember.phone}</span>
                       </div>
                       <button 
                         className="clear-btn" 
@@ -830,7 +829,7 @@ const Locker: React.FC = () => {
                           onClick={() => onSelectMember(member)}
                         >
                           <div className="member-name">{member.realName}</div>
-                          <div className="member-phone">{member.phone || member.phoneNumber}</div>
+                          <div className="member-phone">{member.phone || member.phone}</div>
                         </div>
                       ))}
                     </div>
