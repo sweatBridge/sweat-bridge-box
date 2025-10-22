@@ -46,32 +46,7 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
   const approveApplicant = async (applicant: Applicant) => {
     try {
       setLoading(true);
-      const userDoc = await MemberService.getUserByEmail(applicant.email);
-
-      if (!userDoc) {
-        if (onError) onError('사용자 정보를 찾을 수 없습니다.');
-        return;
-      }
-
-      // boxName이 ?로 시작하는지 확인
-      if (!userDoc.boxName?.startsWith('?')) {
-        if (onError) onError('유효하지 않은 신청 상태입니다.');
-        return;
-      }
-
-      // ? 제거
-      userDoc.boxName = userDoc.boxName.slice(1);
-
-      // 신청 제거
-      await MemberService.removeApplication(applicant.email, userDoc.boxName);
-
-      // memberships 필드가 있으면 제거
-      if (userDoc.hasOwnProperty('memberships')) {
-        delete userDoc.memberships;
-      }
-
-      // 회원 생성
-      await MemberService.createMember(userDoc.boxName, userDoc);
+      await MemberService.approveApplicant(applicant.email, applicant.boxName);
 
       if (onSuccess) {
         onSuccess('회원이 승인되었습니다.');
@@ -82,7 +57,7 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
     } catch (error) {
       console.error('Failed to approve applicant:', error);
       if (onError) {
-        onError('회원 승인에 실패했습니다: ' + error);
+        onError('회원 승인에 실패했습니다: ' + (error instanceof Error ? error.message : error));
       }
     } finally {
       setLoading(false);
@@ -107,7 +82,7 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
     } catch (error) {
       console.error('Failed to reject applicant:', error);
       if (onError) {
-        onError('신청 거절에 실패했습니다: ' + error);
+        onError('신청 거절에 실패했습니다: ' + (error instanceof Error ? error.message : error));
       }
     } finally {
       setLoading(false);

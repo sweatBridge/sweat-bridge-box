@@ -308,6 +308,47 @@ export class MemberService {
   }
 
   /**
+   * 신청자 승인
+   */
+  static async approveApplicant(email: string, boxName: string): Promise<void> {
+    try {
+      // 1. 사용자 정보 조회
+      const userDoc = await this.getUserByEmail(email);
+      
+      if (!userDoc) {
+        throw new Error('사용자 정보를 찾을 수 없습니다.');
+      }
+
+      // 2. boxName이 ?로 시작하는지 확인
+      if (!userDoc.boxName?.startsWith('?')) {
+        throw new Error('유효하지 않은 신청 상태입니다.');
+      }
+
+      // 3. ? 제거
+      const actualBoxName = userDoc.boxName.slice(1);
+
+      // 4. 신청 제거 (applied/applieddoc에서 삭제 및 user 문서 업데이트)
+      await this.removeApplication(email, actualBoxName);
+
+      // 5. memberships 필드가 있으면 제거
+      if (userDoc.hasOwnProperty('memberships')) {
+        delete userDoc.memberships;
+      }
+
+      // 6. boxName 업데이트
+      userDoc.boxName = actualBoxName;
+
+      // 7. 회원 생성
+      await this.createMember(actualBoxName, userDoc);
+
+      console.log(`Applicant ${email} approved successfully`);
+    } catch (error) {
+      console.error('Failed to approve applicant:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 신청 거절
    */
   static async rejectApplicant(email: string, boxName: string): Promise<void> {
