@@ -33,7 +33,6 @@ const MemberManagement = () => {
   const [membershipPlanModalVisible, setMembershipPlanModalVisible] = useState(false);
   const [warningMembersModalVisible, setWarningMembersModalVisible] = useState(false);
   const [memberListModalVisible, setMemberListModalVisible] = useState(false);
-  const [memberListType, setMemberListType] = useState<'warning' | 'new'>('warning');
   
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
@@ -165,7 +164,6 @@ const MemberManagement = () => {
     if (type === 'warning') {
       setWarningMembersModalVisible(true);
     } else {
-      setMemberListType(type);
       setMemberListModalVisible(true);
     }
   };

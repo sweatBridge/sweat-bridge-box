@@ -1,6 +1,5 @@
 import { Member } from '../../../types/member';
 import { 
-  getMembershipTypeKorean, 
   formatPhoneNumber, 
   getGenderText 
 } from '../../../utils/memberUtils';
