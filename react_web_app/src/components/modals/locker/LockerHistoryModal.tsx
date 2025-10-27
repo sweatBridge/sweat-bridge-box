@@ -34,57 +34,66 @@ const LockerHistoryModal = ({
             <div className="empty-history">히스토리가 없습니다.</div>
           ) : (
             <div className="history-list">
-              {historyData.map((item, index) => (
-                <div key={index} className="history-item">
-                  <div className="history-header">
-                    <span className="history-index">#{historyData.length - index}</span>
-                    <span className={`history-state-badge ${item.state}`}>
-                      {item.state === 'used' ? '사용중' : 
-                       item.state === 'unused' ? '사용 가능' : 
-                       item.state === 'na' ? '고장' : '삭제됨'}
-                    </span>
+              {[...historyData].reverse().map((item, index) => {
+                // 배열을 역순으로 표시 (최신 → 오래된 순)
+                const displayIndex = historyData.length - index;
+                
+                return (
+                  <div key={index} className="history-item">
+                    <div className="history-header">
+                      <span className="history-index">
+                        #{displayIndex} {item.createdAt ? (
+                          <span style={{ fontWeight: 'normal' }}>[{item.createdAt.split(' ')[0]}]</span>
+                        ) : ''}
+                      </span>
+                      <span className={`history-state-badge ${item.state}`}>
+                        {item.state === 'used' ? '사용중' : 
+                         item.state === 'unused' ? '사용 가능' : 
+                         item.state === 'na' ? '고장' : '삭제됨'}
+                      </span>
+                    </div>
+                    
+                    <div className="history-details">
+                      {item.realName && (
+                        <div className="history-row">
+                          <span className="history-label">회원:</span>
+                          <span className="history-value">{item.realName}</span>
+                        </div>
+                      )}
+                      {item.phone && (
+                        <div className="history-row">
+                          <span className="history-label">전화번호:</span>
+                          <span className="history-value">{item.phone}</span>
+                        </div>
+                      )}
+                      {item.startDate && (
+                        <div className="history-row">
+                          <span className="history-label">시작일:</span>
+                          <span className="history-value">{item.startDate}</span>
+                        </div>
+                      )}
+                      {item.endDate && (
+                        <div className="history-row">
+                          <span className="history-label">종료일:</span>
+                          <span className="history-value">{item.endDate}</span>
+                        </div>
+                      )}
+                      {item.note && (
+                        <div className="history-row">
+                          <span className="history-label">사유:</span>
+                          <span className="history-value">{item.note}</span>
+                        </div>
+                      )}
+                      {item.assignee && (
+                        <div className="history-row">
+                          <span className="history-label">담당자:</span>
+                          <span className="history-value">{item.assignee}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  
-                  <div className="history-details">
-                    {item.realName && (
-                      <div className="history-row">
-                        <span className="history-label">회원:</span>
-                        <span className="history-value">{item.realName}</span>
-                      </div>
-                    )}
-                    {item.phone && (
-                      <div className="history-row">
-                        <span className="history-label">전화번호:</span>
-                        <span className="history-value">{item.phone}</span>
-                      </div>
-                    )}
-                    {item.startDate && (
-                      <div className="history-row">
-                        <span className="history-label">시작일:</span>
-                        <span className="history-value">{item.startDate}</span>
-                      </div>
-                    )}
-                    {item.endDate && (
-                      <div className="history-row">
-                        <span className="history-label">종료일:</span>
-                        <span className="history-value">{item.endDate}</span>
-                      </div>
-                    )}
-                    {item.note && (
-                      <div className="history-row">
-                        <span className="history-label">사유:</span>
-                        <span className="history-value">{item.note}</span>
-                      </div>
-                    )}
-                    {item.assignee && (
-                      <div className="history-row">
-                        <span className="history-label">담당자:</span>
-                        <span className="history-value">{item.assignee}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
