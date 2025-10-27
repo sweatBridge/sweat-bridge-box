@@ -46,16 +46,16 @@ const LockerHistoryModal = ({
                   </div>
                   
                   <div className="history-details">
-                    {(item.userName || item.user) && (
+                    {item.realName && (
                       <div className="history-row">
                         <span className="history-label">회원:</span>
-                        <span className="history-value">{item.userName || item.user}</span>
+                        <span className="history-value">{item.realName}</span>
                       </div>
                     )}
-                    {item.phoneNumber && (
+                    {item.phone && (
                       <div className="history-row">
                         <span className="history-label">전화번호:</span>
-                        <span className="history-value">{item.phoneNumber}</span>
+                        <span className="history-value">{item.phone}</span>
                       </div>
                     )}
                     {item.startDate && (

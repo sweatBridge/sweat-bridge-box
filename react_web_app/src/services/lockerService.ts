@@ -23,13 +23,14 @@ export class LockerService {
       const toLocker = (v: any): Lockers => ({
         number: num, 
         state: v?.state ?? '',
-        user: v?.user ?? '',
-        userName: v?.userName ?? '',
-        phoneNumber: v?.phoneNumber ?? '',
+        id: v?.id ?? '',
+        realName: v?.realName ?? '',
+        phone: v?.phone ?? '',
         assignee: v?.assignee ?? '',
         note: v?.note ?? '',
         startDate: v?.startDate ?? '',
-        endDate: v?.endDate ?? ''
+        endDate: v?.endDate ?? '',
+        createdAt: v?.createdAt ?? ''
       });
 
       if (Array.isArray(value)) {
@@ -70,13 +71,14 @@ export class LockerService {
         const defaultEntry: Lockers = {
           number: n,
           state: 'unused',
-          user: '',
-          userName: '',
-          phoneNumber: '',
+          id: '',
+          realName: '',
+          phone: '',
           assignee: '',
           note: '',
           startDate: '',
-          endDate: ''
+          endDate: '',
+          createdAt: new Date().toISOString().split('T')[0]
         };
         
         // 키가 존재하는지 확인
@@ -143,20 +145,21 @@ export class LockerService {
       const deletedEntry: Lockers = {
         number: lockerNumber,
         state: 'deleted',
-        user: '',
-        userName: '',
-        phoneNumber: '',
+        id: '',
+        realName: '',
+        phone: '',
         assignee: '',
         note: '',
         startDate: '',
-        endDate: ''
+        endDate: '',
+        createdAt: new Date().toISOString().split('T')[0]
       };
 
       let newValue: any;
 
       if (Array.isArray(existingValue)) {
         const lastItem = existingValue[existingValue.length - 1];
-        const hasName = (lastItem?.userName || lastItem?.user || '').trim().length > 0;
+        const hasName = (lastItem?.realName || '').trim().length > 0;
 
         if (hasName) {
           // 이름이 있으면 배열에 새로운 deleted 항목 추가
@@ -168,7 +171,7 @@ export class LockerService {
           newValue = updated;
         }
       } else if (existingValue && typeof existingValue === 'object') {
-        const hasName = ((existingValue as any)?.userName || (existingValue as any)?.user || '').trim().length > 0;
+        const hasName = ((existingValue as any)?.realName || '').trim().length > 0;
 
         if (hasName) {
           // 이름이 있으면 배열로 변환하고 deleted 항목 추가
@@ -205,13 +208,14 @@ export class LockerService {
       const unusedEntry: Lockers = {
         number: lockerNumber,
         state: 'unused',
-        user: '',
-        userName: '',
-        phoneNumber: '',
+        id: '',
+        realName: '',
+        phone: '',
         assignee: '',
         note: '',
         startDate: '',
-        endDate: ''
+        endDate: '',
+        createdAt: new Date().toISOString().split('T')[0]
       };
 
       let newValue: any;
@@ -258,9 +262,9 @@ export class LockerService {
       let hasUser = false;
       if (Array.isArray(existingValue)) {
         const lastItem = existingValue[existingValue.length - 1];
-        hasUser = (lastItem?.userName || lastItem?.user || '').trim().length > 0;
+        hasUser = (lastItem?.realName || '').trim().length > 0;
       } else if (existingValue && typeof existingValue === 'object') {
-        hasUser = ((existingValue as any)?.userName || (existingValue as any)?.user || '').trim().length > 0;
+        hasUser = ((existingValue as any)?.realName || '').trim().length > 0;
       }
 
       if (hasUser) {
@@ -270,13 +274,14 @@ export class LockerService {
       const updatedEntry: Lockers = {
         number: lockerNumber,
         state,
-        user: '',
-        userName: '',
-        phoneNumber: '',
+        id: '',
+        realName: '',
+        phone: '',
         assignee,
         note,
         startDate: '',
-        endDate: ''
+        endDate: '',
+        createdAt: new Date().toISOString().split('T')[0]
       };
 
       let newValue: any;
@@ -329,13 +334,14 @@ export class LockerService {
     const toLocker = (v: any): Lockers => ({
       number: lockerNumber,
       state: v?.state ?? '',
-      user: v?.user ?? '',
-      userName: v?.userName ?? '',
-      phoneNumber: v?.phoneNumber ?? '',
+      id: v?.id ?? '',
+      realName: v?.realName ?? '',
+      phone: v?.phone ?? '',
       assignee: v?.assignee ?? '',
       note: v?.note ?? '',
       startDate: v?.startDate ?? '',
-      endDate: v?.endDate ?? ''
+      endDate: v?.endDate ?? '',
+      createdAt: v?.createdAt ?? ''
     });
 
     if (Array.isArray(value)) {
@@ -354,6 +360,7 @@ export class LockerService {
   static async assignLocker(
     box: string,
     lockerNumber: number,
+    userId: string,
     userName: string,
     phoneNumber: string,
     startDate: string,
@@ -380,9 +387,9 @@ export class LockerService {
       let hasUser = false;
       if (Array.isArray(existingValue)) {
         const lastItem = existingValue[existingValue.length - 1];
-        hasUser = (lastItem?.userName || lastItem?.user || '').trim().length > 0;
+        hasUser = (lastItem?.realName || '').trim().length > 0;
       } else if (existingValue && typeof existingValue === 'object') {
-        hasUser = ((existingValue as any)?.userName || (existingValue as any)?.user || '').trim().length > 0;
+        hasUser = ((existingValue as any)?.realName || '').trim().length > 0;
       }
 
       if (hasUser) {
@@ -392,13 +399,14 @@ export class LockerService {
       const assignedEntry: Lockers = {
         number: lockerNumber,
         state: 'used',
-        user: userName,  // realName으로 설정
-        userName: userName,  // realName으로 설정
-        phoneNumber: phoneNumber || '',  // undefined 방지
+        id: userId,
+        realName: userName,
+        phone: phoneNumber || '',
         assignee: '',
         note: '',
-        startDate: startDate || '',  // undefined 방지
-        endDate: endDate || ''  // undefined 방지
+        startDate: startDate || '',
+        endDate: endDate || '',
+        createdAt: new Date().toISOString().split('T')[0]
       };
 
       let newValue: any;

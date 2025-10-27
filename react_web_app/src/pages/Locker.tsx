@@ -86,9 +86,9 @@ const Locker: React.FC = () => {
     const map = new Map<number, LockerBox>();
     for (const l of raw) {
       const num = l.number;
-      const name = (l.userName || l.user || '').trim();
+      const name = (l.realName || '').trim();
       
-      // userName이나 user가 있으면 'used' 상태로 판단
+      // realName이 있으면 'used' 상태로 판단
       let nextState: LockerState;
       if (name) {
         nextState = 'used';
@@ -119,7 +119,7 @@ const Locker: React.FC = () => {
   // 카드 클릭 → 편집 모달 열기 (기본값은 해당 번호의 첫 데이터로 프리필)
   const onOpenEdit = (number: number) => {
     const candidates = raw.filter(r => r.number === number);
-    const firstWithName = candidates.find(c => (c.userName || c.user || '').trim().length > 0);
+    const firstWithName = candidates.find(c => (c.realName || '').trim().length > 0);
     const base = firstWithName ?? candidates[0]; // 없으면 첫 항목 참조(없을 수도 있음)
 
     // boxes에서 해당 락커의 상태 찾기
@@ -128,8 +128,8 @@ const Locker: React.FC = () => {
 
     setSelectedNo(number);
     setSelectedState(lockerState);
-    setEditName((base?.userName || base?.user || '').trim());
-    setEditPhone(base?.phoneNumber || '');
+    setEditName((base?.realName || '').trim());
+    setEditPhone(base?.phone || '');
     setEditStartDate(base?.startDate || '');
     setEditEndDate(base?.endDate || '');
     setShowEdit(true);
@@ -181,16 +181,16 @@ const Locker: React.FC = () => {
     try {
       // 해당 락커에 배정된 회원의 이메일을 찾기 위해 현재 데이터 확인
       const candidates = raw.filter(r => r.number === selectedNo);
-      const currentLocker = candidates.find(c => (c.userName || c.user || '').trim().length > 0);
+      const currentLocker = candidates.find(c => (c.realName || '').trim().length > 0);
       
       await LockerService.releaseLocker(BOX_NAME, selectedNo);
       
       // 회원의 locker 필드 제거 (이메일로 찾아야 함)
-      // 현재는 userName만 있으므로 회원 전체를 검색해서 해당 락커를 가진 회원 찾기
+      // 현재는 realName만 있으므로 회원 전체를 검색해서 해당 락커를 가진 회원 찾기
       if (currentLocker) {
         try {
           const allMembers = await MemberService.getMembers(BOX_NAME);
-          const member = allMembers.find(m => m.realName === (currentLocker.userName || currentLocker.user));
+          const member = allMembers.find(m => m.realName === currentLocker.realName);
           if (member) {
             await MemberService.unassignLockerFromMember(BOX_NAME, member.email);
           }
@@ -277,6 +277,7 @@ const Locker: React.FC = () => {
       await LockerService.assignLocker(
         BOX_NAME,
         selectedNo,
+        member.email,
         member.realName,
         phone,
         startDate,
