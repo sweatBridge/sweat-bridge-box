@@ -53,7 +53,7 @@ const LockerDetailsModal = ({
         <div className="modal-body">
           {/* 액션 버튼 */}
           <div className="action-buttons">
-            <button className="btn btn-action" onClick={onUpdate}>수정</button>
+            <button className="btn btn-action" onClick={onUpdate}>상태 변경</button>
             {!name.trim() ? (
               <button 
                 className="btn btn-action" 
