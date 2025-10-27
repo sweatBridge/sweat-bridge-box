@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Gradients } from '../../../constants/gradients';
 import { X, UserPlus, Search } from 'lucide-react';
 import { MemberService } from '../../../services/memberService';
