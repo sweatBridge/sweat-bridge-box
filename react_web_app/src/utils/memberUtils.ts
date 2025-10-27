@@ -115,4 +115,38 @@ export const getActiveMembersCount = (members: any[]): number => {
       : member.membershipInfo.remainingDays;
     return remainingDays > 0;
   }).length;
+};
+
+/**
+ * 주의 회원 필터링
+ * - 횟수권: 잔여 횟수 6회 이하
+ * - 기간권: 잔여 기간 14일 이내
+ */
+export const getWarningMembers = (members: any[]): any[] => {
+  return members.filter(member => {
+    const { type, remainingDays, remainingVisits } = member.membershipInfo;
+    
+    if (type === 'countPass' || type === '횟수권') {
+      // 횟수권: 잔여 횟수 6회 이하
+      const visits = typeof remainingVisits === 'string' 
+        ? parseInt(remainingVisits) 
+        : remainingVisits;
+      return visits > 0 && visits <= 6;
+    } else if (type === 'periodPass' || type === '기간권') {
+      // 기간권: 잔여 기간 14일 이내
+      const days = typeof remainingDays === 'string' 
+        ? parseInt(remainingDays) 
+        : remainingDays;
+      return days > 0 && days <= 14;
+    }
+    
+    return false;
+  });
+};
+
+/**
+ * 주의 회원 수 계산
+ */
+export const getWarningMembersCount = (members: any[]): number => {
+  return getWarningMembers(members).length;
 }; 
