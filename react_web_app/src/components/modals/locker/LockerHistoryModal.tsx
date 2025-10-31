@@ -2,6 +2,7 @@ import React from 'react';
 import { Calendar } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import type { Lockers as LockerItem } from '../../../types/locker';
+import { getLockerStateLabel } from '../../../types/locker';
 
 interface LockerHistoryModalProps {
   visible: boolean;
@@ -47,9 +48,7 @@ const LockerHistoryModal = ({
                         ) : ''}
                       </span>
                       <span className={`history-state-badge ${item.state}`}>
-                        {item.state === 'used' ? '사용중' : 
-                         item.state === 'unused' ? '사용 가능' : 
-                         item.state === 'na' ? '고장' : '삭제됨'}
+                        {getLockerStateLabel(item.state)}
                       </span>
                     </div>
                     

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Info } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
+import type { LockerState } from '../../../types/locker';
+import { LOCKER_STATE } from '../../../types/locker';
 
 interface LockerDetailsModalProps {
   visible: boolean;
@@ -15,7 +17,7 @@ interface LockerDetailsModalProps {
   onRelease: () => void;
   onDelete: () => void;
   onHistory: () => void;
-  state: 'used' | 'unused' | 'na';
+  state: LockerState;
   releasing: boolean;
   deleting: boolean;
 }
@@ -58,7 +60,7 @@ const LockerDetailsModal = ({
               <button 
                 className="btn btn-action" 
                 onClick={onAssign}
-                disabled={state === 'na'}
+                disabled={state === LOCKER_STATE.NA}
               >
                 락커 배정
               </button>

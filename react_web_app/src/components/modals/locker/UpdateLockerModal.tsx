@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
+import { LOCKER_STATE, LockerUpdatableState } from '../../../types/locker';
+
+const { UNUSED, NA } = LOCKER_STATE;
 
 interface UpdateLockerModalProps {
   visible: boolean;
   lockerNo: number;
-  currentState: 'unused' | 'na';
+  currentState: LockerUpdatableState;
   updating: boolean;
   onClose: () => void;
-  onConfirm: (state: 'unused' | 'na', note: string, assignee: string) => void;
+  onConfirm: (state: LockerUpdatableState, note: string, assignee: string) => void;
 }
 
 const UpdateLockerModal = ({
@@ -19,8 +22,8 @@ const UpdateLockerModal = ({
   onClose,
   onConfirm
 }: UpdateLockerModalProps) => {
-  const [updateState, setUpdateState] = useState<'unused' | 'na'>(
-    currentState === 'na' ? 'na' : 'unused'
+  const [updateState, setUpdateState] = useState<LockerUpdatableState>(
+    currentState === NA ? NA : UNUSED
   );
   const [updateNote, setUpdateNote] = useState('');
   const [updateAssignee, setUpdateAssignee] = useState('');
@@ -49,11 +52,11 @@ const UpdateLockerModal = ({
               <select
                 className="form-input"
                 value={updateState}
-                onChange={(e) => setUpdateState(e.target.value as 'unused' | 'na')}
+                onChange={(e) => setUpdateState(e.target.value as LockerUpdatableState)}
                 disabled={updating}
               >
-                <option value="unused" disabled={currentState === 'unused'}>사용 가능</option>
-                <option value="na" disabled={currentState === 'na'}>고장</option>
+                <option value={UNUSED} disabled={currentState === UNUSED}>사용 가능</option>
+                <option value={NA} disabled={currentState === NA}>고장</option>
               </select>
             </div>
 

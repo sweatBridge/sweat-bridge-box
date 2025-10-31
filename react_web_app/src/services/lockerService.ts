@@ -1,6 +1,6 @@
 import { getDoc, doc, runTransaction } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Lockers } from '../types/locker';
+import { Lockers, LOCKER_STATE, LockerState, isLockerState } from '../types/locker';
 
 export class LockerService {
   static async getLockers(box: string): Promise<Lockers[]> {
@@ -20,18 +20,21 @@ export class LockerService {
         continue;
       }
 
-      const toLocker = (v: any): Lockers => ({
-        number: num, 
-        state: v?.state ?? '',
-        id: v?.id ?? '',
-        realName: v?.realName ?? '',
-        phone: v?.phone ?? '',
-        assignee: v?.assignee ?? '',
-        note: v?.note ?? '',
-        startDate: v?.startDate ?? '',
-        endDate: v?.endDate ?? '',
-        createdAt: v?.createdAt ?? ''
-      });
+      const toLocker = (v: any): Lockers => {
+        const state = isLockerState(v?.state) ? v.state : LOCKER_STATE.UNUSED;
+        return {
+          number: num, 
+          state,
+          id: v?.id ?? '',
+          realName: v?.realName ?? '',
+          phone: v?.phone ?? '',
+          assignee: v?.assignee ?? '',
+          note: v?.note ?? '',
+          startDate: v?.startDate ?? '',
+          endDate: v?.endDate ?? '',
+          createdAt: v?.createdAt ?? ''
+        };
+      };
 
       if (Array.isArray(value)) {
         // 배열인 경우 마지막 항목만 사용 (최신 상태)
@@ -70,7 +73,7 @@ export class LockerService {
         
         const defaultEntry: Lockers = {
           number: n,
-          state: 'unused',
+          state: LOCKER_STATE.UNUSED,
           id: '',
           realName: '',
           phone: '',
@@ -90,7 +93,7 @@ export class LockerService {
           if (Array.isArray(existingValue)) {
             // 배열의 마지막 항목이 deleted 상태인지 확인
             const lastItem = existingValue[existingValue.length - 1];
-            isDeleted = lastItem?.state === 'deleted';
+            isDeleted = lastItem?.state === LOCKER_STATE.DELETED;
             
             if (isDeleted) {
               // deleted 상태면 배열에 새 항목 추가
@@ -100,7 +103,7 @@ export class LockerService {
               skipped.push(n);
             }
           } else if (existingValue && typeof existingValue === 'object') {
-            isDeleted = (existingValue as any)?.state === 'deleted';
+            isDeleted = (existingValue as any)?.state === LOCKER_STATE.DELETED;
             
             if (isDeleted) {
               // 객체를 배열로 변환하고 새 항목 추가
@@ -144,7 +147,7 @@ export class LockerService {
       const existingValue = data[key];
       const deletedEntry: Lockers = {
         number: lockerNumber,
-        state: 'deleted',
+        state: LOCKER_STATE.DELETED,
         id: '',
         realName: '',
         phone: '',
@@ -167,7 +170,7 @@ export class LockerService {
         } else {
           // 이름이 없으면 마지막 항목의 상태만 deleted로 변경
           const updated = [...existingValue];
-          updated[updated.length - 1] = { ...lastItem, state: 'deleted' };
+          updated[updated.length - 1] = { ...lastItem, state: LOCKER_STATE.DELETED };
           newValue = updated;
         }
       } else if (existingValue && typeof existingValue === 'object') {
@@ -178,7 +181,7 @@ export class LockerService {
           newValue = [existingValue, deletedEntry];
         } else {
           // 이름이 없으면 상태만 deleted로 변경
-          newValue = { ...existingValue, state: 'deleted' };
+          newValue = { ...existingValue, state: LOCKER_STATE.DELETED };
         }
       } else {
         throw new Error('잘못된 락커 데이터 형식입니다.');
@@ -207,7 +210,7 @@ export class LockerService {
       const existingValue = data[key];
       const unusedEntry: Lockers = {
         number: lockerNumber,
-        state: 'unused',
+        state: LOCKER_STATE.UNUSED,
         id: '',
         realName: '',
         phone: '',
@@ -237,10 +240,14 @@ export class LockerService {
   static async updateLocker(
     box: string,
     lockerNumber: number,
-    state: 'unused' | 'na',
+    state: LockerState,
     note: string,
     assignee: string
   ): Promise<void> {
+    if (state !== LOCKER_STATE.UNUSED && state !== LOCKER_STATE.NA) {
+      throw new Error('지원하지 않는 락커 상태입니다.');
+    }
+
     const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
 
     return runTransaction(db, async (tx) => {
@@ -398,7 +405,7 @@ export class LockerService {
 
       const assignedEntry: Lockers = {
         number: lockerNumber,
-        state: 'used',
+        state: LOCKER_STATE.USED,
         id: userId,
         realName: userName,
         phone: phoneNumber || '',
@@ -413,7 +420,7 @@ export class LockerService {
 
       if (Array.isArray(existingValue)) {
         const lastItem = existingValue[existingValue.length - 1];
-        const isUnusedWithNoNote = lastItem?.state === 'unused' && (!lastItem?.note || lastItem.note.trim() === '');
+        const isUnusedWithNoNote = lastItem?.state === LOCKER_STATE.UNUSED && (!lastItem?.note || lastItem.note.trim() === '');
         
         if (isUnusedWithNoNote) {
           // 사용 가능 상태이고 note가 없으면 마지막 항목 덮어쓰기
@@ -425,7 +432,7 @@ export class LockerService {
           newValue = [...existingValue, assignedEntry];
         }
       } else if (existingValue && typeof existingValue === 'object') {
-        const isUnusedWithNoNote = (existingValue as any)?.state === 'unused' && 
+        const isUnusedWithNoNote = (existingValue as any)?.state === LOCKER_STATE.UNUSED && 
                                      (!(existingValue as any)?.note || (existingValue as any).note.trim() === '');
         
         if (isUnusedWithNoNote) {
