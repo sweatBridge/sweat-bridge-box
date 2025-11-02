@@ -526,6 +526,20 @@ const MemberManagementModal = ({
                             <span className="hold-value">{currentHold.assignee}</span>
                           </div>
                         </div>
+                        <div className="hold-history-actions">
+                          <button 
+                            className="btn-release-hold"
+                            onClick={() => {
+                              if (window.confirm('홀딩을 해제하시겠습니까?')) {
+                                // TODO: 홀딩 해제 로직 구현
+                                console.log('홀딩 해제');
+                              }
+                            }}
+                            disabled={loading}
+                          >
+                            해제
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -1003,6 +1017,9 @@ const MemberManagementModal = ({
           border: 1px solid #fbbf24;
           border-radius: 8px;
           padding: 12px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
         }
 
         .hold-history-header {
@@ -1020,9 +1037,48 @@ const MemberManagementModal = ({
         }
 
         .hold-history-details {
+          flex: 1;
           display: flex;
           flex-direction: column;
           gap: 6px;
+          padding-right: 16px;
+        }
+
+        .hold-history-actions {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 80px;
+        }
+
+        .btn-release-hold {
+          padding: 8px 20px;
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-release-hold:hover:not(:disabled) {
+          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+          box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+          transform: translateY(-1px);
+        }
+
+        .btn-release-hold:active:not(:disabled) {
+          transform: translateY(0);
+          box-shadow: 0 1px 2px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-release-hold:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
         }
 
         .hold-detail-row {
