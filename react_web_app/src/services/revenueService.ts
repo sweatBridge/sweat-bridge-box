@@ -3,6 +3,7 @@ import { UserMembership } from '../types/membership';
 import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Timestamp } from 'firebase/firestore';
+import { formatDateToString } from '../utils/dateUtils';
 
 interface RevenueData {
   assignee: string;
@@ -64,10 +65,7 @@ export class RevenueService {
         
         // createdAt을 Date로 변환하고 날짜 문자열 생성 (로컬 시간 기준)
         const createdDate = revenueData.createdAt.toDate();
-        const year = createdDate.getFullYear();
-        const month = String(createdDate.getMonth() + 1).padStart(2, '0');
-        const day = String(createdDate.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
+        const dateStr = formatDateToString(createdDate);
         
         // 해당 날짜의 데이터가 없으면 초기화
         if (!dailyRevenueMap.has(dateStr)) {
@@ -152,7 +150,9 @@ export class RevenueService {
       const now = new Date();
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth() + 1;
-      const today = now.toISOString().split('T')[0];
+      
+      // 로컬 시간대 기준으로 오늘 날짜 계산
+      const today = formatDateToString(now);
 
       // revenue 컬렉션의 모든 문서 가져오기
       const revenueCollectionRef = collection(db, `box/${boxName}/revenue`);
@@ -178,10 +178,7 @@ export class RevenueService {
               const revenueData = data as RevenueData;
               const price = parseInt(revenueData.price) || 0;
               const createdDate = revenueData.createdAt.toDate();
-              const dataYear = createdDate.getFullYear();
-              const dataMonth = createdDate.getMonth() + 1;
-              const dataDay = String(createdDate.getDate()).padStart(2, '0');
-              const dateStr = `${dataYear}-${String(dataMonth).padStart(2, '0')}-${dataDay}`;
+              const dateStr = formatDateToString(createdDate);
 
               // 이번 해 매출 누적
               if (year === currentYear) {
