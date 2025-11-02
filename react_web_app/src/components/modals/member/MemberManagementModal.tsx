@@ -7,6 +7,7 @@ import { MembershipService } from '../../../services/membershipService';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
 import HoldMembershipModal from '../membership/HoldMembershipModal';
+import DeleteMembershipConfirmModal from '../membership/DeleteMembershipConfirmModal';
 
 const MemberManagementModal = ({ 
   visible, 
@@ -22,6 +23,8 @@ const MemberManagementModal = ({
   const [loading, setLoading] = useState(false);
   const [holdModalVisible, setHoldModalVisible] = useState(false);
   const [selectedMembershipIndex, setSelectedMembershipIndex] = useState<number>(0);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [membershipToDelete, setMembershipToDelete] = useState<{ index: number; plan: string; price: string } | null>(null);
 
   // 회원권 추가 폼 상태
   const [formData, setFormData] = useState<AddMembershipData>({
@@ -201,19 +204,31 @@ const MemberManagementModal = ({
     }
   }, [formData, member, onSuccess, onError, loadData]);
 
-  const handleDeleteMembership = useCallback(async (index: number) => {
-    if (!window.confirm('정말로 이 회원권을 삭제하시겠습니까?')) {
-      return;
-    }
+  const handleOpenDeleteModal = useCallback((index: number) => {
+    const membership = userMemberships[index];
+    const displayInfo = getMembershipDisplayInfo(membership);
+    
+    setMembershipToDelete({
+      index,
+      plan: displayInfo.plan,
+      price: displayInfo.price
+    });
+    setDeleteModalVisible(true);
+  }, [userMemberships]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!membershipToDelete) return;
 
     try {
       setLoading(true);
-      await MembershipService.removeUserMembership(member.email, index);
+      await MembershipService.removeUserMembership(member.email, membershipToDelete.index);
       
       if (onSuccess) {
         onSuccess('회원권이 성공적으로 삭제되었습니다.');
       }
       
+      setDeleteModalVisible(false);
+      setMembershipToDelete(null);
       await loadData();
     } catch (error: any) {
       if (onError) {
@@ -222,7 +237,7 @@ const MemberManagementModal = ({
     } finally {
       setLoading(false);
     }
-  }, [member, onSuccess, onError, loadData]);
+  }, [member, membershipToDelete, onSuccess, onError, loadData]);
 
   const handleOpenHoldModal = useCallback(() => {
     if (currentMemberships.length === 0) {
@@ -742,7 +757,7 @@ const MemberManagementModal = ({
                           <div className="table-cell">{displayInfo.assignee}</div>
                           <div className="table-cell">
                             <button
-                              onClick={() => handleDeleteMembership(index)}
+                              onClick={() => handleOpenDeleteModal(index)}
                               disabled={loading}
                               className="btn btn-sm btn-danger"
                               title="회원권 삭제"
@@ -774,6 +789,19 @@ const MemberManagementModal = ({
         memberEmail={member?.email || ''}
         onClose={() => setHoldModalVisible(false)}
         onConfirm={handleConfirmHold}
+        loading={loading}
+      />
+
+      {/* 회원권 삭제 확인 모달 */}
+      <DeleteMembershipConfirmModal
+        visible={deleteModalVisible}
+        membershipPlan={membershipToDelete?.plan || ''}
+        membershipPrice={membershipToDelete?.price || '0'}
+        onClose={() => {
+          setDeleteModalVisible(false);
+          setMembershipToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
         loading={loading}
       />
 
