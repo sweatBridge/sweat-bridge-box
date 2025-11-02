@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Pause, Calendar, User, FileText } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
+import { formatDateToString, parseStringToDate } from '../../../utils/dateUtils';
 
 interface HoldMembershipModalProps {
   visible: boolean;
   membershipIndex: number;
   memberEmail: string;
   onClose: () => void;
-  onConfirm: (holdStartDate: string, holdEndDate: string, reason: string, assignee: string) => void;
+  onConfirm: (holdStartDate: Date, holdEndDate: Date, reason: string, assignee: string) => void;
   loading?: boolean;
 }
 
@@ -20,8 +21,8 @@ const HoldMembershipModal = ({
   onConfirm,
   loading = false
 }: HoldMembershipModalProps) => {
-  const [holdStartDate, setHoldStartDate] = useState('');
-  const [holdEndDate, setHoldEndDate] = useState('');
+  const [holdStartDate, setHoldStartDate] = useState<Date | null>(null);
+  const [holdEndDate, setHoldEndDate] = useState<Date | null>(null);
   const [reason, setReason] = useState('');
   const [assignee, setAssignee] = useState('');
 
@@ -33,7 +34,7 @@ const HoldMembershipModal = ({
       return;
     }
 
-    if (new Date(holdStartDate) >= new Date(holdEndDate)) {
+    if (holdStartDate >= holdEndDate) {
       alert('종료일은 시작일보다 나중이어야 합니다.');
       return;
     }
@@ -53,8 +54,8 @@ const HoldMembershipModal = ({
 
   const handleClose = () => {
     if (!loading) {
-      setHoldStartDate('');
-      setHoldEndDate('');
+      setHoldStartDate(null);
+      setHoldEndDate(null);
       setReason('');
       setAssignee('');
       onClose();
@@ -87,8 +88,8 @@ const HoldMembershipModal = ({
               <input
                 type="date"
                 className="form-input"
-                value={holdStartDate}
-                onChange={(e) => setHoldStartDate(e.target.value)}
+                value={formatDateToString(holdStartDate)}
+                onChange={(e) => setHoldStartDate(parseStringToDate(e.target.value))}
                 disabled={loading}
               />
             </div>
@@ -101,8 +102,8 @@ const HoldMembershipModal = ({
               <input
                 type="date"
                 className="form-input"
-                value={holdEndDate}
-                onChange={(e) => setHoldEndDate(e.target.value)}
+                value={formatDateToString(holdEndDate)}
+                onChange={(e) => setHoldEndDate(parseStringToDate(e.target.value))}
                 disabled={loading}
               />
             </div>

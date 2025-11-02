@@ -248,13 +248,14 @@ const MemberManagementModal = ({
   }, [currentMemberships, userMemberships, onError]);
 
   const handleConfirmHold = useCallback(async (
-    holdStartDate: string,
-    holdEndDate: string,
+    holdStartDate: Date,
+    holdEndDate: Date,
     reason: string,
     assignee: string
   ) => {
     try {
       setLoading(true);
+      
       await MembershipService.addHold(
         member.email,
         selectedMembershipIndex,

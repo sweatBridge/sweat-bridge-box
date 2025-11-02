@@ -2,6 +2,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { MembershipPlan, UserMembership } from '../types/membership';
 import { RevenueService } from './revenueService';
+import { getDaysBetween } from '../utils/dateUtils';
 
 export class MembershipService {
   private static getBoxName(): string {
@@ -247,8 +248,8 @@ export class MembershipService {
   static async addHold(
     email: string,
     membershipIndex: number,
-    holdStartDate: string,
-    holdEndDate: string,
+    holdStartDate: Date,
+    holdEndDate: Date,
     reason: string,
     assignee: string
   ): Promise<void> {
@@ -271,15 +272,13 @@ export class MembershipService {
         throw new Error('레거시 회원권은 홀딩을 지원하지 않습니다.');
       }
 
-      const holdStart = new Date(holdStartDate);
-      const holdEnd = new Date(holdEndDate);
-      const holdDays = Math.ceil((holdEnd.getTime() - holdStart.getTime()) / (1000 * 60 * 60 * 24));
+      const holdDays = getDaysBetween(holdStartDate, holdEndDate);
 
       // 홀딩 정보 추가
       const newHold = {
         reason,
-        startDate: holdStart,
-        endDate: holdEnd,
+        startDate: holdStartDate,
+        endDate: holdEndDate,
         days: holdDays,
         assignee
       };
