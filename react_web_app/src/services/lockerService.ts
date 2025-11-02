@@ -32,7 +32,8 @@ export class LockerService {
           note: v?.note ?? '',
           startDate: v?.startDate ?? '',
           endDate: v?.endDate ?? '',
-          createdAt: v?.createdAt ?? ''
+          createdAt: v?.createdAt ?? '',
+          key: v?.key ?? ''
         };
       };
 
@@ -81,7 +82,8 @@ export class LockerService {
           note: '',
           startDate: '',
           endDate: '',
-          createdAt: new Date().toISOString().split('T')[0]
+          createdAt: new Date().toISOString().split('T')[0],
+          key: ''
         };
         
         // 키가 존재하는지 확인
@@ -155,7 +157,8 @@ export class LockerService {
         note: '',
         startDate: '',
         endDate: '',
-        createdAt: new Date().toISOString().split('T')[0]
+        createdAt: new Date().toISOString().split('T')[0],
+        key: ''
       };
 
       let newValue: any;
@@ -218,7 +221,8 @@ export class LockerService {
         note: '',
         startDate: '',
         endDate: '',
-        createdAt: new Date().toISOString().split('T')[0]
+        createdAt: new Date().toISOString().split('T')[0],
+        key: ''
       };
 
       let newValue: any;
@@ -288,7 +292,8 @@ export class LockerService {
         note,
         startDate: '',
         endDate: '',
-        createdAt: new Date().toISOString().split('T')[0]
+        createdAt: new Date().toISOString().split('T')[0],
+        key: ''
       };
 
       let newValue: any;
@@ -348,7 +353,8 @@ export class LockerService {
       note: v?.note ?? '',
       startDate: v?.startDate ?? '',
       endDate: v?.endDate ?? '',
-      createdAt: v?.createdAt ?? ''
+      createdAt: v?.createdAt ?? '',
+      key: v?.key ?? ''
     });
 
     if (Array.isArray(value)) {
@@ -383,13 +389,13 @@ export class LockerService {
       }
 
       const data = snap.data() as Record<string, unknown>;
-      const key = String(lockerNumber);
+      const lockerKey = String(lockerNumber);
 
-      if (!Object.prototype.hasOwnProperty.call(data, key)) {
+      if (!Object.prototype.hasOwnProperty.call(data, lockerKey)) {
         throw new Error('해당 락커 번호를 찾을 수 없습니다.');
       }
 
-      const existingValue = data[key];
+      const existingValue = data[lockerKey];
       
       // 현재 사용자가 할당되어 있는지 확인
       let hasUser = false;
@@ -448,7 +454,7 @@ export class LockerService {
         throw new Error('잘못된 락커 데이터 형식입니다.');
       }
 
-      tx.set(ref, { [key]: newValue }, { merge: true });
+      tx.set(ref, { [lockerKey]: newValue }, { merge: true });
     });
   }
 }

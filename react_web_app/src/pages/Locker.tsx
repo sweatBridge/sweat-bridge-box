@@ -184,10 +184,10 @@ const Locker: React.FC = () => {
 
     setReleasing(true);
     try {
-      // 해당 락커에 배정된 회원의 이메일을 찾기 위해 현재 데이터 확인
+      // 해당 락커에 배정된 회원의 정보를 찾기 위해 현재 데이터 확인
       const candidates = raw.filter(r => r.number === selectedNo);
       const currentLocker = candidates.find(c => (c.realName || '').trim().length > 0);
-      
+
       await LockerService.releaseLocker(BOX_NAME, selectedNo);
       
       // 회원의 locker 필드 제거 (이메일로 찾아야 함)

@@ -48,5 +48,5 @@ export interface Lockers{
     startDate: string;
     endDate: string;
     createdAt: string;
-    key?: string;  // 락커 할당 고유 키
+    key: string;  // 락커 할당 고유 키
 }
