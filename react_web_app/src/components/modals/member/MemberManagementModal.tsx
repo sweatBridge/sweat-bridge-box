@@ -280,6 +280,42 @@ const MemberManagementModal = ({
     }
   }, [member, selectedMembershipIndex, onSuccess, onError, loadData]);
 
+  const handleReleaseHold = useCallback(async () => {
+    if (!window.confirm('홀딩을 해제하시겠습니까?\n홀딩 종료일이 오늘 전날로 변경되며, 회원권 만료일이 재계산됩니다.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // 현재 회원권의 인덱스 찾기
+      if (currentMemberships.length === 0) {
+        throw new Error('현재 활성화된 회원권이 없습니다.');
+      }
+
+      const currentMembership = currentMemberships[0];
+      const index = userMemberships.findIndex(m => m.key === (currentMembership as any).key);
+      
+      if (index === -1) {
+        throw new Error('회원권을 찾을 수 없습니다.');
+      }
+
+      await MembershipService.releaseHold(member.email, index);
+      
+      if (onSuccess) {
+        onSuccess('홀딩이 성공적으로 해제되었습니다.');
+      }
+      
+      await loadData();
+    } catch (error: any) {
+      if (onError) {
+        onError(error.message || '홀딩 해제에 실패했습니다.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [member, currentMemberships, userMemberships, onSuccess, onError, loadData]);
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('ko-KR', {
       year: 'numeric',
@@ -529,12 +565,7 @@ const MemberManagementModal = ({
                         <div className="hold-history-actions">
                           <button 
                             className="btn-release-hold"
-                            onClick={() => {
-                              if (window.confirm('홀딩을 해제하시겠습니까?')) {
-                                // TODO: 홀딩 해제 로직 구현
-                                console.log('홀딩 해제');
-                              }
-                            }}
+                            onClick={handleReleaseHold}
                             disabled={loading}
                           >
                             해제

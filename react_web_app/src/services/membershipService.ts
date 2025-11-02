@@ -326,6 +326,118 @@ export class MembershipService {
   }
 
   /**
+   * 회원권 홀딩 해제
+   */
+  static async releaseHold(
+    email: string,
+    membershipIndex: number
+  ): Promise<void> {
+    try {
+      const boxName = localStorage.getItem('boxName');
+      if (!boxName) {
+        throw new Error('박스 이름이 없습니다.');
+      }
+
+      const memberships = await this.getUserMemberships(email);
+      
+      if (membershipIndex < 0 || membershipIndex >= memberships.length) {
+        throw new Error('유효하지 않은 회원권 인덱스입니다.');
+      }
+
+      const membership = memberships[membershipIndex] as any;
+      
+      // 새 구조만 지원
+      if (!membership.period) {
+        throw new Error('레거시 회원권은 홀딩 해제를 지원하지 않습니다.');
+      }
+
+      if (!membership.holds || membership.holds.length === 0) {
+        throw new Error('홀딩 정보가 없습니다.');
+      }
+
+      // 현재 활성화된 홀딩 찾기
+      const now = new Date();
+      const currentHoldIndex = membership.holds.findIndex((hold: any) => {
+        const holdStartDate = new Date(hold.startDate);
+        const holdEndDate = new Date(hold.endDate);
+        return now >= holdStartDate && now <= holdEndDate;
+      });
+
+      if (currentHoldIndex === -1) {
+        throw new Error('현재 활성화된 홀딩이 없습니다.');
+      }
+
+      const currentHold = membership.holds[currentHoldIndex];
+      const originalHoldDays = currentHold.days;
+
+      // 홀딩 종료일을 오늘 전날로 변경 (D-1)
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+
+      // 새로운 홀딩 일수 계산
+      const holdStartDate = new Date(currentHold.startDate);
+      const newHoldDays = getDaysBetween(holdStartDate, yesterday);
+
+      // 홀딩이 시작되지 않았거나 음수인 경우 처리
+      if (newHoldDays < 0) {
+        throw new Error('홀딩 시작 전에는 해제할 수 없습니다.');
+      }
+
+      // 홀딩 정보 업데이트
+      currentHold.endDate = yesterday;
+      currentHold.days = newHoldDays;
+      currentHold.released = true;
+      currentHold.releasedAt = now;
+
+      // 원래 홀딩 일수와 실제 홀딩 일수의 차이 계산
+      const daysDifference = originalHoldDays - newHoldDays;
+
+      // 회원권 만료일 조정 (차이만큼 빼기)
+      const currentEndDate = new Date(membership.period.endDate);
+      const newEndDate = new Date(currentEndDate.getTime() - daysDifference * 24 * 60 * 60 * 1000);
+      membership.period.endDate = newEndDate;
+
+      // 다음 회원권들 연쇄 조정 (차이만큼 앞당기기)
+      for (let i = membershipIndex + 1; i < memberships.length; i++) {
+        const nextMembership = memberships[i] as any;
+        
+        if (nextMembership.period) {
+          const nextStartDate = new Date(nextMembership.period.startDate);
+          const nextEndDate = new Date(nextMembership.period.endDate);
+          
+          // 앞 회원권의 새 만료일
+          const prevEndDate = new Date((memberships[i - 1] as any).period.endDate);
+          
+          // 겹치는 경우 조정
+          if (nextStartDate > prevEndDate) {
+            // 겹치지 않으면 차이만큼 앞당기기
+            nextMembership.period.startDate = new Date(nextStartDate.getTime() - daysDifference * 24 * 60 * 60 * 1000);
+            nextMembership.period.endDate = new Date(nextEndDate.getTime() - daysDifference * 24 * 60 * 60 * 1000);
+          } else {
+            // 겹치면 바로 다음날부터 시작
+            nextMembership.period.startDate = new Date(prevEndDate.getTime() + 24 * 60 * 60 * 1000);
+            const duration = getDaysBetween(nextStartDate, nextEndDate);
+            nextMembership.period.endDate = new Date(nextMembership.period.startDate.getTime() + duration * 24 * 60 * 60 * 1000);
+          }
+        }
+      }
+
+      // 업데이트된 시간 기록
+      membership.updatedAt = new Date();
+
+      // Firebase에 저장
+      const memberDocRef = doc(db, `box/${boxName}/member/${email}`);
+      await setDoc(memberDocRef, { memberships }, { merge: true });
+
+      console.log('Hold released successfully');
+    } catch (error) {
+      console.error('Error releasing hold:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 사용자 회원권 삭제 (매출 데이터도 함께 삭제)
    */
   static async removeUserMembership(email: string, index: number): Promise<void> {
