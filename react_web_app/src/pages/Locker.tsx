@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { Calendar, Plus } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
 import { LockerService } from '../services/lockerService';
 import { MemberService } from '../services/memberService';
+import { RevenueService } from '../services/revenueService';
 import {
   Lockers as LockerItem,
   LockerState,
@@ -285,7 +286,7 @@ const Locker: React.FC = () => {
     }
   };
 
-  const onConfirmAssign = async (member: Member, startDate: string, endDate: string) => {
+  const onConfirmAssign = async (member: Member, startDate: string, endDate: string, price: string, paymentType: 'cash' | 'card') => {
     if (selectedNo === null) return;
 
     setAssigning(true);
@@ -304,7 +305,9 @@ const Locker: React.FC = () => {
         phone,
         startDate,
         endDate,
-        lockerKey
+        lockerKey,
+        price,
+        paymentType
       );
       
       // 회원에게 락커 번호 추가 (동일한 키 사용)
@@ -314,7 +317,18 @@ const Locker: React.FC = () => {
         selectedNo,
         startDate,
         endDate,
-        lockerKey
+        lockerKey,
+        price,
+        paymentType
+      );
+      
+      // 매출에 락커 매출 추가
+      await RevenueService.addLockerRevenue(
+        lockerKey,
+        member.email,
+        member.realName,
+        price,
+        paymentType
       );
       
       alert('락커가 배정되었습니다.');

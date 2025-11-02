@@ -9,7 +9,7 @@ interface AssignLockerModalProps {
   assigning: boolean;
   searching: boolean;
   onClose: () => void;
-  onConfirm: (member: Member, startDate: string, endDate: string) => void;
+  onConfirm: (member: Member, startDate: string, endDate: string, price: string, paymentType: 'cash' | 'card') => void;
   onSearch: (searchText: string) => Promise<Member[]>;
 }
 
@@ -27,6 +27,8 @@ const AssignLockerModal = ({
   const [assignSelectedMember, setAssignSelectedMember] = useState<Member | null>(null);
   const [assignStartDate, setAssignStartDate] = useState('');
   const [assignEndDate, setAssignEndDate] = useState('');
+  const [assignPrice, setAssignPrice] = useState('');
+  const [assignPaymentType, setAssignPaymentType] = useState<'cash' | 'card'>('cash');
 
   if (!visible) return null;
 
@@ -60,7 +62,12 @@ const AssignLockerModal = ({
       return;
     }
 
-    onConfirm(assignSelectedMember, assignStartDate, assignEndDate);
+    if (!assignPrice || assignPrice === '0') {
+      alert('가격을 입력해주세요.');
+      return;
+    }
+
+    onConfirm(assignSelectedMember, assignStartDate, assignEndDate, assignPrice, assignPaymentType);
   };
 
   return (
@@ -154,6 +161,34 @@ const AssignLockerModal = ({
                 onChange={(e) => setAssignEndDate(e.target.value)}
                 disabled={assigning}
               />
+            </div>
+
+            {/* 가격 및 결제수단 */}
+            <div className="form-row">
+              <div className="form-group">
+                <label>가격</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={assignPrice}
+                  onChange={(e) => setAssignPrice(e.target.value)}
+                  placeholder="가격"
+                  disabled={assigning}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>결제수단</label>
+                <select
+                  value={assignPaymentType}
+                  onChange={(e) => setAssignPaymentType(e.target.value as 'cash' | 'card')}
+                  className="form-input"
+                  disabled={assigning}
+                >
+                  <option value="cash">현금</option>
+                  <option value="card">카드</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -375,6 +410,16 @@ const AssignLockerModal = ({
           background-color: #f3f4f6;
           color: #6b7280;
           cursor: not-allowed;
+        }
+
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        .form-row .form-group {
+          margin-bottom: 0;
         }
 
         .modal-footer {

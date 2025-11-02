@@ -378,7 +378,9 @@ export class LockerService {
     phoneNumber: string,
     startDate: string,
     endDate: string,
-    key: string
+    key: string,
+    price: string,
+    paymentType: 'cash' | 'card'
   ): Promise<void> {
     const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
 
@@ -421,7 +423,9 @@ export class LockerService {
         startDate: startDate || '',
         endDate: endDate || '',
         createdAt: new Date().toISOString().split('T')[0],
-        key: key
+        key: key,
+        price: price,
+        paymentType: paymentType
       };
 
       let newValue: any;

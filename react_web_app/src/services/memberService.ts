@@ -125,7 +125,9 @@ export class MemberService {
     lockerNumber: number,
     startDate: string,
     endDate: string,
-    key: string
+    key: string,
+    price: string,
+    paymentType: 'cash' | 'card'
   ): Promise<void> {
     try {
       const path = `/box/${box}/member`;
@@ -144,7 +146,9 @@ export class MemberService {
         startDate: startDate,
         endDate: endDate,
         createdAt: Timestamp.now(),
-        key: key
+        key: key,
+        price: price,
+        paymentType: paymentType
       };
       
       lockerHistory.push(newHistoryEntry);

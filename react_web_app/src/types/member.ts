@@ -11,6 +11,8 @@ export interface LockerHistory {
   endDate: string;
   createdAt: any;  // Firebase Timestamp 또는 string
   key?: string;  // 락커 할당 고유 키
+  price?: string;  // 가격
+  paymentType?: 'cash' | 'card';  // 결제수단
 }
 
 export interface Member {
