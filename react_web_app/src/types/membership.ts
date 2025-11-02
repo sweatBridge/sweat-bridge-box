@@ -48,8 +48,8 @@ export interface UserMembership {
   
   adjustments: Array<{
     value: { days: number };
-    before: { period: { startsAt: string; endsAt: string }};
-    after: { period: { startsAt: string; endsAt: string }};
+    before: { period: { startDate: Date; endDate: Date }};
+    after: { period: { startDate: Date; endDate: Date }};
     reason: string;
     assignee: string;
     at: Date;

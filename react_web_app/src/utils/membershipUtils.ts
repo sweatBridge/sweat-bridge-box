@@ -16,6 +16,13 @@ export interface MembershipData {
     used?: number;
     remaining?: number;
   };
+  holds?: Array<{
+    reason: string;
+    startDate: Timestamp | { seconds: number } | Date;
+    endDate: Timestamp | { seconds: number } | Date;
+    days: number;
+    assignee: string;
+  }>;
 }
 
 export interface MembershipInfo {
@@ -23,6 +30,33 @@ export interface MembershipInfo {
   expiryDate: string;
   remainingDays: string | number;
   remainingVisits: string | number;
+}
+
+/**
+ * 회원권이 현재 홀딩 중인지 확인
+ */
+export function isCurrentlyOnHold(membership: MembershipData): boolean {
+  if (!membership.holds || membership.holds.length === 0) {
+    return false;
+  }
+
+  const now = new Date();
+  
+  // holds 배열이 있는 경우 (새 구조)
+  if (Array.isArray(membership.holds)) {
+    return membership.holds.some((hold: any) => {
+      const holdStartDate = hold.startDate?.seconds 
+        ? new Date(hold.startDate.seconds * 1000)
+        : new Date(hold.startDate);
+      const holdEndDate = hold.endDate?.seconds
+        ? new Date(hold.endDate.seconds * 1000)
+        : new Date(hold.endDate);
+      
+      return now >= holdStartDate && now <= holdEndDate;
+    });
+  }
+  
+  return false;
 }
 
 /**
@@ -113,9 +147,14 @@ export function getMembershipInfo(
     };
   }
 
+  // 홀딩 중인지 확인
+  const isOnHold = isCurrentlyOnHold(currentMembership);
+  
   // 등록 타입
   let type = '-';
-  if (currentMembership.type) {
+  if (isOnHold) {
+    type = '홀딩';
+  } else if (currentMembership.type) {
     switch(currentMembership.type) {
       case 'periodPass':
         type = '기간권';

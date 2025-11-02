@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2 } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Pause } from 'lucide-react';
 import { MemberManagementModalProps, MembershipPlan, UserMembership, AddMembershipData } from '../../../types/membership';
 import { getGenderText, formatPhoneNumber } from '../../../utils/memberUtils';
 import { generateMembershipKey } from '../../../utils/keyGenerator';
 import { MembershipService } from '../../../services/membershipService';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
+import HoldMembershipModal from '../membership/HoldMembershipModal';
 
 const MemberManagementModal = ({ 
   visible, 
@@ -19,6 +20,8 @@ const MemberManagementModal = ({
   const [userMemberships, setUserMemberships] = useState<UserMembership[]>([]);
   const [currentMemberships, setCurrentMemberships] = useState<UserMembership[]>([]);
   const [loading, setLoading] = useState(false);
+  const [holdModalVisible, setHoldModalVisible] = useState(false);
+  const [selectedMembershipIndex, setSelectedMembershipIndex] = useState<number>(0);
 
   // 회원권 추가 폼 상태
   const [formData, setFormData] = useState<AddMembershipData>({
@@ -221,6 +224,61 @@ const MemberManagementModal = ({
     }
   }, [member, onSuccess, onError, loadData]);
 
+  const handleOpenHoldModal = useCallback(() => {
+    if (currentMemberships.length === 0) {
+      if (onError) {
+        onError('홀딩할 회원권이 없습니다.');
+      }
+      return;
+    }
+
+    // 현재 회원권의 인덱스 찾기
+    const currentMembership = currentMemberships[0];
+    const index = userMemberships.findIndex(m => m.key === (currentMembership as any).key);
+    
+    if (index === -1) {
+      if (onError) {
+        onError('회원권을 찾을 수 없습니다.');
+      }
+      return;
+    }
+
+    setSelectedMembershipIndex(index);
+    setHoldModalVisible(true);
+  }, [currentMemberships, userMemberships, onError]);
+
+  const handleConfirmHold = useCallback(async (
+    holdStartDate: string,
+    holdEndDate: string,
+    reason: string,
+    assignee: string
+  ) => {
+    try {
+      setLoading(true);
+      await MembershipService.addHold(
+        member.email,
+        selectedMembershipIndex,
+        holdStartDate,
+        holdEndDate,
+        reason,
+        assignee
+      );
+      
+      if (onSuccess) {
+        onSuccess('홀딩이 성공적으로 적용되었습니다.');
+      }
+      
+      setHoldModalVisible(false);
+      await loadData();
+    } catch (error: any) {
+      if (onError) {
+        onError(error.message || '홀딩 적용에 실패했습니다.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [member, selectedMembershipIndex, onSuccess, onError, loadData]);
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('ko-KR', {
       year: 'numeric',
@@ -372,10 +430,20 @@ const MemberManagementModal = ({
                     return (
                       <div className="membership-card">
                         <div className="membership-header">
-                          <CreditCard size={20} />
-                          <span className="membership-type">
-                            {displayInfo.type === "countPass" ? "횟수권" : "기간권"}
-                          </span>
+                          <div className="membership-header-left">
+                            <CreditCard size={20} />
+                            <span className="membership-type">
+                              {displayInfo.type === "countPass" ? "횟수권" : "기간권"}
+                            </span>
+                          </div>
+                          <button 
+                            className="btn btn-hold"
+                            onClick={handleOpenHoldModal}
+                            disabled={loading}
+                          >
+                            <Pause size={16} />
+                            홀딩
+                          </button>
                         </div>
                         
                         <div className="membership-details">
@@ -414,6 +482,39 @@ const MemberManagementModal = ({
                       </div>
                     );
                   })()
+                )}
+
+                {/* 홀딩 히스토리 */}
+                {currentMemberships.length > 0 && (currentMemberships[0] as any).holds && (currentMemberships[0] as any).holds.length > 0 && (
+                  <div className="hold-history-section">
+                    <h5 className="subsection-title">홀딩 히스토리</h5>
+                    <div className="hold-history-list">
+                      {(currentMemberships[0] as any).holds.map((hold: any, index: number) => (
+                        <div key={index} className="hold-history-item">
+                          <div className="hold-history-header">
+                            <Pause size={14} />
+                            <span className="hold-index">#{index + 1}</span>
+                          </div>
+                          <div className="hold-history-details">
+                            <div className="hold-detail-row">
+                              <span className="hold-label">기간:</span>
+                              <span className="hold-value">
+                                {formatDate(hold.startDate)} ~ {formatDate(hold.endDate)} ({hold.days}일)
+                              </span>
+                            </div>
+                            <div className="hold-detail-row">
+                              <span className="hold-label">사유:</span>
+                              <span className="hold-value">{hold.reason}</span>
+                            </div>
+                            <div className="hold-detail-row">
+                              <span className="hold-label">담당자:</span>
+                              <span className="hold-value">{hold.assignee}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -607,6 +708,16 @@ const MemberManagementModal = ({
         </div>
       </div>
 
+      {/* 홀딩 모달 */}
+      <HoldMembershipModal
+        visible={holdModalVisible}
+        membershipIndex={selectedMembershipIndex}
+        memberEmail={member?.email || ''}
+        onClose={() => setHoldModalVisible(false)}
+        onConfirm={handleConfirmHold}
+        loading={loading}
+      />
+
       <style>{`
         .member-management-modal {
           max-width: 900px;
@@ -789,11 +900,17 @@ const MemberManagementModal = ({
 
         .membership-header {
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          gap: 12px;
           margin-bottom: 16px;
           padding-bottom: 12px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .membership-header-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
         }
 
         .membership-type {
@@ -827,6 +944,87 @@ const MemberManagementModal = ({
         .membership-value {
           font-size: 14px;
           font-weight: 600;
+        }
+
+        .btn-hold {
+          background-color: rgba(255, 255, 255, 0.9);
+          border-color: rgba(255, 255, 255, 0.9);
+          color: ${AppColors.primary};
+          font-weight: 600;
+          padding: 6px 12px;
+          font-size: 13px;
+        }
+
+        .btn-hold:hover:not(:disabled) {
+          background-color: white;
+          border-color: white;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .hold-history-section {
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 2px solid #e5e7eb;
+        }
+
+        .subsection-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: #1f2937;
+          margin-bottom: 12px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .hold-history-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .hold-history-item {
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          border: 1px solid #fbbf24;
+          border-radius: 8px;
+          padding: 12px;
+        }
+
+        .hold-history-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+          color: #92400e;
+          font-weight: 600;
+          font-size: 13px;
+        }
+
+        .hold-index {
+          font-size: 12px;
+        }
+
+        .hold-history-details {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .hold-detail-row {
+          display: flex;
+          gap: 8px;
+          font-size: 13px;
+        }
+
+        .hold-label {
+          font-weight: 600;
+          color: #92400e;
+          min-width: 60px;
+        }
+
+        .hold-value {
+          color: #78350f;
         }
 
         .form-grid {

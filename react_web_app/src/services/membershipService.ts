@@ -242,6 +242,91 @@ export class MembershipService {
   }
 
   /**
+   * 회원권 홀딩 추가
+   */
+  static async addHold(
+    email: string,
+    membershipIndex: number,
+    holdStartDate: string,
+    holdEndDate: string,
+    reason: string,
+    assignee: string
+  ): Promise<void> {
+    try {
+      const boxName = localStorage.getItem('boxName');
+      if (!boxName) {
+        throw new Error('박스 이름이 없습니다.');
+      }
+
+      const memberships = await this.getUserMemberships(email);
+      
+      if (membershipIndex < 0 || membershipIndex >= memberships.length) {
+        throw new Error('유효하지 않은 회원권 인덱스입니다.');
+      }
+
+      const membership = memberships[membershipIndex] as any;
+      
+      // 새 구조만 지원
+      if (!membership.period) {
+        throw new Error('레거시 회원권은 홀딩을 지원하지 않습니다.');
+      }
+
+      const holdStart = new Date(holdStartDate);
+      const holdEnd = new Date(holdEndDate);
+      const holdDays = Math.ceil((holdEnd.getTime() - holdStart.getTime()) / (1000 * 60 * 60 * 24));
+
+      // 홀딩 정보 추가
+      const newHold = {
+        reason,
+        startDate: holdStart,
+        endDate: holdEnd,
+        days: holdDays,
+        assignee
+      };
+
+      membership.holds = membership.holds || [];
+      membership.holds.push(newHold);
+
+      // 만료일 연장
+      const currentEndDate = new Date(membership.period.endDate);
+      const newEndDate = new Date(currentEndDate.getTime() + holdDays * 24 * 60 * 60 * 1000);
+      membership.period.endDate = newEndDate;
+
+      // 다음 회원권들 연쇄 이동
+      for (let i = membershipIndex + 1; i < memberships.length; i++) {
+        const nextMembership = memberships[i] as any;
+        
+        if (nextMembership.period) {
+          const nextStartDate = new Date(nextMembership.period.startDate);
+          
+          // 현재 회원권의 새 만료일과 다음 회원권의 시작일이 겹치는지 확인
+          const currentMembershipEndDate = new Date((memberships[i - 1] as any).period.endDate);
+          
+          if (nextStartDate <= currentMembershipEndDate) {
+            // 겹치면 다음 회원권 이동
+            const daysDiff = Math.ceil((currentMembershipEndDate.getTime() - nextStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+            
+            nextMembership.period.startDate = new Date(currentMembershipEndDate.getTime() + 24 * 60 * 60 * 1000);
+            nextMembership.period.endDate = new Date(new Date(nextMembership.period.endDate).getTime() + daysDiff * 24 * 60 * 60 * 1000);
+          }
+        }
+      }
+
+      // 업데이트된 시간 기록
+      membership.updatedAt = new Date();
+
+      // Firebase에 저장
+      const memberDocRef = doc(db, `box/${boxName}/member/${email}`);
+      await setDoc(memberDocRef, { memberships }, { merge: true });
+
+      console.log('Hold added successfully');
+    } catch (error) {
+      console.error('Error adding hold:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 사용자 회원권 삭제 (매출 데이터도 함께 삭제)
    */
   static async removeUserMembership(email: string, index: number): Promise<void> {
