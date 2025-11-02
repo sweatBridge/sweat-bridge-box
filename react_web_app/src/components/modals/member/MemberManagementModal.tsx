@@ -119,20 +119,53 @@ const MemberManagementModal = ({
     );
 
     const now = new Date();
+    const boxName = localStorage.getItem('boxName') || 'SWEAT';
+    const totalCount = parseInt(formData.count) || 0;
+    
+    // 새로운 회원권 구조
     const newMembership: UserMembership = {
       key: generateMembershipKey(),
       plan: formData.selectedPlanName,
       type: formData.membershipType,
-      count: formData.count,
-      price: formData.price,
-      paymentType: formData.paymentType,
-      assignee: formData.assignee,
-      startDate: startDate,
-      endDate: endDate,
-      holdStartDate: null,
-      holdEndDate: null,
+      
+      purchase: {
+        price: parseInt(formData.price) || 0,
+        paid: parseInt(formData.price) || 0,
+        paymentType: formData.paymentType,
+        at: now
+      },
+      
+      quota: {
+        total: totalCount,
+        used: 0,
+        remaining: totalCount
+      },
+      
+      period: {
+        startDate: startDate,
+        endDate: endDate,
+        originalEndDate: endDate
+      },
+      
+      holds: [],
+      
+      refund: {
+        isRefunded: false,
+        at: null,
+        refundAmount: 0,
+        reason: null
+      },
+      
+      adjustments: [],
+      
       createdAt: now,
       updatedAt: now,
+      assignee: formData.assignee,
+      
+      deleted: false,
+      deletedAt: null,
+      
+      boxName: boxName
     };
 
     try {
@@ -194,6 +227,31 @@ const MemberManagementModal = ({
       month: '2-digit',
       day: '2-digit'
     }).format(date);
+  };
+
+  // 회원권 정보 추출 헬퍼 (레거시 및 새 구조 지원)
+  const getMembershipDisplayInfo = (membership: any) => {
+    // 새 구조
+    if (membership.period && membership.purchase) {
+      return {
+        startDate: membership.period.startDate,
+        endDate: membership.period.endDate,
+        type: membership.type,
+        price: membership.purchase.price.toString(),
+        plan: membership.plan,
+        assignee: membership.assignee
+      };
+    }
+    
+    // 레거시 구조
+    return {
+      startDate: membership.startDate,
+      endDate: membership.endDate,
+      type: membership.type,
+      price: membership.price,
+      plan: membership.plan,
+      assignee: membership.assignee
+    };
   };
 
   if (!visible || !member) return null;
@@ -309,48 +367,53 @@ const MemberManagementModal = ({
                     <p>현재 유효한 회원권이 {currentMemberships.length}개 있습니다.</p>
                   </div>
                 ) : (
-                  <div className="membership-card">
-                    <div className="membership-header">
-                      <CreditCard size={20} />
-                      <span className="membership-type">
-                        {currentMemberships[0].type === "countPass" ? "횟수권" : "기간권"}
-                      </span>
-                    </div>
-                    
-                    <div className="membership-details">
-                      <div className="membership-item">
-                        <Calendar size={16} />
-                        <div>
-                          <span className="membership-label">시작일</span>
-                          <span className="membership-value">{formatDate(currentMemberships[0].startDate)}</span>
+                  (() => {
+                    const displayInfo = getMembershipDisplayInfo(currentMemberships[0]);
+                    return (
+                      <div className="membership-card">
+                        <div className="membership-header">
+                          <CreditCard size={20} />
+                          <span className="membership-type">
+                            {displayInfo.type === "countPass" ? "횟수권" : "기간권"}
+                          </span>
+                        </div>
+                        
+                        <div className="membership-details">
+                          <div className="membership-item">
+                            <Calendar size={16} />
+                            <div>
+                              <span className="membership-label">시작일</span>
+                              <span className="membership-value">{formatDate(displayInfo.startDate)}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="membership-item">
+                            <Clock size={16} />
+                            <div>
+                              <span className="membership-label">종료일</span>
+                              <span className="membership-value">{formatDate(displayInfo.endDate)}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="membership-item">
+                            <CreditCard size={16} />
+                            <div>
+                              <span className="membership-label">가격</span>
+                              <span className="membership-value">{displayInfo.price}원</span>
+                            </div>
+                          </div>
+                          
+                          <div className="membership-item">
+                            <User size={16} />
+                            <div>
+                              <span className="membership-label">담당자</span>
+                              <span className="membership-value">{displayInfo.assignee}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      
-                      <div className="membership-item">
-                        <Clock size={16} />
-                        <div>
-                          <span className="membership-label">종료일</span>
-                          <span className="membership-value">{formatDate(currentMemberships[0].endDate)}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="membership-item">
-                        <CreditCard size={16} />
-                        <div>
-                          <span className="membership-label">가격</span>
-                          <span className="membership-value">{currentMemberships[0].price}원</span>
-                        </div>
-                      </div>
-                      
-                      <div className="membership-item">
-                        <User size={16} />
-                        <div>
-                          <span className="membership-label">담당자</span>
-                          <span className="membership-value">{currentMemberships[0].assignee}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })()
                 )}
               </div>
             </div>
@@ -503,30 +566,33 @@ const MemberManagementModal = ({
                       <div className="table-cell">삭제</div>
                     </div>
                     
-                    {userMemberships.map((membership, index) => (
-                      <div key={index} className="table-row">
-                        <div className="table-cell">{formatDate(membership.startDate)}</div>
-                        <div className="table-cell">{formatDate(membership.endDate)}</div>
-                        <div className="table-cell">
-                          <span className="membership-badge">
-                            {membership.type === "countPass" ? "횟수권" : "기간권"}
-                          </span>
+                    {userMemberships.map((membership, index) => {
+                      const displayInfo = getMembershipDisplayInfo(membership);
+                      return (
+                        <div key={index} className="table-row">
+                          <div className="table-cell">{formatDate(displayInfo.startDate)}</div>
+                          <div className="table-cell">{formatDate(displayInfo.endDate)}</div>
+                          <div className="table-cell">
+                            <span className="membership-badge">
+                              {displayInfo.type === "countPass" ? "횟수권" : "기간권"}
+                            </span>
+                          </div>
+                          <div className="table-cell">{displayInfo.price}원</div>
+                          <div className="table-cell">{displayInfo.plan}</div>
+                          <div className="table-cell">{displayInfo.assignee}</div>
+                          <div className="table-cell">
+                            <button
+                              onClick={() => handleDeleteMembership(index)}
+                              disabled={loading}
+                              className="btn btn-sm btn-danger"
+                              title="회원권 삭제"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </div>
-                        <div className="table-cell">{membership.price}원</div>
-                        <div className="table-cell">{membership.plan}</div>
-                        <div className="table-cell">{membership.assignee}</div>
-                        <div className="table-cell">
-                          <button
-                            onClick={() => handleDeleteMembership(index)}
-                            disabled={loading}
-                            className="btn btn-sm btn-danger"
-                            title="회원권 삭제"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

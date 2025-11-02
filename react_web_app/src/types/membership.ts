@@ -6,7 +6,67 @@ export interface MembershipPlan {
   price: string;
 }
 
+// 새로운 회원권 구조
 export interface UserMembership {
+  key: string;
+  plan: string;
+  type: 'periodPass' | 'countPass';
+  
+  purchase: {
+    price: number;
+    paid: number;
+    paymentType: 'card' | 'cash' | 'transfer' | 'point';
+    at: Date;
+  };
+  
+  quota: {
+    total: number;
+    used: number;
+    remaining: number;
+  };
+  
+  period: {
+    startDate: Date;
+    endDate: Date;
+    originalEndDate: Date;
+  };
+  
+  holds: Array<{
+    reason: string;
+    startDate: Date;
+    endDate: Date;
+    days: number;
+    assignee: string;
+  }>;
+  
+  refund: {
+    isRefunded: boolean;
+    at: Date | null;
+    refundAmount: number;
+    reason: string | null;
+  };
+  
+  adjustments: Array<{
+    value: { days: number };
+    before: { period: { startsAt: string; endsAt: string }};
+    after: { period: { startsAt: string; endsAt: string }};
+    reason: string;
+    assignee: string;
+    at: Date;
+  }>;
+  
+  createdAt: Date;
+  updatedAt: Date;
+  assignee: string;
+  
+  deleted: boolean;
+  deletedAt: Date | null;
+  
+  boxName: string;
+}
+
+// 레거시 데이터 지원을 위한 타입
+export interface LegacyUserMembership {
   key: string;
   plan: string;
   type: 'periodPass' | 'countPass';

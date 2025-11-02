@@ -240,13 +240,14 @@ export class RevenueService {
   }
 
   /**
-   * 회원권 추가 시 매출 데이터 저장
+   * 회원권 추가 시 매출 데이터 저장 (새 구조 지원)
    */
   static async addUserMembership(membership: UserMembership, memberEmail: string, memberRealName: string): Promise<void> {
     try {
       const boxName = this.getBoxName();
-      const year = membership.createdAt.getFullYear();
-      const month = membership.createdAt.getMonth() + 1; // JavaScript month는 0부터 시작
+      const purchaseDate = membership.purchase.at;
+      const year = purchaseDate.getFullYear();
+      const month = purchaseDate.getMonth() + 1;
       
       // Firebase 경로: box/${boxName}/revenue/${year}
       const revenueDocRef = doc(db, `box/${boxName}/revenue/${year}`);
@@ -270,11 +271,11 @@ export class RevenueService {
       // 회원권 매출 데이터 구성
       const membershipRevenueData = {
         assignee: membership.assignee,
-        createdAt: membership.createdAt,
+        createdAt: Timestamp.fromDate(purchaseDate),
         id: memberEmail,
-        paymentType: membership.paymentType,
+        paymentType: membership.purchase.paymentType,
         plan: membership.plan,
-        price: membership.price,
+        price: membership.purchase.price.toString(),
         realName: memberRealName,
         type: membership.type
       };

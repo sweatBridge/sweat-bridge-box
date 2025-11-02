@@ -73,7 +73,7 @@ export class MembershipService {
   }
 
   /**
-   * 사용자 회원권 조회
+   * 사용자 회원권 조회 (레거시 및 새 구조 모두 지원)
    */
   static async getUserMemberships(email: string): Promise<UserMembership[]> {
     try {
@@ -91,15 +91,50 @@ export class MembershipService {
         const memberships = data.memberships || [];
         
         // Date 객체로 변환
-        return memberships.map((membership: any) => ({
-          ...membership,
-          startDate: membership.startDate?.toDate?.() ?? new Date(membership.startDate),
-          endDate: membership.endDate?.toDate?.() ?? new Date(membership.endDate),
-          holdStartDate: membership.holdStartDate?.toDate?.() ?? null,
-          holdEndDate: membership.holdEndDate?.toDate?.() ?? null,
-          createdAt: membership.createdAt?.toDate?.() ?? new Date(membership.createdAt),
-          updatedAt: membership.updatedAt?.toDate?.() ?? new Date(membership.updatedAt),
-        }));
+        return memberships.map((membership: any) => {
+          // 새로운 구조인지 확인
+          if (membership.period && membership.purchase) {
+            return {
+              ...membership,
+              purchase: {
+                ...membership.purchase,
+                at: membership.purchase.at?.toDate?.() ?? new Date(membership.purchase.at)
+              },
+              period: {
+                startDate: membership.period.startDate?.toDate?.() ?? new Date(membership.period.startDate),
+                endDate: membership.period.endDate?.toDate?.() ?? new Date(membership.period.endDate),
+                originalEndDate: membership.period.originalEndDate?.toDate?.() ?? new Date(membership.period.originalEndDate)
+              },
+              holds: (membership.holds || []).map((hold: any) => ({
+                ...hold,
+                startDate: hold.startDate?.toDate?.() ?? new Date(hold.startDate),
+                endDate: hold.endDate?.toDate?.() ?? new Date(hold.endDate)
+              })),
+              refund: {
+                ...membership.refund,
+                at: membership.refund?.at?.toDate?.() ?? null
+              },
+              adjustments: (membership.adjustments || []).map((adj: any) => ({
+                ...adj,
+                at: adj.at?.toDate?.() ?? new Date(adj.at)
+              })),
+              createdAt: membership.createdAt?.toDate?.() ?? new Date(membership.createdAt),
+              updatedAt: membership.updatedAt?.toDate?.() ?? new Date(membership.updatedAt),
+              deletedAt: membership.deletedAt?.toDate?.() ?? null
+            };
+          }
+          
+          // 레거시 구조
+          return {
+            ...membership,
+            startDate: membership.startDate?.toDate?.() ?? new Date(membership.startDate),
+            endDate: membership.endDate?.toDate?.() ?? new Date(membership.endDate),
+            holdStartDate: membership.holdStartDate?.toDate?.() ?? null,
+            holdEndDate: membership.holdEndDate?.toDate?.() ?? null,
+            createdAt: membership.createdAt?.toDate?.() ?? new Date(membership.createdAt),
+            updatedAt: membership.updatedAt?.toDate?.() ?? new Date(membership.updatedAt)
+          };
+        });
       } else {
         console.log('Member 문서를 찾을 수 없습니다.');
         return [];
@@ -111,14 +146,31 @@ export class MembershipService {
   }
 
   /**
-   * 현재 유효한 회원권 필터링
+   * 현재 유효한 회원권 필터링 (레거시 및 새 구조 지원)
    */
   static getCurrentMemberships(memberships: UserMembership[]): UserMembership[] {
     const now = new Date();
     return memberships.filter(membership => {
-      const startDate = new Date(membership.startDate);
-      const endDate = new Date(membership.endDate);
-      return startDate <= now && endDate >= now;
+      // 삭제된 회원권 제외
+      if ((membership as any).deleted) {
+        return false;
+      }
+      
+      // 새 구조
+      if ((membership as any).period) {
+        const startDate = new Date((membership as any).period.startDate);
+        const endDate = new Date((membership as any).period.endDate);
+        return startDate <= now && endDate >= now;
+      }
+      
+      // 레거시 구조
+      if ((membership as any).startDate && (membership as any).endDate) {
+        const startDate = new Date((membership as any).startDate);
+        const endDate = new Date((membership as any).endDate);
+        return startDate <= now && endDate >= now;
+      }
+      
+      return false;
     });
   }
 
@@ -139,13 +191,29 @@ export class MembershipService {
       // 기존 회원권들을 가져와서 날짜 겹침 체크
       const existingMemberships = await this.getUserMemberships(email);
       
-      const newStartDate = new Date(membership.startDate);
-      const newEndDate = new Date(membership.endDate);
+      // 새 구조에서 날짜 추출
+      const newStartDate = new Date(membership.period.startDate);
+      const newEndDate = new Date(membership.period.endDate);
 
       // 날짜 겹침 체크
       for (const existingMembership of existingMemberships) {
-        const existingStartDate = new Date(existingMembership.startDate);
-        const existingEndDate = new Date(existingMembership.endDate);
+        // 삭제된 회원권은 체크하지 않음
+        if ((existingMembership as any).deleted) {
+          continue;
+        }
+        
+        let existingStartDate: Date;
+        let existingEndDate: Date;
+        
+        // 새 구조
+        if ((existingMembership as any).period) {
+          existingStartDate = new Date((existingMembership as any).period.startDate);
+          existingEndDate = new Date((existingMembership as any).period.endDate);
+        } else {
+          // 레거시 구조
+          existingStartDate = new Date((existingMembership as any).startDate);
+          existingEndDate = new Date((existingMembership as any).endDate);
+        }
 
         if (newStartDate <= existingEndDate && existingStartDate <= newEndDate) {
           throw new Error(`일자가 겹치는 다른 회원권이 있습니다. 회원권의 일자를 다시 확인해주세요. 기존 멤버십: ${existingStartDate.toLocaleDateString()} ~ ${existingEndDate.toLocaleDateString()}`);
