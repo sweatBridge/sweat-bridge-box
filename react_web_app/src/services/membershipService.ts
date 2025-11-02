@@ -291,22 +291,27 @@ export class MembershipService {
       const newEndDate = new Date(currentEndDate.getTime() + holdDays * 24 * 60 * 60 * 1000);
       membership.period.endDate = newEndDate;
 
-      // 다음 회원권들 연쇄 이동
+      // 다음 회원권들 연쇄 이동 (홀딩 일수만큼 모두 뒤로 밀기)
       for (let i = membershipIndex + 1; i < memberships.length; i++) {
         const nextMembership = memberships[i] as any;
         
         if (nextMembership.period) {
           const nextStartDate = new Date(nextMembership.period.startDate);
+          const nextEndDate = new Date(nextMembership.period.endDate);
           
-          // 현재 회원권의 새 만료일과 다음 회원권의 시작일이 겹치는지 확인
-          const currentMembershipEndDate = new Date((memberships[i - 1] as any).period.endDate);
+          // 앞 회원권의 새 만료일
+          const prevEndDate = new Date((memberships[i - 1] as any).period.endDate);
           
-          if (nextStartDate <= currentMembershipEndDate) {
-            // 겹치면 다음 회원권 이동
-            const daysDiff = Math.ceil((currentMembershipEndDate.getTime() - nextStartDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-            
-            nextMembership.period.startDate = new Date(currentMembershipEndDate.getTime() + 24 * 60 * 60 * 1000);
-            nextMembership.period.endDate = new Date(new Date(nextMembership.period.endDate).getTime() + daysDiff * 24 * 60 * 60 * 1000);
+          // 겹치는지 확인
+          if (nextStartDate <= prevEndDate) {
+            // 겹치면 바로 다음날부터 시작
+            nextMembership.period.startDate = new Date(prevEndDate.getTime() + 24 * 60 * 60 * 1000);
+            const duration = getDaysBetween(nextStartDate, nextEndDate);
+            nextMembership.period.endDate = new Date(nextMembership.period.startDate.getTime() + duration * 24 * 60 * 60 * 1000);
+          } else {
+            // 겹치지 않으면 홀딩 일수만큼 뒤로 밀기
+            nextMembership.period.startDate = new Date(nextStartDate.getTime() + holdDays * 24 * 60 * 60 * 1000);
+            nextMembership.period.endDate = new Date(nextEndDate.getTime() + holdDays * 24 * 60 * 60 * 1000);
           }
         }
       }
