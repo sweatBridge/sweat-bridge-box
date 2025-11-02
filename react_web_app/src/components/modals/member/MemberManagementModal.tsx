@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Pause } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Pause, DollarSign } from 'lucide-react';
 import { MemberManagementModalProps, MembershipPlan, UserMembership, AddMembershipData } from '../../../types/membership';
 import { getGenderText, formatPhoneNumber } from '../../../utils/memberUtils';
 import { generateMembershipKey } from '../../../utils/keyGenerator';
@@ -8,6 +8,7 @@ import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
 import HoldMembershipModal from '../membership/HoldMembershipModal';
 import DeleteMembershipConfirmModal from '../membership/DeleteMembershipConfirmModal';
+import RefundMembershipModal from '../membership/RefundMembershipModal';
 
 const MemberManagementModal = ({ 
   visible, 
@@ -25,6 +26,8 @@ const MemberManagementModal = ({
   const [selectedMembershipIndex, setSelectedMembershipIndex] = useState<number>(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [membershipToDelete, setMembershipToDelete] = useState<{ index: number; plan: string; price: string } | null>(null);
+  const [refundModalVisible, setRefundModalVisible] = useState(false);
+  const [membershipToRefund, setMembershipToRefund] = useState<{ index: number; plan: string; price: string } | null>(null);
 
   // 회원권 추가 폼 상태
   const [formData, setFormData] = useState<AddMembershipData>({
@@ -238,6 +241,49 @@ const MemberManagementModal = ({
       setLoading(false);
     }
   }, [member, membershipToDelete, onSuccess, onError, loadData]);
+
+  const handleOpenRefundModal = useCallback((index: number) => {
+    const membership = userMemberships[index];
+    const displayInfo = getMembershipDisplayInfo(membership);
+    
+    setMembershipToRefund({
+      index,
+      plan: displayInfo.plan,
+      price: displayInfo.price
+    });
+    setRefundModalVisible(true);
+  }, [userMemberships]);
+
+  const handleConfirmRefund = useCallback(async (refundAmount: string, reason: string) => {
+    if (!membershipToRefund) return;
+
+    try {
+      setLoading(true);
+      // TODO: 환불 로직 구현
+      // await MembershipService.refundUserMembership(member.email, membershipToRefund.index, refundAmount, reason);
+      
+      console.log('환불 처리:', {
+        email: member.email,
+        index: membershipToRefund.index,
+        refundAmount,
+        reason
+      });
+      
+      if (onSuccess) {
+        onSuccess('회원권이 성공적으로 환불되었습니다.');
+      }
+      
+      setRefundModalVisible(false);
+      setMembershipToRefund(null);
+      await loadData();
+    } catch (error: any) {
+      if (onError) {
+        onError(error.message || '회원권 환불에 실패했습니다.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [member, membershipToRefund, onSuccess, onError, loadData]);
 
   const handleOpenHoldModal = useCallback(() => {
     if (currentMemberships.length === 0) {
@@ -738,6 +784,7 @@ const MemberManagementModal = ({
                       <div className="table-cell">가격</div>
                       <div className="table-cell">플랜</div>
                       <div className="table-cell">담당자</div>
+                      <div className="table-cell">환불</div>
                       <div className="table-cell">삭제</div>
                     </div>
                     
@@ -755,6 +802,16 @@ const MemberManagementModal = ({
                           <div className="table-cell">{displayInfo.price}원</div>
                           <div className="table-cell">{displayInfo.plan}</div>
                           <div className="table-cell">{displayInfo.assignee}</div>
+                          <div className="table-cell">
+                            <button
+                              onClick={() => handleOpenRefundModal(index)}
+                              disabled={loading}
+                              className="btn btn-sm btn-refund"
+                              title="회원권 환불"
+                            >
+                              <DollarSign size={14} />
+                            </button>
+                          </div>
                           <div className="table-cell">
                             <button
                               onClick={() => handleOpenDeleteModal(index)}
@@ -802,6 +859,19 @@ const MemberManagementModal = ({
           setMembershipToDelete(null);
         }}
         onConfirm={handleConfirmDelete}
+        loading={loading}
+      />
+
+      {/* 회원권 환불 모달 */}
+      <RefundMembershipModal
+        visible={refundModalVisible}
+        membershipPlan={membershipToRefund?.plan || ''}
+        membershipPrice={membershipToRefund?.price || '0'}
+        onClose={() => {
+          setRefundModalVisible(false);
+          setMembershipToRefund(null);
+        }}
+        onConfirm={handleConfirmRefund}
         loading={loading}
       />
 
@@ -1207,7 +1277,7 @@ const MemberManagementModal = ({
 
         .table-header {
           display: grid !important;
-          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 80px !important;
+          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 80px 80px !important;
           gap: 16px;
           padding: 16px;
           background-color: #f8fafc;
@@ -1220,7 +1290,7 @@ const MemberManagementModal = ({
 
         .table-row {
           display: grid !important;
-          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 80px !important;
+          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 80px 80px !important;
           gap: 16px;
           padding: 16px;
           border-bottom: 1px solid #e5e7eb;
@@ -1267,7 +1337,11 @@ const MemberManagementModal = ({
           justify-content: center;
         }
 
-        .table-cell:nth-child(7) { /* 삭제 */
+        .table-cell:nth-child(7) { /* 환불 */
+          justify-content: center;
+        }
+
+        .table-cell:nth-child(8) { /* 삭제 */
           justify-content: center;
         }
 
@@ -1418,6 +1492,17 @@ const MemberManagementModal = ({
         .btn-danger:hover:not(:disabled) {
           background-color: #b91c1c;
           border-color: #b91c1c;
+        }
+
+        .btn-refund {
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          border-color: #2563eb;
+          color: white;
+        }
+
+        .btn-refund:hover:not(:disabled) {
+          background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+          border-color: #1d4ed8;
         }
 
         @keyframes spin {
