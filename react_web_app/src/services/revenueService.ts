@@ -62,9 +62,12 @@ export class RevenueService {
       Object.entries(monthData).forEach(([revenueKey, data]) => {
         const revenueData = data as RevenueData;
         
-        // createdAt을 Date로 변환하고 날짜 문자열 생성
+        // createdAt을 Date로 변환하고 날짜 문자열 생성 (로컬 시간 기준)
         const createdDate = revenueData.createdAt.toDate();
-        const dateStr = createdDate.toISOString().split('T')[0];
+        const year = createdDate.getFullYear();
+        const month = String(createdDate.getMonth() + 1).padStart(2, '0');
+        const day = String(createdDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
         
         // 해당 날짜의 데이터가 없으면 초기화
         if (!dailyRevenueMap.has(dateStr)) {
@@ -175,7 +178,10 @@ export class RevenueService {
               const revenueData = data as RevenueData;
               const price = parseInt(revenueData.price) || 0;
               const createdDate = revenueData.createdAt.toDate();
-              const dateStr = createdDate.toISOString().split('T')[0];
+              const dataYear = createdDate.getFullYear();
+              const dataMonth = createdDate.getMonth() + 1;
+              const dataDay = String(createdDate.getDate()).padStart(2, '0');
+              const dateStr = `${dataYear}-${String(dataMonth).padStart(2, '0')}-${dataDay}`;
 
               // 이번 해 매출 누적
               if (year === currentYear) {
