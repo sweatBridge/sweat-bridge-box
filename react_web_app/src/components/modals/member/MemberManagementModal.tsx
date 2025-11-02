@@ -312,6 +312,20 @@ const MemberManagementModal = ({
     };
   };
 
+  // 현재 활성화된 홀딩 찾기
+  const getCurrentHold = (membership: any) => {
+    if (!membership.holds || membership.holds.length === 0) {
+      return null;
+    }
+
+    const now = new Date();
+    return membership.holds.find((hold: any) => {
+      const holdStartDate = new Date(hold.startDate);
+      const holdEndDate = new Date(hold.endDate);
+      return now >= holdStartDate && now <= holdEndDate;
+    });
+  };
+
   if (!visible || !member) return null;
 
   return (
@@ -484,38 +498,37 @@ const MemberManagementModal = ({
                   })()
                 )}
 
-                {/* 홀딩 히스토리 */}
-                {currentMemberships.length > 0 && (currentMemberships[0] as any).holds && (currentMemberships[0] as any).holds.length > 0 && (
-                  <div className="hold-history-section">
-                    <h5 className="subsection-title">홀딩 히스토리</h5>
-                    <div className="hold-history-list">
-                      {(currentMemberships[0] as any).holds.map((hold: any, index: number) => (
-                        <div key={index} className="hold-history-item">
-                          <div className="hold-history-header">
-                            <Pause size={14} />
-                            <span className="hold-index">#{index + 1}</span>
+                {/* 현재 홀딩 중인 경우에만 표시 */}
+                {currentMemberships.length > 0 && (() => {
+                  console.log(currentMemberships[0]);
+                  const currentHold = getCurrentHold(currentMemberships[0]);
+                  console.log(currentHold);
+                  if (!currentHold) return null;
+                  
+                  return (
+                    <div className="hold-history-section">
+                      <h5 className="subsection-title">홀딩</h5>
+                      <div className="hold-history-item">
+                        <div className="hold-history-details">
+                          <div className="hold-detail-row">
+                            <span className="hold-label">기간:</span>
+                            <span className="hold-value">
+                              {formatDate(currentHold.startDate)} ~ {formatDate(currentHold.endDate)} ({currentHold.days}일)
+                            </span>
                           </div>
-                          <div className="hold-history-details">
-                            <div className="hold-detail-row">
-                              <span className="hold-label">기간:</span>
-                              <span className="hold-value">
-                                {formatDate(hold.startDate)} ~ {formatDate(hold.endDate)} ({hold.days}일)
-                              </span>
-                            </div>
-                            <div className="hold-detail-row">
-                              <span className="hold-label">사유:</span>
-                              <span className="hold-value">{hold.reason}</span>
-                            </div>
-                            <div className="hold-detail-row">
-                              <span className="hold-label">담당자:</span>
-                              <span className="hold-value">{hold.assignee}</span>
-                            </div>
+                          <div className="hold-detail-row">
+                            <span className="hold-label">사유:</span>
+                            <span className="hold-value">{currentHold.reason}</span>
+                          </div>
+                          <div className="hold-detail-row">
+                            <span className="hold-label">담당자:</span>
+                            <span className="hold-value">{currentHold.assignee}</span>
                           </div>
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
           )}
