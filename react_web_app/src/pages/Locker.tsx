@@ -1,12 +1,21 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, Plus } from 'lucide-react';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
 import { LockerService } from '../services/lockerService';
 import { MemberService } from '../services/memberService';
-import type { Lockers as LockerItem } from '../types/locker';
+import {
+  Lockers as LockerItem,
+  LockerState,
+  LockerUpdatableState,
+  LOCKER_STATE,
+  isLockerState,
+  coalesceLockerState,
+  getLockerStateLabel
+} from '../types/locker';
 import type { Member } from '../types/member';
 import { usePageContext } from '../contexts/PageContext';
+import { generateMembershipKey } from '../utils/keyGenerator';
 import AddLockerModal from '../components/modals/locker/AddLockerModal';
 import LockerDetailsModal from '../components/modals/locker/LockerDetailsModal';
 import DeleteLockerConfirmModal from '../components/modals/locker/DeleteLockerConfirmModal';
@@ -15,13 +24,9 @@ import UpdateLockerModal from '../components/modals/locker/UpdateLockerModal';
 import LockerHistoryModal from '../components/modals/locker/LockerHistoryModal';
 import AssignLockerModal from '../components/modals/locker/AssignLockerModal';
 
-type LockerState = 'used' | 'unused' | 'na' | 'deleted';
 type LockerBox = { number: number; users: string[]; state: LockerState };
 
-const stateRank: Record<LockerState, number> = { na: 3, deleted: 2, used: 1, unused: 0 };
-const coalesceState = (a: LockerState, b: LockerState): LockerState =>
-  stateRank[a] >= stateRank[b] ? a : b; // na > deleted > used > unused
-
+// BOX_NAME은 localStorage에서 가져온다
 const BOX_NAME = localStorage.getItem('boxName') || 'SWEAT';
 
 const Locker: React.FC = () => {
@@ -41,7 +46,7 @@ const Locker: React.FC = () => {
   
   // 선택된 락커 정보
   const [selectedNo, setSelectedNo] = useState<number | null>(null);
-  const [selectedState, setSelectedState] = useState<LockerState>('unused');
+  const [selectedState, setSelectedState] = useState<LockerState>(LOCKER_STATE.UNUSED);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editStartDate, setEditStartDate] = useState('');
@@ -91,24 +96,24 @@ const Locker: React.FC = () => {
       // realName이 있으면 'used' 상태로 판단
       let nextState: LockerState;
       if (name) {
-        nextState = 'used';
-      } else if (l.state === 'used' || l.state === 'unused' || l.state === 'na' || l.state === 'deleted') {
+        nextState = LOCKER_STATE.USED;
+      } else if (l.state && isLockerState(l.state)) {
         nextState = l.state;
       } else {
-        nextState = 'unused';
+        nextState = LOCKER_STATE.UNUSED;
       }
 
       if (!map.has(num)) {
         map.set(num, { number: num, users: name ? [name] : [], state: nextState });
       } else {
         const cur = map.get(num)!;
-        cur.state = coalesceState(cur.state, nextState);
+        cur.state = coalesceLockerState(cur.state, nextState);
         if (name && !cur.users.includes(name)) cur.users.push(name);
       }
     }
     // deleted 상태인 락커는 화면에 표시하지 않음
     return Array.from(map.values())
-      .filter(box => box.state !== 'deleted')
+      .filter(box => box.state !== LOCKER_STATE.DELETED)
       .sort((a, b) => a.number - b.number);
   }, [raw]);
 
@@ -124,7 +129,7 @@ const Locker: React.FC = () => {
 
     // boxes에서 해당 락커의 상태 찾기
     const lockerBox = boxes.find(b => b.number === number);
-    const lockerState = lockerBox?.state || 'unused';
+    const lockerState = lockerBox?.state || LOCKER_STATE.UNUSED;
 
     setSelectedNo(number);
     setSelectedState(lockerState);
@@ -187,12 +192,26 @@ const Locker: React.FC = () => {
       
       // 회원의 locker 필드 제거 (이메일로 찾아야 함)
       // 현재는 realName만 있으므로 회원 전체를 검색해서 해당 락커를 가진 회원 찾기
-      if (currentLocker) {
+      if (currentLocker && selectedNo !== null) {
         try {
           const allMembers = await MemberService.getMembers(BOX_NAME);
           const member = allMembers.find(m => m.realName === currentLocker.realName);
           if (member) {
-            await MemberService.unassignLockerFromMember(BOX_NAME, member.email);
+            // endDate는 오늘 날짜로 설정
+            const endDate = new Date().toISOString().split('T')[0];
+            
+            // key가 있는 경우에만 히스토리 업데이트
+            if (currentLocker.key) {
+              await MemberService.unassignLockerFromMember(
+                BOX_NAME, 
+                member.email,
+                selectedNo,
+                endDate,
+                currentLocker.key
+              );
+            } else {
+              console.warn('락커에 key가 없어 히스토리를 업데이트할 수 없습니다.');
+            }
           }
         } catch (err) {
           console.error('회원 락커 해제 실패:', err);
@@ -219,7 +238,7 @@ const Locker: React.FC = () => {
     setShowUpdateModal(true);
   };
 
-  const onConfirmUpdate = async (state: 'unused' | 'na', note: string, assignee: string) => {
+  const onConfirmUpdate = async (state: LockerUpdatableState, note: string, assignee: string) => {
     if (selectedNo === null) return;
 
     setUpdating(true);
@@ -273,6 +292,9 @@ const Locker: React.FC = () => {
     try {
       const phone = member.phone || '';
       
+      // 동일한 키를 Locker와 Member에 저장하기 위해 미리 생성
+      const lockerKey = generateMembershipKey();
+      
       // 락커에 회원 배정
       await LockerService.assignLocker(
         BOX_NAME,
@@ -281,14 +303,18 @@ const Locker: React.FC = () => {
         member.realName,
         phone,
         startDate,
-        endDate
+        endDate,
+        lockerKey
       );
       
-      // 회원에게 락커 번호 추가
+      // 회원에게 락커 번호 추가 (동일한 키 사용)
       await MemberService.assignLockerToMember(
         BOX_NAME,
         member.email,
-        selectedNo
+        selectedNo,
+        startDate,
+        endDate,
+        lockerKey
       );
       
       alert('락커가 배정되었습니다.');
@@ -342,7 +368,7 @@ const Locker: React.FC = () => {
                   {users.length > 0 ? users.join(', ') : <span className="muted">—</span>}
                 </div>
                 <div className={`status-chip ${state}`}>
-                  {state === 'used' ? '사용중' : state === 'unused' ? '사용 가능' : state === 'na' ? '고장' : '삭제됨'}
+                  {getLockerStateLabel(state)}
                 </div>
               </div>
             ))}
@@ -372,7 +398,7 @@ const Locker: React.FC = () => {
           onRelease={onReleaseLocker}
           onDelete={onDeleteLocker}
           onHistory={onOpenHistory}
-          state={selectedState === 'deleted' ? 'unused' : selectedState}
+          state={selectedState === LOCKER_STATE.DELETED ? LOCKER_STATE.UNUSED : selectedState}
           releasing={releasing}
           deleting={deleting}
         />
@@ -405,7 +431,7 @@ const Locker: React.FC = () => {
         <UpdateLockerModal
           visible={showUpdateModal}
           lockerNo={selectedNo}
-          currentState={selectedState === 'na' ? 'na' : 'unused'}
+          currentState={selectedState === LOCKER_STATE.NA ? LOCKER_STATE.NA : LOCKER_STATE.UNUSED}
           updating={updating}
           onClose={() => setShowUpdateModal(false)}
           onConfirm={onConfirmUpdate}

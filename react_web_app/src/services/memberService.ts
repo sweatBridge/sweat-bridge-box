@@ -9,7 +9,8 @@ import {
   where,
   getDoc,
   setDoc,
-  deleteField
+  deleteField,
+  Timestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Member } from '../types/member';
@@ -116,12 +117,40 @@ export class MemberService {
 
   /**
    * 회원에게 락커 번호 할당
+   * lockerHistory 배열에 히스토리를 누적 추가
    */
-  static async assignLockerToMember(box: string, email: string, lockerNumber: number): Promise<void> {
+  static async assignLockerToMember(
+    box: string, 
+    email: string, 
+    lockerNumber: number,
+    startDate: string,
+    endDate: string,
+    key: string
+  ): Promise<void> {
     try {
       const path = `/box/${box}/member`;
-      await updateDoc(doc(db, path, email), {
-        locker: lockerNumber
+      const memberRef = doc(db, path, email);
+      const memberDoc = await getDoc(memberRef);
+      
+      let lockerHistory: any[] = [];
+      if (memberDoc.exists()) {
+        const data = memberDoc.data();
+        lockerHistory = data.lockerHistory || [];
+      }
+      
+      // 새로운 히스토리 항목 추가
+      const newHistoryEntry = {
+        lockerNum: lockerNumber,
+        startDate: startDate,
+        endDate: endDate,
+        createdAt: Timestamp.now(),
+        key: key
+      };
+      
+      lockerHistory.push(newHistoryEntry);
+      
+      await updateDoc(memberRef, {
+        lockerHistory: lockerHistory
       });
     } catch (error) {
       console.error('Error assigning locker to member:', error);
@@ -131,12 +160,44 @@ export class MemberService {
 
   /**
    * 회원의 락커 할당 해제
+   * lockerHistory 배열에서 key로 항목을 찾아 endDate를 업데이트
    */
-  static async unassignLockerFromMember(box: string, email: string): Promise<void> {
+  static async unassignLockerFromMember(
+    box: string, 
+    email: string,
+    lockerNumber: number,
+    endDate: string,
+    key: string
+  ): Promise<void> {
     try {
       const path = `/box/${box}/member`;
-      await updateDoc(doc(db, path, email), {
-        locker: null
+      const memberRef = doc(db, path, email);
+      const memberDoc = await getDoc(memberRef);
+      
+      if (!memberDoc.exists()) {
+        throw new Error('회원 정보를 찾을 수 없습니다.');
+      }
+      
+      const data = memberDoc.data();
+      let lockerHistory: any[] = data.lockerHistory || [];
+      
+      // key를 기준으로 해당 항목 찾아서 endDate 업데이트
+      const targetIndex = lockerHistory.findIndex(
+        (item: any) => item.key === key && item.lockerNum === lockerNumber
+      );
+      
+      if (targetIndex === -1) {
+        throw new Error('해당 락커 할당 기록을 찾을 수 없습니다.');
+      }
+      
+      // endDate 업데이트
+      lockerHistory[targetIndex] = {
+        ...lockerHistory[targetIndex],
+        endDate: endDate
+      };
+      
+      await updateDoc(memberRef, {
+        lockerHistory: lockerHistory
       });
     } catch (error) {
       console.error('Error unassigning locker from member:', error);

@@ -371,7 +371,8 @@ export class LockerService {
     userName: string,
     phoneNumber: string,
     startDate: string,
-    endDate: string
+    endDate: string,
+    key: string
   ): Promise<void> {
     const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
 
@@ -413,7 +414,8 @@ export class LockerService {
         note: '',
         startDate: startDate || '',
         endDate: endDate || '',
-        createdAt: new Date().toISOString().split('T')[0]
+        createdAt: new Date().toISOString().split('T')[0],
+        key: key
       };
 
       let newValue: any;
