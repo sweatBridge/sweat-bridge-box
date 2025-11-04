@@ -4,6 +4,7 @@ import { MemberManagementModalProps, MembershipPlan, UserMembership, AddMembersh
 import { getGenderText, formatPhoneNumber } from '../../../utils/memberUtils';
 import { generateMembershipKey } from '../../../utils/keyGenerator';
 import { MembershipService } from '../../../services/membershipService';
+import { MemberService } from '../../../services/memberService';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
 import HoldMembershipModal from '../membership/HoldMembershipModal';
@@ -59,6 +60,9 @@ const MemberManagementModal = ({
       setMembershipPlans(plans);
       setUserMemberships(memberships);
       setCurrentMemberships(MembershipService.getCurrentMemberships(memberships));
+      
+      // 메모 불러오기
+      setMemo(member.memo || '');
     } catch (error) {
       console.error('Failed to load data:', error);
       if (onError) {
@@ -452,6 +456,29 @@ const MemberManagementModal = ({
     }
   }, [userMemberships]);
 
+  // 메모 저장
+  const handleSaveMemo = useCallback(async () => {
+    try {
+      setLoading(true);
+      const boxName = localStorage.getItem('boxName');
+      if (!boxName) {
+        throw new Error('박스 이름이 없습니다.');
+      }
+
+      await MemberService.updateMemberMemo(boxName, member.email, memo);
+      
+      if (onSuccess) {
+        onSuccess('메모가 저장되었습니다.');
+      }
+    } catch (error: any) {
+      if (onError) {
+        onError(error.message || '메모 저장에 실패했습니다.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [member, memo, onSuccess, onError]);
+
   if (!visible || !member) return null;
 
   return (
@@ -681,13 +708,7 @@ const MemberManagementModal = ({
                   <div className="memo-actions">
                     <button 
                       className="btn btn-primary btn-sm"
-                      onClick={() => {
-                        // TODO: 메모 저장 로직
-                        console.log('메모 저장:', memo);
-                        if (onSuccess) {
-                          onSuccess('메모가 저장되었습니다.');
-                        }
-                      }}
+                      onClick={handleSaveMemo}
                       disabled={loading}
                     >
                       저장

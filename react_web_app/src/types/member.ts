@@ -27,6 +27,7 @@ export interface Member {
   futureMemberships: any[];
   lockerHistory?: LockerHistory[];
   lockerPass?: string;
+  memo?: string;
 }
 
 export interface MemberListProps {
