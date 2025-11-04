@@ -31,6 +31,7 @@ const MemberManagementModal = ({
   const [membershipToRefund, setMembershipToRefund] = useState<{ index: number; plan: string; price: string } | null>(null);
   const [refundInfoModalVisible, setRefundInfoModalVisible] = useState(false);
   const [refundInfoData, setRefundInfoData] = useState<{ refundAt: Date; refundAmount: number; reason: string; plan: string } | null>(null);
+  const [memo, setMemo] = useState('');
 
   // 회원권 추가 폼 상태
   const [formData, setFormData] = useState<AddMembershipData>({
@@ -664,6 +665,36 @@ const MemberManagementModal = ({
                   );
                 })()}
               </div>
+
+              {/* 메모 섹션 */}
+              <div className="info-section">
+                <h4 className="section-title">메모</h4>
+                <div className="memo-container">
+                  <textarea
+                    className="memo-textarea"
+                    value={memo}
+                    onChange={(e) => setMemo(e.target.value)}
+                    placeholder="회원에 대한 메모를 작성하세요..."
+                    rows={5}
+                    disabled={loading}
+                  />
+                  <div className="memo-actions">
+                    <button 
+                      className="btn btn-primary btn-sm"
+                      onClick={() => {
+                        // TODO: 메모 저장 로직
+                        console.log('메모 저장:', memo);
+                        if (onSuccess) {
+                          onSuccess('메모가 저장되었습니다.');
+                        }
+                      }}
+                      disabled={loading}
+                    >
+                      저장
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1278,6 +1309,45 @@ const MemberManagementModal = ({
 
         .hold-value {
           color: #78350f;
+        }
+
+        .memo-container {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .memo-textarea {
+          width: 100%;
+          padding: 12px;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          font-size: 14px;
+          font-family: inherit;
+          line-height: 1.6;
+          resize: vertical;
+          transition: all 0.2s;
+        }
+
+        .memo-textarea:focus {
+          outline: none;
+          border-color: ${AppColors.primary};
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .memo-textarea:disabled {
+          background-color: #f3f4f6;
+          color: #6b7280;
+          cursor: not-allowed;
+        }
+
+        .memo-textarea::placeholder {
+          color: #9ca3af;
+        }
+
+        .memo-actions {
+          display: flex;
+          justify-content: flex-end;
         }
 
         .form-grid {
