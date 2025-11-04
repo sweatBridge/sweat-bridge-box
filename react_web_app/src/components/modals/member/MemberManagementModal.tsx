@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Pause, DollarSign, CheckCircle, Edit } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Pause, DollarSign, CheckCircle, Edit, History } from 'lucide-react';
 import { MemberManagementModalProps, MembershipPlan, UserMembership, AddMembershipData } from '../../../types/membership';
 import { getGenderText, formatPhoneNumber } from '../../../utils/memberUtils';
 import { generateMembershipKey } from '../../../utils/keyGenerator';
@@ -12,6 +12,7 @@ import DeleteMembershipConfirmModal from '../membership/DeleteMembershipConfirmM
 import RefundMembershipModal from '../membership/RefundMembershipModal';
 import RefundInfoModal from '../membership/RefundInfoModal';
 import EditMembershipModal from '../membership/EditMembershipModal';
+import AdjustmentHistoryModal from '../membership/AdjustmentHistoryModal';
 
 const MemberManagementModal = ({ 
   visible, 
@@ -36,6 +37,8 @@ const MemberManagementModal = ({
   const [memo, setMemo] = useState('');
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [membershipToEdit, setMembershipToEdit] = useState<{ index: number; plan: string; type: string; startDate: Date; endDate: Date; price: string } | null>(null);
+  const [historyModalVisible, setHistoryModalVisible] = useState(false);
+  const [adjustmentHistory, setAdjustmentHistory] = useState<{ plan: string; adjustments: any[] } | null>(null);
 
   // 회원권 추가 폼 상태
   const [formData, setFormData] = useState<AddMembershipData>({
@@ -535,6 +538,20 @@ const MemberManagementModal = ({
     }
   }, [member, membershipToEdit, userMemberships, onSuccess, onError, loadData]);
 
+  // 조정 이력 모달 열기
+  const handleOpenHistoryModal = useCallback((index: number) => {
+    const membership = userMemberships[index] as any;
+    const displayInfo = getMembershipDisplayInfo(membership);
+    
+    if (membership.adjustments && membership.adjustments.length > 0) {
+      setAdjustmentHistory({
+        plan: displayInfo.plan,
+        adjustments: membership.adjustments
+      });
+      setHistoryModalVisible(true);
+    }
+  }, [userMemberships]);
+
   if (!visible || !member) return null;
 
   return (
@@ -919,6 +936,7 @@ const MemberManagementModal = ({
                       <div className="table-cell">가격</div>
                       <div className="table-cell">플랜</div>
                       <div className="table-cell">담당자</div>
+                      <div className="table-cell">조정 이력</div>
                       <div className="table-cell">수정</div>
                       <div className="table-cell">환불</div>
                       <div className="table-cell">삭제</div>
@@ -927,6 +945,7 @@ const MemberManagementModal = ({
                     {userMemberships.map((membership, index) => {
                       const displayInfo = getMembershipDisplayInfo(membership);
                       const refunded = isRefunded(membership);
+                      const hasAdjustments = (membership as any).adjustments && (membership as any).adjustments.length > 0;
                       return (
                         <div key={index} className={`table-row ${refunded ? 'refunded' : ''}`}>
                           <div className="table-cell">{formatDate(displayInfo.startDate)}</div>
@@ -939,6 +958,21 @@ const MemberManagementModal = ({
                           <div className="table-cell">{displayInfo.price}원</div>
                           <div className="table-cell">{displayInfo.plan}</div>
                           <div className="table-cell">{displayInfo.assignee}</div>
+                          <div className="table-cell">
+                            {hasAdjustments ? (
+                              <button
+                                onClick={() => handleOpenHistoryModal(index)}
+                                disabled={loading}
+                                className="btn btn-sm btn-history"
+                                title="조정 이력 보기"
+                              >
+                                <History size={14} />
+                                <span className="history-count">{(membership as any).adjustments.length}</span>
+                              </button>
+                            ) : (
+                              <span className="no-history">-</span>
+                            )}
+                          </div>
                           <div className="table-cell">
                             <button
                               onClick={() => handleOpenEditModal(index)}
@@ -1063,6 +1097,19 @@ const MemberManagementModal = ({
           }}
           onConfirm={handleConfirmEdit}
           loading={loading}
+        />
+      )}
+
+      {/* 조정 이력 모달 */}
+      {adjustmentHistory && (
+        <AdjustmentHistoryModal
+          visible={historyModalVisible}
+          membershipPlan={adjustmentHistory.plan}
+          adjustments={adjustmentHistory.adjustments}
+          onClose={() => {
+            setHistoryModalVisible(false);
+            setAdjustmentHistory(null);
+          }}
         />
       )}
 
@@ -1507,7 +1554,7 @@ const MemberManagementModal = ({
 
         .table-header {
           display: grid !important;
-          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 80px 80px 80px !important;
+          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 90px 80px 80px 80px !important;
           gap: 16px;
           padding: 16px;
           background-color: #f8fafc;
@@ -1520,7 +1567,7 @@ const MemberManagementModal = ({
 
         .table-row {
           display: grid !important;
-          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 80px 80px 80px !important;
+          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 90px 80px 80px 80px !important;
           gap: 16px;
           padding: 16px;
           border-bottom: 1px solid #e5e7eb;
@@ -1576,15 +1623,19 @@ const MemberManagementModal = ({
           justify-content: center;
         }
 
-        .table-cell:nth-child(7) { /* 수정 */
+        .table-cell:nth-child(7) { /* 조정 이력 */
           justify-content: center;
         }
 
-        .table-cell:nth-child(8) { /* 환불 */
+        .table-cell:nth-child(8) { /* 수정 */
           justify-content: center;
         }
 
-        .table-cell:nth-child(9) { /* 삭제 */
+        .table-cell:nth-child(9) { /* 환불 */
+          justify-content: center;
+        }
+
+        .table-cell:nth-child(10) { /* 삭제 */
           justify-content: center;
         }
 
@@ -1735,6 +1786,34 @@ const MemberManagementModal = ({
         .btn-danger:hover:not(:disabled) {
           background-color: #b91c1c;
           border-color: #b91c1c;
+        }
+
+        .btn-history {
+          background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+          border-color: #64748b;
+          color: white;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .btn-history:hover:not(:disabled) {
+          background: linear-gradient(135deg, #475569 0%, #334155 100%);
+          border-color: #475569;
+        }
+
+        .history-count {
+          font-size: 11px;
+          background: rgba(255, 255, 255, 0.3);
+          padding: 1px 5px;
+          border-radius: 10px;
+          font-weight: 700;
+        }
+
+        .no-history {
+          color: #d1d5db;
+          font-size: 14px;
+          font-weight: 500;
         }
 
         .btn-edit {

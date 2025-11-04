@@ -117,6 +117,18 @@ export class MembershipService {
               },
               adjustments: (membership.adjustments || []).map((adj: any) => ({
                 ...adj,
+                before: {
+                  period: {
+                    startDate: adj.before?.period?.startDate?.toDate?.() ?? new Date(adj.before?.period?.startDate),
+                    endDate: adj.before?.period?.endDate?.toDate?.() ?? new Date(adj.before?.period?.endDate)
+                  }
+                },
+                after: {
+                  period: {
+                    startDate: adj.after?.period?.startDate?.toDate?.() ?? new Date(adj.after?.period?.startDate),
+                    endDate: adj.after?.period?.endDate?.toDate?.() ?? new Date(adj.after?.period?.endDate)
+                  }
+                },
                 at: adj.at?.toDate?.() ?? new Date(adj.at)
               })),
               createdAt: membership.createdAt?.toDate?.() ?? new Date(membership.createdAt),
