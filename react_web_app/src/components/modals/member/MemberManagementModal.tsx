@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Pause, DollarSign, CheckCircle } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Pause, DollarSign, CheckCircle, Edit } from 'lucide-react';
 import { MemberManagementModalProps, MembershipPlan, UserMembership, AddMembershipData } from '../../../types/membership';
 import { getGenderText, formatPhoneNumber } from '../../../utils/memberUtils';
 import { generateMembershipKey } from '../../../utils/keyGenerator';
@@ -11,6 +11,7 @@ import HoldMembershipModal from '../membership/HoldMembershipModal';
 import DeleteMembershipConfirmModal from '../membership/DeleteMembershipConfirmModal';
 import RefundMembershipModal from '../membership/RefundMembershipModal';
 import RefundInfoModal from '../membership/RefundInfoModal';
+import EditMembershipModal from '../membership/EditMembershipModal';
 
 const MemberManagementModal = ({ 
   visible, 
@@ -33,6 +34,8 @@ const MemberManagementModal = ({
   const [refundInfoModalVisible, setRefundInfoModalVisible] = useState(false);
   const [refundInfoData, setRefundInfoData] = useState<{ refundAt: Date; refundAmount: number; reason: string; plan: string } | null>(null);
   const [memo, setMemo] = useState('');
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [membershipToEdit, setMembershipToEdit] = useState<{ index: number; plan: string; type: string; startDate: Date; endDate: Date; price: string } | null>(null);
 
   // 회원권 추가 폼 상태
   const [formData, setFormData] = useState<AddMembershipData>({
@@ -479,6 +482,59 @@ const MemberManagementModal = ({
     }
   }, [member, memo, onSuccess, onError]);
 
+  // 회원권 수정 모달 열기
+  const handleOpenEditModal = useCallback((index: number) => {
+    const membership = userMemberships[index];
+    const displayInfo = getMembershipDisplayInfo(membership);
+    
+    setMembershipToEdit({
+      index,
+      plan: displayInfo.plan,
+      type: displayInfo.type,
+      startDate: new Date(displayInfo.startDate),
+      endDate: new Date(displayInfo.endDate),
+      price: displayInfo.price
+    });
+    setEditModalVisible(true);
+  }, [userMemberships]);
+
+  // 회원권 수정 확인
+  const handleConfirmEdit = useCallback(async (
+    newStartDate: Date,
+    newEndDate: Date,
+    reason: string,
+    assignee: string
+  ) => {
+    if (!membershipToEdit) return;
+
+    try {
+      setLoading(true);
+      await MembershipService.editMembershipPeriod(
+        member.email,
+        membershipToEdit.index,
+        newStartDate,
+        newEndDate,
+        reason,
+        assignee,
+        userMemberships
+      );
+      
+      if (onSuccess) {
+        onSuccess('회원권이 성공적으로 수정되었습니다.');
+      }
+      
+      setEditModalVisible(false);
+      setMembershipToEdit(null);
+      await loadData();
+    } catch (error: any) {
+      if (onError) {
+        onError(error.message || '회원권 수정에 실패했습니다.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [member, membershipToEdit, userMemberships, onSuccess, onError, loadData]);
+
   if (!visible || !member) return null;
 
   return (
@@ -863,6 +919,7 @@ const MemberManagementModal = ({
                       <div className="table-cell">가격</div>
                       <div className="table-cell">플랜</div>
                       <div className="table-cell">담당자</div>
+                      <div className="table-cell">수정</div>
                       <div className="table-cell">환불</div>
                       <div className="table-cell">삭제</div>
                     </div>
@@ -882,6 +939,16 @@ const MemberManagementModal = ({
                           <div className="table-cell">{displayInfo.price}원</div>
                           <div className="table-cell">{displayInfo.plan}</div>
                           <div className="table-cell">{displayInfo.assignee}</div>
+                          <div className="table-cell">
+                            <button
+                              onClick={() => handleOpenEditModal(index)}
+                              disabled={loading || refunded}
+                              className="btn btn-sm btn-edit"
+                              title={refunded ? "환불된 회원권은 수정할 수 없습니다" : "회원권 수정"}
+                            >
+                              <Edit size={14} />
+                            </button>
+                          </div>
                           <div className="table-cell">
                             {refunded ? (
                               <button
@@ -978,6 +1045,24 @@ const MemberManagementModal = ({
             setRefundInfoModalVisible(false);
             setRefundInfoData(null);
           }}
+        />
+      )}
+
+      {/* 회원권 수정 모달 */}
+      {membershipToEdit && (
+        <EditMembershipModal
+          visible={editModalVisible}
+          membershipPlan={membershipToEdit.plan}
+          membershipType={membershipToEdit.type}
+          currentStartDate={membershipToEdit.startDate}
+          currentEndDate={membershipToEdit.endDate}
+          membershipPrice={membershipToEdit.price}
+          onClose={() => {
+            setEditModalVisible(false);
+            setMembershipToEdit(null);
+          }}
+          onConfirm={handleConfirmEdit}
+          loading={loading}
         />
       )}
 
@@ -1422,7 +1507,7 @@ const MemberManagementModal = ({
 
         .table-header {
           display: grid !important;
-          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 80px 80px !important;
+          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 80px 80px 80px !important;
           gap: 16px;
           padding: 16px;
           background-color: #f8fafc;
@@ -1435,7 +1520,7 @@ const MemberManagementModal = ({
 
         .table-row {
           display: grid !important;
-          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 80px 80px !important;
+          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 80px 80px 80px !important;
           gap: 16px;
           padding: 16px;
           border-bottom: 1px solid #e5e7eb;
@@ -1491,11 +1576,15 @@ const MemberManagementModal = ({
           justify-content: center;
         }
 
-        .table-cell:nth-child(7) { /* 환불 */
+        .table-cell:nth-child(7) { /* 수정 */
           justify-content: center;
         }
 
-        .table-cell:nth-child(8) { /* 삭제 */
+        .table-cell:nth-child(8) { /* 환불 */
+          justify-content: center;
+        }
+
+        .table-cell:nth-child(9) { /* 삭제 */
           justify-content: center;
         }
 
@@ -1646,6 +1735,17 @@ const MemberManagementModal = ({
         .btn-danger:hover:not(:disabled) {
           background-color: #b91c1c;
           border-color: #b91c1c;
+        }
+
+        .btn-edit {
+          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+          border-color: #8b5cf6;
+          color: white;
+        }
+
+        .btn-edit:hover:not(:disabled) {
+          background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+          border-color: #7c3aed;
         }
 
         .btn-refund {

@@ -2,7 +2,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { MembershipPlan, UserMembership } from '../types/membership';
 import { RevenueService } from './revenueService';
-import { getDaysBetween } from '../utils/dateUtils';
+import { getDaysBetween, formatDateToString } from '../utils/dateUtils';
 
 export class MembershipService {
   private static getBoxName(): string {
@@ -445,6 +445,120 @@ export class MembershipService {
       console.log('Hold released successfully');
     } catch (error) {
       console.error('Error releasing hold:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 회원권 기간 수정
+   */
+  static async editMembershipPeriod(
+    email: string,
+    membershipIndex: number,
+    newStartDate: Date,
+    newEndDate: Date,
+    reason: string,
+    assignee: string,
+    existingMemberships?: UserMembership[]
+  ): Promise<void> {
+    try {
+      const boxName = localStorage.getItem('boxName');
+      if (!boxName) {
+        throw new Error('박스 이름이 없습니다.');
+      }
+
+      const memberships = existingMemberships || await this.getUserMemberships(email);
+      
+      if (membershipIndex < 0 || membershipIndex >= memberships.length) {
+        throw new Error('유효하지 않은 회원권 인덱스입니다.');
+      }
+
+      const membership = memberships[membershipIndex] as any;
+      
+      // 새 구조만 지원
+      if (!membership.period) {
+        throw new Error('레거시 회원권은 수정을 지원하지 않습니다.');
+      }
+
+      // 다른 회원권과 겹치는지 체크
+      for (let i = 0; i < memberships.length; i++) {
+        if (i === membershipIndex) continue; // 자기 자신은 제외
+        
+        const otherMembership = memberships[i] as any;
+        
+        // 삭제되거나 환불된 회원권은 제외
+        if (otherMembership.deleted || (otherMembership.refund && otherMembership.refund.isRefunded)) {
+          continue;
+        }
+        
+        let otherStartDate: Date;
+        let otherEndDate: Date;
+        
+        // 새 구조
+        if (otherMembership.period) {
+          otherStartDate = new Date(otherMembership.period.startDate);
+          otherEndDate = new Date(otherMembership.period.endDate);
+        } else {
+          // 레거시 구조
+          otherStartDate = new Date(otherMembership.startDate);
+          otherEndDate = new Date(otherMembership.endDate);
+        }
+        
+        // 날짜 겹침 체크
+        if (newStartDate <= otherEndDate && otherStartDate <= newEndDate) {
+          throw new Error(
+            `수정하려는 기간이 다른 회원권과 겹칩니다.\n` +
+            `겹치는 회원권: ${formatDateToString(otherStartDate)} ~ ${formatDateToString(otherEndDate)}`
+          );
+        }
+      }
+
+      // 이전 기간 정보 저장
+      const beforePeriod = {
+        startDate: new Date(membership.period.startDate),
+        endDate: new Date(membership.period.endDate)
+      };
+
+      // 일수 차이 계산
+      const daysDifference = getDaysBetween(beforePeriod.endDate, newEndDate);
+
+      // 조정 기록 추가
+      const adjustment = {
+        value: { days: daysDifference },
+        before: {
+          period: {
+            startDate: beforePeriod.startDate,
+            endDate: beforePeriod.endDate
+          }
+        },
+        after: {
+          period: {
+            startDate: newStartDate,
+            endDate: newEndDate
+          }
+        },
+        reason,
+        assignee,
+        at: new Date()
+      };
+
+      membership.adjustments = membership.adjustments || [];
+      membership.adjustments.push(adjustment);
+
+      // 기간 업데이트
+      membership.period.startDate = newStartDate;
+      membership.period.endDate = newEndDate;
+
+      // 업데이트된 시간 기록
+      membership.updatedAt = new Date();
+
+      // Firebase에 저장
+      const memberDocRef = doc(db, `box/${boxName}/member/${email}`);
+      await setDoc(memberDocRef, { memberships }, { merge: true });
+
+      console.log('Membership period updated successfully');
+    } catch (error) {
+      console.error('Error editing membership period:', error);
       throw error;
     }
   }
