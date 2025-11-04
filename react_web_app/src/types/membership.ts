@@ -47,7 +47,6 @@ export interface UserMembership {
   };
   
   adjustments: Array<{
-    value: { days: number };
     before: { period: { startDate: Date; endDate: Date }};
     after: { period: { startDate: Date; endDate: Date }};
     reason: string;

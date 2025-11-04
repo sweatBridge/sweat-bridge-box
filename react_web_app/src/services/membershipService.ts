@@ -519,12 +519,8 @@ export class MembershipService {
         endDate: new Date(membership.period.endDate)
       };
 
-      // 일수 차이 계산
-      const daysDifference = getDaysBetween(beforePeriod.endDate, newEndDate);
-
       // 조정 기록 추가
       const adjustment = {
-        value: { days: daysDifference },
         before: {
           period: {
             startDate: beforePeriod.startDate,
