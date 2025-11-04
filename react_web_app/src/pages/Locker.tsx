@@ -1,20 +1,33 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { Calendar, Plus, Info } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
 import { LockerService } from '../services/lockerService';
 import { MemberService } from '../services/memberService';
-import type { Lockers as LockerItem } from '../types/locker';
+import { RevenueService } from '../services/revenueService';
+import {
+  Lockers as LockerItem,
+  LockerState,
+  LockerUpdatableState,
+  LOCKER_STATE,
+  isLockerState,
+  coalesceLockerState,
+  getLockerStateLabel
+} from '../types/locker';
 import type { Member } from '../types/member';
 import { usePageContext } from '../contexts/PageContext';
+import { generateMembershipKey } from '../utils/keyGenerator';
+import AddLockerModal from '../components/modals/locker/AddLockerModal';
+import LockerDetailsModal from '../components/modals/locker/LockerDetailsModal';
+import DeleteLockerConfirmModal from '../components/modals/locker/DeleteLockerConfirmModal';
+import ReleaseLockerConfirmModal from '../components/modals/locker/ReleaseLockerConfirmModal';
+import UpdateLockerModal from '../components/modals/locker/UpdateLockerModal';
+import LockerHistoryModal from '../components/modals/locker/LockerHistoryModal';
+import AssignLockerModal from '../components/modals/locker/AssignLockerModal';
 
-type LockerState = 'used' | 'unused' | 'na' | 'deleted';
 type LockerBox = { number: number; users: string[]; state: LockerState };
 
-const stateRank: Record<LockerState, number> = { na: 3, deleted: 2, used: 1, unused: 0 };
-const coalesceState = (a: LockerState, b: LockerState): LockerState =>
-  stateRank[a] >= stateRank[b] ? a : b; // na > deleted > used > unused
-
+// BOX_NAME은 localStorage에서 가져온다
 const BOX_NAME = localStorage.getItem('boxName') || 'SWEAT';
 
 const Locker: React.FC = () => {
@@ -23,50 +36,32 @@ const Locker: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 일괄 추가 모달 상태
+  // 모달 상태
   const [showAdd, setShowAdd] = useState(false);
-  const [startNo, setStartNo] = useState<string>('');
-  const [endNo, setEndNo] = useState<string>('');
-  const [adding, setAdding] = useState(false);
-  const [addError, setAddError] = useState<string | null>(null);
-
-  // 개별 편집 모달 상태
   const [showEdit, setShowEdit] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showReleaseConfirm, setShowReleaseConfirm] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  
+  // 선택된 락커 정보
   const [selectedNo, setSelectedNo] = useState<number | null>(null);
-  const [selectedState, setSelectedState] = useState<LockerState>('unused');
+  const [selectedState, setSelectedState] = useState<LockerState>(LOCKER_STATE.UNUSED);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
-  const [editStartDate, setEditStartDate] = useState(''); // YYYY-MM-DD
-  const [editEndDate, setEditEndDate] = useState(''); // YYYY-MM-DD
+  const [editStartDate, setEditStartDate] = useState('');
+  const [editEndDate, setEditEndDate] = useState('');
+  
+  // 로딩 상태
   const [deleting, setDeleting] = useState(false);
-  
-  // 삭제 확인 모달 상태
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  
-  // 락커 해지 모달 상태
-  const [showReleaseConfirm, setShowReleaseConfirm] = useState(false);
   const [releasing, setReleasing] = useState(false);
-
-  // 락커 수정 모달 상태
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [updateState, setUpdateState] = useState<'unused' | 'na'>('unused');
-  const [updateNote, setUpdateNote] = useState('');
-  const [updateAssignee, setUpdateAssignee] = useState('');
   const [updating, setUpdating] = useState(false);
-
-  // 락커 히스토리 모달 상태
-  const [showHistory, setShowHistory] = useState(false);
-  const [historyData, setHistoryData] = useState<LockerItem[]>([]);
-
-  // 락커 배정 모달 상태
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [assignSearchText, setAssignSearchText] = useState('');
-  const [assignSearchResults, setAssignSearchResults] = useState<Member[]>([]);
-  const [assignSelectedMember, setAssignSelectedMember] = useState<Member | null>(null);
-  const [assignStartDate, setAssignStartDate] = useState('');
-  const [assignEndDate, setAssignEndDate] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [searching, setSearching] = useState(false);
+  
+  // 히스토리 데이터
+  const [historyData, setHistoryData] = useState<LockerItem[]>([]);
 
   const loadLockers = useCallback(async () => {
     setLoading(true);
@@ -97,81 +92,66 @@ const Locker: React.FC = () => {
     const map = new Map<number, LockerBox>();
     for (const l of raw) {
       const num = l.number;
-      const name = (l.userName || l.user || '').trim();
+      const name = (l.realName || '').trim();
       
-      // userName이나 user가 있으면 'used' 상태로 판단
+      // realName이 있으면 'used' 상태로 판단
       let nextState: LockerState;
       if (name) {
-        nextState = 'used';
-      } else if (l.state === 'used' || l.state === 'unused' || l.state === 'na' || l.state === 'deleted') {
+        nextState = LOCKER_STATE.USED;
+      } else if (l.state && isLockerState(l.state)) {
         nextState = l.state;
       } else {
-        nextState = 'unused';
+        nextState = LOCKER_STATE.UNUSED;
       }
 
       if (!map.has(num)) {
         map.set(num, { number: num, users: name ? [name] : [], state: nextState });
       } else {
         const cur = map.get(num)!;
-        cur.state = coalesceState(cur.state, nextState);
+        cur.state = coalesceLockerState(cur.state, nextState);
         if (name && !cur.users.includes(name)) cur.users.push(name);
       }
     }
     // deleted 상태인 락커는 화면에 표시하지 않음
     return Array.from(map.values())
-      .filter(box => box.state !== 'deleted')
+      .filter(box => box.state !== LOCKER_STATE.DELETED)
       .sort((a, b) => a.number - b.number);
   }, [raw]);
 
   const onOpenAdd = () => {
-    setStartNo('');
-    setEndNo('');
-    setAddError(null);
     setShowAdd(true);
   };
 
   // 카드 클릭 → 편집 모달 열기 (기본값은 해당 번호의 첫 데이터로 프리필)
   const onOpenEdit = (number: number) => {
     const candidates = raw.filter(r => r.number === number);
-    const firstWithName = candidates.find(c => (c.userName || c.user || '').trim().length > 0);
+    const firstWithName = candidates.find(c => (c.realName || '').trim().length > 0);
     const base = firstWithName ?? candidates[0]; // 없으면 첫 항목 참조(없을 수도 있음)
 
     // boxes에서 해당 락커의 상태 찾기
     const lockerBox = boxes.find(b => b.number === number);
-    const lockerState = lockerBox?.state || 'unused';
+    const lockerState = lockerBox?.state || LOCKER_STATE.UNUSED;
 
     setSelectedNo(number);
     setSelectedState(lockerState);
-    setEditName((base?.userName || base?.user || '').trim());
-    setEditPhone(base?.phoneNumber || '');
+    setEditName((base?.realName || '').trim());
+    setEditPhone(base?.phone || '');
     setEditStartDate(base?.startDate || '');
     setEditEndDate(base?.endDate || '');
     setShowEdit(true);
   };
 
-  const onConfirmAdd = async () => {
-    setAddError(null);
+  const onConfirmAdd = async (startNo: string, endNo: string) => {
     const s = parseInt(startNo, 10);
     const e = parseInt(endNo, 10);
-    if (Number.isNaN(s) || Number.isNaN(e)) {
-      setAddError('숫자를 정확히 입력해 주세요.');
-      return;
-    }
-    if (s < 1 || e < 1) {
-      setAddError('번호는 1 이상이어야 합니다.');
-      return;
-    }
-
-    setAdding(true);
     try {
       const { added, skipped } = await LockerService.addLockers(BOX_NAME, s, e);
       alert(`추가: ${added.length}개, 건너뜀(이미 존재): ${skipped.length}개`);
       setShowAdd(false);
       await loadLockers();
     } catch (err: any) {
-      setAddError(err?.message ?? String(err));
-    } finally {
-      setAdding(false);
+      alert(err?.message ?? String(err));
+      throw err; // re-throw to let modal handle loading state
     }
   };
 
@@ -205,20 +185,34 @@ const Locker: React.FC = () => {
 
     setReleasing(true);
     try {
-      // 해당 락커에 배정된 회원의 이메일을 찾기 위해 현재 데이터 확인
+      // 해당 락커에 배정된 회원의 정보를 찾기 위해 현재 데이터 확인
       const candidates = raw.filter(r => r.number === selectedNo);
-      const currentLocker = candidates.find(c => (c.userName || c.user || '').trim().length > 0);
-      
+      const currentLocker = candidates.find(c => (c.realName || '').trim().length > 0);
+
       await LockerService.releaseLocker(BOX_NAME, selectedNo);
       
       // 회원의 locker 필드 제거 (이메일로 찾아야 함)
-      // 현재는 userName만 있으므로 회원 전체를 검색해서 해당 락커를 가진 회원 찾기
-      if (currentLocker) {
+      // 현재는 realName만 있으므로 회원 전체를 검색해서 해당 락커를 가진 회원 찾기
+      if (currentLocker && selectedNo !== null) {
         try {
           const allMembers = await MemberService.getMembers(BOX_NAME);
-          const member = allMembers.find(m => m.realName === (currentLocker.userName || currentLocker.user));
+          const member = allMembers.find(m => m.realName === currentLocker.realName);
           if (member) {
-            await MemberService.unassignLockerFromMember(BOX_NAME, member.email);
+            // endDate는 오늘 날짜로 설정
+            const endDate = new Date().toISOString().split('T')[0];
+            
+            // key가 있는 경우에만 히스토리 업데이트
+            if (currentLocker.key) {
+              await MemberService.unassignLockerFromMember(
+                BOX_NAME, 
+                member.email,
+                selectedNo,
+                endDate,
+                currentLocker.key
+              );
+            } else {
+              console.warn('락커에 key가 없어 히스토리를 업데이트할 수 없습니다.');
+            }
           }
         } catch (err) {
           console.error('회원 락커 해제 실패:', err);
@@ -242,24 +236,15 @@ const Locker: React.FC = () => {
       alert('회원을 먼저 해지하시기 바랍니다.');
       return;
     }
-
-    // 현재 상태를 기본값으로 설정
-    const currentState = selectedState === 'na' ? 'na' : 'unused';
-    setUpdateState(currentState);
-    
-    // 입력 필드를 초기화
-    setUpdateNote('');
-    setUpdateAssignee('');
-    
     setShowUpdateModal(true);
   };
 
-  const onConfirmUpdate = async () => {
+  const onConfirmUpdate = async (state: LockerUpdatableState, note: string, assignee: string) => {
     if (selectedNo === null) return;
 
     setUpdating(true);
     try {
-      await LockerService.updateLocker(BOX_NAME, selectedNo, updateState, updateNote, updateAssignee);
+      await LockerService.updateLocker(BOX_NAME, selectedNo, state, note, assignee);
       alert('락커가 수정되었습니다.');
       setShowUpdateModal(false);
       setShowEdit(false);
@@ -285,69 +270,65 @@ const Locker: React.FC = () => {
   };
 
   const onOpenAssignModal = () => {
-    // 초기화
-    setAssignSearchText('');
-    setAssignSearchResults([]);
-    setAssignSelectedMember(null);
-    setAssignStartDate('');
-    setAssignEndDate('');
     setShowAssignModal(true);
   };
 
-  const onSearchMembers = async () => {
-    if (!assignSearchText.trim()) {
-      setAssignSearchResults([]);
-      return;
-    }
-
+  const onSearchMembers = async (searchText: string): Promise<Member[]> => {
     setSearching(true);
     try {
-      const results = await MemberService.searchMembersByName(BOX_NAME, assignSearchText);
-      setAssignSearchResults(results);
+      const results = await MemberService.searchMembersByName(BOX_NAME, searchText);
+      return results;
     } catch (err: any) {
       alert(`검색 실패: ${err?.message ?? String(err)}`);
+      return [];
     } finally {
       setSearching(false);
     }
   };
 
-  const onSelectMember = (member: Member) => {
-    setAssignSelectedMember(member);
-    setAssignSearchResults([]);
-  };
-
-  const onConfirmAssign = async () => {
+  const onConfirmAssign = async (member: Member, startDate: string, endDate: string, price: string, paymentType: 'cash' | 'card') => {
     if (selectedNo === null) return;
-    
-    if (!assignSelectedMember) {
-      alert('회원을 선택해주세요.');
-      return;
-    }
-
-    if (!assignStartDate || !assignEndDate) {
-      alert('시작 날짜와 종료 날짜를 입력해주세요.');
-      return;
-    }
 
     setAssigning(true);
     try {
-      const phone = assignSelectedMember.phone || '';
+      const phone = member.phone || '';
+      
+      // 동일한 키를 Locker와 Member에 저장하기 위해 미리 생성
+      const lockerKey = generateMembershipKey();
       
       // 락커에 회원 배정
       await LockerService.assignLocker(
         BOX_NAME,
         selectedNo,
-        assignSelectedMember.realName,
+        member.email,
+        member.realName,
         phone,
-        assignStartDate,
-        assignEndDate
+        startDate,
+        endDate,
+        lockerKey,
+        price,
+        paymentType
       );
       
-      // 회원에게 락커 번호 추가
+      // 회원에게 락커 번호 추가 (동일한 키 사용)
       await MemberService.assignLockerToMember(
         BOX_NAME,
-        assignSelectedMember.email,
-        selectedNo
+        member.email,
+        selectedNo,
+        startDate,
+        endDate,
+        lockerKey,
+        price,
+        paymentType
+      );
+      
+      // 매출에 락커 매출 추가
+      await RevenueService.addLockerRevenue(
+        lockerKey,
+        member.email,
+        member.realName,
+        price,
+        paymentType
       );
       
       alert('락커가 배정되었습니다.');
@@ -401,7 +382,7 @@ const Locker: React.FC = () => {
                   {users.length > 0 ? users.join(', ') : <span className="muted">—</span>}
                 </div>
                 <div className={`status-chip ${state}`}>
-                  {state === 'used' ? '사용중' : state === 'unused' ? '사용 가능' : state === 'na' ? '고장' : '삭제됨'}
+                  {getLockerStateLabel(state)}
                 </div>
               </div>
             ))}
@@ -410,466 +391,88 @@ const Locker: React.FC = () => {
       </div>
 
       {/* 일괄 추가 모달 */}
-      {showAdd && (
-        <div className="modal-overlay" onClick={() => !adding && setShowAdd(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="header-title">
-                <Plus size={20} className="header-icon" />
-                <h3>락커 일괄 추가</h3>
-              </div>
-              <button className="close-button" onClick={() => !adding && setShowAdd(false)}>×</button>
-            </div>
-            
-            <div className="modal-body">
-              <div className="form-section">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>시작 번호</label>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      step={1}
-                      value={startNo}
-                      onChange={(e) => setStartNo(e.target.value)}
-                      placeholder="예: 201"
-                      disabled={adding}
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>끝 번호</label>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      step={1}
-                      value={endNo}
-                      onChange={(e) => setEndNo(e.target.value)}
-                      placeholder="예: 220"
-                      disabled={adding}
-                      className="form-input"
-                    />
-                  </div>
-                </div>
-                
-                <div className="info-box">
-                  예시: 201~220 입력 시 201, 202, ... 220까지 20개의 락커가 생성됩니다.
-                </div>
+      <AddLockerModal
+        visible={showAdd}
+        onClose={() => setShowAdd(false)}
+        onConfirm={onConfirmAdd}
+      />
 
-                {addError && <div className="form-error">{addError}</div>}
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowAdd(false)} disabled={adding}>취소</button>
-              <button className="btn btn-primary" onClick={onConfirmAdd} disabled={adding}>
-                {adding ? '추가 중…' : '추가'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 개별 편집 모달 (저장 동작은 아직 없음) */}
-      {showEdit && selectedNo !== null && (
-        <div className="modal-overlay" onClick={() => setShowEdit(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="header-title">
-                <Info size={20} className="header-icon" />
-                <h3>락커 #{selectedNo} 정보</h3>
-              </div>
-              <button className="close-button" onClick={() => setShowEdit(false)}>×</button>
-            </div>
-            
-            <div className="modal-body">
-              {/* 액션 버튼 */}
-              <div className="action-buttons">
-                <button className="btn btn-action" onClick={onOpenUpdateModal}>수정</button>
-                {!editName.trim() ? (
-                  <button 
-                    className="btn btn-action" 
-                    onClick={onOpenAssignModal}
-                    disabled={selectedState === 'na'}
-                  >
-                    락커 배정
-                  </button>
-                ) : (
-                  <button 
-                    className="btn btn-action" 
-                    onClick={onReleaseLocker}
-                    disabled={releasing}
-                  >
-                    {releasing ? '해지 중...' : '락커 해지'}
-                  </button>
-                )}
-                <button 
-                  className="btn btn-action" 
-                  onClick={onDeleteLocker}
-                  disabled={deleting || editName.trim().length > 0}
-                >
-                  {deleting ? '삭제 중...' : '락커 삭제'}
-                </button>
-              </div>
-
-              <div className="form-section">
-                <div className="form-group">
-                  <label>회원 이름</label>
-                  <input
-                    type="text"
-                    value={editName}
-                    readOnly
-                    placeholder="—"
-                    className="form-input"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>회원 전화 번호</label>
-                  <input
-                    type="tel"
-                    inputMode="tel"
-                    value={editPhone}
-                    readOnly
-                    placeholder="—"
-                    className="form-input"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>사용 시작</label>
-                  <input
-                    type="date"
-                    value={editStartDate}
-                    readOnly
-                    className="form-input"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>사용 종료</label>
-                  <input
-                    type="date"
-                    value={editEndDate}
-                    readOnly
-                    className="form-input"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn btn-primary" onClick={onOpenHistory}>히스토리</button>
-            </div>
-          </div>
-        </div>
+      {/* 개별 편집 모달 */}
+      {selectedNo !== null && (
+        <LockerDetailsModal
+          visible={showEdit}
+          lockerNo={selectedNo}
+          name={editName}
+          phone={editPhone}
+          startDate={editStartDate}
+          endDate={editEndDate}
+          onClose={() => setShowEdit(false)}
+          onUpdate={onOpenUpdateModal}
+          onAssign={onOpenAssignModal}
+          onRelease={onReleaseLocker}
+          onDelete={onDeleteLocker}
+          onHistory={onOpenHistory}
+          state={selectedState === LOCKER_STATE.DELETED ? LOCKER_STATE.UNUSED : selectedState}
+          releasing={releasing}
+          deleting={deleting}
+        />
       )}
 
       {/* 삭제 확인 모달 */}
-      {showDeleteConfirm && selectedNo !== null && (
-        <div className="modal-overlay" onClick={() => !deleting && setShowDeleteConfirm(false)}>
-          <div className="modal-content delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="header-title">
-                <Info size={20} className="header-icon" />
-                <h3>락커 삭제 확인</h3>
-              </div>
-              <button className="close-button" onClick={() => !deleting && setShowDeleteConfirm(false)}>×</button>
-            </div>
-            
-            <div className="modal-body">
-              <div className="delete-message">
-                <p className="delete-title">락커 #{selectedNo}를 삭제하시겠습니까?</p>
-                <div className="delete-info-box">
-                  <Info size={16} />
-                  <span>락커 삭제 시에도 회원 히스토리/결제 기록은 유지됩니다.</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>취소</button>
-              <button className="btn btn-danger" onClick={onConfirmDelete} disabled={deleting}>
-                {deleting ? '삭제 중…' : '삭제'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {selectedNo !== null && (
+        <DeleteLockerConfirmModal
+          visible={showDeleteConfirm}
+          lockerNo={selectedNo}
+          deleting={deleting}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={onConfirmDelete}
+        />
       )}
 
       {/* 락커 해지 확인 모달 */}
-      {showReleaseConfirm && selectedNo !== null && (
-        <div className="modal-overlay" onClick={() => !releasing && setShowReleaseConfirm(false)}>
-          <div className="modal-content release-confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="header-title">
-                <Info size={20} className="header-icon" />
-                <h3>락커 해지 확인</h3>
-              </div>
-              <button className="close-button" onClick={() => !releasing && setShowReleaseConfirm(false)}>×</button>
-            </div>
-            
-            <div className="modal-body">
-              <div className="release-message">
-                <p className="release-title">회원의 락커를 해지하시겠습니까?</p>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowReleaseConfirm(false)} disabled={releasing}>취소</button>
-              <button className="btn btn-primary" onClick={onConfirmRelease} disabled={releasing}>
-                {releasing ? '해지 중…' : '해지'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {selectedNo !== null && (
+        <ReleaseLockerConfirmModal
+          visible={showReleaseConfirm}
+          lockerNo={selectedNo}
+          releasing={releasing}
+          onClose={() => setShowReleaseConfirm(false)}
+          onConfirm={onConfirmRelease}
+        />
       )}
 
       {/* 락커 수정 모달 */}
-      {showUpdateModal && selectedNo !== null && (
-        <div className="modal-overlay" onClick={() => !updating && setShowUpdateModal(false)}>
-          <div className="modal-content update-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="header-title">
-                <Info size={20} className="header-icon" />
-                <h3>락커 #{selectedNo} 수정</h3>
-              </div>
-              <button className="close-button" onClick={() => !updating && setShowUpdateModal(false)}>×</button>
-            </div>
-            
-            <div className="modal-body">
-              <div className="form-section">
-                <div className="form-group">
-                  <label>상태</label>
-                  <select
-                    className="form-input"
-                    value={updateState}
-                    onChange={(e) => setUpdateState(e.target.value as 'unused' | 'na')}
-                    disabled={updating}
-                  >
-                    <option value="unused" disabled={selectedState === 'unused'}>사용 가능</option>
-                    <option value="na" disabled={selectedState === 'na'}>고장</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>사유</label>
-                  <textarea
-                    className="form-input form-textarea"
-                    value={updateNote}
-                    onChange={(e) => setUpdateNote(e.target.value)}
-                    placeholder="사유를 입력하세요"
-                    disabled={updating}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>담당자</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={updateAssignee}
-                    onChange={(e) => setUpdateAssignee(e.target.value)}
-                    placeholder="담당자를 입력하세요"
-                    disabled={updating}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowUpdateModal(false)} disabled={updating}>취소</button>
-              <button className="btn btn-primary" onClick={onConfirmUpdate} disabled={updating}>
-                {updating ? '수정 중…' : '저장'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {selectedNo !== null && (
+        <UpdateLockerModal
+          visible={showUpdateModal}
+          lockerNo={selectedNo}
+          currentState={selectedState === LOCKER_STATE.NA ? LOCKER_STATE.NA : LOCKER_STATE.UNUSED}
+          updating={updating}
+          onClose={() => setShowUpdateModal(false)}
+          onConfirm={onConfirmUpdate}
+        />
       )}
 
       {/* 락커 히스토리 모달 */}
-      {showHistory && selectedNo !== null && (
-        <div className="modal-overlay" onClick={() => setShowHistory(false)}>
-          <div className="modal-content history-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="header-title">
-                <Calendar size={20} className="header-icon" />
-                <h3>락커 #{selectedNo} 히스토리</h3>
-              </div>
-              <button className="close-button" onClick={() => setShowHistory(false)}>×</button>
-            </div>
-            
-            <div className="modal-body">
-              {historyData.length === 0 ? (
-                <div className="empty-history">히스토리가 없습니다.</div>
-              ) : (
-                <div className="history-list">
-                  {historyData.map((item, index) => (
-                    <div key={index} className="history-item">
-                      <div className="history-header">
-                        <span className="history-index">#{historyData.length - index}</span>
-                        <span className={`history-state-badge ${item.state}`}>
-                          {item.state === 'used' ? '사용중' : 
-                           item.state === 'unused' ? '사용 가능' : 
-                           item.state === 'na' ? '고장' : '삭제됨'}
-                        </span>
-                      </div>
-                      
-                      <div className="history-details">
-                        {(item.userName || item.user) && (
-                          <div className="history-row">
-                            <span className="history-label">회원:</span>
-                            <span className="history-value">{item.userName || item.user}</span>
-                          </div>
-                        )}
-                        {item.phoneNumber && (
-                          <div className="history-row">
-                            <span className="history-label">전화번호:</span>
-                            <span className="history-value">{item.phoneNumber}</span>
-                          </div>
-                        )}
-                        {item.startDate && (
-                          <div className="history-row">
-                            <span className="history-label">시작일:</span>
-                            <span className="history-value">{item.startDate}</span>
-                          </div>
-                        )}
-                        {item.endDate && (
-                          <div className="history-row">
-                            <span className="history-label">종료일:</span>
-                            <span className="history-value">{item.endDate}</span>
-                          </div>
-                        )}
-                        {item.note && (
-                          <div className="history-row">
-                            <span className="history-label">사유:</span>
-                            <span className="history-value">{item.note}</span>
-                          </div>
-                        )}
-                        {item.assignee && (
-                          <div className="history-row">
-                            <span className="history-label">담당자:</span>
-                            <span className="history-value">{item.assignee}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowHistory(false)}>닫기</button>
-            </div>
-          </div>
-        </div>
+      {selectedNo !== null && (
+        <LockerHistoryModal
+          visible={showHistory}
+          lockerNo={selectedNo}
+          historyData={historyData}
+          onClose={() => setShowHistory(false)}
+        />
       )}
 
       {/* 락커 배정 모달 */}
-      {showAssignModal && selectedNo !== null && (
-        <div className="modal-overlay" onClick={() => !assigning && setShowAssignModal(false)}>
-          <div className="modal-content assign-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="header-title">
-                <Plus size={20} className="header-icon" />
-                <h3>락커 #{selectedNo} 배정</h3>
-              </div>
-              <button className="close-button" onClick={() => !assigning && setShowAssignModal(false)}>×</button>
-            </div>
-            
-            <div className="modal-body">
-              <div className="form-section">
-                {/* 회원 검색 */}
-                <div className="form-group">
-                  <label>이름 검색</label>
-                  <div className="search-input-wrapper">
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={assignSearchText}
-                      onChange={(e) => setAssignSearchText(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && onSearchMembers()}
-                      placeholder="회원 이름을 입력하세요"
-                      disabled={assigning}
-                    />
-                    <button 
-                      className="btn btn-primary search-btn" 
-                      onClick={onSearchMembers}
-                      disabled={searching || assigning}
-                    >
-                      {searching ? '검색 중...' : '검색'}
-                    </button>
-                  </div>
-
-                  {/* 선택된 회원 표시 */}
-                  {assignSelectedMember && (
-                    <div className="selected-member">
-                      <div className="member-info">
-                        <strong>{assignSelectedMember.realName}</strong>
-                        <span className="member-detail">{assignSelectedMember.phone}</span>
-                      </div>
-                      <button 
-                        className="clear-btn" 
-                        onClick={() => setAssignSelectedMember(null)}
-                        disabled={assigning}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  )}
-
-                  {/* 검색 결과 */}
-                  {assignSearchResults.length > 0 && !assignSelectedMember && (
-                    <div className="search-results">
-                      {assignSearchResults.map((member) => (
-                        <div 
-                          key={member.email} 
-                          className="search-result-item"
-                          onClick={() => onSelectMember(member)}
-                        >
-                          <div className="member-name">{member.realName}</div>
-                          <div className="member-phone">{member.phone || member.phone}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* 시작 날짜 */}
-                <div className="form-group">
-                  <label>시작 날짜</label>
-                  <input
-                    type="date"
-                    className="form-input"
-                    value={assignStartDate}
-                    onChange={(e) => setAssignStartDate(e.target.value)}
-                    disabled={assigning}
-                  />
-                </div>
-
-                {/* 종료 날짜 */}
-                <div className="form-group">
-                  <label>종료 날짜</label>
-                  <input
-                    type="date"
-                    className="form-input"
-                    value={assignEndDate}
-                    onChange={(e) => setAssignEndDate(e.target.value)}
-                    disabled={assigning}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowAssignModal(false)} disabled={assigning}>취소</button>
-              <button className="btn btn-primary" onClick={onConfirmAssign} disabled={assigning}>
-                {assigning ? '배정 중…' : '배정'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {selectedNo !== null && (
+        <AssignLockerModal
+          visible={showAssignModal}
+          lockerNo={selectedNo}
+          assigning={assigning}
+          searching={searching}
+          onClose={() => setShowAssignModal(false)}
+          onConfirm={onConfirmAssign}
+          onSearch={onSearchMembers}
+        />
       )}
 
       <style>{`

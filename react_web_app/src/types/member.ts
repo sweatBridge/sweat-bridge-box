@@ -5,6 +5,16 @@ export interface MembershipInfo {
   remainingVisits: string | number;
 }
 
+export interface LockerHistory {
+  lockerNum: number;
+  startDate: string;
+  endDate: string;
+  createdAt: any;  // Firebase Timestamp 또는 string
+  key?: string;  // 락커 할당 고유 키
+  price?: string;  // 가격
+  paymentType?: 'cash' | 'card';  // 결제수단
+}
+
 export interface Member {
   email: string;
   realName: string;
@@ -15,6 +25,8 @@ export interface Member {
   membershipInfo: MembershipInfo;
   memberships: any[];
   futureMemberships: any[];
+  lockerHistory?: LockerHistory[];
+  lockerPass?: string;
 }
 
 export interface MemberListProps {

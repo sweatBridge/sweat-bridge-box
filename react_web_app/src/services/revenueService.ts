@@ -62,9 +62,12 @@ export class RevenueService {
       Object.entries(monthData).forEach(([revenueKey, data]) => {
         const revenueData = data as RevenueData;
         
-        // createdAt을 Date로 변환하고 날짜 문자열 생성
+        // createdAt을 Date로 변환하고 날짜 문자열 생성 (로컬 시간 기준)
         const createdDate = revenueData.createdAt.toDate();
-        const dateStr = createdDate.toISOString().split('T')[0];
+        const year = createdDate.getFullYear();
+        const month = String(createdDate.getMonth() + 1).padStart(2, '0');
+        const day = String(createdDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
         
         // 해당 날짜의 데이터가 없으면 초기화
         if (!dailyRevenueMap.has(dateStr)) {
@@ -175,7 +178,10 @@ export class RevenueService {
               const revenueData = data as RevenueData;
               const price = parseInt(revenueData.price) || 0;
               const createdDate = revenueData.createdAt.toDate();
-              const dateStr = createdDate.toISOString().split('T')[0];
+              const dataYear = createdDate.getFullYear();
+              const dataMonth = createdDate.getMonth() + 1;
+              const dataDay = String(createdDate.getDate()).padStart(2, '0');
+              const dateStr = `${dataYear}-${String(dataMonth).padStart(2, '0')}-${dataDay}`;
 
               // 이번 해 매출 누적
               if (year === currentYear) {
@@ -282,6 +288,64 @@ export class RevenueService {
     } catch (error) {
       console.error('Error adding membership revenue:', error);
       throw new Error('매출 데이터 저장에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 락커 배정 시 매출 데이터 저장
+   */
+  static async addLockerRevenue(
+    lockerKey: string,
+    userEmail: string,
+    userName: string,
+    price: string,
+    paymentType: 'cash' | 'card'
+  ): Promise<void> {
+    try {
+      const boxName = this.getBoxName();
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      
+      // Firebase 경로: box/${boxName}/revenue/${year}
+      const revenueDocRef = doc(db, `box/${boxName}/revenue/${year}`);
+      
+      // 기존 문서 가져오기
+      const revenueDoc = await getDoc(revenueDocRef);
+      let revenueData: { [key: string]: any } = {};
+      
+      if (revenueDoc.exists()) {
+        revenueData = revenueDoc.data();
+      }
+      
+      // 해당 월 데이터가 없으면 초기화
+      if (!revenueData[month.toString()]) {
+        revenueData[month.toString()] = {};
+        console.log(`Initialized month ${month} data`);
+      }
+      
+      // 락커 매출 데이터 구성
+      const lockerRevenueData = {
+        assignee: '',
+        createdAt: Timestamp.now(),
+        id: userEmail,
+        paymentType: paymentType,
+        plan: '사물함 이용권',
+        price: price,
+        realName: userName,
+        type: 'locker'
+      };
+      
+      // 락커 키를 사용하여 데이터 저장
+      revenueData[month.toString()][lockerKey] = lockerRevenueData;
+      
+      // Firebase에 저장
+      await setDoc(revenueDocRef, revenueData);
+      
+      console.log(`Locker revenue added with key ${lockerKey}`);
+    } catch (error) {
+      console.error('Error adding locker revenue:', error);
+      throw new Error('락커 매출 데이터 저장에 실패했습니다.');
     }
   }
 
