@@ -493,6 +493,18 @@ export class MembershipService {
       const memberDocRef = doc(db, `box/${boxName}/member/${email}`);
       await setDoc(memberDocRef, { memberships }, { merge: true });
 
+      // 매출 데이터에서 환불 금액 차감
+      try {
+        const membershipKey = membership.key;
+        if (membershipKey) {
+          await RevenueService.refundUserMembership(membershipKey, parseInt(refundAmount));
+          console.log('Revenue refund processed for membership:', membershipKey);
+        }
+      } catch (revenueError) {
+        console.error('Failed to process revenue refund, but membership refund was successful:', revenueError);
+        // 매출 차감 실패해도 회원권 환불은 성공으로 처리
+      }
+
       console.log('Refund processed successfully');
     } catch (error) {
       console.error('Error refunding membership:', error);

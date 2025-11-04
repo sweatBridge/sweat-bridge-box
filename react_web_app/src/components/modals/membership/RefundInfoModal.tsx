@@ -121,10 +121,10 @@ const RefundInfoModal = ({
           justify-content: space-between;
           align-items: center;
           padding: 20px;
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
           border-bottom: none;
           border-radius: 8px 8px 0 0;
-          box-shadow: 0 2px 10px rgba(16, 185, 129, 0.15);
+          box-shadow: 0 2px 10px rgba(249, 115, 22, 0.15);
         }
 
         .header-title {
@@ -175,10 +175,10 @@ const RefundInfoModal = ({
         .refund-badge {
           display: inline-block;
           padding: 8px 16px;
-          background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-          border: 1px solid #6ee7b7;
+          background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+          border: 1px solid #fb923c;
           border-radius: 20px;
-          color: #065f46;
+          color: #7c2d12;
           font-weight: 600;
           font-size: 14px;
           margin-bottom: 20px;
@@ -215,8 +215,8 @@ const RefundInfoModal = ({
           display: flex;
           gap: 12px;
           padding: 12px;
-          background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-          border: 1px solid #bbf7d0;
+          background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+          border: 1px solid #fdba74;
           border-radius: 8px;
         }
 
@@ -228,7 +228,7 @@ const RefundInfoModal = ({
           height: 32px;
           background: white;
           border-radius: 50%;
-          color: #10b981;
+          color: #f97316;
           flex-shrink: 0;
         }
 
@@ -242,18 +242,18 @@ const RefundInfoModal = ({
         .detail-label {
           font-size: 12px;
           font-weight: 500;
-          color: #065f46;
+          color: #7c2d12;
         }
 
         .detail-value {
           font-size: 14px;
           font-weight: 600;
-          color: #064e3b;
+          color: #9a3412;
         }
 
         .detail-value.price {
           font-size: 18px;
-          color: #10b981;
+          color: #f97316;
         }
 
         .modal-footer {

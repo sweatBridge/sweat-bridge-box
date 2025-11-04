@@ -854,9 +854,9 @@ const MemberManagementModal = ({
                           <div className="table-cell">
                             <button
                               onClick={() => handleOpenDeleteModal(index)}
-                              disabled={loading}
+                              disabled={loading || refunded}
                               className="btn btn-sm btn-danger"
-                              title="회원권 삭제"
+                              title={refunded ? "환불된 회원권은 삭제할 수 없습니다" : "회원권 삭제"}
                             >
                               <Trash2 size={14} />
                             </button>
@@ -1357,12 +1357,12 @@ const MemberManagementModal = ({
         }
 
         .table-row.refunded {
-          background-color: #f0fdf4;
+          background-color: #fff7ed;
           opacity: 0.8;
         }
 
         .table-row.refunded:hover {
-          background-color: #dcfce7;
+          background-color: #ffedd5;
         }
 
         .table-cell {
@@ -1569,14 +1569,14 @@ const MemberManagementModal = ({
         }
 
         .btn-refunded {
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-          border-color: #10b981;
+          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+          border-color: #f97316;
           color: white;
         }
 
         .btn-refunded:hover:not(:disabled) {
-          background: linear-gradient(135deg, #059669 0%, #047857 100%);
-          border-color: #059669;
+          background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+          border-color: #ea580c;
         }
 
         @keyframes spin {

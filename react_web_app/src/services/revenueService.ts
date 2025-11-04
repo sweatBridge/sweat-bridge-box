@@ -14,6 +14,7 @@ interface RevenueData {
   price: string;
   realName: string;
   type: string;
+  refundAmount: string;
 }
 
 export class RevenueService {
@@ -83,25 +84,27 @@ export class RevenueService {
 
         const dailyData = dailyRevenueMap.get(dateStr)!;
         const price = parseInt(revenueData.price) || 0;
+        const refundAmount = parseInt(revenueData.refundAmount) || 0;
+        const actualPrice = price - refundAmount;  // 환불 금액 차감
 
         // 회원권과 기타 매출 구분
         // type이 countPass 또는 periodPass면 회원권, 그 외는 기타
         const isMembership = revenueData.type === 'countPass' || revenueData.type === 'periodPass';
         
         if (isMembership) {
-          dailyData.membershipRevenue += price;
+          dailyData.membershipRevenue += actualPrice;
           dailyData.membershipCount += 1;
         } else {
-          dailyData.otherRevenue += price;
+          dailyData.otherRevenue += actualPrice;
           dailyData.otherCount += 1;
         }
 
         // 결제 수단별 집계
         if (revenueData.paymentType === 'cash') {
-          dailyData.cashRevenue += price;
+          dailyData.cashRevenue += actualPrice;
           dailyData.cashCount += 1;
         } else if (revenueData.paymentType === 'card') {
-          dailyData.cardRevenue += price;
+          dailyData.cardRevenue += actualPrice;
           dailyData.cardCount += 1;
         }
       });
@@ -177,22 +180,25 @@ export class RevenueService {
             for (const [, data] of Object.entries(monthData)) {
               const revenueData = data as RevenueData;
               const price = parseInt(revenueData.price) || 0;
+              const refundAmount = parseInt(revenueData.refundAmount) || 0;
+              const actualPrice = price - refundAmount;  // 환불 금액 차감
+              
               const createdDate = revenueData.createdAt.toDate();
               const dateStr = formatDateToString(createdDate);
 
               // 이번 해 매출 누적
               if (year === currentYear) {
-                totalRevenue += price;
+                totalRevenue += actualPrice;
               }
 
               // 이번 달 매출 체크
               if (year === currentYear && month === currentMonth) {
-                thisMonthRevenue += price;
+                thisMonthRevenue += actualPrice;
               }
 
               // 오늘 매출 체크
               if (dateStr === today) {
-                todayRevenue += price;
+                todayRevenue += actualPrice;
               }
             }
           }
@@ -274,7 +280,8 @@ export class RevenueService {
         plan: membership.plan,
         price: membership.purchase.price.toString(),
         realName: memberRealName,
-        type: membership.type
+        type: membership.type,
+        refundAmount: "0"
       };
       
       // 회원권 키를 사용하여 데이터 저장
@@ -331,7 +338,8 @@ export class RevenueService {
         plan: '사물함 이용권',
         price: price,
         realName: userName,
-        type: 'locker'
+        type: 'locker',
+        refundAmount: "0"
       };
       
       // 락커 키를 사용하여 데이터 저장
@@ -344,6 +352,66 @@ export class RevenueService {
     } catch (error) {
       console.error('Error adding locker revenue:', error);
       throw new Error('락커 매출 데이터 저장에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 회원권 환불 시 매출 차감 처리
+   */
+  static async refundUserMembership(membershipKey: string, refundAmount: number): Promise<void> {
+    try {
+      const boxName = this.getBoxName();
+      
+      // revenue 컬렉션의 모든 문서 가져오기
+      const revenueCollectionRef = collection(db, `box/${boxName}/revenue`);
+      const revenueSnapshot = await getDocs(revenueCollectionRef);
+      
+      let found = false;
+      let foundLocation = '';
+      
+      // 각 연도 문서를 순회하면서 회원권 키 찾기
+      for (const yearDoc of revenueSnapshot.docs) {
+        const yearData = yearDoc.data();
+        const yearId = yearDoc.id;
+        let yearDataModified = false;
+        
+        // 각 월을 순회
+        for (const monthKey in yearData) {
+          const monthData = yearData[monthKey];
+          
+          // 해당 월에 회원권 키가 있는지 확인
+          if (monthData && typeof monthData === 'object' && membershipKey in monthData) {
+            const membershipData = monthData[membershipKey];
+            
+            // 환불 금액 업데이트
+            membershipData.refundAmount = refundAmount.toString();
+            
+            yearDataModified = true;
+            found = true;
+            foundLocation = `${yearId}/${monthKey}`;
+            
+            console.log(`Found and updated refundAmount for ${membershipKey} from ${foundLocation}`);
+            console.log(`Price: ${membershipData.price}, Refund amount: ${refundAmount}`);
+          }
+        }
+        
+        // 해당 연도 문서가 수정되었으면 Firebase에 업데이트
+        if (yearDataModified) {
+          const yearDocRef = doc(db, `box/${boxName}/revenue/${yearId}`);
+          await setDoc(yearDocRef, yearData);
+          console.log(`Updated revenue document for year ${yearId}`);
+        }
+      }
+      
+      if (found) {
+        console.log(`Successfully processed refund for membership key ${membershipKey} from ${foundLocation}`);
+      } else {
+        console.log(`Membership key ${membershipKey} not found in revenue data`);
+      }
+      
+    } catch (error) {
+      console.error('Error refunding membership revenue:', error);
+      throw new Error('매출 환불 처리에 실패했습니다.');
     }
   }
 
