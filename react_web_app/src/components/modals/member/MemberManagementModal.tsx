@@ -227,7 +227,11 @@ const MemberManagementModal = ({
 
     try {
       setLoading(true);
-      await MembershipService.removeUserMembership(member.email, membershipToDelete.index);
+      await MembershipService.removeUserMembership(
+        member.email, 
+        membershipToDelete.index,
+        userMemberships
+      );
       
       if (onSuccess) {
         onSuccess('회원권이 성공적으로 삭제되었습니다.');
@@ -243,7 +247,7 @@ const MemberManagementModal = ({
     } finally {
       setLoading(false);
     }
-  }, [member, membershipToDelete, onSuccess, onError, loadData]);
+  }, [member, membershipToDelete, userMemberships, onSuccess, onError, loadData]);
 
   const handleOpenRefundModal = useCallback((index: number) => {
     const membership = userMemberships[index];
@@ -266,7 +270,8 @@ const MemberManagementModal = ({
         member.email, 
         membershipToRefund.index, 
         refundAmount, 
-        reason
+        reason,
+        userMemberships
       );
       
       if (onSuccess) {
@@ -283,7 +288,7 @@ const MemberManagementModal = ({
     } finally {
       setLoading(false);
     }
-  }, [member, membershipToRefund, onSuccess, onError, loadData]);
+  }, [member, membershipToRefund, userMemberships, onSuccess, onError, loadData]);
 
   const handleOpenHoldModal = useCallback(() => {
     if (currentMemberships.length === 0) {
@@ -323,7 +328,8 @@ const MemberManagementModal = ({
         holdStartDate,
         holdEndDate,
         reason,
-        assignee
+        assignee,
+        userMemberships
       );
       
       if (onSuccess) {
@@ -339,7 +345,7 @@ const MemberManagementModal = ({
     } finally {
       setLoading(false);
     }
-  }, [member, selectedMembershipIndex, onSuccess, onError, loadData]);
+  }, [member, selectedMembershipIndex, userMemberships, onSuccess, onError, loadData]);
 
   const handleReleaseHold = useCallback(async () => {
     if (!window.confirm('홀딩을 해제하시겠습니까?\n홀딩 종료일이 오늘 전날로 변경되며, 회원권 만료일이 재계산됩니다.')) {
@@ -361,7 +367,7 @@ const MemberManagementModal = ({
         throw new Error('회원권을 찾을 수 없습니다.');
       }
 
-      await MembershipService.releaseHold(member.email, index);
+      await MembershipService.releaseHold(member.email, index, userMemberships);
       
       if (onSuccess) {
         onSuccess('홀딩이 성공적으로 해제되었습니다.');

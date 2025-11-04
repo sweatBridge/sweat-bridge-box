@@ -256,7 +256,8 @@ export class MembershipService {
     holdStartDate: Date,
     holdEndDate: Date,
     reason: string,
-    assignee: string
+    assignee: string,
+    existingMemberships?: UserMembership[]
   ): Promise<void> {
     try {
       const boxName = localStorage.getItem('boxName');
@@ -264,7 +265,7 @@ export class MembershipService {
         throw new Error('박스 이름이 없습니다.');
       }
 
-      const memberships = await this.getUserMemberships(email);
+      const memberships = existingMemberships || await this.getUserMemberships(email);
       
       if (membershipIndex < 0 || membershipIndex >= memberships.length) {
         throw new Error('유효하지 않은 회원권 인덱스입니다.');
@@ -340,7 +341,8 @@ export class MembershipService {
    */
   static async releaseHold(
     email: string,
-    membershipIndex: number
+    membershipIndex: number,
+    existingMemberships?: UserMembership[]
   ): Promise<void> {
     try {
       const boxName = localStorage.getItem('boxName');
@@ -348,7 +350,7 @@ export class MembershipService {
         throw new Error('박스 이름이 없습니다.');
       }
 
-      const memberships = await this.getUserMemberships(email);
+      const memberships = existingMemberships || await this.getUserMemberships(email);
       
       if (membershipIndex < 0 || membershipIndex >= memberships.length) {
         throw new Error('유효하지 않은 회원권 인덱스입니다.');
@@ -454,7 +456,8 @@ export class MembershipService {
     email: string,
     membershipIndex: number,
     refundAmount: string,
-    reason: string
+    reason: string,
+    existingMemberships?: UserMembership[]
   ): Promise<void> {
     try {
       const boxName = localStorage.getItem('boxName');
@@ -462,7 +465,7 @@ export class MembershipService {
         throw new Error('박스 이름이 없습니다.');
       }
 
-      const memberships = await this.getUserMemberships(email);
+      const memberships = existingMemberships || await this.getUserMemberships(email);
       
       if (membershipIndex < 0 || membershipIndex >= memberships.length) {
         throw new Error('유효하지 않은 회원권 인덱스입니다.');
@@ -500,7 +503,11 @@ export class MembershipService {
   /**
    * 사용자 회원권 삭제 (매출 데이터도 함께 삭제)
    */
-  static async removeUserMembership(email: string, index: number): Promise<void> {
+  static async removeUserMembership(
+    email: string, 
+    index: number,
+    existingMemberships?: UserMembership[]
+  ): Promise<void> {
     try {
       const boxName = localStorage.getItem('boxName');
       if (!boxName) {
@@ -511,17 +518,17 @@ export class MembershipService {
         throw new Error('회원권 인덱스 또는 이메일이 없습니다.');
       }
 
-      const existingMemberships = await this.getUserMemberships(email);
+      const memberships = existingMemberships || await this.getUserMemberships(email);
       
-      if (index < 0 || index >= existingMemberships.length) {
+      if (index < 0 || index >= memberships.length) {
         throw new Error('유효하지 않은 회원권 인덱스입니다.');
       }
 
       // 삭제할 회원권의 키 저장
-      const membershipToDelete = existingMemberships[index];
+      const membershipToDelete = memberships[index];
       const membershipKey = membershipToDelete.key;
 
-      const updatedMemberships = existingMemberships.filter((_, i) => i !== index);
+      const updatedMemberships = memberships.filter((_, i) => i !== index);
       
       const memberDocRef = doc(db, `box/${boxName}/member/${email}`);
       await setDoc(memberDocRef, { memberships: updatedMemberships }, { merge: true });
