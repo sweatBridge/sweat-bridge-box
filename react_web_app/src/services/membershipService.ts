@@ -156,6 +156,11 @@ export class MembershipService {
       if ((membership as any).deleted) {
         return false;
       }
+
+      // 환불된 회원권 제외
+      if ((membership as any).refund && (membership as any).refund.isRefunded) {
+        return false;
+      }
       
       // 새 구조
       if ((membership as any).period) {
@@ -438,6 +443,56 @@ export class MembershipService {
       console.log('Hold released successfully');
     } catch (error) {
       console.error('Error releasing hold:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 회원권 환불 처리
+   */
+  static async refundUserMembership(
+    email: string,
+    membershipIndex: number,
+    refundAmount: string,
+    reason: string
+  ): Promise<void> {
+    try {
+      const boxName = localStorage.getItem('boxName');
+      if (!boxName) {
+        throw new Error('박스 이름이 없습니다.');
+      }
+
+      const memberships = await this.getUserMemberships(email);
+      
+      if (membershipIndex < 0 || membershipIndex >= memberships.length) {
+        throw new Error('유효하지 않은 회원권 인덱스입니다.');
+      }
+
+      const membership = memberships[membershipIndex] as any;
+
+      // 이미 환불된 회원권인지 확인
+      if (membership.refund && membership.refund.isRefunded) {
+        throw new Error('이미 환불된 회원권입니다.');
+      }
+
+      // 환불 정보 업데이트
+      membership.refund = {
+        isRefunded: true,
+        at: new Date(),
+        refundAmount: parseInt(refundAmount),
+        reason: reason
+      };
+
+      // 업데이트된 시간 기록
+      membership.updatedAt = new Date();
+
+      // Firebase에 저장
+      const memberDocRef = doc(db, `box/${boxName}/member/${email}`);
+      await setDoc(memberDocRef, { memberships }, { merge: true });
+
+      console.log('Refund processed successfully');
+    } catch (error) {
+      console.error('Error refunding membership:', error);
       throw error;
     }
   }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Pause, DollarSign } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Pause, DollarSign, CheckCircle } from 'lucide-react';
 import { MemberManagementModalProps, MembershipPlan, UserMembership, AddMembershipData } from '../../../types/membership';
 import { getGenderText, formatPhoneNumber } from '../../../utils/memberUtils';
 import { generateMembershipKey } from '../../../utils/keyGenerator';
@@ -9,6 +9,7 @@ import { AppColors } from '../../../constants/colors';
 import HoldMembershipModal from '../membership/HoldMembershipModal';
 import DeleteMembershipConfirmModal from '../membership/DeleteMembershipConfirmModal';
 import RefundMembershipModal from '../membership/RefundMembershipModal';
+import RefundInfoModal from '../membership/RefundInfoModal';
 
 const MemberManagementModal = ({ 
   visible, 
@@ -28,6 +29,8 @@ const MemberManagementModal = ({
   const [membershipToDelete, setMembershipToDelete] = useState<{ index: number; plan: string; price: string } | null>(null);
   const [refundModalVisible, setRefundModalVisible] = useState(false);
   const [membershipToRefund, setMembershipToRefund] = useState<{ index: number; plan: string; price: string } | null>(null);
+  const [refundInfoModalVisible, setRefundInfoModalVisible] = useState(false);
+  const [refundInfoData, setRefundInfoData] = useState<{ refundAt: Date; refundAmount: number; reason: string; plan: string } | null>(null);
 
   // 회원권 추가 폼 상태
   const [formData, setFormData] = useState<AddMembershipData>({
@@ -259,15 +262,12 @@ const MemberManagementModal = ({
 
     try {
       setLoading(true);
-      // TODO: 환불 로직 구현
-      // await MembershipService.refundUserMembership(member.email, membershipToRefund.index, refundAmount, reason);
-      
-      console.log('환불 처리:', {
-        email: member.email,
-        index: membershipToRefund.index,
-        refundAmount,
+      await MembershipService.refundUserMembership(
+        member.email, 
+        membershipToRefund.index, 
+        refundAmount, 
         reason
-      });
+      );
       
       if (onSuccess) {
         onSuccess('회원권이 성공적으로 환불되었습니다.');
@@ -423,6 +423,27 @@ const MemberManagementModal = ({
       return now >= holdStartDate && now <= holdEndDate;
     });
   };
+
+  // 환불된 회원권인지 확인
+  const isRefunded = (membership: any) => {
+    return membership.refund && membership.refund.isRefunded;
+  };
+
+  // 환불 정보 모달 열기
+  const handleOpenRefundInfoModal = useCallback((index: number) => {
+    const membership = userMemberships[index];
+    const displayInfo = getMembershipDisplayInfo(membership);
+    
+    if (isRefunded(membership) && membership.refund.at && membership.refund.reason !== null) {
+      setRefundInfoData({
+        refundAt: new Date(membership.refund.at),
+        refundAmount: membership.refund.refundAmount || 0,
+        reason: membership.refund.reason || '',
+        plan: displayInfo.plan
+      });
+      setRefundInfoModalVisible(true);
+    }
+  }, [userMemberships]);
 
   if (!visible || !member) return null;
 
@@ -790,8 +811,9 @@ const MemberManagementModal = ({
                     
                     {userMemberships.map((membership, index) => {
                       const displayInfo = getMembershipDisplayInfo(membership);
+                      const refunded = isRefunded(membership);
                       return (
-                        <div key={index} className="table-row">
+                        <div key={index} className={`table-row ${refunded ? 'refunded' : ''}`}>
                           <div className="table-cell">{formatDate(displayInfo.startDate)}</div>
                           <div className="table-cell">{formatDate(displayInfo.endDate)}</div>
                           <div className="table-cell">
@@ -803,14 +825,25 @@ const MemberManagementModal = ({
                           <div className="table-cell">{displayInfo.plan}</div>
                           <div className="table-cell">{displayInfo.assignee}</div>
                           <div className="table-cell">
-                            <button
-                              onClick={() => handleOpenRefundModal(index)}
-                              disabled={loading}
-                              className="btn btn-sm btn-refund"
-                              title="회원권 환불"
-                            >
-                              <DollarSign size={14} />
-                            </button>
+                            {refunded ? (
+                              <button
+                                onClick={() => handleOpenRefundInfoModal(index)}
+                                disabled={loading}
+                                className="btn btn-sm btn-refunded"
+                                title="환불 정보 보기"
+                              >
+                                <CheckCircle size={14} />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleOpenRefundModal(index)}
+                                disabled={loading}
+                                className="btn btn-sm btn-refund"
+                                title="회원권 환불"
+                              >
+                                <DollarSign size={14} />
+                              </button>
+                            )}
                           </div>
                           <div className="table-cell">
                             <button
@@ -874,6 +907,21 @@ const MemberManagementModal = ({
         onConfirm={handleConfirmRefund}
         loading={loading}
       />
+
+      {/* 환불 정보 모달 */}
+      {refundInfoData && (
+        <RefundInfoModal
+          visible={refundInfoModalVisible}
+          refundAt={refundInfoData.refundAt}
+          refundAmount={refundInfoData.refundAmount}
+          reason={refundInfoData.reason}
+          membershipPlan={refundInfoData.plan}
+          onClose={() => {
+            setRefundInfoModalVisible(false);
+            setRefundInfoData(null);
+          }}
+        />
+      )}
 
       <style>{`
         .member-management-modal {
@@ -1302,6 +1350,15 @@ const MemberManagementModal = ({
           background-color: #f9fafb;
         }
 
+        .table-row.refunded {
+          background-color: #f0fdf4;
+          opacity: 0.8;
+        }
+
+        .table-row.refunded:hover {
+          background-color: #dcfce7;
+        }
+
         .table-cell {
           display: flex;
           align-items: center;
@@ -1503,6 +1560,17 @@ const MemberManagementModal = ({
         .btn-refund:hover:not(:disabled) {
           background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
           border-color: #1d4ed8;
+        }
+
+        .btn-refunded {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          border-color: #10b981;
+          color: white;
+        }
+
+        .btn-refunded:hover:not(:disabled) {
+          background: linear-gradient(135deg, #059669 0%, #047857 100%);
+          border-color: #059669;
         }
 
         @keyframes spin {
