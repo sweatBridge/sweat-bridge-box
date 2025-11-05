@@ -429,16 +429,12 @@ const MemberManagementModal = ({
 
   // 현재 활성화된 홀딩 찾기
   const getCurrentHold = (membership: any) => {
-    if (!membership.holds || membership.holds.length === 0) {
+    if (!MembershipService.isHold(membership)) {
       return null;
     }
-
-    const now = new Date();
-    return membership.holds.find((hold: any) => {
-      const holdStartDate = new Date(hold.startDate);
-      const holdEndDate = new Date(hold.endDate);
-      return now >= holdStartDate && now <= holdEndDate;
-    });
+    
+    // 가장 최신 홀딩 반환
+    return membership.holds[membership.holds.length - 1];
   };
 
   // 환불된 회원권인지 확인
