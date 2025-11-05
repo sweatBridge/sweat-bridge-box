@@ -1,11 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2 } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Pause, DollarSign, CheckCircle, Edit, History } from 'lucide-react';
 import { MemberManagementModalProps, MembershipPlan, UserMembership, AddMembershipData } from '../../../types/membership';
 import { getGenderText, formatPhoneNumber } from '../../../utils/memberUtils';
 import { generateMembershipKey } from '../../../utils/keyGenerator';
 import { MembershipService } from '../../../services/membershipService';
+import { MemberService } from '../../../services/memberService';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
+import HoldMembershipModal from '../membership/HoldMembershipModal';
+import DeleteMembershipConfirmModal from '../membership/DeleteMembershipConfirmModal';
+import RefundMembershipModal from '../membership/RefundMembershipModal';
+import RefundInfoModal from '../membership/RefundInfoModal';
+import EditMembershipModal from '../membership/EditMembershipModal';
+import AdjustmentHistoryModal from '../membership/AdjustmentHistoryModal';
 
 const MemberManagementModal = ({ 
   visible, 
@@ -19,6 +26,19 @@ const MemberManagementModal = ({
   const [userMemberships, setUserMemberships] = useState<UserMembership[]>([]);
   const [currentMemberships, setCurrentMemberships] = useState<UserMembership[]>([]);
   const [loading, setLoading] = useState(false);
+  const [holdModalVisible, setHoldModalVisible] = useState(false);
+  const [selectedMembershipIndex, setSelectedMembershipIndex] = useState<number>(0);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [membershipToDelete, setMembershipToDelete] = useState<{ index: number; plan: string; price: string } | null>(null);
+  const [refundModalVisible, setRefundModalVisible] = useState(false);
+  const [membershipToRefund, setMembershipToRefund] = useState<{ index: number; plan: string; price: string } | null>(null);
+  const [refundInfoModalVisible, setRefundInfoModalVisible] = useState(false);
+  const [refundInfoData, setRefundInfoData] = useState<{ refundAt: Date; refundAmount: number; reason: string; plan: string } | null>(null);
+  const [memo, setMemo] = useState('');
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [membershipToEdit, setMembershipToEdit] = useState<{ index: number; plan: string; type: string; startDate: Date; endDate: Date; price: string } | null>(null);
+  const [historyModalVisible, setHistoryModalVisible] = useState(false);
+  const [adjustmentHistory, setAdjustmentHistory] = useState<{ plan: string; adjustments: any[] } | null>(null);
 
   // 회원권 추가 폼 상태
   const [formData, setFormData] = useState<AddMembershipData>({
@@ -46,6 +66,9 @@ const MemberManagementModal = ({
       setMembershipPlans(plans);
       setUserMemberships(memberships);
       setCurrentMemberships(MembershipService.getCurrentMemberships(memberships));
+      
+      // 메모 불러오기
+      setMemo(member.memo || '');
     } catch (error) {
       console.error('Failed to load data:', error);
       if (onError) {
@@ -119,20 +142,53 @@ const MemberManagementModal = ({
     );
 
     const now = new Date();
+    const boxName = localStorage.getItem('boxName') || 'SWEAT';
+    const totalCount = parseInt(formData.count) || 0;
+    
+    // 새로운 회원권 구조
     const newMembership: UserMembership = {
       key: generateMembershipKey(),
       plan: formData.selectedPlanName,
       type: formData.membershipType,
-      count: formData.count,
-      price: formData.price,
-      paymentType: formData.paymentType,
-      assignee: formData.assignee,
-      startDate: startDate,
-      endDate: endDate,
-      holdStartDate: null,
-      holdEndDate: null,
+      
+      purchase: {
+        price: parseInt(formData.price) || 0,
+        paid: parseInt(formData.price) || 0,
+        paymentType: formData.paymentType,
+        at: now
+      },
+      
+      quota: {
+        total: totalCount,
+        used: 0,
+        remaining: totalCount
+      },
+      
+      period: {
+        startDate: startDate,
+        endDate: endDate,
+        originalEndDate: endDate
+      },
+      
+      holds: [],
+      
+      refund: {
+        isRefunded: false,
+        at: null,
+        refundAmount: 0,
+        reason: null
+      },
+      
+      adjustments: [],
+      
       createdAt: now,
       updatedAt: now,
+      assignee: formData.assignee,
+      
+      deleted: false,
+      deletedAt: null,
+      
+      boxName: boxName
     };
 
     try {
@@ -165,19 +221,35 @@ const MemberManagementModal = ({
     }
   }, [formData, member, onSuccess, onError, loadData]);
 
-  const handleDeleteMembership = useCallback(async (index: number) => {
-    if (!window.confirm('정말로 이 회원권을 삭제하시겠습니까?')) {
-      return;
-    }
+  const handleOpenDeleteModal = useCallback((index: number) => {
+    const membership = userMemberships[index];
+    const displayInfo = getMembershipDisplayInfo(membership);
+    
+    setMembershipToDelete({
+      index,
+      plan: displayInfo.plan,
+      price: displayInfo.price
+    });
+    setDeleteModalVisible(true);
+  }, [userMemberships]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!membershipToDelete) return;
 
     try {
       setLoading(true);
-      await MembershipService.removeUserMembership(member.email, index);
+      await MembershipService.removeUserMembership(
+        member.email, 
+        membershipToDelete.index,
+        userMemberships
+      );
       
       if (onSuccess) {
         onSuccess('회원권이 성공적으로 삭제되었습니다.');
       }
       
+      setDeleteModalVisible(false);
+      setMembershipToDelete(null);
       await loadData();
     } catch (error: any) {
       if (onError) {
@@ -186,7 +258,141 @@ const MemberManagementModal = ({
     } finally {
       setLoading(false);
     }
-  }, [member, onSuccess, onError, loadData]);
+  }, [member, membershipToDelete, userMemberships, onSuccess, onError, loadData]);
+
+  const handleOpenRefundModal = useCallback((index: number) => {
+    const membership = userMemberships[index];
+    const displayInfo = getMembershipDisplayInfo(membership);
+    
+    setMembershipToRefund({
+      index,
+      plan: displayInfo.plan,
+      price: displayInfo.price
+    });
+    setRefundModalVisible(true);
+  }, [userMemberships]);
+
+  const handleConfirmRefund = useCallback(async (refundAmount: string, reason: string) => {
+    if (!membershipToRefund) return;
+
+    try {
+      setLoading(true);
+      await MembershipService.refundUserMembership(
+        member.email, 
+        membershipToRefund.index, 
+        refundAmount, 
+        reason,
+        userMemberships
+      );
+      
+      if (onSuccess) {
+        onSuccess('회원권이 성공적으로 환불되었습니다.');
+      }
+      
+      setRefundModalVisible(false);
+      setMembershipToRefund(null);
+      await loadData();
+    } catch (error: any) {
+      if (onError) {
+        onError(error.message || '회원권 환불에 실패했습니다.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [member, membershipToRefund, userMemberships, onSuccess, onError, loadData]);
+
+  const handleOpenHoldModal = useCallback(() => {
+    if (currentMemberships.length === 0) {
+      if (onError) {
+        onError('홀딩할 회원권이 없습니다.');
+      }
+      return;
+    }
+
+    // 현재 회원권의 인덱스 찾기
+    const currentMembership = currentMemberships[0];
+    const index = userMemberships.findIndex(m => m.key === (currentMembership as any).key);
+    
+    if (index === -1) {
+      if (onError) {
+        onError('회원권을 찾을 수 없습니다.');
+      }
+      return;
+    }
+
+    setSelectedMembershipIndex(index);
+    setHoldModalVisible(true);
+  }, [currentMemberships, userMemberships, onError]);
+
+  const handleConfirmHold = useCallback(async (
+    holdStartDate: Date,
+    holdEndDate: Date,
+    reason: string,
+    assignee: string
+  ) => {
+    try {
+      setLoading(true);
+      
+      await MembershipService.addHold(
+        member.email,
+        selectedMembershipIndex,
+        holdStartDate,
+        holdEndDate,
+        reason,
+        assignee,
+        userMemberships
+      );
+      
+      if (onSuccess) {
+        onSuccess('홀딩이 성공적으로 적용되었습니다.');
+      }
+      
+      setHoldModalVisible(false);
+      await loadData();
+    } catch (error: any) {
+      if (onError) {
+        onError(error.message || '홀딩 적용에 실패했습니다.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [member, selectedMembershipIndex, userMemberships, onSuccess, onError, loadData]);
+
+  const handleReleaseHold = useCallback(async () => {
+    if (!window.confirm('홀딩을 해제하시겠습니까?\n홀딩 종료일이 오늘 전날로 변경되며, 회원권 만료일이 재계산됩니다.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // 현재 회원권의 인덱스 찾기
+      if (currentMemberships.length === 0) {
+        throw new Error('현재 활성화된 회원권이 없습니다.');
+      }
+
+      const currentMembership = currentMemberships[0];
+      const index = userMemberships.findIndex(m => m.key === (currentMembership as any).key);
+      
+      if (index === -1) {
+        throw new Error('회원권을 찾을 수 없습니다.');
+      }
+
+      await MembershipService.releaseHold(member.email, index, userMemberships);
+      
+      if (onSuccess) {
+        onSuccess('홀딩이 성공적으로 해제되었습니다.');
+      }
+      
+      await loadData();
+    } catch (error: any) {
+      if (onError) {
+        onError(error.message || '홀딩 해제에 실패했습니다.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [member, currentMemberships, userMemberships, onSuccess, onError, loadData]);
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('ko-KR', {
@@ -195,6 +401,152 @@ const MemberManagementModal = ({
       day: '2-digit'
     }).format(date);
   };
+
+  // 회원권 정보 추출 헬퍼 (레거시 및 새 구조 지원)
+  const getMembershipDisplayInfo = (membership: any) => {
+    // 새 구조
+    if (membership.period && membership.purchase) {
+      return {
+        startDate: membership.period.startDate,
+        endDate: membership.period.endDate,
+        type: membership.type,
+        price: membership.purchase.price.toString(),
+        plan: membership.plan,
+        assignee: membership.assignee
+      };
+    }
+    
+    // 레거시 구조
+    return {
+      startDate: membership.startDate,
+      endDate: membership.endDate,
+      type: membership.type,
+      price: membership.price,
+      plan: membership.plan,
+      assignee: membership.assignee
+    };
+  };
+
+  // 현재 활성화된 홀딩 찾기
+  const getCurrentHold = (membership: any) => {
+    if (!MembershipService.isHold(membership)) {
+      return null;
+    }
+    
+    // 가장 최신 홀딩 반환
+    return membership.holds[membership.holds.length - 1];
+  };
+
+  // 환불된 회원권인지 확인
+  const isRefunded = (membership: any) => {
+    return membership.refund && membership.refund.isRefunded;
+  };
+
+  // 환불 정보 모달 열기
+  const handleOpenRefundInfoModal = useCallback((index: number) => {
+    const membership = userMemberships[index];
+    const displayInfo = getMembershipDisplayInfo(membership);
+    
+    if (isRefunded(membership) && membership.refund.at && membership.refund.reason !== null) {
+      setRefundInfoData({
+        refundAt: new Date(membership.refund.at),
+        refundAmount: membership.refund.refundAmount || 0,
+        reason: membership.refund.reason || '',
+        plan: displayInfo.plan
+      });
+      setRefundInfoModalVisible(true);
+    }
+  }, [userMemberships]);
+
+  // 메모 저장
+  const handleSaveMemo = useCallback(async () => {
+    try {
+      setLoading(true);
+      const boxName = localStorage.getItem('boxName');
+      if (!boxName) {
+        throw new Error('박스 이름이 없습니다.');
+      }
+
+      await MemberService.updateMemberMemo(boxName, member.email, memo);
+      
+      if (onSuccess) {
+        onSuccess('메모가 저장되었습니다.');
+      }
+    } catch (error: any) {
+      if (onError) {
+        onError(error.message || '메모 저장에 실패했습니다.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [member, memo, onSuccess, onError]);
+
+  // 회원권 수정 모달 열기
+  const handleOpenEditModal = useCallback((index: number) => {
+    const membership = userMemberships[index];
+    const displayInfo = getMembershipDisplayInfo(membership);
+    
+    setMembershipToEdit({
+      index,
+      plan: displayInfo.plan,
+      type: displayInfo.type,
+      startDate: new Date(displayInfo.startDate),
+      endDate: new Date(displayInfo.endDate),
+      price: displayInfo.price
+    });
+    setEditModalVisible(true);
+  }, [userMemberships]);
+
+  // 회원권 수정 확인
+  const handleConfirmEdit = useCallback(async (
+    newStartDate: Date,
+    newEndDate: Date,
+    reason: string,
+    assignee: string
+  ) => {
+    if (!membershipToEdit) return;
+
+    try {
+      setLoading(true);
+      await MembershipService.editMembershipPeriod(
+        member.email,
+        membershipToEdit.index,
+        newStartDate,
+        newEndDate,
+        reason,
+        assignee,
+        userMemberships
+      );
+      
+      if (onSuccess) {
+        onSuccess('회원권이 성공적으로 수정되었습니다.');
+      }
+      
+      setEditModalVisible(false);
+      setMembershipToEdit(null);
+      await loadData();
+    } catch (error: any) {
+      if (onError) {
+        onError(error.message || '회원권 수정에 실패했습니다.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [member, membershipToEdit, userMemberships, onSuccess, onError, loadData]);
+
+  // 조정 이력 모달 열기
+  const handleOpenHistoryModal = useCallback((index: number) => {
+    const membership = userMemberships[index] as any;
+    const displayInfo = getMembershipDisplayInfo(membership);
+    
+    if (membership.adjustments && membership.adjustments.length > 0) {
+      setAdjustmentHistory({
+        plan: displayInfo.plan,
+        adjustments: membership.adjustments
+      });
+      setHistoryModalVisible(true);
+    }
+  }, [userMemberships]);
 
   if (!visible || !member) return null;
 
@@ -309,49 +661,129 @@ const MemberManagementModal = ({
                     <p>현재 유효한 회원권이 {currentMemberships.length}개 있습니다.</p>
                   </div>
                 ) : (
-                  <div className="membership-card">
-                    <div className="membership-header">
-                      <CreditCard size={20} />
-                      <span className="membership-type">
-                        {currentMemberships[0].type === "countPass" ? "횟수권" : "기간권"}
-                      </span>
-                    </div>
-                    
-                    <div className="membership-details">
-                      <div className="membership-item">
-                        <Calendar size={16} />
-                        <div>
-                          <span className="membership-label">시작일</span>
-                          <span className="membership-value">{formatDate(currentMemberships[0].startDate)}</span>
+                  (() => {
+                    const displayInfo = getMembershipDisplayInfo(currentMemberships[0]);
+                    return (
+                      <div className="membership-card">
+                        <div className="membership-header">
+                          <div className="membership-header-left">
+                            <CreditCard size={20} />
+                            <span className="membership-type">
+                              {displayInfo.type === "countPass" ? "횟수권" : "기간권"}
+                            </span>
+                          </div>
+                          <button 
+                            className="btn btn-hold"
+                            onClick={handleOpenHoldModal}
+                            disabled={loading}
+                          >
+                            <Pause size={16} />
+                            홀딩
+                          </button>
+                        </div>
+                        
+                        <div className="membership-details">
+                          <div className="membership-item">
+                            <Calendar size={16} />
+                            <div>
+                              <span className="membership-label">시작일</span>
+                              <span className="membership-value">{formatDate(displayInfo.startDate)}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="membership-item">
+                            <Clock size={16} />
+                            <div>
+                              <span className="membership-label">종료일</span>
+                              <span className="membership-value">{formatDate(displayInfo.endDate)}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="membership-item">
+                            <CreditCard size={16} />
+                            <div>
+                              <span className="membership-label">가격</span>
+                              <span className="membership-value">{displayInfo.price}원</span>
+                            </div>
+                          </div>
+                          
+                          <div className="membership-item">
+                            <User size={16} />
+                            <div>
+                              <span className="membership-label">담당자</span>
+                              <span className="membership-value">{displayInfo.assignee}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      
-                      <div className="membership-item">
-                        <Clock size={16} />
-                        <div>
-                          <span className="membership-label">종료일</span>
-                          <span className="membership-value">{formatDate(currentMemberships[0].endDate)}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="membership-item">
-                        <CreditCard size={16} />
-                        <div>
-                          <span className="membership-label">가격</span>
-                          <span className="membership-value">{currentMemberships[0].price}원</span>
-                        </div>
-                      </div>
-                      
-                      <div className="membership-item">
-                        <User size={16} />
-                        <div>
-                          <span className="membership-label">담당자</span>
-                          <span className="membership-value">{currentMemberships[0].assignee}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })()
                 )}
+
+                {/* 현재 홀딩 중인 경우에만 표시 */}
+                {currentMemberships.length > 0 && (() => {
+                  console.log(currentMemberships[0]);
+                  const currentHold = getCurrentHold(currentMemberships[0]);
+                  console.log(currentHold);
+                  if (!currentHold) return null;
+                  
+                  return (
+                    <div className="hold-history-section">
+                      <h5 className="subsection-title">홀딩</h5>
+                      <div className="hold-history-item">
+                        <div className="hold-history-details">
+                          <div className="hold-detail-row">
+                            <span className="hold-label">기간:</span>
+                            <span className="hold-value">
+                              {formatDate(currentHold.startDate)} ~ {formatDate(currentHold.endDate)} ({currentHold.days}일)
+                            </span>
+                          </div>
+                          <div className="hold-detail-row">
+                            <span className="hold-label">사유:</span>
+                            <span className="hold-value">{currentHold.reason}</span>
+                          </div>
+                          <div className="hold-detail-row">
+                            <span className="hold-label">담당자:</span>
+                            <span className="hold-value">{currentHold.assignee}</span>
+                          </div>
+                        </div>
+                        <div className="hold-history-actions">
+                          <button 
+                            className="btn-release-hold"
+                            onClick={handleReleaseHold}
+                            disabled={loading}
+                          >
+                            해제
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* 메모 섹션 */}
+              <div className="info-section">
+                <h4 className="section-title">메모</h4>
+                <div className="memo-container">
+                  <textarea
+                    className="memo-textarea"
+                    value={memo}
+                    onChange={(e) => setMemo(e.target.value)}
+                    placeholder="회원에 대한 메모를 작성하세요..."
+                    rows={5}
+                    disabled={loading}
+                  />
+                  <div className="memo-actions">
+                    <button 
+                      className="btn btn-primary btn-sm"
+                      onClick={handleSaveMemo}
+                      disabled={loading}
+                    >
+                      저장
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -500,33 +932,87 @@ const MemberManagementModal = ({
                       <div className="table-cell">가격</div>
                       <div className="table-cell">플랜</div>
                       <div className="table-cell">담당자</div>
+                      <div className="table-cell">조정 이력</div>
+                      <div className="table-cell">수정</div>
+                      <div className="table-cell">환불</div>
                       <div className="table-cell">삭제</div>
                     </div>
                     
-                    {userMemberships.map((membership, index) => (
-                      <div key={index} className="table-row">
-                        <div className="table-cell">{formatDate(membership.startDate)}</div>
-                        <div className="table-cell">{formatDate(membership.endDate)}</div>
-                        <div className="table-cell">
-                          <span className="membership-badge">
-                            {membership.type === "countPass" ? "횟수권" : "기간권"}
-                          </span>
+                    {userMemberships.map((membership, index) => {
+                      const displayInfo = getMembershipDisplayInfo(membership);
+                      const refunded = isRefunded(membership);
+                      const hasAdjustments = (membership as any).adjustments && (membership as any).adjustments.length > 0;
+                      return (
+                        <div key={index} className={`table-row ${refunded ? 'refunded' : ''}`}>
+                          <div className="table-cell">{formatDate(displayInfo.startDate)}</div>
+                          <div className="table-cell">{formatDate(displayInfo.endDate)}</div>
+                          <div className="table-cell">
+                            <span className="membership-badge">
+                              {displayInfo.type === "countPass" ? "횟수권" : "기간권"}
+                            </span>
+                          </div>
+                          <div className="table-cell">{displayInfo.price}원</div>
+                          <div className="table-cell">{displayInfo.plan}</div>
+                          <div className="table-cell">{displayInfo.assignee}</div>
+                          <div className="table-cell">
+                            {hasAdjustments ? (
+                              <button
+                                onClick={() => handleOpenHistoryModal(index)}
+                                disabled={loading}
+                                className="btn btn-sm btn-history"
+                                title="조정 이력 보기"
+                              >
+                                <History size={14} />
+                                <span className="history-count">{(membership as any).adjustments.length}</span>
+                              </button>
+                            ) : (
+                              <span className="no-history">-</span>
+                            )}
+                          </div>
+                          <div className="table-cell">
+                            <button
+                              onClick={() => handleOpenEditModal(index)}
+                              disabled={loading || refunded}
+                              className="btn btn-sm btn-edit"
+                              title={refunded ? "환불된 회원권은 수정할 수 없습니다" : "회원권 수정"}
+                            >
+                              <Edit size={14} />
+                            </button>
+                          </div>
+                          <div className="table-cell">
+                            {refunded ? (
+                              <button
+                                onClick={() => handleOpenRefundInfoModal(index)}
+                                disabled={loading}
+                                className="btn btn-sm btn-refunded"
+                                title="환불 정보 보기"
+                              >
+                                <CheckCircle size={14} />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleOpenRefundModal(index)}
+                                disabled={loading}
+                                className="btn btn-sm btn-refund"
+                                title="회원권 환불"
+                              >
+                                <DollarSign size={14} />
+                              </button>
+                            )}
+                          </div>
+                          <div className="table-cell">
+                            <button
+                              onClick={() => handleOpenDeleteModal(index)}
+                              disabled={loading || refunded}
+                              className="btn btn-sm btn-danger"
+                              title={refunded ? "환불된 회원권은 삭제할 수 없습니다" : "회원권 삭제"}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </div>
-                        <div className="table-cell">{membership.price}원</div>
-                        <div className="table-cell">{membership.plan}</div>
-                        <div className="table-cell">{membership.assignee}</div>
-                        <div className="table-cell">
-                          <button
-                            onClick={() => handleDeleteMembership(index)}
-                            disabled={loading}
-                            className="btn btn-sm btn-danger"
-                            title="회원권 삭제"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -540,6 +1026,88 @@ const MemberManagementModal = ({
           </button>
         </div>
       </div>
+
+      {/* 홀딩 모달 */}
+      <HoldMembershipModal
+        visible={holdModalVisible}
+        membershipIndex={selectedMembershipIndex}
+        memberEmail={member?.email || ''}
+        onClose={() => setHoldModalVisible(false)}
+        onConfirm={handleConfirmHold}
+        loading={loading}
+      />
+
+      {/* 회원권 삭제 확인 모달 */}
+      <DeleteMembershipConfirmModal
+        visible={deleteModalVisible}
+        membershipPlan={membershipToDelete?.plan || ''}
+        membershipPrice={membershipToDelete?.price || '0'}
+        onClose={() => {
+          setDeleteModalVisible(false);
+          setMembershipToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        loading={loading}
+      />
+
+      {/* 회원권 환불 모달 */}
+      <RefundMembershipModal
+        visible={refundModalVisible}
+        membershipPlan={membershipToRefund?.plan || ''}
+        membershipPrice={membershipToRefund?.price || '0'}
+        onClose={() => {
+          setRefundModalVisible(false);
+          setMembershipToRefund(null);
+        }}
+        onConfirm={handleConfirmRefund}
+        loading={loading}
+      />
+
+      {/* 환불 정보 모달 */}
+      {refundInfoData && (
+        <RefundInfoModal
+          visible={refundInfoModalVisible}
+          refundAt={refundInfoData.refundAt}
+          refundAmount={refundInfoData.refundAmount}
+          reason={refundInfoData.reason}
+          membershipPlan={refundInfoData.plan}
+          onClose={() => {
+            setRefundInfoModalVisible(false);
+            setRefundInfoData(null);
+          }}
+        />
+      )}
+
+      {/* 회원권 수정 모달 */}
+      {membershipToEdit && (
+        <EditMembershipModal
+          visible={editModalVisible}
+          membershipPlan={membershipToEdit.plan}
+          membershipType={membershipToEdit.type}
+          currentStartDate={membershipToEdit.startDate}
+          currentEndDate={membershipToEdit.endDate}
+          membershipPrice={membershipToEdit.price}
+          onClose={() => {
+            setEditModalVisible(false);
+            setMembershipToEdit(null);
+          }}
+          onConfirm={handleConfirmEdit}
+          loading={loading}
+        />
+      )}
+
+      {/* 조정 이력 모달 */}
+      {adjustmentHistory && (
+        <AdjustmentHistoryModal
+          visible={historyModalVisible}
+          membershipPlan={adjustmentHistory.plan}
+          adjustments={adjustmentHistory.adjustments}
+          onClose={() => {
+            setHistoryModalVisible(false);
+            setAdjustmentHistory(null);
+          }}
+        />
+      )}
 
       <style>{`
         .member-management-modal {
@@ -723,11 +1291,17 @@ const MemberManagementModal = ({
 
         .membership-header {
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          gap: 12px;
           margin-bottom: 16px;
           padding-bottom: 12px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .membership-header-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
         }
 
         .membership-type {
@@ -761,6 +1335,168 @@ const MemberManagementModal = ({
         .membership-value {
           font-size: 14px;
           font-weight: 600;
+        }
+
+        .btn-hold {
+          background-color: rgba(255, 255, 255, 0.9);
+          border-color: rgba(255, 255, 255, 0.9);
+          color: ${AppColors.primary};
+          font-weight: 600;
+          padding: 6px 12px;
+          font-size: 13px;
+        }
+
+        .btn-hold:hover:not(:disabled) {
+          background-color: white;
+          border-color: white;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .hold-history-section {
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 2px solid #e5e7eb;
+        }
+
+        .subsection-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: #1f2937;
+          margin-bottom: 12px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .hold-history-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .hold-history-item {
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          border: 1px solid #fbbf24;
+          border-radius: 8px;
+          padding: 12px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .hold-history-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 8px;
+          color: #92400e;
+          font-weight: 600;
+          font-size: 13px;
+        }
+
+        .hold-index {
+          font-size: 12px;
+        }
+
+        .hold-history-details {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          padding-right: 16px;
+        }
+
+        .hold-history-actions {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 80px;
+        }
+
+        .btn-release-hold {
+          padding: 8px 20px;
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-release-hold:hover:not(:disabled) {
+          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+          box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+          transform: translateY(-1px);
+        }
+
+        .btn-release-hold:active:not(:disabled) {
+          transform: translateY(0);
+          box-shadow: 0 1px 2px rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-release-hold:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+        }
+
+        .hold-detail-row {
+          display: flex;
+          gap: 8px;
+          font-size: 13px;
+        }
+
+        .hold-label {
+          font-weight: 600;
+          color: #92400e;
+          min-width: 60px;
+        }
+
+        .hold-value {
+          color: #78350f;
+        }
+
+        .memo-container {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .memo-textarea {
+          width: 100%;
+          padding: 12px;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          font-size: 14px;
+          font-family: inherit;
+          line-height: 1.6;
+          resize: vertical;
+          transition: all 0.2s;
+        }
+
+        .memo-textarea:focus {
+          outline: none;
+          border-color: ${AppColors.primary};
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .memo-textarea:disabled {
+          background-color: #f3f4f6;
+          color: #6b7280;
+          cursor: not-allowed;
+        }
+
+        .memo-textarea::placeholder {
+          color: #9ca3af;
+        }
+
+        .memo-actions {
+          display: flex;
+          justify-content: flex-end;
         }
 
         .form-grid {
@@ -814,7 +1550,7 @@ const MemberManagementModal = ({
 
         .table-header {
           display: grid !important;
-          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 80px !important;
+          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 90px 80px 80px 80px !important;
           gap: 16px;
           padding: 16px;
           background-color: #f8fafc;
@@ -827,7 +1563,7 @@ const MemberManagementModal = ({
 
         .table-row {
           display: grid !important;
-          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 80px !important;
+          grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 90px 80px 80px 80px !important;
           gap: 16px;
           padding: 16px;
           border-bottom: 1px solid #e5e7eb;
@@ -837,6 +1573,15 @@ const MemberManagementModal = ({
 
         .table-row:hover {
           background-color: #f9fafb;
+        }
+
+        .table-row.refunded {
+          background-color: #fff7ed;
+          opacity: 0.8;
+        }
+
+        .table-row.refunded:hover {
+          background-color: #ffedd5;
         }
 
         .table-cell {
@@ -874,7 +1619,19 @@ const MemberManagementModal = ({
           justify-content: center;
         }
 
-        .table-cell:nth-child(7) { /* 삭제 */
+        .table-cell:nth-child(7) { /* 조정 이력 */
+          justify-content: center;
+        }
+
+        .table-cell:nth-child(8) { /* 수정 */
+          justify-content: center;
+        }
+
+        .table-cell:nth-child(9) { /* 환불 */
+          justify-content: center;
+        }
+
+        .table-cell:nth-child(10) { /* 삭제 */
           justify-content: center;
         }
 
@@ -1025,6 +1782,67 @@ const MemberManagementModal = ({
         .btn-danger:hover:not(:disabled) {
           background-color: #b91c1c;
           border-color: #b91c1c;
+        }
+
+        .btn-history {
+          background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+          border-color: #64748b;
+          color: white;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .btn-history:hover:not(:disabled) {
+          background: linear-gradient(135deg, #475569 0%, #334155 100%);
+          border-color: #475569;
+        }
+
+        .history-count {
+          font-size: 11px;
+          background: rgba(255, 255, 255, 0.3);
+          padding: 1px 5px;
+          border-radius: 10px;
+          font-weight: 700;
+        }
+
+        .no-history {
+          color: #d1d5db;
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .btn-edit {
+          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+          border-color: #8b5cf6;
+          color: white;
+        }
+
+        .btn-edit:hover:not(:disabled) {
+          background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+          border-color: #7c3aed;
+        }
+
+        .btn-refund {
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          border-color: #2563eb;
+          color: white;
+        }
+
+        .btn-refund:hover:not(:disabled) {
+          background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+          border-color: #1d4ed8;
+        }
+
+        .btn-refunded {
+          background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+          border-color: #f97316;
+          color: white;
+        }
+
+        .btn-refunded:hover:not(:disabled) {
+          background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+          border-color: #ea580c;
         }
 
         @keyframes spin {

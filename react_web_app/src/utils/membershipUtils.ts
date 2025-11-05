@@ -2,10 +2,27 @@ import { Timestamp } from 'firebase/firestore';
 
 export interface MembershipData {
   type: 'periodPass' | 'countPass';
-  startDate: Timestamp | { seconds: number };
-  endDate: Timestamp | { seconds: number };
+  startDate?: Timestamp | { seconds: number };
+  endDate?: Timestamp | { seconds: number };
   count?: number;
   days?: number;
+  // 새로운 구조 지원
+  period?: {
+    startDate?: Timestamp | { seconds: number };
+    endDate?: Timestamp | { seconds: number };
+  };
+  quota?: {
+    total?: number;
+    used?: number;
+    remaining?: number;
+  };
+  holds?: Array<{
+    reason: string;
+    startDate: Timestamp | { seconds: number } | Date;
+    endDate: Timestamp | { seconds: number } | Date;
+    days: number;
+    assignee: string;
+  }>;
 }
 
 export interface MembershipInfo {
@@ -16,7 +33,34 @@ export interface MembershipInfo {
 }
 
 /**
- * 현재 유효한 회원권들을 필터링
+ * 회원권이 현재 홀딩 중인지 확인
+ */
+export function isCurrentlyOnHold(membership: MembershipData): boolean {
+  if (!membership.holds || membership.holds.length === 0) {
+    return false;
+  }
+
+  const now = new Date();
+  
+  // holds 배열이 있는 경우 (새 구조)
+  if (Array.isArray(membership.holds)) {
+    return membership.holds.some((hold: any) => {
+      const holdStartDate = hold.startDate?.seconds 
+        ? new Date(hold.startDate.seconds * 1000)
+        : new Date(hold.startDate);
+      const holdEndDate = hold.endDate?.seconds
+        ? new Date(hold.endDate.seconds * 1000)
+        : new Date(hold.endDate);
+      
+      return now >= holdStartDate && now <= holdEndDate;
+    });
+  }
+  
+  return false;
+}
+
+/**
+ * 현재 유효한 회원권들을 필터링 (레거시 및 새 구조 모두 지원)
  */
 export function getCurrentMemberships(memberships: MembershipData[]): MembershipData[] {
   if (!memberships || !Array.isArray(memberships)) {
@@ -24,7 +68,24 @@ export function getCurrentMemberships(memberships: MembershipData[]): Membership
   }
   
   return memberships.filter(membership => {
-    // startDate와 endDate가 유효한지 확인
+    // 새로운 구조 체크
+    if (membership.period) {
+      const startDate = membership.period.startDate && membership.period.startDate.seconds 
+        ? new Date(membership.period.startDate.seconds * 1000) 
+        : null;
+      const endDate = membership.period.endDate && membership.period.endDate.seconds 
+        ? new Date(membership.period.endDate.seconds * 1000) 
+        : null;
+      
+      if (!startDate || !endDate) {
+        return false;
+      }
+      
+      const today = new Date();
+      return today >= startDate && today <= endDate;
+    }
+    
+    // 레거시 구조 체크
     const startDate = membership.startDate && membership.startDate.seconds 
       ? new Date(membership.startDate.seconds * 1000) 
       : null;
@@ -58,7 +119,7 @@ export function convertTimestampToString(timestamp: Timestamp | { seconds: numbe
 }
 
 /**
- * 회원권 정보를 계산하여 반환
+ * 회원권 정보를 계산하여 반환 (레거시 및 새 구조 모두 지원)
  */
 export function getMembershipInfo(
   currentMemberships: MembershipData[], 
@@ -86,9 +147,14 @@ export function getMembershipInfo(
     };
   }
 
+  // 홀딩 중인지 확인
+  const isOnHold = isCurrentlyOnHold(currentMembership);
+  
   // 등록 타입
   let type = '-';
-  if (currentMembership.type) {
+  if (isOnHold) {
+    type = '홀딩';
+  } else if (currentMembership.type) {
     switch(currentMembership.type) {
       case 'periodPass':
         type = '기간권';
@@ -101,16 +167,19 @@ export function getMembershipInfo(
     }
   }
 
+  // 날짜 추출 (새 구조 우선, 레거시 폴백)
+  const endDateTimestamp = currentMembership.period?.endDate || currentMembership.endDate;
+
   // 만료 일자
-  const expiryDate = currentMembership.endDate 
-    ? convertTimestampToString(currentMembership.endDate) 
+  const expiryDate = endDateTimestamp 
+    ? convertTimestampToString(endDateTimestamp) 
     : '-';
 
   // 잔여 기간 계산
   let remainingDays: string | number = '-';
-  if (currentMembership.endDate && currentMembership.endDate.seconds) {
+  if (endDateTimestamp && endDateTimestamp.seconds) {
     const today = new Date();
-    const endDate = new Date(currentMembership.endDate.seconds * 1000);
+    const endDate = new Date(endDateTimestamp.seconds * 1000);
     const diff = endDate.getTime() - today.getTime();
     
     if (diff > 0) {
@@ -121,12 +190,16 @@ export function getMembershipInfo(
     }
   }
 
-  // 잔여 횟수 계산
+  // 잔여 횟수 계산 (새 구조 우선, 레거시 폴백)
   let remainingVisits: string | number = '-';
   if (currentMembership.type === 'periodPass') {
     remainingVisits = '∞';
-  } else if (currentMembership.type === 'countPass' && currentMembership.count !== undefined) {
-    remainingVisits = currentMembership.count;
+  } else if (currentMembership.type === 'countPass') {
+    if (currentMembership.quota?.remaining !== undefined) {
+      remainingVisits = currentMembership.quota.remaining;
+    } else if (currentMembership.count !== undefined) {
+      remainingVisits = currentMembership.count;
+    }
   }
 
   return {
@@ -138,7 +211,7 @@ export function getMembershipInfo(
 }
 
 /**
- * 미래 회원권들을 필터링 (시작일이 미래인 것들)
+ * 미래 회원권들을 필터링 (시작일이 미래인 것들) - 레거시 및 새 구조 지원
  */
 export function getFutureMemberships(memberships: MembershipData[]): MembershipData[] {
   if (!memberships || !Array.isArray(memberships)) {
@@ -146,8 +219,10 @@ export function getFutureMemberships(memberships: MembershipData[]): MembershipD
   }
   
   return memberships.filter(membership => {
-    const startDate = membership.startDate && membership.startDate.seconds 
-      ? new Date(membership.startDate.seconds * 1000) 
+    // 새 구조 우선, 레거시 폴백
+    const startDateTimestamp = membership.period?.startDate || membership.startDate;
+    const startDate = startDateTimestamp && startDateTimestamp.seconds 
+      ? new Date(startDateTimestamp.seconds * 1000) 
       : null;
     
     if (!startDate) {
@@ -160,7 +235,7 @@ export function getFutureMemberships(memberships: MembershipData[]): MembershipD
 }
 
 /**
- * 만료된 회원권들을 필터링
+ * 만료된 회원권들을 필터링 - 레거시 및 새 구조 지원
  */
 export function getExpiredMemberships(memberships: MembershipData[]): MembershipData[] {
   if (!memberships || !Array.isArray(memberships)) {
@@ -168,8 +243,10 @@ export function getExpiredMemberships(memberships: MembershipData[]): Membership
   }
   
   return memberships.filter(membership => {
-    const endDate = membership.endDate && membership.endDate.seconds 
-      ? new Date(membership.endDate.seconds * 1000) 
+    // 새 구조 우선, 레거시 폴백
+    const endDateTimestamp = membership.period?.endDate || membership.endDate;
+    const endDate = endDateTimestamp && endDateTimestamp.seconds 
+      ? new Date(endDateTimestamp.seconds * 1000) 
       : null;
     
     if (!endDate) {

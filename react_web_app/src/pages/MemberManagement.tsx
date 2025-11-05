@@ -10,6 +10,7 @@ import AddMemberModal from '../components/modals/member/AddMemberModal';
 import ApplyRequestModal from '../components/modals/member/ApplyRequestModal';
 import ToastMessage from '../components/ToastMessage';
 import { getGenderText, filterMembers, getActiveMembersCount, getWarningMembers, getWarningMembersCount } from '../utils/memberUtils';
+import { MembershipService } from '../services/membershipService';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
@@ -284,20 +285,30 @@ const MemberManagement = () => {
                   <p>{searchValue ? '검색 조건에 맞는 회원이 없습니다.' : '등록된 회원이 없습니다.'}</p>
                 </div>
               ) : (
-                currentMembers.map((member, index) => (
-                  <div key={member.email} className="table-row">
-                    <div className="table-cell">
-                      <div className="member-name-cell">
-                        <div className="member-avatar">
-                          <Users size={16} />
+                currentMembers.map((member, index) => {
+                  // 회원권 상태 뱃지 정보 가져오기
+                  const statusBadges = MembershipService.getMembershipStatusBadges(member);
+                  
+                  return (
+                    <div key={member.email} className="table-row">
+                      <div className="table-cell">
+                        <div className="member-name-cell">
+                          <div className="member-avatar">
+                            <Users size={16} />
+                          </div>
+                          <span>{member.realName}</span>
                         </div>
-                        <span>{member.realName}</span>
                       </div>
-                    </div>
-                    <div className="table-cell">{member.nickName}</div>
-                    <div className="table-cell">
-                      <span className="membership-badge">{member.membershipInfo.type}</span>
-                    </div>
+                      <div className="table-cell">{member.nickName}</div>
+                      <div className="table-cell">
+                        <div className="membership-badges">
+                          {statusBadges.map((badge, idx) => (
+                            <span key={idx} className={`membership-badge ${badge.colorClass}`}>
+                              {badge.label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     <div className="table-cell">{member.membershipInfo.expiryDate}</div>
                     <div className="table-cell">
                       <span className={`remaining-days ${member.membershipInfo.remainingDays <= 7 ? 'warning' : ''}`}>
@@ -324,17 +335,18 @@ const MemberManagement = () => {
                         </button>
                       </div>
                     </div>
-                    <div className="table-cell">
-                      <button 
-                        className="btn btn-sm btn-light"
-                        onClick={() => handleShowDetails(member)}
-                        title="상세 정보"
-                      >
-                        <Eye size={14} />
-                      </button>
+                      <div className="table-cell">
+                        <button 
+                          className="btn btn-sm btn-light"
+                          onClick={() => handleShowDetails(member)}
+                          title="상세 정보"
+                        >
+                          <Eye size={14} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
             
@@ -754,13 +766,36 @@ const MemberManagement = () => {
           flex-shrink: 0;
         }
 
+        .membership-badges {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
         .membership-badge {
-          background-color: #dbeafe;
-          color: #1e40af;
           padding: 4px 8px;
           border-radius: 12px;
           font-size: 12px;
           font-weight: 500;
+        }
+
+        .membership-badge.primary {
+          background-color: #dbeafe;
+          color: #1e40af;
+          border: 1px solid #bfdbfe;
+        }
+
+        .membership-badge.none {
+          background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+          border: 1px solid #fca5a5;
+          color: #991b1b;
+        }
+
+        .membership-badge.hold {
+          background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%) !important;
+          border: 1px solid #fb923c !important;
+          color: #7c2d12 !important;
         }
 
         .remaining-days {

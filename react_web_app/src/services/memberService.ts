@@ -460,6 +460,25 @@ export class MemberService {
   }
 
   /**
+   * 회원 메모 업데이트
+   */
+  static async updateMemberMemo(box: string, email: string, memo: string): Promise<void> {
+    try {
+      const path = `/box/${box}/member`;
+      const memberRef = doc(db, path, email);
+      
+      await updateDoc(memberRef, {
+        memo: memo
+      });
+      
+      console.log(`Successfully updated memo for member: ${email}`);
+    } catch (error) {
+      console.error('Error updating member memo:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 회원권 정보 계산
    */
   private static calculateMembershipInfo(memberships: MembershipData[], futureMemberships: MembershipData[]) {
