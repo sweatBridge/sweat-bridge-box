@@ -288,6 +288,8 @@ const MemberManagement = () => {
                 currentMembers.map((member, index) => {
                   // 회원권 상태 뱃지 정보 가져오기
                   const statusBadges = MembershipService.getMembershipStatusBadges(member);
+                  // 회원 상태 뱃지 정보 가져오기
+                  const memberStatusBadge = MembershipService.getMemberStatusBadge(member);
                   
                   return (
                     <div key={member.email} className="table-row">
@@ -299,7 +301,14 @@ const MemberManagement = () => {
                           <span>{member.realName}</span>
                         </div>
                       </div>
-                      <div className="table-cell">{member.nickName}</div>
+                      <div className="table-cell">
+                        <div className="nickname-with-badge">
+                          <span>{member.nickName}</span>
+                          <span className={`member-status-badge ${memberStatusBadge.colorClass}`}>
+                            {memberStatusBadge.status}
+                          </span>
+                        </div>
+                      </div>
                       <div className="table-cell">
                         <div className="membership-badges">
                           {statusBadges.map((badge, idx) => (
@@ -796,6 +805,34 @@ const MemberManagement = () => {
           background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%) !important;
           border: 1px solid #fb923c !important;
           color: #7c2d12 !important;
+        }
+
+        .nickname-with-badge {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .member-status-badge {
+          display: inline-block;
+          padding: 3px 8px;
+          border-radius: 10px;
+          font-size: 11px;
+          font-weight: 600;
+          border: none;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .member-status-badge.warning {
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          border: 1px solid #fbbf24;
+          color: #92400e;
+        }
+
+        .member-status-badge.active {
+          background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+          border: 1px solid #10b981;
+          color: #065f46;
         }
 
         .remaining-days {

@@ -249,6 +249,25 @@ export class MembershipService {
   }
 
   /**
+   * 회원의 상태 뱃지 정보 반환
+   * @param member 회원 정보
+   * @returns { status: '주의' | '활성', colorClass: 'warning' | 'active' }
+   */
+  static getMemberStatusBadge(member: any): { status: string; colorClass: string } {
+    if (this.isWarningMember(member)) {
+      return {
+        status: '주의',
+        colorClass: 'warning'
+      };
+    }
+    
+    return {
+      status: '활성',
+      colorClass: 'active'
+    };
+  }
+
+  /**
    * 현재 유효한 회원권 필터링 (레거시 및 새 구조 지원)
    */
   static getCurrentMemberships(memberships: UserMembership[]): UserMembership[] {
