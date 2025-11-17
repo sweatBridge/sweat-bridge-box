@@ -3,6 +3,7 @@ import {
   formatPhoneNumber, 
   getGenderText 
 } from '../../../utils/memberUtils';
+import { MembershipService } from '../../../services/membershipService';
 import { Gradients } from '../../../constants/gradients';
 import { AlertTriangle, X } from 'lucide-react';
 
@@ -17,39 +18,21 @@ const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: Warni
   if (!visible) return null;
 
   const getWarningMessage = (member: Member) => {
-    const { type, remainingDays, remainingVisits } = member.membershipInfo;
+    const remainingDays = member.membershipInfo?.remainingDays;
     
-    if (type === 'countPass' || type === '횟수권') {
-      const visits = typeof remainingVisits === 'string' 
-        ? parseInt(remainingVisits) 
-        : remainingVisits;
-      return `${visits}회`;
-    } else if (type === 'periodPass' || type === '기간권') {
-      const days = typeof remainingDays === 'string' 
-        ? parseInt(remainingDays) 
-        : remainingDays;
-      return `${days}일`;
+    if (remainingDays === '-' || remainingDays === undefined || remainingDays === null) {
+      return '-';
     }
     
-    return '-';
-  };
-
-  const getWarningLevel = (member: Member): 'danger' | 'warning' => {
-    const { type, remainingDays, remainingVisits } = member.membershipInfo;
+    const days = typeof remainingDays === 'string' 
+      ? parseInt(remainingDays) 
+      : remainingDays;
     
-    if (type === 'countPass' || type === '횟수권') {
-      const visits = typeof remainingVisits === 'string' 
-        ? parseInt(remainingVisits) 
-        : remainingVisits;
-      return visits <= 3 ? 'danger' : 'warning';
-    } else if (type === 'periodPass' || type === '기간권') {
-      const days = typeof remainingDays === 'string' 
-        ? parseInt(remainingDays) 
-        : remainingDays;
-      return days <= 7 ? 'danger' : 'warning';
+    if (isNaN(days)) {
+      return '-';
     }
     
-    return 'warning';
+    return `${days}일`;
   };
 
   return (
@@ -69,13 +52,9 @@ const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: Warni
           <div className="modal-description">
             <p>회원권 만료가 임박한 회원 목록입니다.</p>
             <div className="legend">
-              <span className="legend-item danger">
-                <span className="legend-dot"></span>
-                <strong>위험</strong> - 횟수권 3회 이하 / 기간권 7일 이내
-              </span>
               <span className="legend-item warning">
                 <span className="legend-dot"></span>
-                <strong>주의</strong> - 횟수권 4~6회 / 기간권 8~14일
+                <strong>주의</strong> - 남은 일자 {MembershipService.getWarningMemberThreshold()}일 이내
               </span>
             </div>
           </div>
@@ -98,7 +77,6 @@ const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: Warni
                 </thead>
                 <tbody>
                   {members.map((member) => {
-                    const warningLevel = getWarningLevel(member);
                     return (
                       <tr 
                         key={member.email}
@@ -106,7 +84,7 @@ const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: Warni
                         onClick={() => onMemberClick?.(member)}
                       >
                         <td className="text-center">
-                          <span className={`status-badge ${warningLevel}`}>
+                          <span className="status-badge warning">
                             {getWarningMessage(member)}
                           </span>
                         </td>
@@ -238,11 +216,6 @@ const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: Warni
           font-weight: 600;
         }
 
-        .legend-item.danger .legend-dot {
-          background: #dc2626;
-          box-shadow: 0 0 0 2px #fee2e2;
-        }
-
         .legend-item.warning .legend-dot {
           background: #f59e0b;
           box-shadow: 0 0 0 2px #fef3c7;
@@ -354,11 +327,6 @@ const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: Warni
           font-weight: 600;
           border: none;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .status-badge.danger {
-          background: #dc2626;
-          color: white;
         }
 
         .status-badge.warning {

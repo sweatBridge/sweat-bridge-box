@@ -204,6 +204,51 @@ export class MembershipService {
   }
 
   /**
+   * 주의 회원 판단 기준 (나중에 변경하기 용이하도록 분리)
+   * @returns 주의 회원인지 여부
+   */
+  static getWarningMemberThreshold(): number {
+    return 14; // 남은 일자 14일 이내
+  }
+
+  /**
+   * 회원이 주의 회원인지 판단
+   * @param member 회원 정보
+   * @returns 주의 회원인지 여부
+   */
+  static isWarningMember(member: any): boolean {
+    const threshold = this.getWarningMemberThreshold();
+    const remainingDays = member.membershipInfo?.remainingDays;
+    
+    // remainingDays가 숫자가 아니거나 '-'인 경우 제외
+    if (remainingDays === '-' || remainingDays === undefined || remainingDays === null) {
+      return false;
+    }
+    
+    // 숫자로 변환
+    const days = typeof remainingDays === 'string' 
+      ? parseInt(remainingDays) 
+      : remainingDays;
+    
+    // 숫자가 아니거나 NaN인 경우 제외
+    if (isNaN(days)) {
+      return false;
+    }
+    
+    // 0보다 크고 threshold 이하인 경우 주의 회원
+    return days > 0 && days <= threshold;
+  }
+
+  /**
+   * 회원 배열에서 주의 회원만 필터링
+   * @param members 회원 배열
+   * @returns 주의 회원 배열
+   */
+  static filterWarningMembers(members: any[]): any[] {
+    return members.filter(member => this.isWarningMember(member));
+  }
+
+  /**
    * 현재 유효한 회원권 필터링 (레거시 및 새 구조 지원)
    */
   static getCurrentMemberships(memberships: UserMembership[]): UserMembership[] {
