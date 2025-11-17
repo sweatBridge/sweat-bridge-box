@@ -73,6 +73,24 @@ const MemberManagement = () => {
   // 검색된 회원 필터링
   const filteredMembers = filterMembers(members, searchValue);
   
+  // 상태 뱃지 기준으로 정렬 (주의 -> 활성 -> 비활성)
+  const sortedMembers = [...filteredMembers].sort((a, b) => {
+    const badgeA = MembershipService.getMemberStatusBadge(a);
+    const badgeB = MembershipService.getMemberStatusBadge(b);
+    
+    // 우선순위: warning(1) > active(2) > inactive(3)
+    const priorityMap: { [key: string]: number } = {
+      'warning': 1,
+      'active': 2,
+      'inactive': 3
+    };
+    
+    const priorityA = priorityMap[badgeA.colorClass] || 999;
+    const priorityB = priorityMap[badgeB.colorClass] || 999;
+    
+    return priorityA - priorityB;
+  });
+  
   // 유효한 회원권을 가진 회원 수 계산
   const activeMembersCount = getActiveMembersCount(members);
   
@@ -81,10 +99,10 @@ const MemberManagement = () => {
   const warningMembers = getWarningMembers(members);
   
   // 페이지네이션 계산
-  const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedMembers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentMembers = filteredMembers.slice(startIndex, endIndex);
+  const currentMembers = sortedMembers.slice(startIndex, endIndex);
   
   // 검색어가 변경되면 첫 페이지로 이동
   useEffect(() => {
@@ -360,11 +378,11 @@ const MemberManagement = () => {
             </div>
             
             {/* 페이지네이션 */}
-            {filteredMembers.length > 0 && totalPages > 1 && (
+            {sortedMembers.length > 0 && totalPages > 1 && (
               <div className="pagination-container">
                 <div className="pagination-info">
                   <span>
-                    {startIndex + 1}-{Math.min(endIndex, filteredMembers.length)} / {filteredMembers.length}명
+                    {startIndex + 1}-{Math.min(endIndex, sortedMembers.length)} / {sortedMembers.length}명
                   </span>
                 </div>
                 
