@@ -251,9 +251,20 @@ export class MembershipService {
   /**
    * 회원의 상태 뱃지 정보 반환
    * @param member 회원 정보
-   * @returns { status: '주의' | '활성', colorClass: 'warning' | 'active' }
+   * @returns { status: '주의' | '활성' | '비활성', colorClass: 'warning' | 'active' | 'inactive' }
    */
   static getMemberStatusBadge(member: any): { status: string; colorClass: string } {
+    const membershipType = member.membershipInfo?.type || '없음';
+    
+    // 회원권이 없는 경우
+    if (membershipType === '없음') {
+      return {
+        status: '비활성',
+        colorClass: 'inactive'
+      };
+    }
+    
+    // 주의 회원인 경우
     if (this.isWarningMember(member)) {
       return {
         status: '주의',
@@ -261,6 +272,7 @@ export class MembershipService {
       };
     }
     
+    // 나머지는 활성
     return {
       status: '활성',
       colorClass: 'active'

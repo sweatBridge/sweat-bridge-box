@@ -835,6 +835,12 @@ const MemberManagement = () => {
           color: #065f46;
         }
 
+        .member-status-badge.inactive {
+          background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+          border: 1px solid #9ca3af;
+          color: #4b5563;
+        }
+
         .remaining-days {
           font-weight: 600;
         }
