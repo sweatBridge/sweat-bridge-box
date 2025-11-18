@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Timestamp } from 'firebase/firestore';
 import { Gradients } from '../../../constants/gradients';
 import { X, UserPlus, Search } from 'lucide-react';
 import { MemberService } from '../../../services/memberService';
@@ -100,6 +101,9 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError }: AddMemberModal
         delete selectedUser.memberships;
       }
 
+      // 가입일 추가
+      selectedUser.joinedAt = Timestamp.now();
+
       // user 도큐먼트 업데이트
       await MemberService.updateUser(selectedUser.email, selectedUser);
 
@@ -157,7 +161,8 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError }: AddMemberModal
 
       const memberData = {
         ...formData,
-        boxName: boxName
+        boxName: boxName,
+        joinedAt: Timestamp.now()
       };
 
       await MemberService.createMember(boxName, memberData);
