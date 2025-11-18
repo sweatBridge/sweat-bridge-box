@@ -249,11 +249,37 @@ export class MembershipService {
   }
 
   /**
+   * 회원이 신규 회원인지 확인 (최근 30일 내 가입)
+   * @param member 회원 정보
+   * @returns 신규 회원인지 여부
+   */
+  static isNewMember(member: any): boolean {
+    if (!member.joinedAt) {
+      return false;
+    }
+
+    const joinedDate = member.joinedAt?.toDate?.() || new Date(member.joinedAt);
+    const now = new Date();
+    const daysSinceJoined = Math.floor((now.getTime() - joinedDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return daysSinceJoined <= 30;
+  }
+
+  /**
    * 회원의 상태 뱃지 정보 반환
    * @param member 회원 정보
-   * @returns { status: '주의' | '활성' | '비활성', colorClass: 'warning' | 'active' | 'inactive' }
+   * @returns { status: '신규' | '주의' | '활성' | '비활성', colorClass: 'new' | 'warning' | 'active' | 'inactive' }
    */
   static getMemberStatusBadge(member: any): { status: string; colorClass: string } {
+    // 신규 회원인 경우 (최근 30일 내 가입) - 최우선 체크
+    // 회원권이 없어도 신규 회원이면 "신규" 뱃지 표시
+    if (this.isNewMember(member)) {
+      return {
+        status: '신규',
+        colorClass: 'new'
+      };
+    }
+    
     const membershipType = member.membershipInfo?.type || '없음';
     
     // 회원권이 없는 경우

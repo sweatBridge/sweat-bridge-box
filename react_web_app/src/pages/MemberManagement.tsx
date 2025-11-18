@@ -74,12 +74,14 @@ const MemberManagement = () => {
   const { 
     activeMembersCount, 
     warningMembersCount, 
+    newMembersCount,
     totalMembersCount, 
     warningMembers,
     memberBadgesMap 
   } = useMemo(() => {
     let active = 0;
     let warning = 0;
+    let newMembers = 0;
     const warningList: Member[] = [];
     const badgesMap = new Map<string, {
       membershipTypeBadges: Array<{ label: string; colorClass: string }>;
@@ -89,7 +91,7 @@ const MemberManagement = () => {
     members.forEach(member => {
       // 회원권 상태 뱃지 정보 가져오기 (기간권 > 횟수권 > 없음 > 홀딩)
       const membershipTypeBadges = MembershipService.getMembershipStatusBadges(member);
-      // 회원 상태 뱃지 정보 가져오기 (주의 > 활성 > 비활성)
+      // 회원 상태 뱃지 정보 가져오기 (신규 > 주의 > 활성 > 비활성)
       const memberStatusBadge = MembershipService.getMemberStatusBadge(member);
       
       // 뱃지 정보를 Map에 저장
@@ -99,7 +101,9 @@ const MemberManagement = () => {
       });
       
       // 통계 계산
-      if (memberStatusBadge.status === '활성') {
+      if (memberStatusBadge.status === '신규') {
+        newMembers++;
+      } else if (memberStatusBadge.status === '활성') {
         active++;
       } else if (memberStatusBadge.status === '주의') {
         warning++;
@@ -110,7 +114,8 @@ const MemberManagement = () => {
     return {
       activeMembersCount: active,
       warningMembersCount: warning,
-      totalMembersCount: active + warning,
+      newMembersCount: newMembers,
+      totalMembersCount: active + warning + newMembers,
       warningMembers: warningList,
       memberBadgesMap: badgesMap
     };
@@ -127,14 +132,15 @@ const MemberManagement = () => {
     
     if (!badgesA || !badgesB) return 0;
     
-    // 1순위: 상태 뱃지 (warning > active > inactive)
+    // 1순위: 상태 뱃지 (new > warning > active > inactive)
     const statusBadgeA = badgesA.memberStatusBadge;
     const statusBadgeB = badgesB.memberStatusBadge;
     
     const statusPriorityMap: { [key: string]: number } = {
       'warning': 1,
-      'active': 2,
-      'inactive': 3
+      'new': 2,
+      'active': 3,
+      'inactive': 4
     };
     
     const statusPriorityA = statusPriorityMap[statusBadgeA.colorClass] || 999;
@@ -249,9 +255,6 @@ const MemberManagement = () => {
     setSelectedMember(member);
     setMemberManagementModalVisible(true);
   };
-
-  // 임시 통계 데이터 (추후 실제 데이터로 대체)
-  const newMembersCount = 5; // 신규 회원 (이번 달 등록)
 
   return (
     <div className="dashboard">
@@ -889,6 +892,12 @@ const MemberManagement = () => {
           font-weight: 600;
           border: none;
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .member-status-badge.new {
+          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+          border: 1px solid #60a5fa;
+          color: #1e40af;
         }
 
         .member-status-badge.warning {
