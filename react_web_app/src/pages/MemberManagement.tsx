@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Users, UserPlus, CreditCard, Trash2, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Member, ToastMessageType } from '../types/member';
 import { useMemberManagement } from '../hooks/useMemberManagement';
@@ -9,7 +9,7 @@ import WarningMembersModal from '../components/modals/member/WarningMembersModal
 import AddMemberModal from '../components/modals/member/AddMemberModal';
 import ApplyRequestModal from '../components/modals/member/ApplyRequestModal';
 import ToastMessage from '../components/ToastMessage';
-import { getGenderText, filterMembers, getActiveMembersCount, getWarningMembers, getWarningMembersCount } from '../utils/memberUtils';
+import { getGenderText, filterMembers } from '../utils/memberUtils';
 import { MembershipService } from '../services/membershipService';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
@@ -112,12 +112,30 @@ const MemberManagement = () => {
     return membershipPriorityA - membershipPriorityB;
   });
   
-  // 유효한 회원권을 가진 회원 수 계산
-  const activeMembersCount = getActiveMembersCount(members);
-  
-  // 주의 회원 수 및 목록 계산
-  const warningMembersCount = getWarningMembersCount(members);
-  const warningMembers = getWarningMembers(members);
+  // 통계 계산 (페이지 로드 시 한 번만 계산)
+  const { activeMembersCount, warningMembersCount, totalMembersCount, warningMembers } = useMemo(() => {
+    let active = 0;
+    let warning = 0;
+    const warningList: Member[] = [];
+    
+    members.forEach(member => {
+      const statusBadge = MembershipService.getMemberStatusBadge(member);
+      
+      if (statusBadge.status === '활성') {
+        active++;
+      } else if (statusBadge.status === '주의') {
+        warning++;
+        warningList.push(member);
+      }
+    });
+    
+    return {
+      activeMembersCount: active,
+      warningMembersCount: warning,
+      totalMembersCount: active + warning,
+      warningMembers: warningList
+    };
+  }, [members]);
   
   // 페이지네이션 계산
   const totalPages = Math.ceil(sortedMembers.length / itemsPerPage);
@@ -129,12 +147,6 @@ const MemberManagement = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchValue]);
-
-  // 회원 상세 보기 및 회원권 관리
-  const handleShowDetails = useCallback((member: Member) => {
-    setSelectedMember(member);
-    setMemberManagementModalVisible(true);
-  }, []);
 
   // 회원 삭제
   const handleDeleteMember = useCallback((member: Member) => {
@@ -243,7 +255,7 @@ const MemberManagement = () => {
           </div>
           <div className="stat-card-content">
             <div className="stat-card-label">총 회원</div>
-            <div className="stat-card-value">{members.length}명</div>
+            <div className="stat-card-value">{totalMembersCount}명</div>
           </div>
         </div>
 
@@ -324,9 +336,9 @@ const MemberManagement = () => {
                 </div>
               ) : (
                 currentMembers.map((member, index) => {
-                  // 회원권 상태 뱃지 정보 가져오기
+                  // 회원권 상태 뱃지 정보 가져오기 (기간권 > 횟수권 > 없음 > 홀딩)
                   const statusBadges = MembershipService.getMembershipStatusBadges(member);
-                  // 회원 상태 뱃지 정보 가져오기
+                  // 회원 상태 뱃지 정보 가져오기 (주의 > 활성 > 비활성 )
                   const memberStatusBadge = MembershipService.getMemberStatusBadge(member);
                   
                   return (
