@@ -70,14 +70,66 @@ const MemberManagement = () => {
     }
   }, [error, createToast, clearError]);
 
+  // 통계 계산 및 뱃지 정보 미리 계산 (페이지 로드 시 한 번만 계산)
+  const { 
+    activeMembersCount, 
+    warningMembersCount, 
+    totalMembersCount, 
+    warningMembers,
+    memberBadgesMap 
+  } = useMemo(() => {
+    let active = 0;
+    let warning = 0;
+    const warningList: Member[] = [];
+    const badgesMap = new Map<string, {
+      membershipTypeBadges: Array<{ label: string; colorClass: string }>;
+      memberStatusBadge: { status: string; colorClass: string };
+    }>();
+    
+    members.forEach(member => {
+      // 회원권 상태 뱃지 정보 가져오기 (기간권 > 횟수권 > 없음 > 홀딩)
+      const membershipTypeBadges = MembershipService.getMembershipStatusBadges(member);
+      // 회원 상태 뱃지 정보 가져오기 (주의 > 활성 > 비활성)
+      const memberStatusBadge = MembershipService.getMemberStatusBadge(member);
+      
+      // 뱃지 정보를 Map에 저장
+      badgesMap.set(member.email, {
+        membershipTypeBadges,
+        memberStatusBadge
+      });
+      
+      // 통계 계산
+      if (memberStatusBadge.status === '활성') {
+        active++;
+      } else if (memberStatusBadge.status === '주의') {
+        warning++;
+        warningList.push(member);
+      }
+    });
+    
+    return {
+      activeMembersCount: active,
+      warningMembersCount: warning,
+      totalMembersCount: active + warning,
+      warningMembers: warningList,
+      memberBadgesMap: badgesMap
+    };
+  }, [members]);
+
   // 검색된 회원 필터링
   const filteredMembers = filterMembers(members, searchValue);
   
-  // 2단계 정렬: 1순위 - 상태 뱃지, 2순위 - 회원권 타입 뱃지
+  // 2단계 정렬: 1순위 - 상태 뱃지, 2순위 - 회원권 타입 뱃지 (미리 계산된 뱃지 정보 사용)
   const sortedMembers = [...filteredMembers].sort((a, b) => {
+    // 미리 계산된 뱃지 정보 사용
+    const badgesA = memberBadgesMap.get(a.email);
+    const badgesB = memberBadgesMap.get(b.email);
+    
+    if (!badgesA || !badgesB) return 0;
+    
     // 1순위: 상태 뱃지 (warning > active > inactive)
-    const statusBadgeA = MembershipService.getMemberStatusBadge(a);
-    const statusBadgeB = MembershipService.getMemberStatusBadge(b);
+    const statusBadgeA = badgesA.memberStatusBadge;
+    const statusBadgeB = badgesB.memberStatusBadge;
     
     const statusPriorityMap: { [key: string]: number } = {
       'warning': 1,
@@ -94,11 +146,8 @@ const MemberManagement = () => {
     }
     
     // 1순위가 같으면 2순위로 정렬: 회원권 타입 뱃지 (primary > hold > none)
-    const membershipBadgesA = MembershipService.getMembershipStatusBadges(a);
-    const membershipBadgesB = MembershipService.getMembershipStatusBadges(b);
-    
-    const membershipBadgeA = membershipBadgesA[0] || { colorClass: '' };
-    const membershipBadgeB = membershipBadgesB[0] || { colorClass: '' };
+    const membershipBadgeA = badgesA.membershipTypeBadges[0] || { colorClass: '' };
+    const membershipBadgeB = badgesB.membershipTypeBadges[0] || { colorClass: '' };
     
     const membershipPriorityMap: { [key: string]: number } = {
       'primary': 1,
@@ -111,31 +160,6 @@ const MemberManagement = () => {
     
     return membershipPriorityA - membershipPriorityB;
   });
-  
-  // 통계 계산 (페이지 로드 시 한 번만 계산)
-  const { activeMembersCount, warningMembersCount, totalMembersCount, warningMembers } = useMemo(() => {
-    let active = 0;
-    let warning = 0;
-    const warningList: Member[] = [];
-    
-    members.forEach(member => {
-      const statusBadge = MembershipService.getMemberStatusBadge(member);
-      
-      if (statusBadge.status === '활성') {
-        active++;
-      } else if (statusBadge.status === '주의') {
-        warning++;
-        warningList.push(member);
-      }
-    });
-    
-    return {
-      activeMembersCount: active,
-      warningMembersCount: warning,
-      totalMembersCount: active + warning,
-      warningMembers: warningList
-    };
-  }, [members]);
   
   // 페이지네이션 계산
   const totalPages = Math.ceil(sortedMembers.length / itemsPerPage);
@@ -336,10 +360,13 @@ const MemberManagement = () => {
                 </div>
               ) : (
                 currentMembers.map((member, index) => {
-                  // 회원권 상태 뱃지 정보 가져오기 (기간권 > 횟수권 > 없음 > 홀딩)
-                  const statusBadges = MembershipService.getMembershipStatusBadges(member);
-                  // 회원 상태 뱃지 정보 가져오기 (주의 > 활성 > 비활성 )
-                  const memberStatusBadge = MembershipService.getMemberStatusBadge(member);
+                  // 미리 계산된 뱃지 정보 사용
+                  const badges = memberBadgesMap.get(member.email) || {
+                    membershipTypeBadges: [],
+                    memberStatusBadge: { status: '', colorClass: '' }
+                  };
+                  const membershipTypeBadges = badges.membershipTypeBadges;
+                  const memberStatusBadge = badges.memberStatusBadge;
                   
                   return (
                     <div key={member.email} className="table-row">
@@ -361,7 +388,7 @@ const MemberManagement = () => {
                       </div>
                       <div className="table-cell">
                         <div className="membership-badges">
-                          {statusBadges.map((badge, idx) => (
+                          {membershipTypeBadges.map((badge, idx) => (
                             <span key={idx} className={`membership-badge ${badge.colorClass}`}>
                               {badge.label}
                             </span>
