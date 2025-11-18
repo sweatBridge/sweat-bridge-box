@@ -6,6 +6,7 @@ import MemberDeletionModal from '../components/modals/member/MemberDeletionModal
 import MembershipPlanModal from '../components/modals/membership/MembershipPlanModal';
 import MemberManagementModal from '../components/modals/member/MemberManagementModal';
 import WarningMembersModal from '../components/modals/member/WarningMembersModal';
+import NewMembersModal from '../components/modals/member/NewMembersModal';
 import AddMemberModal from '../components/modals/member/AddMemberModal';
 import ApplyRequestModal from '../components/modals/member/ApplyRequestModal';
 import ToastMessage from '../components/ToastMessage';
@@ -35,6 +36,7 @@ const MemberManagement = () => {
   const [deletionModalVisible, setDeletionModalVisible] = useState(false);
   const [membershipPlanModalVisible, setMembershipPlanModalVisible] = useState(false);
   const [warningMembersModalVisible, setWarningMembersModalVisible] = useState(false);
+  const [newMembersModalVisible, setNewMembersModalVisible] = useState(false);
   const [memberListModalVisible, setMemberListModalVisible] = useState(false);
   const [addMemberModalVisible, setAddMemberModalVisible] = useState(false);
   const [applyRequestModalVisible, setApplyRequestModalVisible] = useState(false);
@@ -77,12 +79,14 @@ const MemberManagement = () => {
     newMembersCount,
     totalMembersCount, 
     warningMembers,
+    newMembers,
     memberBadgesMap 
   } = useMemo(() => {
     let active = 0;
     let warning = 0;
     let newMembers = 0;
     const warningList: Member[] = [];
+    const newMembersList: Member[] = [];
     const badgesMap = new Map<string, {
       membershipTypeBadges: Array<{ label: string; colorClass: string }>;
       memberStatusBadge: { status: string; colorClass: string };
@@ -103,6 +107,7 @@ const MemberManagement = () => {
       // 통계 계산
       if (memberStatusBadge.status === '신규') {
         newMembers++;
+        newMembersList.push(member);
       } else if (memberStatusBadge.status === '활성') {
         active++;
       } else if (memberStatusBadge.status === '주의') {
@@ -117,6 +122,7 @@ const MemberManagement = () => {
       newMembersCount: newMembers,
       totalMembersCount: active + warning + newMembers,
       warningMembers: warningList,
+      newMembers: newMembersList,
       memberBadgesMap: badgesMap
     };
   }, [members]);
@@ -240,18 +246,25 @@ const MemberManagement = () => {
     }
   };
 
-  // 회원 리스트 모달 열기 (신규 회원용)
+  // 회원 리스트 모달 열기
   const handleOpenMemberList = (type: 'warning' | 'new') => {
     if (type === 'warning') {
       setWarningMembersModalVisible(true);
-    } else {
-      setMemberListModalVisible(true);
+    } else if (type === 'new') {
+      setNewMembersModalVisible(true);
     }
   };
 
   // 주의 회원 모달에서 회원 클릭 시
   const handleWarningMemberClick = (member: Member) => {
     setWarningMembersModalVisible(false);
+    setSelectedMember(member);
+    setMemberManagementModalVisible(true);
+  };
+
+  // 신규 회원 모달에서 회원 클릭 시
+  const handleNewMemberClick = (member: Member) => {
+    setNewMembersModalVisible(false);
     setSelectedMember(member);
     setMemberManagementModalVisible(true);
   };
@@ -531,6 +544,14 @@ const MemberManagement = () => {
         members={warningMembers}
         onClose={() => setWarningMembersModalVisible(false)}
         onMemberClick={handleWarningMemberClick}
+      />
+
+      {/* 신규 회원 모달 */}
+      <NewMembersModal
+        visible={newMembersModalVisible}
+        members={newMembers}
+        onClose={() => setNewMembersModalVisible(false)}
+        onMemberClick={handleNewMemberClick}
       />
 
       {/* 회원 추가 모달 */}

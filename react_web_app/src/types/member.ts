@@ -28,6 +28,7 @@ export interface Member {
   lockerHistory?: LockerHistory[];
   lockerPass?: string;
   memo?: string;
+  joinedAt?: any; // Firebase Timestamp
 }
 
 export interface MemberListProps {
