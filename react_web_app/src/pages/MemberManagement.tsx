@@ -73,22 +73,43 @@ const MemberManagement = () => {
   // 검색된 회원 필터링
   const filteredMembers = filterMembers(members, searchValue);
   
-  // 상태 뱃지 기준으로 정렬 (주의 -> 활성 -> 비활성)
+  // 2단계 정렬: 1순위 - 상태 뱃지, 2순위 - 회원권 타입 뱃지
   const sortedMembers = [...filteredMembers].sort((a, b) => {
-    const badgeA = MembershipService.getMemberStatusBadge(a);
-    const badgeB = MembershipService.getMemberStatusBadge(b);
+    // 1순위: 상태 뱃지 (warning > active > inactive)
+    const statusBadgeA = MembershipService.getMemberStatusBadge(a);
+    const statusBadgeB = MembershipService.getMemberStatusBadge(b);
     
-    // 우선순위: warning(1) > active(2) > inactive(3)
-    const priorityMap: { [key: string]: number } = {
+    const statusPriorityMap: { [key: string]: number } = {
       'warning': 1,
       'active': 2,
       'inactive': 3
     };
     
-    const priorityA = priorityMap[badgeA.colorClass] || 999;
-    const priorityB = priorityMap[badgeB.colorClass] || 999;
+    const statusPriorityA = statusPriorityMap[statusBadgeA.colorClass] || 999;
+    const statusPriorityB = statusPriorityMap[statusBadgeB.colorClass] || 999;
     
-    return priorityA - priorityB;
+    // 1순위가 다르면 1순위로 정렬
+    if (statusPriorityA !== statusPriorityB) {
+      return statusPriorityA - statusPriorityB;
+    }
+    
+    // 1순위가 같으면 2순위로 정렬: 회원권 타입 뱃지 (primary > hold > none)
+    const membershipBadgesA = MembershipService.getMembershipStatusBadges(a);
+    const membershipBadgesB = MembershipService.getMembershipStatusBadges(b);
+    
+    const membershipBadgeA = membershipBadgesA[0] || { colorClass: '' };
+    const membershipBadgeB = membershipBadgesB[0] || { colorClass: '' };
+    
+    const membershipPriorityMap: { [key: string]: number } = {
+      'primary': 1,
+      'hold': 2,
+      'none': 3
+    };
+    
+    const membershipPriorityA = membershipPriorityMap[membershipBadgeA.colorClass] || 999;
+    const membershipPriorityB = membershipPriorityMap[membershipBadgeB.colorClass] || 999;
+    
+    return membershipPriorityA - membershipPriorityB;
   });
   
   // 유효한 회원권을 가진 회원 수 계산
