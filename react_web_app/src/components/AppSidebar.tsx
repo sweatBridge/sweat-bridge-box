@@ -12,8 +12,9 @@ const menuItems = [
   // { icon: Dumbbell, title: '와드 관리', index: 1, path: '/wod' },
   { icon: Users, title: '회원 관리', index: 2, path: '/members' },
   { icon: Calendar, title: '수업 관리', index: 3, path: '/classes' },
-  { icon: LockIcon, title: '락커 관리', index: 4, path: '/lockers' },
-  { icon: DollarSign, title: '매출 관리', index: 5, path: '/revenue' },
+  { icon: DollarSign, title: '매출 관리', index: 4, path: '/revenue' },
+  { icon: LockIcon, title: '락커 관리', index: 5, path: '/lockers' },
+  
 ];
 
 const AppSidebar = ({ selectedIndex }: AppSidebarProps) => {
