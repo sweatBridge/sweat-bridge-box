@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Users, UserPlus, CreditCard, Eye, Trash2, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Users, UserPlus, CreditCard, Trash2, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Member, ToastMessageType } from '../types/member';
 import { useMemberManagement } from '../hooks/useMemberManagement';
 import MemberDeletionModal from '../components/modals/member/MemberDeletionModal';
@@ -313,8 +313,7 @@ const MemberManagement = () => {
                 <div className="table-cell">잔여 기간</div>
                 <div className="table-cell">잔여 횟수</div>
                 <div className="table-cell">성별</div>
-                <div className="table-cell">기능</div>
-                <div className="table-cell">상세</div>
+                <div className="table-cell">관리</div>
               </div>
 
               {filteredMembers.length === 0 ? (
@@ -383,15 +382,6 @@ const MemberManagement = () => {
                         </button>
                       </div>
                     </div>
-                      <div className="table-cell">
-                        <button 
-                          className="btn btn-sm btn-light"
-                          onClick={() => handleShowDetails(member)}
-                          title="상세 정보"
-                        >
-                          <Eye size={14} />
-                        </button>
-                      </div>
                     </div>
                   );
                 })
