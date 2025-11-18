@@ -6,7 +6,6 @@ import { ClassEvent } from '../types/class';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
 import { useMemberManagement } from '../hooks/useMemberManagement';
-import { getActiveMembersCount } from '../utils/memberUtils';
 import { MembershipService } from '../services/membershipService';
 import { Member } from '../types/member';
 
@@ -53,23 +52,31 @@ const Dashboard = () => {
     loadData();
   }, [loadMembers]);
 
-  // 회원 통계 계산
-  const totalMembers = members.length;
-  const activeMembersCount = getActiveMembersCount(members);
-
-  // 신규 회원 목록 계산 (최근 30일 내 가입, 최신순 정렬, 최대 5명)
-  const recentMembers = useMemo(() => {
+  // 회원 통계 및 신규 회원 목록 계산 (getMemberStatusBadge 한 번만 호출)
+  const {
+    totalMembersCount,
+    recentMembers
+  } = useMemo(() => {
+    let active = 0;
+    let warning = 0;
+    let newMembers = 0;
     const newMembersList: Member[] = [];
     
     members.forEach(member => {
       const memberStatusBadge = MembershipService.getMemberStatusBadge(member);
+      
       if (memberStatusBadge.status === '신규') {
+        newMembers++;
         newMembersList.push(member);
+      } else if (memberStatusBadge.status === '활성') {
+        active++;
+      } else if (memberStatusBadge.status === '주의') {
+        warning++;
       }
     });
     
-    // 가입일 기준 최신순 정렬
-    return newMembersList
+    // 신규 회원 목록: 가입일 기준 최신순 정렬, 최대 5명
+    const recentMembersList = newMembersList
       .sort((a, b) => {
         const dateA = a.joinedAt?.toDate?.() || new Date(a.joinedAt || 0);
         const dateB = b.joinedAt?.toDate?.() || new Date(b.joinedAt || 0);
@@ -89,6 +96,14 @@ const Dashboard = () => {
           date: dateStr
         };
       });
+    
+    return {
+      activeMembersCount: active,
+      warningMembersCount: warning,
+      newMembersCount: newMembers,
+      totalMembersCount: active + warning + newMembers,
+      recentMembers: recentMembersList
+    };
   }, [members]);
 
   // 통계 데이터
@@ -107,8 +122,8 @@ const Dashboard = () => {
     },
     {
       title: '유효 회원',
-      value: activeMembersCount.toString(),
-      subtitle: `총 회원: ${totalMembers}명`,
+      value: totalMembersCount.toString(),
+      subtitle: `총 회원: ${totalMembersCount}명`,
       icon: Users,
       color: AppColors.success,
     },
