@@ -103,6 +103,28 @@ export const useMemberManagement = () => {
     }
   }, [setLoading, setError, loadMembers]);
 
+  // 회원 메모 업데이트 (새로고침 없이 로컬 상태 즉시 업데이트)
+  const updateMemberMemo = useCallback(async (email: string, memo: string, box?: string) => {
+    const boxName = box || localStorage.getItem('boxName') || 'SWEAT';
+    setError(null);
+    
+    try {
+      await MemberService.updateMemberMemo(boxName, email, memo);
+      // 로컬 상태 즉시 업데이트 (새로고침 없이 반영)
+      setState(prev => ({
+        ...prev,
+        members: prev.members.map(member => 
+          member.email === email 
+            ? { ...member, memo: memo }
+            : member
+        )
+      }));
+    } catch (error) {
+      setError((error as Error).message);
+      throw error;
+    }
+  }, [setError]);
+
   return {
     members: state.members,
     loading: state.loading,
@@ -111,6 +133,7 @@ export const useMemberManagement = () => {
     deleteMember,
     updateMemberMembership,
     addMember,
+    updateMemberMemo,
     clearError
   };
 }; 

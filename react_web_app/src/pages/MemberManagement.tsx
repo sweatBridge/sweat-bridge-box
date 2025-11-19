@@ -26,6 +26,7 @@ const MemberManagement = () => {
     error,
     loadMembers,
     deleteMember,
+    updateMemberMemo,
     clearError
   } = useMemberManagement();
 
@@ -506,6 +507,13 @@ const MemberManagement = () => {
               type: 'danger',
               message
             });
+          }
+        }}
+        onMemoUpdate={async (email, memo) => {
+          try {
+            await updateMemberMemo(email, memo);
+          } catch (error) {
+            console.error('Failed to update member memo in parent:', error);
           }
         }}
       />

@@ -19,7 +19,8 @@ const MemberManagementModal = ({
   member, 
   onClose, 
   onSuccess, 
-  onError 
+  onError,
+  onMemoUpdate
 }: MemberManagementModalProps) => {
   const [activeTab, setActiveTab] = useState<'details' | 'membership'>('details');
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
@@ -469,6 +470,11 @@ const MemberManagementModal = ({
 
       await MemberService.updateMemberMemo(boxName, member.email, memo);
       
+      // 부모 컴포넌트의 members 상태도 업데이트
+      if (onMemoUpdate) {
+        onMemoUpdate(member.email, memo);
+      }
+      
       if (onSuccess) {
         onSuccess('메모가 저장되었습니다.');
       }
@@ -479,7 +485,7 @@ const MemberManagementModal = ({
     } finally {
       setLoading(false);
     }
-  }, [member, memo, onSuccess, onError]);
+  }, [member, memo, onSuccess, onError, onMemoUpdate]);
 
   // 회원권 수정 모달 열기
   const handleOpenEditModal = useCallback((index: number) => {
