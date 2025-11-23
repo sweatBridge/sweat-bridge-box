@@ -632,7 +632,7 @@ export class MembershipService {
         throw new Error('유효하지 않은 회원권 인덱스입니다.');
       }
 
-      const membership = memberships[membershipIndex] as any;
+      const membership = memberships[membershipIndex];
       
       // 새 구조만 지원
       if (!membership.period) {
@@ -643,25 +643,15 @@ export class MembershipService {
       for (let i = 0; i < memberships.length; i++) {
         if (i === membershipIndex) continue; // 자기 자신은 제외
         
-        const otherMembership = memberships[i] as any;
+        const otherMembership = memberships[i];
         
         // 삭제되거나 환불된 회원권은 제외
         if (otherMembership.deleted || (otherMembership.refund && otherMembership.refund.isRefunded)) {
           continue;
         }
-        
-        let otherStartDate: Date;
-        let otherEndDate: Date;
-        
-        // 새 구조
-        if (otherMembership.period) {
-          otherStartDate = new Date(otherMembership.period.startDate);
-          otherEndDate = new Date(otherMembership.period.endDate);
-        } else {
-          // 레거시 구조
-          otherStartDate = new Date(otherMembership.startDate);
-          otherEndDate = new Date(otherMembership.endDate);
-        }
+
+        const otherStartDate = new Date(otherMembership.period.startDate);
+        const otherEndDate = new Date(otherMembership.period.endDate);
         
         // 날짜 겹침 체크
         if (newStartDate <= otherEndDate && otherStartDate <= newEndDate) {
