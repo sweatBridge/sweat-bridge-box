@@ -95,20 +95,20 @@ const RevenueManagement = () => {
       
       const dayRevenue = monthlyRevenue.dailyData.find(day => day.date === dateStr);
       
-      if (dayRevenue && dayRevenue.totalRevenue > 0) {
+      if (dayRevenue && (dayRevenue.cashRevenue > 0 || dayRevenue.cardRevenue > 0)) {
         return (
           <div className="calendar-tile-content">
-            <div className="revenue-amount">
-              {(dayRevenue.totalRevenue / 10000).toFixed(0)}만
-            </div>
-            <div className="revenue-details">
-              <span className="membership-revenue">
-                {(dayRevenue.membershipRevenue / 10000).toFixed(0)}만
-              </span>
-              <span className="other-revenue">
-                {(dayRevenue.otherRevenue / 10000).toFixed(0)}만
-              </span>
-            </div>
+            {/* 날짜는 react-calendar가 자동으로 위에 표시 */}
+            {dayRevenue.cashRevenue > 0 && (
+              <div className="revenue-line cash-revenue">
+                {dayRevenue.cashRevenue.toLocaleString()}원
+              </div>
+            )}
+            {dayRevenue.cardRevenue > 0 && (
+              <div className="revenue-line card-revenue">
+                {dayRevenue.cardRevenue.toLocaleString()}원
+              </div>
+            )}
           </div>
         );
       }
@@ -235,14 +235,6 @@ const RevenueManagement = () => {
           <div className="calendar-header">
             <h3>매출 캘린더</h3>
             <div className="calendar-legend">
-              <div className="legend-item">
-                <div className="legend-color membership"></div>
-                <span>회원권 매출</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-color other"></div>
-                <span>기타 매출</span>
-              </div>
               <div className="legend-item">
                 <div className="legend-color cash"></div>
                 <span>현금 매출</span>
@@ -532,20 +524,12 @@ const RevenueManagement = () => {
           border-radius: 2px;
         }
 
-        .legend-color.membership {
-          background: #3b82f6;
-        }
-
-        .legend-color.other {
-          background: #10b981;
-        }
-
         .legend-color.cash {
-          background: #f59e0b;
+          background: #3b82f6; /* 파란색 */
         }
 
         .legend-color.card {
-          background: #8b5cf6;
+          background: #10b981; /* 녹색 */
         }
 
         .calendar-container {
@@ -629,6 +613,21 @@ const RevenueManagement = () => {
           transition: all 0.2s;
         }
 
+        .react-calendar__tile {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-start;
+          padding: 4px 2px;
+        }
+
+        .react-calendar__month-view__days__day abbr {
+          position: relative;
+          z-index: 2;
+          margin-bottom: 8px;
+          font-weight: 500;
+        }
+
         .react-calendar__month-view__days__day:hover {
           background-color: #f8fafc;
           border-color: #e2e8f0;
@@ -651,43 +650,33 @@ const RevenueManagement = () => {
 
         .calendar-tile-content {
           position: absolute;
-          top: 4px;
-          left: 4px;
-          right: 4px;
-          bottom: 4px;
+          top: 24px;
+          left: 0;
+          right: 0;
+          bottom: 0;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
+          justify-content: flex-start;
+          gap: 2px;
+          padding: 0 2px;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .revenue-line {
           font-size: 10px;
-        }
-
-        .revenue-amount {
-          font-weight: 600;
-          color: #374151;
+          font-weight: 700;
+          line-height: 1.3;
           text-align: center;
-          margin-top: 2px;
+          flex-shrink: 0;
         }
 
-        .revenue-details {
-          display: flex;
-          justify-content: space-between;
-          margin-top: auto;
+        .revenue-line.cash-revenue {
+          color: #3b82f6; /* 파란색 */
         }
 
-        .membership-revenue {
-          background: #3b82f6;
-          color: white;
-          padding: 1px 3px;
-          border-radius: 2px;
-          font-size: 9px;
-        }
-
-        .other-revenue {
-          background: #10b981;
-          color: white;
-          padding: 1px 3px;
-          border-radius: 2px;
-          font-size: 9px;
+        .revenue-line.card-revenue {
+          color: #10b981; /* 녹색 */
         }
 
         .details-section {
