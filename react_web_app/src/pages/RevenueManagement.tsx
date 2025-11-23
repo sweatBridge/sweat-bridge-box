@@ -293,36 +293,6 @@ const RevenueManagement = () => {
               <div className="revenue-breakdown">
                 <div className="breakdown-item">
                   <div className="breakdown-header">
-                    <div className="breakdown-color membership"></div>
-                    <span className="breakdown-label">회원권 매출</span>
-                  </div>
-                  <div className="breakdown-content">
-                    <div className="breakdown-amount">
-                      {selectedDayRevenue.membershipRevenue.toLocaleString()}원
-                    </div>
-                    <div className="breakdown-count">
-                      {selectedDayRevenue.membershipCount}건
-                    </div>
-                  </div>
-                </div>
-
-                <div className="breakdown-item">
-                  <div className="breakdown-header">
-                    <div className="breakdown-color other"></div>
-                    <span className="breakdown-label">기타 매출</span>
-                  </div>
-                  <div className="breakdown-content">
-                    <div className="breakdown-amount">
-                      {selectedDayRevenue.otherRevenue.toLocaleString()}원
-                    </div>
-                    <div className="breakdown-count">
-                      {selectedDayRevenue.otherCount}건
-                    </div>
-                  </div>
-                </div>
-
-                <div className="breakdown-item">
-                  <div className="breakdown-header">
                     <div className="breakdown-color cash"></div>
                     <span className="breakdown-label">현금 매출</span>
                   </div>
@@ -353,22 +323,6 @@ const RevenueManagement = () => {
               </div>
 
               <div className="revenue-chart">
-                <div className="chart-title">매출 구성 비율</div>
-                <div className="chart-bar">
-                  <div 
-                    className="chart-segment membership"
-                    style={{ 
-                      width: `${(selectedDayRevenue.membershipRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
-                    }}
-                  ></div>
-                  <div 
-                    className="chart-segment other"
-                    style={{ 
-                      width: `${(selectedDayRevenue.otherRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
-                    }}
-                  ></div>
-                </div>
-                
                 <div className="chart-title">결제수단 비율</div>
                 <div className="chart-bar">
                   <div 
@@ -746,19 +700,11 @@ const RevenueManagement = () => {
         }
 
         .breakdown-item:nth-child(1) {
-          border-left-color: #3b82f6; /* 회원권 매출 */
+          border-left-color: #3b82f6; /* 현금 매출 */
         }
 
         .breakdown-item:nth-child(2) {
-          border-left-color: #10b981; /* 기타 매출 */
-        }
-
-        .breakdown-item:nth-child(3) {
-          border-left-color: #f59e0b; /* 현금 매출 */
-        }
-
-        .breakdown-item:nth-child(4) {
-          border-left-color: #8b5cf6; /* 카드 매출 */
+          border-left-color: #10b981; /* 카드 매출 */
         }
 
         .breakdown-header {
@@ -773,20 +719,12 @@ const RevenueManagement = () => {
           border-radius: 2px;
         }
 
-        .breakdown-color.membership {
-          background: #3b82f6;
-        }
-
-        .breakdown-color.other {
-          background: #10b981;
-        }
-
         .breakdown-color.cash {
-          background: #f59e0b;
+          background: #3b82f6; /* 파란색 */
         }
 
         .breakdown-color.card {
-          background: #8b5cf6;
+          background: #10b981; /* 초록색 */
         }
 
         .breakdown-label {
@@ -822,20 +760,12 @@ const RevenueManagement = () => {
           background: #f3f4f6;
         }
 
-        .chart-segment.membership {
-          background: #3b82f6;
-        }
-
-        .chart-segment.other {
-          background: #10b981;
-        }
-
         .chart-segment.cash {
-          background: #f59e0b;
+          background: #3b82f6; /* 파란색 */
         }
 
         .chart-segment.card {
-          background: #8b5cf6;
+          background: #10b981; /* 초록색 */
         }
 
         .chart-title {
