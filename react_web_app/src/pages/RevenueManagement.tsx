@@ -95,7 +95,7 @@ const RevenueManagement = () => {
       
       const dayRevenue = monthlyRevenue.dailyData.find(day => day.date === dateStr);
       
-      if (dayRevenue && (dayRevenue.cashRevenue > 0 || dayRevenue.cardRevenue > 0)) {
+      if (dayRevenue && (dayRevenue.cashRevenue > 0 || dayRevenue.cardRevenue > 0 || dayRevenue.refundRevenue > 0)) {
         return (
           <div className="calendar-tile-content">
             {/* 날짜는 react-calendar가 자동으로 위에 표시 */}
@@ -107,6 +107,11 @@ const RevenueManagement = () => {
             {dayRevenue.cardRevenue > 0 && (
               <div className="revenue-line card-revenue">
                 {dayRevenue.cardRevenue.toLocaleString()}원
+              </div>
+            )}
+            {dayRevenue.refundRevenue > 0 && (
+              <div className="revenue-line refund-revenue">
+                {dayRevenue.refundRevenue.toLocaleString()}원
               </div>
             )}
           </div>
@@ -243,6 +248,10 @@ const RevenueManagement = () => {
                 <div className="legend-color card"></div>
                 <span>카드 매출</span>
               </div>
+              <div className="legend-item">
+                <div className="legend-color refund"></div>
+                <span>환불액</span>
+              </div>
             </div>
           </div>
           
@@ -317,6 +326,18 @@ const RevenueManagement = () => {
                     </div>
                     <div className="breakdown-count">
                       {selectedDayRevenue.cardCount}건
+                    </div>
+                  </div>
+                </div>
+
+                <div className="breakdown-item">
+                  <div className="breakdown-header">
+                    <div className="breakdown-color refund"></div>
+                    <span className="breakdown-label">환불액</span>
+                  </div>
+                  <div className="breakdown-content">
+                    <div className="breakdown-amount">
+                      {selectedDayRevenue.refundRevenue.toLocaleString()}원
                     </div>
                   </div>
                 </div>
@@ -486,6 +507,10 @@ const RevenueManagement = () => {
           background: #10b981; /* 녹색 */
         }
 
+        .legend-color.refund {
+          background: #dc2626; /* 빨간색 */
+        }
+
         .calendar-container {
           flex: 1;
           display: flex;
@@ -633,6 +658,10 @@ const RevenueManagement = () => {
           color: #10b981; /* 녹색 */
         }
 
+        .revenue-line.refund-revenue {
+          color: #dc2626; /* 빨간색 */
+        }
+
         .details-section {
           display: flex;
           flex-direction: column;
@@ -707,6 +736,10 @@ const RevenueManagement = () => {
           border-left-color: #10b981; /* 카드 매출 */
         }
 
+        .breakdown-item:nth-child(3) {
+          border-left-color: #dc2626; /* 환불액 */
+        }
+
         .breakdown-header {
           display: flex;
           align-items: center;
@@ -725,6 +758,10 @@ const RevenueManagement = () => {
 
         .breakdown-color.card {
           background: #10b981; /* 초록색 */
+        }
+
+        .breakdown-color.refund {
+          background: #dc2626; /* 빨간색 */
         }
 
         .breakdown-label {
