@@ -55,13 +55,18 @@ const EditMembershipModal = ({
       return;
     }
 
-    if (!reason.trim()) {
-      alert('수정 사유를 입력해주세요.');
+    if (!reason.trim() || reason.trim().length < 2) {
+      alert('변경 사유는 최소 2자 이상 입력해주세요.');
       return;
     }
 
     if (!assignee.trim()) {
       alert('담당자를 입력해주세요.');
+      return;
+    }
+
+    if (assignee.trim().length > 10) {
+      alert('담당자는 10글자 이하로 입력해주세요.');
       return;
     }
 
@@ -155,7 +160,8 @@ const EditMembershipModal = ({
                 className="form-input"
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value)}
-                placeholder="담당자 이름"
+                placeholder="담당자 이름 (최대 10자)"
+                maxLength={10}
                 disabled={loading}
               />
             </div>
@@ -184,7 +190,7 @@ const EditMembershipModal = ({
                 className="form-input"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="변경 사유를 입력하세요"
+                placeholder="변경 사유를 입력하세요 (최소 2자 이상)"
                 disabled={loading}
               />
             </div>
