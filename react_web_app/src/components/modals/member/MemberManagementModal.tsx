@@ -682,7 +682,7 @@ const MemberManagementModal = ({
                           <button 
                             className="btn btn-hold"
                             onClick={handleOpenHoldModal}
-                            disabled={loading}
+                            disabled={loading || !!getCurrentHold(currentMemberships[0])}
                           >
                             <Pause size={16} />
                             홀딩
