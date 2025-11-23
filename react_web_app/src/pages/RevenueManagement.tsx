@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { DollarSign, TrendingUp, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { DollarSign, TrendingUp, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { useRevenueManagement } from '../hooks/useRevenueManagement';
@@ -7,6 +7,7 @@ import { DailyRevenue, RevenueData } from '../types/revenue';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
+import TransactionHistoryModal from '../components/modals/revenue/TransactionHistoryModal';
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -28,6 +29,7 @@ const RevenueManagement = () => {
   // 상태 관리
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [transactionModalVisible, setTransactionModalVisible] = useState(false);
 
   // 페이지 정보 설정
   useEffect(() => {
@@ -376,62 +378,18 @@ const RevenueManagement = () => {
                 </div>
               )}
 
-              {/* 거래 내역 리스트 */}
+              {/* 거래 내역 보기 버튼 */}
               <div className="transaction-list">
                 <div className="transaction-list-header">
                   <h4>거래 내역</h4>
-                </div>
-                <div className="transaction-cards">
-                  {getSelectedDayTransactions().map((transaction, index) => {
-                    const transactionDate = transaction.createdAt?.toDate?.() || new Date(transaction.createdAt || 0);
-                    const formattedDate = transactionDate.toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    });
-                    
-                    // 회원권 타입 텍스트
-                    const getMembershipTypeText = (type: string) => {
-                      if (type === 'periodPass') return '장기 회원권';
-                      if (type === 'countPass') return '횟수권';
-                      return '기타';
-                    };
-
-                    // 회원권 기간 텍스트 (plan에서 추출)
-                    const getMembershipDuration = (plan: string) => {
-                      // plan 예: "6개월 회원권", "1개월 회원권" 등
-                      return plan || '회원권';
-                    };
-
-                    const price = parseInt(transaction.price) || 0;
-                    const isCash = transaction.paymentType === 'cash';
-                    
-                    return (
-                      <div key={index} className="transaction-card">
-                        <div className="transaction-card-header">
-                          <div className="transaction-member-name">{transaction.realName}</div>
-                          <div className={`transaction-price ${isCash ? 'cash' : 'card'}`}>
-                            {price.toLocaleString()}원
-                          </div>
-                        </div>
-                        <div className="transaction-card-body">
-                          <div className="transaction-info">
-                            <div className="transaction-plan">{getMembershipDuration(transaction.plan)}</div>
-                            <div className="transaction-date">{formattedDate}</div>
-                            <div className="transaction-type">{getMembershipTypeText(transaction.type)}</div>
-                          </div>
-                          <div className="transaction-payment-buttons">
-                            <button className={`payment-button ${transaction.paymentType === 'cash' ? 'active cash' : 'cash'}`}>
-                              현금
-                            </button>
-                            <button className={`payment-button ${transaction.paymentType === 'card' ? 'active card' : 'card'}`}>
-                              카드
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <button 
+                    className="btn-view-transactions"
+                    onClick={() => setTransactionModalVisible(true)}
+                    disabled={getSelectedDayTransactions().length === 0}
+                  >
+                    <Eye size={16} />
+                    보기
+                  </button>
                 </div>
               </div>
             </div>
@@ -444,6 +402,14 @@ const RevenueManagement = () => {
           )}
         </div>
       </div>
+
+      {/* 거래 내역 모달 */}
+      <TransactionHistoryModal
+        visible={transactionModalVisible}
+        transactions={getSelectedDayTransactions()}
+        selectedDate={selectedDate}
+        onClose={() => setTransactionModalVisible(false)}
+      />
 
       <style>{`
         .stats-grid {
@@ -922,6 +888,9 @@ const RevenueManagement = () => {
         }
 
         .transaction-list-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           margin-bottom: 16px;
         }
 
@@ -930,6 +899,34 @@ const RevenueManagement = () => {
           font-size: 16px;
           font-weight: 600;
           color: #374151;
+        }
+
+        .btn-view-transactions {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          background: ${Gradients.primary};
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-view-transactions:hover:not(:disabled) {
+          background: ${Gradients.primaryHover};
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-view-transactions:disabled {
+          background: #d1d5db;
+          color: #9ca3af;
+          cursor: not-allowed;
+          opacity: 0.6;
         }
 
         .transaction-cards {
