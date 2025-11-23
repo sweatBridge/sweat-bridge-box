@@ -22,7 +22,6 @@ const MemberManagementModal = ({
   onError,
   onMemoUpdate
 }: MemberManagementModalProps) => {
-  const [activeTab, setActiveTab] = useState<'details' | 'membership'>('details');
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
   const [userMemberships, setUserMemberships] = useState<UserMembership[]>([]);
   const [currentMemberships, setCurrentMemberships] = useState<UserMembership[]>([]);
@@ -567,96 +566,98 @@ const MemberManagementModal = ({
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 
-        {/* 탭 네비게이션 */}
-        <div className="tab-navigation">
-          <button 
-            className={`tab-button ${activeTab === 'details' ? 'active' : ''}`}
-            onClick={() => setActiveTab('details')}
-          >
-            <User size={16} />
-            상세 정보
-          </button>
-          <button 
-            className={`tab-button ${activeTab === 'membership' ? 'active' : ''}`}
-            onClick={() => setActiveTab('membership')}
-          >
-            <CreditCard size={16} />
-            회원권 관리
-          </button>
-        </div>
-        
         <div className="modal-body">
-          {activeTab === 'details' && (
-            <div className="details-content">
-              {/* 기본 정보 섹션 */}
-              <div className="info-section">
-                <h4 className="section-title">기본 정보</h4>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <div className="info-icon">
-                      <User size={16} />
-                    </div>
-                    <div className="info-content">
-                      <span className="info-label">이름</span>
-                      <span className="info-value">{member.realName}</span>
-                    </div>
+          <div className="content-wrapper">
+            {/* 기본 정보 섹션 */}
+            <div className="info-section">
+              <h4 className="section-title">기본 정보</h4>
+              <div className="info-grid">
+                <div className="info-item">
+                  <div className="info-icon">
+                    <User size={16} />
                   </div>
-                  
-                  <div className="info-item">
-                    <div className="info-icon">
-                      <User size={16} />
-                    </div>
-                    <div className="info-content">
-                      <span className="info-label">닉네임</span>
-                      <span className="info-value">{member.nickName}</span>
-                    </div>
+                  <div className="info-content">
+                    <span className="info-label">이름</span>
+                    <span className="info-value">{member.realName}</span>
                   </div>
-                  
-                  <div className="info-item">
-                    <div className="info-icon">
-                      <Mail size={16} />
-                    </div>
-                    <div className="info-content">
-                      <span className="info-label">이메일</span>
-                      <span className="info-value">{member.email}</span>
-                    </div>
+                </div>
+                
+                <div className="info-item">
+                  <div className="info-icon">
+                    <User size={16} />
                   </div>
-                  
-                  <div className="info-item">
-                    <div className="info-icon">
-                      <Phone size={16} />
-                    </div>
-                    <div className="info-content">
-                      <span className="info-label">전화번호</span>
-                      <span className="info-value">{formatPhoneNumber(member.phone)}</span>
-                    </div>
+                  <div className="info-content">
+                    <span className="info-label">닉네임</span>
+                    <span className="info-value">{member.nickName}</span>
                   </div>
-                  
-                  <div className="info-item">
-                    <div className="info-icon">
-                      <Users size={16} />
-                    </div>
-                    <div className="info-content">
-                      <span className="info-label">성별</span>
-                      <span className="info-value">{getGenderText(member.gender)}</span>
-                    </div>
+                </div>
+                
+                <div className="info-item">
+                  <div className="info-icon">
+                    <Mail size={16} />
                   </div>
-                  
-                  <div className="info-item">
-                    <div className="info-icon">
-                      <Calendar size={16} />
-                    </div>
-                    <div className="info-content">
-                      <span className="info-label">생년월일</span>
-                      <span className="info-value">{member.birthDate || '-'}</span>
-                    </div>
+                  <div className="info-content">
+                    <span className="info-label">이메일</span>
+                    <span className="info-value">{member.email}</span>
+                  </div>
+                </div>
+                
+                <div className="info-item">
+                  <div className="info-icon">
+                    <Phone size={16} />
+                  </div>
+                  <div className="info-content">
+                    <span className="info-label">전화번호</span>
+                    <span className="info-value">{formatPhoneNumber(member.phone)}</span>
+                  </div>
+                </div>
+                
+                <div className="info-item">
+                  <div className="info-icon">
+                    <Users size={16} />
+                  </div>
+                  <div className="info-content">
+                    <span className="info-label">성별</span>
+                    <span className="info-value">{getGenderText(member.gender)}</span>
+                  </div>
+                </div>
+                
+                <div className="info-item">
+                  <div className="info-icon">
+                    <Calendar size={16} />
+                  </div>
+                  <div className="info-content">
+                    <span className="info-label">생년월일</span>
+                    <span className="info-value">{member.birthDate || '-'}</span>
                   </div>
                 </div>
               </div>
 
-              {/* 현재 회원권 정보 */}
-              <div className="info-section">
-                <h4 className="section-title">현재 회원권 정보</h4>
+              {/* 메모 섹션 (기본 정보 안에 포함) */}
+              <div className="memo-subsection">
+                <div className="memo-container">
+                  <input
+                    type="text"
+                    className="memo-input"
+                    value={memo}
+                    onChange={(e) => setMemo(e.target.value)}
+                    placeholder="회원에 대한 메모를 작성하세요..."
+                    disabled={loading}
+                  />
+                  <button 
+                    className="btn btn-primary btn-sm"
+                    onClick={handleSaveMemo}
+                    disabled={loading}
+                  >
+                    저장
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 활성 회원권 정보 */}
+            <div className="info-section">
+              <h4 className="section-title">활성 회원권</h4>
                 {currentMemberships.length === 0 ? (
                   <div className="no-membership">
                     <CreditCard size={48} className="no-membership-icon" />
@@ -766,46 +767,18 @@ const MemberManagementModal = ({
                     </div>
                   );
                 })()}
-              </div>
-
-              {/* 메모 섹션 */}
-              <div className="info-section">
-                <h4 className="section-title">메모</h4>
-                <div className="memo-container">
-                  <textarea
-                    className="memo-textarea"
-                    value={memo}
-                    onChange={(e) => setMemo(e.target.value)}
-                    placeholder="회원에 대한 메모를 작성하세요..."
-                    rows={5}
-                    disabled={loading}
-                  />
-                  <div className="memo-actions">
-                    <button 
-                      className="btn btn-primary btn-sm"
-                      onClick={handleSaveMemo}
-                      disabled={loading}
-                    >
-                      저장
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
-          )}
 
-          {activeTab === 'membership' && (
-            <div className="membership-content">
-              {loading && (
-                <div className="loading-overlay">
-                  <div className="loading-spinner"></div>
-                  <p>처리 중...</p>
-                </div>
-              )}
+            {loading && (
+              <div className="loading-overlay">
+                <div className="loading-spinner"></div>
+                <p>처리 중...</p>
+              </div>
+            )}
 
-              {/* 회원권 추가 폼 */}
-              <div className="membership-form">
-                <h4 className="section-title">회원권 추가</h4>
+            {/* 회원권 등록 */}
+            <div className="membership-form">
+              <h4 className="section-title">회원권 등록</h4>
                 
                 <div className="form-grid">
                   <div className="form-group">
@@ -920,9 +893,9 @@ const MemberManagementModal = ({
                 </div>
               </div>
 
-              {/* 회원권 목록 */}
-              <div className="membership-list">
-                <h4 className="section-title">회원권 목록</h4>
+            {/* 회원권 목록 */}
+            <div className="membership-list">
+              <h4 className="section-title">회원권 목록</h4>
                 
                 {userMemberships.length === 0 ? (
                   <div className="empty-memberships">
@@ -1021,9 +994,8 @@ const MemberManagementModal = ({
                     })}
                   </div>
                 )}
-              </div>
             </div>
-          )}
+          </div>
         </div>
         
         <div className="modal-footer">
@@ -1122,41 +1094,7 @@ const MemberManagementModal = ({
           max-height: 90vh;
         }
 
-        .tab-navigation {
-          display: flex;
-          border-bottom: 1px solid #e5e7eb;
-          background-color: #f8fafc;
-        }
-
-        .tab-button {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 16px;
-          background: none;
-          border: none;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 500;
-          color: #6b7280;
-          transition: all 0.2s;
-        }
-
-        .tab-button:hover {
-          background-color: #f3f4f6;
-          color: #374151;
-        }
-
-        .tab-button.active {
-          background-color: white;
-          color: ${AppColors.primary};
-          border-bottom: 2px solid ${AppColors.primary};
-        }
-
-        .details-content,
-        .membership-content {
+        .content-wrapper {
           position: relative;
         }
 
@@ -1466,43 +1404,40 @@ const MemberManagementModal = ({
           color: #78350f;
         }
 
+        .memo-subsection {
+          margin-top: 16px;
+        }
+
         .memo-container {
           display: flex;
-          flex-direction: column;
+          align-items: center;
           gap: 12px;
         }
 
-        .memo-textarea {
-          width: 100%;
-          padding: 12px;
+        .memo-input {
+          flex: 1;
+          padding: 8px 12px;
           border: 1px solid #d1d5db;
-          border-radius: 8px;
-          font-size: 14px;
+          border-radius: 6px;
+          font-size: 13px;
           font-family: inherit;
-          line-height: 1.6;
-          resize: vertical;
           transition: all 0.2s;
         }
 
-        .memo-textarea:focus {
+        .memo-input:focus {
           outline: none;
           border-color: ${AppColors.primary};
           box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
-        .memo-textarea:disabled {
+        .memo-input:disabled {
           background-color: #f3f4f6;
           color: #6b7280;
           cursor: not-allowed;
         }
 
-        .memo-textarea::placeholder {
+        .memo-input::placeholder {
           color: #9ca3af;
-        }
-
-        .memo-actions {
-          display: flex;
-          justify-content: flex-end;
         }
 
         .form-grid {

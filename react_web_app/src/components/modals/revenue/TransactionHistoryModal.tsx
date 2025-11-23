@@ -1,8 +1,6 @@
-import { useState } from 'react';
-import { X, Calendar, User, CreditCard, DollarSign } from 'lucide-react';
+import { Calendar, CreditCard } from 'lucide-react';
 import { RevenueData } from '../../../types/revenue';
 import { Gradients } from '../../../constants/gradients';
-import { AppColors } from '../../../constants/colors';
 
 interface TransactionHistoryModalProps {
   visible: boolean;
