@@ -5,7 +5,7 @@ import { db } from '../config/firebase';
 import { Timestamp } from 'firebase/firestore';
 import { formatDateToString } from '../utils/dateUtils';
 
-interface RevenueData {
+export interface RevenueData {
   assignee: string;
   createdAt: Timestamp;
   id: string;
@@ -41,7 +41,8 @@ export class RevenueService {
           totalRevenue: 0,
           membershipRevenue: 0,
           otherRevenue: 0,
-          dailyData: []
+          dailyData: [],
+          dailyTransactions: {}
         };
       }
 
@@ -60,6 +61,9 @@ export class RevenueService {
         cardCount: number;
         refundRevenue: number;
       }>();
+
+      // 날짜별 거래 내역을 담을 Map
+      const dailyTransactionsMap = new Map<string, RevenueData[]>();
 
       // 각 매출 데이터를 일별로 집계
       Object.entries(monthData).forEach(([revenueKey, data]) => {
@@ -82,7 +86,11 @@ export class RevenueService {
             cardCount: 0,
             refundRevenue: 0
           });
+          dailyTransactionsMap.set(dateStr, []);
         }
+
+        // 거래 내역 추가
+        dailyTransactionsMap.get(dateStr)!.push(revenueData);
 
         const dailyData = dailyRevenueMap.get(dateStr)!;
         const price = parseInt(revenueData.price) || 0;
@@ -135,13 +143,20 @@ export class RevenueService {
       const membershipRevenue = dailyData.reduce((sum, day) => sum + day.membershipRevenue, 0);
       const otherRevenue = dailyData.reduce((sum, day) => sum + day.otherRevenue, 0);
 
+      // Map을 객체로 변환
+      const dailyTransactions: { [date: string]: RevenueData[] } = {};
+      dailyTransactionsMap.forEach((transactions, date) => {
+        dailyTransactions[date] = transactions;
+      });
+
       return {
         year,
         month,
         totalRevenue,
         membershipRevenue,
         otherRevenue,
-        dailyData
+        dailyData,
+        dailyTransactions
       };
     } catch (error) {
       console.error('Error fetching monthly revenue:', error);

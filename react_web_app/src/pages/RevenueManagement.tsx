@@ -3,7 +3,7 @@ import { DollarSign, TrendingUp, Calendar as CalendarIcon, ChevronLeft, ChevronR
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { useRevenueManagement } from '../hooks/useRevenueManagement';
-import { DailyRevenue } from '../types/revenue';
+import { DailyRevenue, RevenueData } from '../types/revenue';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
@@ -68,6 +68,19 @@ const RevenueManagement = () => {
     const dateStr = `${year}-${month}-${day}`;
     
     return monthlyRevenue.dailyData.find(day => day.date === dateStr) || null;
+  }, [monthlyRevenue, selectedDate]);
+
+  // 선택된 날짜의 거래 내역 가져오기
+  const getSelectedDayTransactions = useCallback((): RevenueData[] => {
+    if (!monthlyRevenue) return [];
+    
+    // 로컬 시간 기준으로 날짜 문자열 생성
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
+    return monthlyRevenue.dailyTransactions[dateStr] || [];
   }, [monthlyRevenue, selectedDate]);
 
   // 캘린더 날짜 클릭 핸들러
@@ -343,21 +356,82 @@ const RevenueManagement = () => {
                 </div>
               </div>
 
-              <div className="revenue-chart">
-                <div className="chart-title">결제수단 비율</div>
-                <div className="chart-bar">
-                  <div 
-                    className="chart-segment cash"
-                    style={{ 
-                      width: `${(selectedDayRevenue.cashRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
-                    }}
-                  ></div>
-                  <div 
-                    className="chart-segment card"
-                    style={{ 
-                      width: `${(selectedDayRevenue.cardRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
-                    }}
-                  ></div>
+              {selectedDayRevenue.totalRevenue > 0 && (
+                <div className="revenue-chart">
+                  <div className="chart-title">결제수단 비율</div>
+                  <div className="chart-bar">
+                    <div 
+                      className="chart-segment cash"
+                      style={{ 
+                        width: `${(selectedDayRevenue.cashRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
+                      }}
+                    ></div>
+                    <div 
+                      className="chart-segment card"
+                      style={{ 
+                        width: `${(selectedDayRevenue.cardRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
+              {/* 거래 내역 리스트 */}
+              <div className="transaction-list">
+                <div className="transaction-list-header">
+                  <h4>거래 내역</h4>
+                </div>
+                <div className="transaction-cards">
+                  {getSelectedDayTransactions().map((transaction, index) => {
+                    const transactionDate = transaction.createdAt?.toDate?.() || new Date(transaction.createdAt || 0);
+                    const formattedDate = transactionDate.toLocaleDateString('ko-KR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    });
+                    
+                    // 회원권 타입 텍스트
+                    const getMembershipTypeText = (type: string) => {
+                      if (type === 'periodPass') return '장기 회원권';
+                      if (type === 'countPass') return '횟수권';
+                      return '기타';
+                    };
+
+                    // 회원권 기간 텍스트 (plan에서 추출)
+                    const getMembershipDuration = (plan: string) => {
+                      // plan 예: "6개월 회원권", "1개월 회원권" 등
+                      return plan || '회원권';
+                    };
+
+                    const price = parseInt(transaction.price) || 0;
+                    const isCash = transaction.paymentType === 'cash';
+                    
+                    return (
+                      <div key={index} className="transaction-card">
+                        <div className="transaction-card-header">
+                          <div className="transaction-member-name">{transaction.realName}</div>
+                          <div className={`transaction-price ${isCash ? 'cash' : 'card'}`}>
+                            {price.toLocaleString()}원
+                          </div>
+                        </div>
+                        <div className="transaction-card-body">
+                          <div className="transaction-info">
+                            <div className="transaction-plan">{getMembershipDuration(transaction.plan)}</div>
+                            <div className="transaction-date">{formattedDate}</div>
+                            <div className="transaction-type">{getMembershipTypeText(transaction.type)}</div>
+                          </div>
+                          <div className="transaction-payment-buttons">
+                            <button className={`payment-button ${transaction.paymentType === 'cash' ? 'active cash' : 'cash'}`}>
+                              현금
+                            </button>
+                            <button className={`payment-button ${transaction.paymentType === 'card' ? 'active card' : 'card'}`}>
+                              카드
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -841,6 +915,127 @@ const RevenueManagement = () => {
         .no-revenue p {
           margin: 0;
           font-size: 14px;
+        }
+
+        .transaction-list {
+          margin-top: 24px;
+        }
+
+        .transaction-list-header {
+          margin-bottom: 16px;
+        }
+
+        .transaction-list-header h4 {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .transaction-cards {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .transaction-card {
+          background: white;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          padding: 16px;
+          transition: all 0.2s;
+        }
+
+        .transaction-card:hover {
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .transaction-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+
+        .transaction-member-name {
+          font-size: 18px;
+          font-weight: 700;
+          color: #1f2937;
+        }
+
+        .transaction-price {
+          font-size: 18px;
+          font-weight: 700;
+        }
+
+        .transaction-price.cash {
+          color: #3b82f6; /* 파란색 */
+        }
+
+        .transaction-price.card {
+          color: #10b981; /* 초록색 */
+        }
+
+        .transaction-card-body {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+        }
+
+        .transaction-info {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .transaction-plan {
+          font-size: 14px;
+          font-weight: 500;
+          color: #374151;
+        }
+
+        .transaction-date {
+          font-size: 13px;
+          color: #6b7280;
+        }
+
+        .transaction-type {
+          font-size: 13px;
+          color: #6b7280;
+        }
+
+        .transaction-payment-buttons {
+          display: flex;
+          gap: 8px;
+        }
+
+        .payment-button {
+          padding: 6px 12px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          background: white;
+          font-size: 12px;
+          font-weight: 500;
+          color: #6b7280;
+          cursor: default;
+          transition: all 0.2s;
+        }
+
+        .payment-button.active.cash {
+          background: #3b82f6;
+          border-color: #3b82f6;
+          color: white;
+        }
+
+        .payment-button.active.card {
+          background: #10b981;
+          border-color: #10b981;
+          color: white;
+        }
+
+        .payment-button:not(.active) {
+          background: #f3f4f6;
+          color: #9ca3af;
         }
 
         .loading-container {

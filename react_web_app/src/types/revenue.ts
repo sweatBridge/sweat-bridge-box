@@ -13,6 +13,18 @@ export interface DailyRevenue {
   refundRevenue: number; // 환불액
 }
 
+export interface RevenueData {
+  assignee: string;
+  createdAt: any; // Timestamp
+  id: string;
+  paymentType: 'card' | 'cash';
+  plan: string;
+  price: string;
+  realName: string;
+  type: string;
+  refundAmount: string;
+}
+
 export interface MonthlyRevenue {
   year: number;
   month: number;
@@ -20,6 +32,7 @@ export interface MonthlyRevenue {
   membershipRevenue: number;
   otherRevenue: number;
   dailyData: DailyRevenue[];
+  dailyTransactions: { [date: string]: RevenueData[] }; // 날짜별 거래 내역
 }
 
 export interface RevenueStats {
