@@ -541,22 +541,20 @@ export class MembershipService {
       const currentHold = membership.holds[currentHoldIndex];
       const originalHoldDays = currentHold.days;
 
-      // 홀딩 종료일을 오늘 전날로 변경 (D-1)
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      yesterday.setHours(0, 0, 0, 0);
+      // 홀딩 종료일을 오늘로 변경 (D)
+      const today = new Date(now);
+      today.setHours(0, 0, 0, 0);
 
       // 새로운 홀딩 일수 계산
       const holdStartDate = new Date(currentHold.startDate);
-      const newHoldDays = getDaysBetween(holdStartDate, yesterday);
-
+      const newHoldDays = getDaysBetween(holdStartDate, today);
       // 홀딩이 시작되지 않았거나 음수인 경우 처리
       if (newHoldDays < 0) {
         throw new Error('홀딩 시작 전에는 해제할 수 없습니다.');
       }
 
       // 홀딩 정보 업데이트
-      currentHold.endDate = yesterday;
+      currentHold.endDate = today;
       currentHold.days = newHoldDays;
       currentHold.released = true;
       currentHold.releasedAt = now;

@@ -729,9 +729,7 @@ const MemberManagementModal = ({
 
                 {/* 현재 홀딩 중인 경우에만 표시 */}
                 {currentMemberships.length > 0 && (() => {
-                  console.log(currentMemberships[0]);
                   const currentHold = getCurrentHold(currentMemberships[0]);
-                  console.log(currentHold);
                   if (!currentHold) return null;
                   
                   return (
