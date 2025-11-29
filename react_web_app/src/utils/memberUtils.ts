@@ -1,3 +1,5 @@
+import { MembershipService } from '../services/membershipService';
+
 /**
  * 성별 텍스트 변환
  */
@@ -119,33 +121,17 @@ export const getActiveMembersCount = (members: any[]): number => {
 
 /**
  * 주의 회원 필터링
- * - 횟수권: 잔여 횟수 6회 이하
- * - 기간권: 잔여 기간 14일 이내
+ * - 남은 일자 14일 이내 (타입과 상관없이 통일)
+ * @deprecated MembershipService.filterWarningMembers를 직접 사용하세요
  */
 export const getWarningMembers = (members: any[]): any[] => {
-  return members.filter(member => {
-    const { type, remainingDays, remainingVisits } = member.membershipInfo;
-    
-    if (type === 'countPass' || type === '횟수권') {
-      // 횟수권: 잔여 횟수 6회 이하
-      const visits = typeof remainingVisits === 'string' 
-        ? parseInt(remainingVisits) 
-        : remainingVisits;
-      return visits > 0 && visits <= 6;
-    } else if (type === 'periodPass' || type === '기간권') {
-      // 기간권: 잔여 기간 14일 이내
-      const days = typeof remainingDays === 'string' 
-        ? parseInt(remainingDays) 
-        : remainingDays;
-      return days > 0 && days <= 14;
-    }
-    
-    return false;
-  });
+  // MembershipService의 함수를 사용하도록 위임
+  return MembershipService.filterWarningMembers(members);
 };
 
 /**
  * 주의 회원 수 계산
+ * @deprecated MembershipService.filterWarningMembers를 사용하세요
  */
 export const getWarningMembersCount = (members: any[]): number => {
   return getWarningMembers(members).length;

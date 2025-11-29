@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { DollarSign, TrendingUp, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { DollarSign, TrendingUp, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { useRevenueManagement } from '../hooks/useRevenueManagement';
-import { DailyRevenue } from '../types/revenue';
+import { DailyRevenue, RevenueData } from '../types/revenue';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
+import TransactionHistoryModal from '../components/modals/revenue/TransactionHistoryModal';
 
 type ValuePiece = Date | null;
 type Value = ValuePiece | [ValuePiece, ValuePiece];
@@ -28,6 +29,7 @@ const RevenueManagement = () => {
   // 상태 관리
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+  const [transactionModalVisible, setTransactionModalVisible] = useState(false);
 
   // 페이지 정보 설정
   useEffect(() => {
@@ -70,6 +72,19 @@ const RevenueManagement = () => {
     return monthlyRevenue.dailyData.find(day => day.date === dateStr) || null;
   }, [monthlyRevenue, selectedDate]);
 
+  // 선택된 날짜의 거래 내역 가져오기
+  const getSelectedDayTransactions = useCallback((): RevenueData[] => {
+    if (!monthlyRevenue) return [];
+    
+    // 로컬 시간 기준으로 날짜 문자열 생성
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
+    return monthlyRevenue.dailyTransactions[dateStr] || [];
+  }, [monthlyRevenue, selectedDate]);
+
   // 캘린더 날짜 클릭 핸들러
   const handleDateChange = (value: Value) => {
     if (value instanceof Date) {
@@ -95,20 +110,25 @@ const RevenueManagement = () => {
       
       const dayRevenue = monthlyRevenue.dailyData.find(day => day.date === dateStr);
       
-      if (dayRevenue && dayRevenue.totalRevenue > 0) {
+      if (dayRevenue && (dayRevenue.cashRevenue > 0 || dayRevenue.cardRevenue > 0 || dayRevenue.refundRevenue > 0)) {
         return (
           <div className="calendar-tile-content">
-            <div className="revenue-amount">
-              {(dayRevenue.totalRevenue / 10000).toFixed(0)}만
-            </div>
-            <div className="revenue-details">
-              <span className="membership-revenue">
-                {(dayRevenue.membershipRevenue / 10000).toFixed(0)}만
-              </span>
-              <span className="other-revenue">
-                {(dayRevenue.otherRevenue / 10000).toFixed(0)}만
-              </span>
-            </div>
+            {/* 날짜는 react-calendar가 자동으로 위에 표시 */}
+            {dayRevenue.cashRevenue > 0 && (
+              <div className="revenue-line cash-revenue">
+                {dayRevenue.cashRevenue.toLocaleString()}원
+              </div>
+            )}
+            {dayRevenue.cardRevenue > 0 && (
+              <div className="revenue-line card-revenue">
+                {dayRevenue.cardRevenue.toLocaleString()}원
+              </div>
+            )}
+            {dayRevenue.refundRevenue > 0 && (
+              <div className="revenue-line refund-revenue">
+                {dayRevenue.refundRevenue.toLocaleString()}원
+              </div>
+            )}
           </div>
         );
       }
@@ -236,20 +256,16 @@ const RevenueManagement = () => {
             <h3>매출 캘린더</h3>
             <div className="calendar-legend">
               <div className="legend-item">
-                <div className="legend-color membership"></div>
-                <span>회원권 매출</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-color other"></div>
-                <span>기타 매출</span>
-              </div>
-              <div className="legend-item">
                 <div className="legend-color cash"></div>
                 <span>현금 매출</span>
               </div>
               <div className="legend-item">
                 <div className="legend-color card"></div>
                 <span>카드 매출</span>
+              </div>
+              <div className="legend-item">
+                <div className="legend-color refund"></div>
+                <span>환불액</span>
               </div>
             </div>
           </div>
@@ -301,36 +317,6 @@ const RevenueManagement = () => {
               <div className="revenue-breakdown">
                 <div className="breakdown-item">
                   <div className="breakdown-header">
-                    <div className="breakdown-color membership"></div>
-                    <span className="breakdown-label">회원권 매출</span>
-                  </div>
-                  <div className="breakdown-content">
-                    <div className="breakdown-amount">
-                      {selectedDayRevenue.membershipRevenue.toLocaleString()}원
-                    </div>
-                    <div className="breakdown-count">
-                      {selectedDayRevenue.membershipCount}건
-                    </div>
-                  </div>
-                </div>
-
-                <div className="breakdown-item">
-                  <div className="breakdown-header">
-                    <div className="breakdown-color other"></div>
-                    <span className="breakdown-label">기타 매출</span>
-                  </div>
-                  <div className="breakdown-content">
-                    <div className="breakdown-amount">
-                      {selectedDayRevenue.otherRevenue.toLocaleString()}원
-                    </div>
-                    <div className="breakdown-count">
-                      {selectedDayRevenue.otherCount}건
-                    </div>
-                  </div>
-                </div>
-
-                <div className="breakdown-item">
-                  <div className="breakdown-header">
                     <div className="breakdown-color cash"></div>
                     <span className="breakdown-label">현금 매출</span>
                   </div>
@@ -358,39 +344,52 @@ const RevenueManagement = () => {
                     </div>
                   </div>
                 </div>
+
+                <div className="breakdown-item">
+                  <div className="breakdown-header">
+                    <div className="breakdown-color refund"></div>
+                    <span className="breakdown-label">환불액</span>
+                  </div>
+                  <div className="breakdown-content">
+                    <div className="breakdown-amount">
+                      {selectedDayRevenue.refundRevenue.toLocaleString()}원
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="revenue-chart">
-                <div className="chart-title">매출 구성 비율</div>
-                <div className="chart-bar">
-                  <div 
-                    className="chart-segment membership"
-                    style={{ 
-                      width: `${(selectedDayRevenue.membershipRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
-                    }}
-                  ></div>
-                  <div 
-                    className="chart-segment other"
-                    style={{ 
-                      width: `${(selectedDayRevenue.otherRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
-                    }}
-                  ></div>
+              {selectedDayRevenue.totalRevenue > 0 && (
+                <div className="revenue-chart">
+                  <div className="chart-title">결제수단 비율</div>
+                  <div className="chart-bar">
+                    <div 
+                      className="chart-segment cash"
+                      style={{ 
+                        width: `${(selectedDayRevenue.cashRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
+                      }}
+                    ></div>
+                    <div 
+                      className="chart-segment card"
+                      style={{ 
+                        width: `${(selectedDayRevenue.cardRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
+                      }}
+                    ></div>
+                  </div>
                 </div>
-                
-                <div className="chart-title">결제수단 비율</div>
-                <div className="chart-bar">
-                  <div 
-                    className="chart-segment cash"
-                    style={{ 
-                      width: `${(selectedDayRevenue.cashRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
-                    }}
-                  ></div>
-                  <div 
-                    className="chart-segment card"
-                    style={{ 
-                      width: `${(selectedDayRevenue.cardRevenue / selectedDayRevenue.totalRevenue) * 100}%` 
-                    }}
-                  ></div>
+              )}
+
+              {/* 거래 내역 보기 버튼 */}
+              <div className="transaction-list">
+                <div className="transaction-list-header">
+                  <h4>거래 내역</h4>
+                  <button 
+                    className="btn-view-transactions"
+                    onClick={() => setTransactionModalVisible(true)}
+                    disabled={getSelectedDayTransactions().length === 0}
+                  >
+                    <Eye size={16} />
+                    보기
+                  </button>
                 </div>
               </div>
             </div>
@@ -403,6 +402,14 @@ const RevenueManagement = () => {
           )}
         </div>
       </div>
+
+      {/* 거래 내역 모달 */}
+      <TransactionHistoryModal
+        visible={transactionModalVisible}
+        transactions={getSelectedDayTransactions()}
+        selectedDate={selectedDate}
+        onClose={() => setTransactionModalVisible(false)}
+      />
 
       <style>{`
         .stats-grid {
@@ -532,20 +539,16 @@ const RevenueManagement = () => {
           border-radius: 2px;
         }
 
-        .legend-color.membership {
-          background: #3b82f6;
-        }
-
-        .legend-color.other {
-          background: #10b981;
-        }
-
         .legend-color.cash {
-          background: #f59e0b;
+          background: #3b82f6; /* 파란색 */
         }
 
         .legend-color.card {
-          background: #8b5cf6;
+          background: #10b981; /* 녹색 */
+        }
+
+        .legend-color.refund {
+          background: #dc2626; /* 빨간색 */
         }
 
         .calendar-container {
@@ -629,6 +632,21 @@ const RevenueManagement = () => {
           transition: all 0.2s;
         }
 
+        .react-calendar__tile {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-start;
+          padding: 4px 2px;
+        }
+
+        .react-calendar__month-view__days__day abbr {
+          position: relative;
+          z-index: 2;
+          margin-bottom: 8px;
+          font-weight: 500;
+        }
+
         .react-calendar__month-view__days__day:hover {
           background-color: #f8fafc;
           border-color: #e2e8f0;
@@ -651,43 +669,37 @@ const RevenueManagement = () => {
 
         .calendar-tile-content {
           position: absolute;
-          top: 4px;
-          left: 4px;
-          right: 4px;
-          bottom: 4px;
+          top: 24px;
+          left: 0;
+          right: 0;
+          bottom: 0;
           display: flex;
           flex-direction: column;
-          justify-content: space-between;
+          justify-content: flex-start;
+          gap: 2px;
+          padding: 0 2px;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .revenue-line {
           font-size: 10px;
-        }
-
-        .revenue-amount {
-          font-weight: 600;
-          color: #374151;
+          font-weight: 700;
+          line-height: 1.3;
           text-align: center;
-          margin-top: 2px;
+          flex-shrink: 0;
         }
 
-        .revenue-details {
-          display: flex;
-          justify-content: space-between;
-          margin-top: auto;
+        .revenue-line.cash-revenue {
+          color: #3b82f6; /* 파란색 */
         }
 
-        .membership-revenue {
-          background: #3b82f6;
-          color: white;
-          padding: 1px 3px;
-          border-radius: 2px;
-          font-size: 9px;
+        .revenue-line.card-revenue {
+          color: #10b981; /* 녹색 */
         }
 
-        .other-revenue {
-          background: #10b981;
-          color: white;
-          padding: 1px 3px;
-          border-radius: 2px;
-          font-size: 9px;
+        .revenue-line.refund-revenue {
+          color: #dc2626; /* 빨간색 */
         }
 
         .details-section {
@@ -757,19 +769,15 @@ const RevenueManagement = () => {
         }
 
         .breakdown-item:nth-child(1) {
-          border-left-color: #3b82f6; /* 회원권 매출 */
+          border-left-color: #3b82f6; /* 현금 매출 */
         }
 
         .breakdown-item:nth-child(2) {
-          border-left-color: #10b981; /* 기타 매출 */
+          border-left-color: #10b981; /* 카드 매출 */
         }
 
         .breakdown-item:nth-child(3) {
-          border-left-color: #f59e0b; /* 현금 매출 */
-        }
-
-        .breakdown-item:nth-child(4) {
-          border-left-color: #8b5cf6; /* 카드 매출 */
+          border-left-color: #dc2626; /* 환불액 */
         }
 
         .breakdown-header {
@@ -784,20 +792,16 @@ const RevenueManagement = () => {
           border-radius: 2px;
         }
 
-        .breakdown-color.membership {
-          background: #3b82f6;
-        }
-
-        .breakdown-color.other {
-          background: #10b981;
-        }
-
         .breakdown-color.cash {
-          background: #f59e0b;
+          background: #3b82f6; /* 파란색 */
         }
 
         .breakdown-color.card {
-          background: #8b5cf6;
+          background: #10b981; /* 초록색 */
+        }
+
+        .breakdown-color.refund {
+          background: #dc2626; /* 빨간색 */
         }
 
         .breakdown-label {
@@ -833,20 +837,12 @@ const RevenueManagement = () => {
           background: #f3f4f6;
         }
 
-        .chart-segment.membership {
-          background: #3b82f6;
-        }
-
-        .chart-segment.other {
-          background: #10b981;
-        }
-
         .chart-segment.cash {
-          background: #f59e0b;
+          background: #3b82f6; /* 파란색 */
         }
 
         .chart-segment.card {
-          background: #8b5cf6;
+          background: #10b981; /* 초록색 */
         }
 
         .chart-title {
@@ -885,6 +881,158 @@ const RevenueManagement = () => {
         .no-revenue p {
           margin: 0;
           font-size: 14px;
+        }
+
+        .transaction-list {
+          margin-top: 24px;
+        }
+
+        .transaction-list-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+        }
+
+        .transaction-list-header h4 {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .btn-view-transactions {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          background: ${Gradients.primary};
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-view-transactions:hover:not(:disabled) {
+          background: ${Gradients.primaryHover};
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-view-transactions:disabled {
+          background: #d1d5db;
+          color: #9ca3af;
+          cursor: not-allowed;
+          opacity: 0.6;
+        }
+
+        .transaction-cards {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .transaction-card {
+          background: white;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          padding: 16px;
+          transition: all 0.2s;
+        }
+
+        .transaction-card:hover {
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .transaction-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+
+        .transaction-member-name {
+          font-size: 18px;
+          font-weight: 700;
+          color: #1f2937;
+        }
+
+        .transaction-price {
+          font-size: 18px;
+          font-weight: 700;
+        }
+
+        .transaction-price.cash {
+          color: #3b82f6; /* 파란색 */
+        }
+
+        .transaction-price.card {
+          color: #10b981; /* 초록색 */
+        }
+
+        .transaction-card-body {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+        }
+
+        .transaction-info {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .transaction-plan {
+          font-size: 14px;
+          font-weight: 500;
+          color: #374151;
+        }
+
+        .transaction-date {
+          font-size: 13px;
+          color: #6b7280;
+        }
+
+        .transaction-type {
+          font-size: 13px;
+          color: #6b7280;
+        }
+
+        .transaction-payment-buttons {
+          display: flex;
+          gap: 8px;
+        }
+
+        .payment-button {
+          padding: 6px 12px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          background: white;
+          font-size: 12px;
+          font-weight: 500;
+          color: #6b7280;
+          cursor: default;
+          transition: all 0.2s;
+        }
+
+        .payment-button.active.cash {
+          background: #3b82f6;
+          border-color: #3b82f6;
+          color: white;
+        }
+
+        .payment-button.active.card {
+          background: #10b981;
+          border-color: #10b981;
+          color: white;
+        }
+
+        .payment-button:not(.active) {
+          background: #f3f4f6;
+          color: #9ca3af;
         }
 
         .loading-container {

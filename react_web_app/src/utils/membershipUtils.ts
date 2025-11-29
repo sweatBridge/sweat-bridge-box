@@ -68,6 +68,16 @@ export function getCurrentMemberships(memberships: MembershipData[]): Membership
   }
   
   return memberships.filter(membership => {
+    // 삭제된 회원권 제외
+    if ((membership as any).deleted) {
+      return false;
+    }
+
+    // 환불된 회원권 제외
+    if ((membership as any).refund && (membership as any).refund.isRefunded) {
+      return false;
+    }
+    
     // 새로운 구조 체크
     if (membership.period) {
       const startDate = membership.period.startDate && membership.period.startDate.seconds 

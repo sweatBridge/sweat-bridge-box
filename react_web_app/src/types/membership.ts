@@ -96,6 +96,7 @@ export interface MemberManagementModalProps {
   onClose: () => void;
   onSuccess?: (message: string) => void;
   onError?: (message: string) => void;
+  onMemoUpdate?: (email: string, memo: string) => void;
 }
 
 export interface AddMembershipData {

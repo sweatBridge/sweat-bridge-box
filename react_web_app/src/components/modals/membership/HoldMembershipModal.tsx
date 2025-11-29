@@ -145,7 +145,7 @@ const HoldMembershipModal = ({
             취소
           </button>
           <button className="btn btn-primary" onClick={handleConfirm} disabled={loading}>
-            {loading ? '처리 중...' : '홀딩 적용'}
+            {loading ? '처리 중...' : '적용'}
           </button>
         </div>
       </div>

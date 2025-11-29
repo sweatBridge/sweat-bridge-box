@@ -403,7 +403,10 @@ export class MemberService {
       // 6. boxName 업데이트
       userDoc.boxName = actualBoxName;
 
-      // 7. 회원 생성
+      // 7. 가입일 추가
+      userDoc.joinedAt = Timestamp.now();
+
+      // 8. 회원 생성
       await this.createMember(actualBoxName, userDoc);
 
       console.log(`Applicant ${email} approved successfully`);

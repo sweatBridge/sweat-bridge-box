@@ -204,6 +204,108 @@ export class MembershipService {
   }
 
   /**
+   * 주의 회원 판단 기준 (나중에 변경하기 용이하도록 분리)
+   * @returns 주의 회원인지 여부
+   */
+  static getWarningMemberThreshold(): number {
+    return 14; // 남은 일자 14일 이내
+  }
+
+  /**
+   * 회원이 주의 회원인지 판단
+   * @param member 회원 정보
+   * @returns 주의 회원인지 여부
+   */
+  static isWarningMember(member: any): boolean {
+    const threshold = this.getWarningMemberThreshold();
+    const remainingDays = member.membershipInfo?.remainingDays;
+    
+    // remainingDays가 숫자가 아니거나 '-'인 경우 제외
+    if (remainingDays === '-' || remainingDays === undefined || remainingDays === null) {
+      return false;
+    }
+    
+    // 숫자로 변환
+    const days = typeof remainingDays === 'string' 
+      ? parseInt(remainingDays) 
+      : remainingDays;
+    
+    // 숫자가 아니거나 NaN인 경우 제외
+    if (isNaN(days)) {
+      return false;
+    }
+    
+    // 0보다 크고 threshold 이하인 경우 주의 회원
+    return days > 0 && days <= threshold;
+  }
+
+  /**
+   * 회원 배열에서 주의 회원만 필터링
+   * @param members 회원 배열
+   * @returns 주의 회원 배열
+   */
+  static filterWarningMembers(members: any[]): any[] {
+    return members.filter(member => this.isWarningMember(member));
+  }
+
+  /**
+   * 회원이 신규 회원인지 확인 (최근 30일 내 가입)
+   * @param member 회원 정보
+   * @returns 신규 회원인지 여부
+   */
+  static isNewMember(member: any): boolean {
+    if (!member.joinedAt) {
+      return false;
+    }
+
+    const joinedDate = member.joinedAt?.toDate?.() || new Date(member.joinedAt);
+    const now = new Date();
+    const daysSinceJoined = Math.floor((now.getTime() - joinedDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return daysSinceJoined <= 30;
+  }
+
+  /**
+   * 회원의 상태 뱃지 정보 반환
+   * @param member 회원 정보
+   * @returns { status: '신규' | '주의' | '활성' | '비활성', colorClass: 'new' | 'warning' | 'active' | 'inactive' }
+   */
+  static getMemberStatusBadge(member: any): { status: string; colorClass: string } {
+    // 신규 회원인 경우 (최근 30일 내 가입) - 최우선 체크
+    // 회원권이 없어도 신규 회원이면 "신규" 뱃지 표시
+    if (this.isNewMember(member)) {
+      return {
+        status: '신규',
+        colorClass: 'new'
+      };
+    }
+    
+    const membershipType = member.membershipInfo?.type || '없음';
+    
+    // 회원권이 없는 경우
+    if (membershipType === '없음') {
+      return {
+        status: '비활성',
+        colorClass: 'inactive'
+      };
+    }
+    
+    // 주의 회원인 경우
+    if (this.isWarningMember(member)) {
+      return {
+        status: '주의',
+        colorClass: 'warning'
+      };
+    }
+    
+    // 나머지는 활성
+    return {
+      status: '활성',
+      colorClass: 'active'
+    };
+  }
+
+  /**
    * 현재 유효한 회원권 필터링 (레거시 및 새 구조 지원)
    */
   static getCurrentMemberships(memberships: UserMembership[]): UserMembership[] {
@@ -439,22 +541,20 @@ export class MembershipService {
       const currentHold = membership.holds[currentHoldIndex];
       const originalHoldDays = currentHold.days;
 
-      // 홀딩 종료일을 오늘 전날로 변경 (D-1)
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      yesterday.setHours(0, 0, 0, 0);
+      // 홀딩 종료일을 오늘로 변경 (D)
+      const today = new Date(now);
+      today.setHours(0, 0, 0, 0);
 
       // 새로운 홀딩 일수 계산
       const holdStartDate = new Date(currentHold.startDate);
-      const newHoldDays = getDaysBetween(holdStartDate, yesterday);
-
+      const newHoldDays = getDaysBetween(holdStartDate, today);
       // 홀딩이 시작되지 않았거나 음수인 경우 처리
       if (newHoldDays < 0) {
         throw new Error('홀딩 시작 전에는 해제할 수 없습니다.');
       }
 
       // 홀딩 정보 업데이트
-      currentHold.endDate = yesterday;
+      currentHold.endDate = today;
       currentHold.days = newHoldDays;
       currentHold.released = true;
       currentHold.releasedAt = now;
@@ -530,7 +630,7 @@ export class MembershipService {
         throw new Error('유효하지 않은 회원권 인덱스입니다.');
       }
 
-      const membership = memberships[membershipIndex] as any;
+      const membership = memberships[membershipIndex];
       
       // 새 구조만 지원
       if (!membership.period) {
@@ -541,25 +641,15 @@ export class MembershipService {
       for (let i = 0; i < memberships.length; i++) {
         if (i === membershipIndex) continue; // 자기 자신은 제외
         
-        const otherMembership = memberships[i] as any;
+        const otherMembership = memberships[i];
         
         // 삭제되거나 환불된 회원권은 제외
         if (otherMembership.deleted || (otherMembership.refund && otherMembership.refund.isRefunded)) {
           continue;
         }
-        
-        let otherStartDate: Date;
-        let otherEndDate: Date;
-        
-        // 새 구조
-        if (otherMembership.period) {
-          otherStartDate = new Date(otherMembership.period.startDate);
-          otherEndDate = new Date(otherMembership.period.endDate);
-        } else {
-          // 레거시 구조
-          otherStartDate = new Date(otherMembership.startDate);
-          otherEndDate = new Date(otherMembership.endDate);
-        }
+
+        const otherStartDate = new Date(otherMembership.period.startDate);
+        const otherEndDate = new Date(otherMembership.period.endDate);
         
         // 날짜 겹침 체크
         if (newStartDate <= otherEndDate && otherStartDate <= newEndDate) {

@@ -3,36 +3,29 @@ import {
   formatPhoneNumber, 
   getGenderText 
 } from '../../../utils/memberUtils';
-import { MembershipService } from '../../../services/membershipService';
 import { Gradients } from '../../../constants/gradients';
-import { AlertTriangle, X } from 'lucide-react';
+import { UserPlus, X } from 'lucide-react';
 
-interface WarningMembersModalProps {
+interface NewMembersModalProps {
   visible: boolean;
   members: Member[];
   onClose: () => void;
   onMemberClick?: (member: Member) => void;
 }
 
-const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: WarningMembersModalProps) => {
+const NewMembersModal = ({ visible, members, onClose, onMemberClick }: NewMembersModalProps) => {
   if (!visible) return null;
 
-  const getWarningMessage = (member: Member) => {
-    const remainingDays = member.membershipInfo?.remainingDays;
-    
-    if (remainingDays === '-' || remainingDays === undefined || remainingDays === null) {
+  const getJoinedDate = (member: Member) => {
+    if (!member.joinedAt) {
       return '-';
     }
+
+    const joinedDate = member.joinedAt?.toDate?.() || new Date(member.joinedAt);
+    const now = new Date();
+    const daysSinceJoined = Math.floor((now.getTime() - joinedDate.getTime()) / (1000 * 60 * 60 * 24));
     
-    const days = typeof remainingDays === 'string' 
-      ? parseInt(remainingDays) 
-      : remainingDays;
-    
-    if (isNaN(days)) {
-      return '-';
-    }
-    
-    return `${days}일`;
+    return `${daysSinceJoined}일 전`;
   };
 
   return (
@@ -40,8 +33,8 @@ const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: Warni
       <div className="modal-container" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-header-content">
-            <AlertTriangle size={24} className="warning-icon" />
-            <h3>주의 회원 목록</h3>
+            <UserPlus size={24} className="new-icon" />
+            <h3>신규 회원 목록</h3>
           </div>
           <button className="modal-close" onClick={onClose}>
             <X size={24} />
@@ -50,26 +43,26 @@ const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: Warni
         
         <div className="modal-body">
           <div className="modal-description">
-            <p>회원권 만료가 임박한 회원 목록입니다.</p>
+            <p>최근 30일 내 가입한 회원 목록입니다.</p>
             <div className="legend">
-              <span className="legend-item warning">
+              <span className="legend-item new">
                 <span className="legend-dot"></span>
-                <strong>주의</strong> - 남은 일자 {MembershipService.getWarningMemberThreshold()}일 이내
+                <strong>신규</strong> - 최근 30일 내 가입
               </span>
             </div>
           </div>
 
           {members.length === 0 ? (
             <div className="empty-state">
-              <AlertTriangle size={48} className="empty-icon" />
-              <p>주의 회원이 없습니다.</p>
+              <UserPlus size={48} className="empty-icon" />
+              <p>신규 회원이 없습니다.</p>
             </div>
           ) : (
             <div className="table-container">
               <table className="members-table">
                 <thead>
                   <tr>
-                    <th className="text-center">상태</th>
+                    <th className="text-center">가입일</th>
                     <th>이름</th>
                     <th>성별</th>
                     <th>연락처</th>
@@ -84,8 +77,8 @@ const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: Warni
                         onClick={() => onMemberClick?.(member)}
                       >
                         <td className="text-center">
-                          <span className="status-badge warning">
-                            {getWarningMessage(member)}
+                          <span className="status-badge new">
+                            {getJoinedDate(member)}
                           </span>
                         </td>
                         <td className="member-name">{member.realName}</td>
@@ -149,8 +142,8 @@ const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: Warni
           gap: 12px;
         }
 
-        .warning-icon {
-          color: #fbbf24;
+        .new-icon {
+          color: #60a5fa;
         }
 
         .modal-header h3 {
@@ -216,9 +209,9 @@ const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: Warni
           font-weight: 600;
         }
 
-        .legend-item.warning .legend-dot {
-          background: #f59e0b;
-          box-shadow: 0 0 0 2px #fef3c7;
+        .legend-item.new .legend-dot {
+          background: #60a5fa;
+          box-shadow: 0 0 0 2px #dbeafe;
         }
 
         .legend-dot {
@@ -329,9 +322,10 @@ const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: Warni
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        .status-badge.warning {
-          background: #f59e0b;
-          color: white;
+        .status-badge.new {
+          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+          border: 1px solid #60a5fa;
+          color: #1e40af;
         }
 
         .modal-footer {
@@ -397,5 +391,5 @@ const WarningMembersModal = ({ visible, members, onClose, onMemberClick }: Warni
   );
 };
 
-export default WarningMembersModal;
+export default NewMembersModal;
 

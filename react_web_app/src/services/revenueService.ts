@@ -5,7 +5,7 @@ import { db } from '../config/firebase';
 import { Timestamp } from 'firebase/firestore';
 import { formatDateToString } from '../utils/dateUtils';
 
-interface RevenueData {
+export interface RevenueData {
   assignee: string;
   createdAt: Timestamp;
   id: string;
@@ -41,7 +41,8 @@ export class RevenueService {
           totalRevenue: 0,
           membershipRevenue: 0,
           otherRevenue: 0,
-          dailyData: []
+          dailyData: [],
+          dailyTransactions: {}
         };
       }
 
@@ -58,7 +59,11 @@ export class RevenueService {
         cashCount: number;
         cardRevenue: number;
         cardCount: number;
+        refundRevenue: number;
       }>();
+
+      // 날짜별 거래 내역을 담을 Map
+      const dailyTransactionsMap = new Map<string, RevenueData[]>();
 
       // 각 매출 데이터를 일별로 집계
       Object.entries(monthData).forEach(([revenueKey, data]) => {
@@ -78,33 +83,40 @@ export class RevenueService {
             cashRevenue: 0,
             cashCount: 0,
             cardRevenue: 0,
-            cardCount: 0
+            cardCount: 0,
+            refundRevenue: 0
           });
+          dailyTransactionsMap.set(dateStr, []);
         }
+
+        // 거래 내역 추가
+        dailyTransactionsMap.get(dateStr)!.push(revenueData);
 
         const dailyData = dailyRevenueMap.get(dateStr)!;
         const price = parseInt(revenueData.price) || 0;
         const refundAmount = parseInt(revenueData.refundAmount) || 0;
-        const actualPrice = price - refundAmount;  // 환불 금액 차감
+
+        // 환불액 별도 집계
+        dailyData.refundRevenue += refundAmount;
 
         // 회원권과 기타 매출 구분
         // type이 countPass 또는 periodPass면 회원권, 그 외는 기타
         const isMembership = revenueData.type === 'countPass' || revenueData.type === 'periodPass';
         
         if (isMembership) {
-          dailyData.membershipRevenue += actualPrice;
+          dailyData.membershipRevenue += price;
           dailyData.membershipCount += 1;
         } else {
-          dailyData.otherRevenue += actualPrice;
+          dailyData.otherRevenue += price;
           dailyData.otherCount += 1;
         }
 
-        // 결제 수단별 집계
+        // 결제 수단별 집계 (price 기준)
         if (revenueData.paymentType === 'cash') {
-          dailyData.cashRevenue += actualPrice;
+          dailyData.cashRevenue += price;
           dailyData.cashCount += 1;
         } else if (revenueData.paymentType === 'card') {
-          dailyData.cardRevenue += actualPrice;
+          dailyData.cardRevenue += price;
           dailyData.cardCount += 1;
         }
       });
@@ -117,11 +129,12 @@ export class RevenueService {
           membershipCount: data.membershipCount,
           otherRevenue: data.otherRevenue,
           otherCount: data.otherCount,
-          totalRevenue: data.membershipRevenue + data.otherRevenue,
+          totalRevenue: data.cashRevenue + data.cardRevenue - data.refundRevenue, // 현금 + 카드 - 환불액
           cashRevenue: data.cashRevenue,
           cashCount: data.cashCount,
           cardRevenue: data.cardRevenue,
-          cardCount: data.cardCount
+          cardCount: data.cardCount,
+          refundRevenue: data.refundRevenue
         }))
         .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -130,13 +143,20 @@ export class RevenueService {
       const membershipRevenue = dailyData.reduce((sum, day) => sum + day.membershipRevenue, 0);
       const otherRevenue = dailyData.reduce((sum, day) => sum + day.otherRevenue, 0);
 
+      // Map을 객체로 변환
+      const dailyTransactions: { [date: string]: RevenueData[] } = {};
+      dailyTransactionsMap.forEach((transactions, date) => {
+        dailyTransactions[date] = transactions;
+      });
+
       return {
         year,
         month,
         totalRevenue,
         membershipRevenue,
         otherRevenue,
-        dailyData
+        dailyData,
+        dailyTransactions
       };
     } catch (error) {
       console.error('Error fetching monthly revenue:', error);

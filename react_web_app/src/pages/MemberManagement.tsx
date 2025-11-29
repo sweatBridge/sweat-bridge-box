@@ -1,15 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Search, Users, UserPlus, CreditCard, Eye, Trash2, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Search, Users, UserPlus, CreditCard, Trash2, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Member, ToastMessageType } from '../types/member';
 import { useMemberManagement } from '../hooks/useMemberManagement';
 import MemberDeletionModal from '../components/modals/member/MemberDeletionModal';
 import MembershipPlanModal from '../components/modals/membership/MembershipPlanModal';
 import MemberManagementModal from '../components/modals/member/MemberManagementModal';
 import WarningMembersModal from '../components/modals/member/WarningMembersModal';
+import NewMembersModal from '../components/modals/member/NewMembersModal';
 import AddMemberModal from '../components/modals/member/AddMemberModal';
 import ApplyRequestModal from '../components/modals/member/ApplyRequestModal';
 import ToastMessage from '../components/ToastMessage';
-import { getGenderText, filterMembers, getActiveMembersCount, getWarningMembers, getWarningMembersCount } from '../utils/memberUtils';
+import { getGenderText, filterMembers } from '../utils/memberUtils';
 import { MembershipService } from '../services/membershipService';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
@@ -25,6 +26,7 @@ const MemberManagement = () => {
     error,
     loadMembers,
     deleteMember,
+    updateMemberMemo,
     clearError
   } = useMemberManagement();
 
@@ -35,6 +37,7 @@ const MemberManagement = () => {
   const [deletionModalVisible, setDeletionModalVisible] = useState(false);
   const [membershipPlanModalVisible, setMembershipPlanModalVisible] = useState(false);
   const [warningMembersModalVisible, setWarningMembersModalVisible] = useState(false);
+  const [newMembersModalVisible, setNewMembersModalVisible] = useState(false);
   const [memberListModalVisible, setMemberListModalVisible] = useState(false);
   const [addMemberModalVisible, setAddMemberModalVisible] = useState(false);
   const [applyRequestModalVisible, setApplyRequestModalVisible] = useState(false);
@@ -70,32 +73,117 @@ const MemberManagement = () => {
     }
   }, [error, createToast, clearError]);
 
+  // 통계 계산 및 뱃지 정보 미리 계산 (페이지 로드 시 한 번만 계산)
+  const { 
+    activeMembersCount, 
+    warningMembersCount, 
+    newMembersCount,
+    totalMembersCount, 
+    warningMembers,
+    newMembers,
+    memberBadgesMap 
+  } = useMemo(() => {
+    let active = 0;
+    let warning = 0;
+    let newMembers = 0;
+    const warningList: Member[] = [];
+    const newMembersList: Member[] = [];
+    const badgesMap = new Map<string, {
+      membershipTypeBadges: Array<{ label: string; colorClass: string }>;
+      memberStatusBadge: { status: string; colorClass: string };
+    }>();
+    
+    members.forEach(member => {
+      // 회원권 상태 뱃지 정보 가져오기 (기간권 > 횟수권 > 없음 > 홀딩)
+      const membershipTypeBadges = MembershipService.getMembershipStatusBadges(member);
+      // 회원 상태 뱃지 정보 가져오기 (신규 > 주의 > 활성 > 비활성)
+      const memberStatusBadge = MembershipService.getMemberStatusBadge(member);
+      
+      // 뱃지 정보를 Map에 저장
+      badgesMap.set(member.email, {
+        membershipTypeBadges,
+        memberStatusBadge
+      });
+      
+      // 통계 계산
+      if (memberStatusBadge.status === '신규') {
+        newMembers++;
+        newMembersList.push(member);
+      } else if (memberStatusBadge.status === '활성') {
+        active++;
+      } else if (memberStatusBadge.status === '주의') {
+        warning++;
+        warningList.push(member);
+      }
+    });
+    
+    return {
+      activeMembersCount: active,
+      warningMembersCount: warning,
+      newMembersCount: newMembers,
+      totalMembersCount: active + warning + newMembers,
+      warningMembers: warningList,
+      newMembers: newMembersList,
+      memberBadgesMap: badgesMap
+    };
+  }, [members]);
+
   // 검색된 회원 필터링
   const filteredMembers = filterMembers(members, searchValue);
   
-  // 유효한 회원권을 가진 회원 수 계산
-  const activeMembersCount = getActiveMembersCount(members);
-  
-  // 주의 회원 수 및 목록 계산
-  const warningMembersCount = getWarningMembersCount(members);
-  const warningMembers = getWarningMembers(members);
+  // 2단계 정렬: 1순위 - 상태 뱃지, 2순위 - 회원권 타입 뱃지 (미리 계산된 뱃지 정보 사용)
+  const sortedMembers = [...filteredMembers].sort((a, b) => {
+    // 미리 계산된 뱃지 정보 사용
+    const badgesA = memberBadgesMap.get(a.email);
+    const badgesB = memberBadgesMap.get(b.email);
+    
+    if (!badgesA || !badgesB) return 0;
+    
+    // 1순위: 상태 뱃지 (new > warning > active > inactive)
+    const statusBadgeA = badgesA.memberStatusBadge;
+    const statusBadgeB = badgesB.memberStatusBadge;
+    
+    const statusPriorityMap: { [key: string]: number } = {
+      'warning': 1,
+      'new': 2,
+      'active': 3,
+      'inactive': 4
+    };
+    
+    const statusPriorityA = statusPriorityMap[statusBadgeA.colorClass] || 999;
+    const statusPriorityB = statusPriorityMap[statusBadgeB.colorClass] || 999;
+    
+    // 1순위가 다르면 1순위로 정렬
+    if (statusPriorityA !== statusPriorityB) {
+      return statusPriorityA - statusPriorityB;
+    }
+    
+    // 1순위가 같으면 2순위로 정렬: 회원권 타입 뱃지 (primary > hold > none)
+    const membershipBadgeA = badgesA.membershipTypeBadges[0] || { colorClass: '' };
+    const membershipBadgeB = badgesB.membershipTypeBadges[0] || { colorClass: '' };
+    
+    const membershipPriorityMap: { [key: string]: number } = {
+      'primary': 1,
+      'hold': 2,
+      'none': 3
+    };
+    
+    const membershipPriorityA = membershipPriorityMap[membershipBadgeA.colorClass] || 999;
+    const membershipPriorityB = membershipPriorityMap[membershipBadgeB.colorClass] || 999;
+    
+    return membershipPriorityA - membershipPriorityB;
+  });
   
   // 페이지네이션 계산
-  const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedMembers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentMembers = filteredMembers.slice(startIndex, endIndex);
+  const currentMembers = sortedMembers.slice(startIndex, endIndex);
   
   // 검색어가 변경되면 첫 페이지로 이동
   useEffect(() => {
     setCurrentPage(1);
   }, [searchValue]);
-
-  // 회원 상세 보기 및 회원권 관리
-  const handleShowDetails = useCallback((member: Member) => {
-    setSelectedMember(member);
-    setMemberManagementModalVisible(true);
-  }, []);
 
   // 회원 삭제
   const handleDeleteMember = useCallback((member: Member) => {
@@ -159,12 +247,12 @@ const MemberManagement = () => {
     }
   };
 
-  // 회원 리스트 모달 열기 (신규 회원용)
+  // 회원 리스트 모달 열기
   const handleOpenMemberList = (type: 'warning' | 'new') => {
     if (type === 'warning') {
       setWarningMembersModalVisible(true);
-    } else {
-      setMemberListModalVisible(true);
+    } else if (type === 'new') {
+      setNewMembersModalVisible(true);
     }
   };
 
@@ -175,8 +263,12 @@ const MemberManagement = () => {
     setMemberManagementModalVisible(true);
   };
 
-  // 임시 통계 데이터 (추후 실제 데이터로 대체)
-  const newMembersCount = 5; // 신규 회원 (이번 달 등록)
+  // 신규 회원 모달에서 회원 클릭 시
+  const handleNewMemberClick = (member: Member) => {
+    setNewMembersModalVisible(false);
+    setSelectedMember(member);
+    setMemberManagementModalVisible(true);
+  };
 
   return (
     <div className="dashboard">
@@ -204,7 +296,7 @@ const MemberManagement = () => {
           </div>
           <div className="stat-card-content">
             <div className="stat-card-label">총 회원</div>
-            <div className="stat-card-value">{members.length}명</div>
+            <div className="stat-card-value">{totalMembersCount}명</div>
           </div>
         </div>
 
@@ -274,8 +366,7 @@ const MemberManagement = () => {
                 <div className="table-cell">잔여 기간</div>
                 <div className="table-cell">잔여 횟수</div>
                 <div className="table-cell">성별</div>
-                <div className="table-cell">기능</div>
-                <div className="table-cell">상세</div>
+                <div className="table-cell">관리</div>
               </div>
 
               {filteredMembers.length === 0 ? (
@@ -286,8 +377,13 @@ const MemberManagement = () => {
                 </div>
               ) : (
                 currentMembers.map((member, index) => {
-                  // 회원권 상태 뱃지 정보 가져오기
-                  const statusBadges = MembershipService.getMembershipStatusBadges(member);
+                  // 미리 계산된 뱃지 정보 사용
+                  const badges = memberBadgesMap.get(member.email) || {
+                    membershipTypeBadges: [],
+                    memberStatusBadge: { status: '', colorClass: '' }
+                  };
+                  const membershipTypeBadges = badges.membershipTypeBadges;
+                  const memberStatusBadge = badges.memberStatusBadge;
                   
                   return (
                     <div key={member.email} className="table-row">
@@ -299,10 +395,17 @@ const MemberManagement = () => {
                           <span>{member.realName}</span>
                         </div>
                       </div>
-                      <div className="table-cell">{member.nickName}</div>
+                      <div className="table-cell">
+                        <div className="nickname-with-badge">
+                          <span>{member.nickName}</span>
+                          <span className={`member-status-badge ${memberStatusBadge.colorClass}`}>
+                            {memberStatusBadge.status}
+                          </span>
+                        </div>
+                      </div>
                       <div className="table-cell">
                         <div className="membership-badges">
-                          {statusBadges.map((badge, idx) => (
+                          {membershipTypeBadges.map((badge, idx) => (
                             <span key={idx} className={`membership-badge ${badge.colorClass}`}>
                               {badge.label}
                             </span>
@@ -335,15 +438,6 @@ const MemberManagement = () => {
                         </button>
                       </div>
                     </div>
-                      <div className="table-cell">
-                        <button 
-                          className="btn btn-sm btn-light"
-                          onClick={() => handleShowDetails(member)}
-                          title="상세 정보"
-                        >
-                          <Eye size={14} />
-                        </button>
-                      </div>
                     </div>
                   );
                 })
@@ -351,11 +445,11 @@ const MemberManagement = () => {
             </div>
             
             {/* 페이지네이션 */}
-            {filteredMembers.length > 0 && totalPages > 1 && (
+            {sortedMembers.length > 0 && totalPages > 1 && (
               <div className="pagination-container">
                 <div className="pagination-info">
                   <span>
-                    {startIndex + 1}-{Math.min(endIndex, filteredMembers.length)} / {filteredMembers.length}명
+                    {startIndex + 1}-{Math.min(endIndex, sortedMembers.length)} / {sortedMembers.length}명
                   </span>
                 </div>
                 
@@ -415,6 +509,13 @@ const MemberManagement = () => {
             });
           }
         }}
+        onMemoUpdate={async (email, memo) => {
+          try {
+            await updateMemberMemo(email, memo);
+          } catch (error) {
+            console.error('Failed to update member memo in parent:', error);
+          }
+        }}
       />
 
       <MemberDeletionModal
@@ -451,6 +552,14 @@ const MemberManagement = () => {
         members={warningMembers}
         onClose={() => setWarningMembersModalVisible(false)}
         onMemberClick={handleWarningMemberClick}
+      />
+
+      {/* 신규 회원 모달 */}
+      <NewMembersModal
+        visible={newMembersModalVisible}
+        members={newMembers}
+        onClose={() => setNewMembersModalVisible(false)}
+        onMemberClick={handleNewMemberClick}
       />
 
       {/* 회원 추가 모달 */}
@@ -796,6 +905,46 @@ const MemberManagement = () => {
           background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%) !important;
           border: 1px solid #fb923c !important;
           color: #7c2d12 !important;
+        }
+
+        .nickname-with-badge {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .member-status-badge {
+          display: inline-block;
+          padding: 3px 8px;
+          border-radius: 10px;
+          font-size: 11px;
+          font-weight: 600;
+          border: none;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .member-status-badge.new {
+          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+          border: 1px solid #60a5fa;
+          color: #1e40af;
+        }
+
+        .member-status-badge.warning {
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          border: 1px solid #fbbf24;
+          color: #92400e;
+        }
+
+        .member-status-badge.active {
+          background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+          border: 1px solid #10b981;
+          color: #065f46;
+        }
+
+        .member-status-badge.inactive {
+          background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+          border: 1px solid #9ca3af;
+          color: #4b5563;
         }
 
         .remaining-days {

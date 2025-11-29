@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar, Users, CheckCircle, TrendingUp } from 'lucide-react';
 import { AppColors } from '../constants/colors';
 import { ClassService } from '../services/classService';
@@ -6,7 +6,8 @@ import { ClassEvent } from '../types/class';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
 import { useMemberManagement } from '../hooks/useMemberManagement';
-import { getActiveMembersCount } from '../utils/memberUtils';
+import { MembershipService } from '../services/membershipService';
+import { Member } from '../types/member';
 
 const Dashboard = () => {
   const [todayClasses, setTodayClasses] = useState<ClassEvent[]>([]);
@@ -51,9 +52,59 @@ const Dashboard = () => {
     loadData();
   }, [loadMembers]);
 
-  // 회원 통계 계산
-  const totalMembers = members.length;
-  const activeMembersCount = getActiveMembersCount(members);
+  // 회원 통계 및 신규 회원 목록 계산 (getMemberStatusBadge 한 번만 호출)
+  const {
+    totalMembersCount,
+    recentMembers
+  } = useMemo(() => {
+    let active = 0;
+    let warning = 0;
+    let newMembers = 0;
+    const newMembersList: Member[] = [];
+    
+    members.forEach(member => {
+      const memberStatusBadge = MembershipService.getMemberStatusBadge(member);
+      
+      if (memberStatusBadge.status === '신규') {
+        newMembers++;
+        newMembersList.push(member);
+      } else if (memberStatusBadge.status === '활성') {
+        active++;
+      } else if (memberStatusBadge.status === '주의') {
+        warning++;
+      }
+    });
+    
+    // 신규 회원 목록: 가입일 기준 최신순 정렬, 최대 5명
+    const recentMembersList = newMembersList
+      .sort((a, b) => {
+        const dateA = a.joinedAt?.toDate?.() || new Date(a.joinedAt || 0);
+        const dateB = b.joinedAt?.toDate?.() || new Date(b.joinedAt || 0);
+        return dateB.getTime() - dateA.getTime(); // 최신순
+      })
+      .slice(0, 5) // 최대 5명만
+      .map(member => {
+        const joinedDate = member.joinedAt?.toDate?.() || new Date(member.joinedAt || 0);
+        const dateStr = joinedDate.toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        
+        return {
+          name: member.realName,
+          date: dateStr
+        };
+      });
+    
+    return {
+      activeMembersCount: active,
+      warningMembersCount: warning,
+      newMembersCount: newMembers,
+      totalMembersCount: active + warning + newMembers,
+      recentMembers: recentMembersList
+    };
+  }, [members]);
 
   // 통계 데이터
   const statsData = [
@@ -71,8 +122,8 @@ const Dashboard = () => {
     },
     {
       title: '유효 회원',
-      value: activeMembersCount.toString(),
-      subtitle: `총 회원: ${totalMembers}명`,
+      value: totalMembersCount.toString(),
+      subtitle: `총 회원: ${totalMembersCount}명`,
       icon: Users,
       color: AppColors.success,
     },
@@ -90,14 +141,6 @@ const Dashboard = () => {
       icon: TrendingUp,
       color: AppColors.warning,
     },
-  ];
-
-  const recentMembers = [
-    { name: '김철수수', date: '2024-01-15' },
-    { name: '이영희', date: '2024-01-14' },
-    { name: '박민수', date: '2024-01-13' },
-    { name: '정수진', date: '2024-01-12' },
-    { name: '최동훈', date: '2024-01-11' },
   ];
 
   const StatCard = ({ title, value, subtitle, icon: Icon, color }: {
@@ -229,17 +272,24 @@ const Dashboard = () => {
         {/* 최근 가입 회원 */}
         <div className="content-card">
           <h3 className="content-card-title">최근 가입 회원</h3>
-          {recentMembers.map((member, index) => (
-            <div key={index} className="member-item">
-              <div className="member-avatar">
-                {member.name[0]}
-              </div>
-              <div className="member-info">
-                <div className="member-name">{member.name}</div>
-                <div className="member-date">{member.date}</div>
-              </div>
+          {recentMembers.length === 0 ? (
+            <div className="empty-state">
+              <Users size={48} className="empty-icon" />
+              <p>최근 가입한 회원이 없습니다.</p>
             </div>
-          ))}
+          ) : (
+            recentMembers.map((member, index) => (
+              <div key={index} className="member-item">
+                <div className="member-avatar">
+                  {member.name[0]}
+                </div>
+                <div className="member-info">
+                  <div className="member-name">{member.name}</div>
+                  <div className="member-date">{member.date}</div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
