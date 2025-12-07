@@ -18,15 +18,19 @@ const AddLockerModal = ({ visible, onClose, onConfirm }: AddLockerModalProps) =>
 
   const handleConfirm = async () => {
     setAddError(null);
-    const s = parseInt(startNo, 10);
-    const e = parseInt(endNo, 10);
+    const startNumber = parseInt(startNo, 10);
+    const endNumber = parseInt(endNo, 10);
     
-    if (Number.isNaN(s) || Number.isNaN(e)) {
+    if (Number.isNaN(startNumber) || Number.isNaN(endNumber)) {
       setAddError('숫자를 정확히 입력해 주세요.');
       return;
     }
-    if (s < 1 || e < 1) {
+    if (startNumber < 1 || endNumber < 1) {
       setAddError('번호는 1 이상이어야 합니다.');
+      return;
+    }
+    if (endNumber < startNumber) {
+      setAddError('끝 번호는 시작 번호보다 크거나 같아야 합니다.');
       return;
     }
 

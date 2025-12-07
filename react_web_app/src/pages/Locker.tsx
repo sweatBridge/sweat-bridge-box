@@ -142,10 +142,10 @@ const Locker: React.FC = () => {
   };
 
   const onConfirmAdd = async (startNo: string, endNo: string) => {
-    const s = parseInt(startNo, 10);
-    const e = parseInt(endNo, 10);
+    const startNumber = parseInt(startNo, 10);
+    const endNumber = parseInt(endNo, 10);
     try {
-      const { added, skipped } = await LockerService.addLockers(BOX_NAME, s, e);
+      const { added, skipped } = await LockerService.addLockers(BOX_NAME, startNumber, endNumber);
       alert(`추가: ${added.length}개, 건너뜀(이미 존재): ${skipped.length}개`);
       setShowAdd(false);
       await loadLockers();
