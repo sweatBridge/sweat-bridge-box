@@ -34,6 +34,16 @@ const AddLockerModal = ({ visible, onClose, onConfirm }: AddLockerModalProps) =>
       return;
     }
 
+    if (endNumber - startNumber > 200) {
+      setAddError('1회 최대 200개까지 추가할 수 있습니다.');
+      return;
+    }
+
+    if (endNumber > 1000) {
+      setAddError('락커 번호는 1000 이하여야 합니다.');
+      return;
+    }
+
     setAdding(true);
     try {
       await onConfirm(startNo, endNo);
