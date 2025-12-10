@@ -70,7 +70,7 @@ const LockerDetailsModal = ({
                 onClick={onRelease}
                 disabled={releasing}
               >
-                {releasing ? '해지 중...' : '락커 해지'}
+                {releasing ? '해지 중...' : '회원 해지'}
               </button>
             )}
             <button 

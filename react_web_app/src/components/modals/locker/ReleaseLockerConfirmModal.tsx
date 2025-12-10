@@ -25,7 +25,7 @@ const ReleaseLockerConfirmModal = ({
         <div className="modal-header">
           <div className="header-title">
             <Info size={20} className="header-icon" />
-            <h3>락커 해지 확인</h3>
+            <h3>회원 해지 확인</h3>
           </div>
           <button className="close-button" onClick={() => !releasing && onClose()}>×</button>
         </div>

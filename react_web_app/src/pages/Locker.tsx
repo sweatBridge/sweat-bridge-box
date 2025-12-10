@@ -6,7 +6,7 @@ import { LockerService } from '../services/lockerService';
 import { MemberService } from '../services/memberService';
 import { RevenueService } from '../services/revenueService';
 import {
-  Lockers as LockerItem,
+  Locker as LockerItem,
   LockerState,
   LockerUpdatableState,
   LOCKER_STATE,
@@ -382,7 +382,11 @@ const Locker: React.FC = () => {
                   {users.length > 0 ? users.join(', ') : <span className="muted">—</span>}
                 </div>
                 <div className={`status-chip ${state}`}>
-                  {getLockerStateLabel(state)}
+                  {(() => {
+                    // 해당 락커의 데이터 찾기 (lockerService.getLockers에서 이미 마지막 원소만 반환)
+                    const lockerData = raw.find(r => r.number === number);
+                    return getLockerStateLabel(state, lockerData);
+                  })()}
                 </div>
               </div>
             ))}
@@ -429,7 +433,7 @@ const Locker: React.FC = () => {
         />
       )}
 
-      {/* 락커 해지 확인 모달 */}
+      {/* 회원 해지 확인 모달 */}
       {selectedNo !== null && (
         <ReleaseLockerConfirmModal
           visible={showReleaseConfirm}
@@ -873,7 +877,7 @@ const Locker: React.FC = () => {
           border-color: #fca5a5;
         }
 
-        /* 락커 해지 확인 모달 스타일 */
+        /* 회원 해지 확인 모달 스타일 */
         .release-confirm-modal {
           max-width: 500px;
         }

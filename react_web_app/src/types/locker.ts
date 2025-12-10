@@ -20,7 +20,38 @@ export const isLockerState = (value: unknown): value is LockerState =>
 export const coalesceLockerState = (a: LockerState, b: LockerState): LockerState =>
   LOCKER_STATE_ORDER[a] >= LOCKER_STATE_ORDER[b] ? a : b;
 
-export const getLockerStateLabel = (state: LockerState) => {
+export const getLockerStateLabel = (state: LockerState, locker?: Locker) => {
+  // state가 USED이고 락커 데이터가 있는 경우 날짜 비교
+  if (state === LOCKER_STATE.USED && locker) {
+    const { startDate, endDate } = locker;
+    
+    // startDate와 endDate가 모두 있는 경우에만 날짜 비교
+    if (startDate && endDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      
+      // startDate 이전이면 '사용 예정'
+      if (today < start) {
+        return '사용 예정';
+      }
+      
+      // endDate 이후면 '만료'
+      if (today > end) {
+        return '만료';
+      }
+      
+      // startDate와 endDate 사이면 '사용중'
+      return '사용중';
+    }
+  }
+  
+  // 기본 상태 라벨 반환
   switch (state) {
     case LOCKER_STATE.USED:
       return '사용중';
@@ -37,7 +68,7 @@ export const getLockerStateLabel = (state: LockerState) => {
 
 export type LockerUpdatableState = typeof LOCKER_STATE.UNUSED | typeof LOCKER_STATE.NA;
 
-export interface Lockers{
+export interface Locker{
     number: number;
     state: LockerState;
     id: string;  // 사용자 이메일
