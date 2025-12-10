@@ -12,7 +12,8 @@ import {
   LOCKER_STATE,
   isLockerState,
   coalesceLockerState,
-  getLockerStateLabel
+  getLockerStateLabel,
+  getLockerState
 } from '../types/locker';
 import type { Member } from '../types/member';
 import { usePageContext } from '../contexts/PageContext';
@@ -104,11 +105,18 @@ const Locker: React.FC = () => {
         nextState = LOCKER_STATE.UNUSED;
       }
 
+      // 날짜 비교를 통해 실제 상태 결정 (만료된 경우 UNUSED로 변경)
+      const actualState = getLockerState(nextState, l);
+      
+      // 만료된 경우(원래 USED였지만 UNUSED로 변경된 경우) 회원 정보 비우기
+      const isExpired = nextState === LOCKER_STATE.USED && actualState === LOCKER_STATE.UNUSED;
+      const displayUsers = isExpired ? [] : (name ? [name] : []);
+
       if (!map.has(num)) {
-        map.set(num, { number: num, users: name ? [name] : [], state: nextState });
+        map.set(num, { number: num, users: displayUsers, state: actualState });
       } else {
         const cur = map.get(num)!;
-        cur.state = coalesceLockerState(cur.state, nextState);
+        cur.state = coalesceLockerState(cur.state, actualState);
         if (name && !cur.users.includes(name)) cur.users.push(name);
       }
     }
@@ -131,13 +139,20 @@ const Locker: React.FC = () => {
     // boxes에서 해당 락커의 상태 찾기
     const lockerBox = boxes.find(b => b.number === number);
     const lockerState = lockerBox?.state || LOCKER_STATE.UNUSED;
+    
+    // 만료된 경우(원래 USED였지만 UNUSED로 변경된 경우) 회원 정보 비우기
+    const lockerData = raw.find(r => r.number === number);
+    const originalState = lockerData?.realName?.trim() 
+      ? LOCKER_STATE.USED 
+      : (lockerData?.state && isLockerState(lockerData.state) ? lockerData.state : LOCKER_STATE.UNUSED);
+    const isExpired = originalState === LOCKER_STATE.USED && lockerState === LOCKER_STATE.UNUSED;
 
     setSelectedNo(number);
     setSelectedState(lockerState);
-    setEditName((base?.realName || '').trim());
-    setEditPhone(base?.phone || '');
-    setEditStartDate(base?.startDate || '');
-    setEditEndDate(base?.endDate || '');
+    setEditName(isExpired ? '' : ((base?.realName || '').trim()));
+    setEditPhone(isExpired ? '' : (base?.phone || ''));
+    setEditStartDate(isExpired ? '' : (base?.startDate || ''));
+    setEditEndDate(isExpired ? '' : (base?.endDate || ''));
     setShowEdit(true);
   };
 
