@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calendar } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
-import type { Lockers as LockerItem } from '../../../types/locker';
+import type { Locker as LockerItem } from '../../../types/locker';
 import { getLockerStateLabel } from '../../../types/locker';
 
 interface LockerHistoryModalProps {
@@ -48,7 +48,7 @@ const LockerHistoryModal = ({
                         ) : ''}
                       </span>
                       <span className={`history-state-badge ${item.state}`}>
-                        {getLockerStateLabel(item.state)}
+                        {getLockerStateLabel(item.state, item)}
                       </span>
                     </div>
                     

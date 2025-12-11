@@ -1,16 +1,16 @@
 import { getDoc, doc, runTransaction } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Lockers, LOCKER_STATE, LockerState, isLockerState } from '../types/locker';
+import { Locker, LOCKER_STATE, LockerState, isLockerState } from '../types/locker';
 
 export class LockerService {
-  static async getLockers(box: string): Promise<Lockers[]> {
+  static async getLockers(box: string): Promise<Locker[]> {
     // lockerdoc 은 "문서"이므로 getDoc + doc 사용
     const ref = doc(db, `box/${box}/lockers/lockerdoc`);
     const snap = await getDoc(ref);
     if (!snap.exists()) return [];
 
     const data = snap.data() as Record<string, unknown>;
-    const out: Lockers[] = [];
+    const out: Locker[] = [];
 
     for (const [key, value] of Object.entries(data)) {
       // key 가 "101" 같은 라커번호 제목
@@ -20,7 +20,7 @@ export class LockerService {
         continue;
       }
 
-      const toLocker = (v: any): Lockers => {
+      const toLocker = (v: any): Locker => {
         const state = isLockerState(v?.state) ? v.state : LOCKER_STATE.UNUSED;
         return {
           number: num, 
@@ -72,7 +72,7 @@ export class LockerService {
       for (let n = lo; n <= hi; n++) {
         const key = String(n);
         
-        const defaultEntry: Lockers = {
+        const defaultEntry: Locker = {
           number: n,
           state: LOCKER_STATE.UNUSED,
           id: '',
@@ -147,7 +147,7 @@ export class LockerService {
       }
 
       const existingValue = data[key];
-      const deletedEntry: Lockers = {
+      const deletedEntry: Locker = {
         number: lockerNumber,
         state: LOCKER_STATE.DELETED,
         id: '',
@@ -211,7 +211,7 @@ export class LockerService {
       }
 
       const existingValue = data[key];
-      const unusedEntry: Lockers = {
+      const unusedEntry: Locker = {
         number: lockerNumber,
         state: LOCKER_STATE.UNUSED,
         id: '',
@@ -282,7 +282,7 @@ export class LockerService {
         throw new Error('회원을 먼저 해지하시기 바랍니다.');
       }
 
-      const updatedEntry: Lockers = {
+      const updatedEntry: Locker = {
         number: lockerNumber,
         state,
         id: '',
@@ -325,7 +325,7 @@ export class LockerService {
     });
   }
 
-  static async getLockerHistory(box: string, lockerNumber: number): Promise<Lockers[]> {
+  static async getLockerHistory(box: string, lockerNumber: number): Promise<Locker[]> {
     const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
     const snap = await getDoc(ref);
 
@@ -341,9 +341,9 @@ export class LockerService {
     }
 
     const value = data[key];
-    const history: Lockers[] = [];
+    const history: Locker[] = [];
 
-    const toLocker = (v: any): Lockers => ({
+    const toLocker = (v: any): Locker => ({
       number: lockerNumber,
       state: v?.state ?? '',
       id: v?.id ?? '',
@@ -412,7 +412,7 @@ export class LockerService {
         throw new Error('이미 회원이 배정되어 있습니다. 먼저 해지해주세요.');
       }
 
-      const assignedEntry: Lockers = {
+      const assignedEntry: Locker = {
         number: lockerNumber,
         state: LOCKER_STATE.USED,
         id: userId,

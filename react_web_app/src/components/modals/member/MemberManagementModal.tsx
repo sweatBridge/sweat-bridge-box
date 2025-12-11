@@ -33,7 +33,7 @@ const MemberManagementModal = ({
   const [refundModalVisible, setRefundModalVisible] = useState(false);
   const [membershipToRefund, setMembershipToRefund] = useState<{ index: number; plan: string; price: string } | null>(null);
   const [refundInfoModalVisible, setRefundInfoModalVisible] = useState(false);
-  const [refundInfoData, setRefundInfoData] = useState<{ refundAt: Date; refundAmount: number; reason: string; plan: string } | null>(null);
+  const [refundInfoData, setRefundInfoData] = useState<{ refundAt: Date; refundAmount: number; reason: string; assignee: string | null; plan: string } | null>(null);
   const [memo, setMemo] = useState('');
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [membershipToEdit, setMembershipToEdit] = useState<{ index: number; plan: string; type: string; startDate: Date; endDate: Date; price: string } | null>(null);
@@ -176,6 +176,7 @@ const MemberManagementModal = ({
         isRefunded: false,
         at: null,
         refundAmount: 0,
+        assignee: null,
         reason: null
       },
       
@@ -272,7 +273,7 @@ const MemberManagementModal = ({
     setRefundModalVisible(true);
   }, [userMemberships]);
 
-  const handleConfirmRefund = useCallback(async (refundAmount: string, reason: string) => {
+  const handleConfirmRefund = useCallback(async (refundAmount: string, reason: string, assignee: string) => {
     if (!membershipToRefund) return;
 
     try {
@@ -282,6 +283,7 @@ const MemberManagementModal = ({
         membershipToRefund.index, 
         refundAmount, 
         reason,
+        assignee,
         userMemberships
       );
       
@@ -452,6 +454,7 @@ const MemberManagementModal = ({
         refundAt: new Date(membership.refund.at),
         refundAmount: membership.refund.refundAmount || 0,
         reason: membership.refund.reason || '',
+        assignee: membership.refund.assignee || null,
         plan: displayInfo.plan
       });
       setRefundInfoModalVisible(true);
@@ -1046,6 +1049,7 @@ const MemberManagementModal = ({
           refundAt={refundInfoData.refundAt}
           refundAmount={refundInfoData.refundAmount}
           reason={refundInfoData.reason}
+          assignee={refundInfoData.assignee}
           membershipPlan={refundInfoData.plan}
           onClose={() => {
             setRefundInfoModalVisible(false);
@@ -1087,9 +1091,9 @@ const MemberManagementModal = ({
 
       <style>{`
         .member-management-modal {
-          max-width: 900px;
+          max-width: 1200px;
           width: 95%;
-          max-height: 90vh;
+          max-height: 95vh;
         }
 
         .content-wrapper {

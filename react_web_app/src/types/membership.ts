@@ -44,6 +44,7 @@ export interface UserMembership {
     at: Date | null;
     refundAmount: number;
     reason: string | null;
+    assignee: string | null;
   };
   
   adjustments: Array<{

@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { DollarSign, Calendar } from 'lucide-react';
+import { DollarSign, Calendar, User } from 'lucide-react';
 
 interface RefundMembershipModalProps {
   visible: boolean;
   membershipPlan: string;
   membershipPrice: string;
   onClose: () => void;
-  onConfirm: (refundAmount: string, reason: string) => void;
+  onConfirm: (refundAmount: string, reason: string, assignee: string) => void;
   loading?: boolean;
 }
 
@@ -20,6 +20,7 @@ const RefundMembershipModal = ({
 }: RefundMembershipModalProps) => {
   const [refundAmount, setRefundAmount] = useState(membershipPrice);
   const [reason, setReason] = useState('');
+  const [assignee, setAssignee] = useState('');
 
   if (!visible) return null;
 
@@ -34,13 +35,19 @@ const RefundMembershipModal = ({
       return;
     }
 
-    onConfirm(refundAmount, reason);
+    if (!assignee.trim()) {
+      alert('담당자를 입력해주세요.');
+      return;
+    }
+
+    onConfirm(refundAmount, reason, assignee);
   };
 
   const handleClose = () => {
     if (!loading) {
       setRefundAmount(membershipPrice);
       setReason('');
+      setAssignee('');
       onClose();
     }
   };
@@ -101,6 +108,22 @@ const RefundMembershipModal = ({
                 placeholder="환불 사유를 입력하세요"
                 disabled={loading}
                 rows={3}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>
+                <User size={16} />
+                담당자
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                value={assignee}
+                onChange={(e) => setAssignee(e.target.value)}
+                disabled={loading}
+                placeholder="담당자 이름"
+                maxLength={10}
               />
             </div>
           </div>

@@ -456,7 +456,7 @@ export class MembershipService {
       const newEndDate = new Date(currentEndDate.getTime() + holdDays * 24 * 60 * 60 * 1000);
       membership.period.endDate = newEndDate;
 
-      // 다음 회원권들 연쇄 이동 (홀딩 일수만큼 모두 뒤로 밀기)
+      // 다음 회원권들 순서대로 확인하여 겹치는 부분만큼 연장
       for (let i = membershipIndex + 1; i < memberships.length; i++) {
         const nextMembership = memberships[i] as any;
         
@@ -467,16 +467,16 @@ export class MembershipService {
           // 앞 회원권의 새 만료일
           const prevEndDate = new Date((memberships[i - 1] as any).period.endDate);
           
-          // 겹치는지 확인
-          if (nextStartDate <= prevEndDate) {
-            // 겹치면 바로 다음날부터 시작
+          // 겹치는 부분 확인 (앞 회원권 만료일이 다음 회원권 시작일보다 늦거나 같으면 겹침)
+          if (prevEndDate >= nextStartDate) {
+            // 겹치는 일수 계산
+            const overlapDays = getDaysBetween(nextStartDate, prevEndDate) + 1; // +1은 시작일과 종료일 모두 포함
+            
+            // 겹치는 일수만큼 다음 회원권의 만료일 연장
+            nextMembership.period.endDate = new Date(nextEndDate.getTime() + overlapDays * 24 * 60 * 60 * 1000);
+            
+            // 다음 회원권의 시작일은 앞 회원권 만료일 다음날로 조정
             nextMembership.period.startDate = new Date(prevEndDate.getTime() + 24 * 60 * 60 * 1000);
-            const duration = getDaysBetween(nextStartDate, nextEndDate);
-            nextMembership.period.endDate = new Date(nextMembership.period.startDate.getTime() + duration * 24 * 60 * 60 * 1000);
-          } else {
-            // 겹치지 않으면 홀딩 일수만큼 뒤로 밀기
-            nextMembership.period.startDate = new Date(nextStartDate.getTime() + holdDays * 24 * 60 * 60 * 1000);
-            nextMembership.period.endDate = new Date(nextEndDate.getTime() + holdDays * 24 * 60 * 60 * 1000);
           }
         }
       }
@@ -566,31 +566,6 @@ export class MembershipService {
       const currentEndDate = new Date(membership.period.endDate);
       const newEndDate = new Date(currentEndDate.getTime() - daysDifference * 24 * 60 * 60 * 1000);
       membership.period.endDate = newEndDate;
-
-      // 다음 회원권들 연쇄 조정 (차이만큼 앞당기기)
-      for (let i = membershipIndex + 1; i < memberships.length; i++) {
-        const nextMembership = memberships[i] as any;
-        
-        if (nextMembership.period) {
-          const nextStartDate = new Date(nextMembership.period.startDate);
-          const nextEndDate = new Date(nextMembership.period.endDate);
-          
-          // 앞 회원권의 새 만료일
-          const prevEndDate = new Date((memberships[i - 1] as any).period.endDate);
-          
-          // 겹치는 경우 조정
-          if (nextStartDate > prevEndDate) {
-            // 겹치지 않으면 차이만큼 앞당기기
-            nextMembership.period.startDate = new Date(nextStartDate.getTime() - daysDifference * 24 * 60 * 60 * 1000);
-            nextMembership.period.endDate = new Date(nextEndDate.getTime() - daysDifference * 24 * 60 * 60 * 1000);
-          } else {
-            // 겹치면 바로 다음날부터 시작
-            nextMembership.period.startDate = new Date(prevEndDate.getTime() + 24 * 60 * 60 * 1000);
-            const duration = getDaysBetween(nextStartDate, nextEndDate);
-            nextMembership.period.endDate = new Date(nextMembership.period.startDate.getTime() + duration * 24 * 60 * 60 * 1000);
-          }
-        }
-      }
 
       // 업데이트된 시간 기록
       membership.updatedAt = new Date();
@@ -714,6 +689,7 @@ export class MembershipService {
     membershipIndex: number,
     refundAmount: string,
     reason: string,
+    assignee: string,
     existingMemberships?: UserMembership[]
   ): Promise<void> {
     try {
@@ -740,7 +716,8 @@ export class MembershipService {
         isRefunded: true,
         at: new Date(),
         refundAmount: parseInt(refundAmount),
-        reason: reason
+        reason: reason,
+        assignee: assignee
       };
 
       // 업데이트된 시간 기록
