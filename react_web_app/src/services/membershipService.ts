@@ -689,6 +689,7 @@ export class MembershipService {
     membershipIndex: number,
     refundAmount: string,
     reason: string,
+    assignee: string,
     existingMemberships?: UserMembership[]
   ): Promise<void> {
     try {
@@ -715,7 +716,8 @@ export class MembershipService {
         isRefunded: true,
         at: new Date(),
         refundAmount: parseInt(refundAmount),
-        reason: reason
+        reason: reason,
+        assignee: assignee
       };
 
       // 업데이트된 시간 기록

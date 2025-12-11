@@ -1,10 +1,11 @@
-import { DollarSign, Calendar, FileText } from 'lucide-react';
+import { DollarSign, Calendar, FileText, User } from 'lucide-react';
 
 interface RefundInfoModalProps {
   visible: boolean;
   refundAt: Date;
   refundAmount: number;
   reason: string;
+  assignee: string | null;
   membershipPlan: string;
   onClose: () => void;
 }
@@ -14,6 +15,7 @@ const RefundInfoModal = ({
   refundAt,
   refundAmount,
   reason,
+  assignee,
   membershipPlan,
   onClose
 }: RefundInfoModalProps) => {
@@ -80,6 +82,18 @@ const RefundInfoModal = ({
                 <span className="detail-value">{reason}</span>
               </div>
             </div>
+
+            {assignee && (
+              <div className="detail-item">
+                <div className="detail-icon">
+                  <User size={16} />
+                </div>
+                <div className="detail-content">
+                  <span className="detail-label">담당자</span>
+                  <span className="detail-value">{assignee}</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
