@@ -1091,9 +1091,9 @@ const MemberManagementModal = ({
 
       <style>{`
         .member-management-modal {
-          max-width: 900px;
+          max-width: 1200px;
           width: 95%;
-          max-height: 90vh;
+          max-height: 95vh;
         }
 
         .content-wrapper {
