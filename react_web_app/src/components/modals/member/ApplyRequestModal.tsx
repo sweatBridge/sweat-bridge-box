@@ -15,6 +15,7 @@ interface Applicant {
   email: string;
   phone: string;
   boxName: string;
+  birth?: string;
 }
 
 const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyRequestModalProps) => {
