@@ -38,7 +38,13 @@ export class MemberService {
       
       const members: Member[] = [];
       querySnapshot.forEach((doc) => {
-        const data = doc.data() as FirebaseMemberData;
+        const data = doc.data() as any;
+        
+        // birth 필드를 birthDate로 변환 (레거시 데이터 지원)
+        if (data.birth && !data.birthDate) {
+          data.birthDate = data.birth;
+        }
+        
         members.push({
           ...data,
           membershipInfo: this.calculateMembershipInfo(
@@ -360,7 +366,8 @@ export class MemberService {
               name: applicant.realName || '',
               email: applicant.email || '',
               phone: applicant.phone || '',
-              boxName: boxName
+              boxName: boxName,
+              birth: applicant.birth || undefined
             });
           }
         }
@@ -400,13 +407,19 @@ export class MemberService {
         delete userDoc.memberships;
       }
 
-      // 6. boxName 업데이트
+      // 6. birth 필드를 birthDate로 변환
+      if (userDoc.birth && !userDoc.birthDate) {
+        userDoc.birthDate = userDoc.birth;
+        delete userDoc.birth;
+      }
+
+      // 7. boxName 업데이트
       userDoc.boxName = actualBoxName;
 
-      // 7. 가입일 추가
+      // 8. 가입일 추가
       userDoc.joinedAt = Timestamp.now();
 
-      // 8. 회원 생성
+      // 9. 회원 생성
       await this.createMember(actualBoxName, userDoc);
 
       console.log(`Applicant ${email} approved successfully`);
