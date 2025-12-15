@@ -280,9 +280,9 @@ const MemberManagement = () => {
         </button>
         <button className="btn btn-primary" onClick={handleAddMember}>
           <UserPlus size={16} />
-          회원추가
+          회원 추가
         </button>
-        <button className="btn btn-secondary" onClick={handleManageMembershipPlans}>
+        <button className="btn btn-primary" onClick={handleManageMembershipPlans}>
           <CreditCard size={16} />
           회원권 관리
         </button>
