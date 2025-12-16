@@ -13,7 +13,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Member } from '../types/member';
+import { Member, MemberLockerHistory } from '../types/member';
 import { getCurrentMemberships, getFutureMemberships, getMembershipInfo, MembershipData } from '../utils/membershipUtils';
 
 export interface FirebaseMemberData {
@@ -134,14 +134,14 @@ export class MemberService {
       const memberRef = doc(db, path, email);
       const memberDoc = await getDoc(memberRef);
       
-      let lockerHistory: any[] = [];
+      let lockerHistory: MemberLockerHistory[] = [];
       if (memberDoc.exists()) {
         const data = memberDoc.data();
-        lockerHistory = data.lockerHistory || [];
+        lockerHistory = (data.lockerHistory || []) as MemberLockerHistory[];
       }
       
       // 새로운 히스토리 항목 추가
-      const newHistoryEntry = {
+      const newHistoryEntry: MemberLockerHistory = {
         lockerNum: lockerNumber,
         startDate: startDate,
         endDate: endDate,
