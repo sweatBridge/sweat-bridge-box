@@ -19,23 +19,76 @@ const ExtendAllModal = ({ visible, onClose, onSuccess, onError }: ExtendAllModal
   const [days, setDays] = useState<string>('');
   const [reason, setReason] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    extensionType?: string;
+    days?: string;
+    reason?: string;
+  }>({});
+
+  // 연장 일수 검증 공통 함수
+  const validateDays = (daysValue: string): string | undefined => {
+    if (!daysValue || daysValue.trim() === '') {
+      return '연장 일수를 입력해주세요.';
+    }
+    const daysNum = parseInt(daysValue, 10);
+    if (isNaN(daysNum)) {
+      return '연장 일수는 숫자만 입력 가능합니다.';
+    }
+    if (daysNum < 1) {
+      return '연장 일수는 최소 1일 이상이어야 합니다.';
+    }
+    if (daysNum > 365) {
+      return '연장 일수는 최대 365일까지 입력 가능합니다.';
+    }
+    return undefined;
+  };
+
+  // 연장 사유 검증 공통 함수
+  const validateReason = (reasonValue: string): string | undefined => {
+    if (!reasonValue.trim()) {
+      return '연장 사유를 입력해주세요.';
+    }
+    if (reasonValue.length > 100) {
+      return '연장 사유는 100글자 이내로 입력해주세요.';
+    }
+    return undefined;
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: {
+      extensionType?: string;
+      days?: string;
+      reason?: string;
+    } = {};
+
+    // 연장 대상 선택 필수
+    if (!extensionType) {
+      newErrors.extensionType = '연장 대상을 선택해주세요.';
+    }
+
+    // 연장 일수 검증
+    const daysError = validateDays(days);
+    if (daysError) {
+      newErrors.days = daysError;
+    }
+
+    // 연장 사유 검증
+    const reasonError = validateReason(reason);
+    if (reasonError) {
+      newErrors.reason = reasonError;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleExecute = async () => {
     // 유효성 검사
-    const daysNum = parseInt(days);
-    if (!days || isNaN(daysNum) || daysNum < 1 || daysNum > 365) {
-      if (onError) {
-        onError('연장 일수는 1일부터 365일까지 입력 가능합니다.');
-      }
+    if (!validateForm()) {
       return;
     }
 
-    if (!reason.trim()) {
-      if (onError) {
-        onError('연장 사유를 입력해주세요.');
-      }
-      return;
-    }
+    const daysNum = parseInt(days, 10);
 
     if (!window.confirm('전체 연장을 실행하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
       return;
@@ -93,6 +146,7 @@ const ExtendAllModal = ({ visible, onClose, onSuccess, onError }: ExtendAllModal
       setDays('');
       setReason('');
       setExtensionType('membership');
+      setErrors({});
 
       if (onSuccess) {
         onSuccess(message);
@@ -126,7 +180,10 @@ const ExtendAllModal = ({ visible, onClose, onSuccess, onError }: ExtendAllModal
         <div className="modal-body">
           {/* 연장 타입 선택 */}
           <div className="form-section">
-            <label className="form-label">연장 대상</label>
+            <label className="form-label">연장 대상 <span className="required">*</span></label>
+            {errors.extensionType && (
+              <div className="error-message">{errors.extensionType}</div>
+            )}
             <div className="radio-group">
               <label className="radio-option">
                 <input
@@ -174,29 +231,70 @@ const ExtendAllModal = ({ visible, onClose, onSuccess, onError }: ExtendAllModal
 
           {/* 연장 일수 */}
           <div className="form-section">
-            <label className="form-label">연장 일수</label>
+            <label className="form-label">연장 일수 <span className="required">*</span></label>
+            {errors.days && (
+              <div className="error-message">{errors.days}</div>
+            )}
             <input
               type="number"
               min="1"
               max="365"
               placeholder="연장할 일수를 입력하세요 (예: 7)"
               value={days}
-              onChange={(e) => setDays(e.target.value)}
-              className="form-input"
+              onChange={(e) => {
+                const value = e.target.value;
+                // 숫자만 입력 가능하도록 검증
+                if (value === '' || /^\d+$/.test(value)) {
+                  setDays(value);
+                  // 실시간 검증
+                  const daysError = validateDays(value);
+                  setErrors(prev => {
+                    const newErrors = { ...prev };
+                    if (daysError) {
+                      newErrors.days = daysError;
+                    } else {
+                      delete newErrors.days;
+                    }
+                    return newErrors;
+                  });
+                }
+              }}
+              className={`form-input ${errors.days ? 'input-error' : ''}`}
             />
             <div className="form-hint">1일부터 365일까지 입력 가능합니다</div>
           </div>
 
           {/* 연장 사유 */}
           <div className="form-section">
-            <label className="form-label">연장 사유</label>
+            <label className="form-label">연장 사유 <span className="required">*</span></label>
+            {errors.reason && (
+              <div className="error-message">{errors.reason}</div>
+            )}
             <input
               type="text"
+              maxLength={100}
               placeholder="예: 휴관일 보상, 공사로 인한 보상 등"
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="form-input"
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.length <= 100) {
+                  setReason(value);
+                  // 실시간 검증
+                  const reasonError = validateReason(value);
+                  setErrors(prev => {
+                    const newErrors = { ...prev };
+                    if (reasonError) {
+                      newErrors.reason = reasonError;
+                    } else {
+                      delete newErrors.reason;
+                    }
+                    return newErrors;
+                  });
+                }
+              }}
+              className={`form-input ${errors.reason ? 'input-error' : ''}`}
             />
+            <div className="form-hint">{reason.length}/100 글자</div>
           </div>
 
           {/* 경고 메시지 */}
@@ -348,6 +446,27 @@ const ExtendAllModal = ({ visible, onClose, onSuccess, onError }: ExtendAllModal
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+          }
+
+          .form-input.input-error {
+            border-color: #dc2626;
+          }
+
+          .form-input.input-error:focus {
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+          }
+
+          .required {
+            color: #dc2626;
+            margin-left: 4px;
+          }
+
+          .error-message {
+            color: #dc2626;
+            font-size: 12px;
+            margin-top: 4px;
+            margin-bottom: 8px;
           }
 
           .form-hint {
