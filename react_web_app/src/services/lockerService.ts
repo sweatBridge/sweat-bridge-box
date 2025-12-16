@@ -441,7 +441,10 @@ export class LockerService {
   static async extendAllLockers(
     box: string,
     days: number
-  ): Promise<{ extendedCount: number }> {
+  ): Promise<{ 
+    extendedCount: number;
+    extendedLockers: Array<{ id: string; key: string; endDate: string }>;
+  }> {
     const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -449,13 +452,13 @@ export class LockerService {
     return runTransaction(db, async (tx) => {
       const snap = await tx.get(ref);
       if (!snap.exists()) {
-        return { extendedCount: 0 };
+        return { extendedCount: 0, extendedLockers: [] };
       }
 
       const data = snap.data() as Record<string, unknown>;
       let extendedCount = 0;
       const updates: Record<string, any> = {};
-
+      const extendedLockers: Array<{ id: string; key: string; endDate: string }> = [];
 
       for (const [key, value] of Object.entries(data)) {
         const num = Number(key);
@@ -502,6 +505,15 @@ export class LockerService {
               updates[key] = updatedLocker;
             }
 
+            // 연장된 락커 정보 저장 (id와 key가 있는 경우만)
+            if (latestLocker.id && latestLocker.key) {
+              extendedLockers.push({
+                id: latestLocker.id,
+                key: latestLocker.key,
+                endDate: newEndDateStr
+              });
+            }
+
             extendedCount++;
           }
         }
@@ -511,7 +523,7 @@ export class LockerService {
         tx.update(ref, updates);
       }
 
-      return { extendedCount };
+      return { extendedCount, extendedLockers };
     });
   }
 }

@@ -163,6 +163,54 @@ export class MemberService {
   }
 
   /**
+   * 회원의 락커 히스토리에서 endDate 업데이트
+   * id(email)와 key를 기준으로 lockerHistory를 찾아 endDate를 변경
+   */
+  static async updateLockerHistoryEndDate(
+    box: string,
+    email: string,
+    key: string,
+    newEndDate: string
+  ): Promise<void> {
+    try {
+      const path = `/box/${box}/member`;
+      const memberRef = doc(db, path, email);
+      const memberDoc = await getDoc(memberRef);
+      
+      if (!memberDoc.exists()) {
+        throw new Error('회원 정보를 찾을 수 없습니다.');
+      }
+      
+      const data = memberDoc.data();
+      let lockerHistory: any[] = data.lockerHistory || [];
+      
+      // key를 기준으로 해당 항목 찾아서 endDate 업데이트
+      const targetIndex = lockerHistory.findIndex(
+        (item: any) => item.key === key
+      );
+      
+      if (targetIndex === -1) {
+        // 히스토리를 찾을 수 없어도 에러를 던지지 않고 로그만 남김
+        console.warn(`락커 히스토리를 찾을 수 없습니다. email: ${email}, key: ${key}`);
+        return;
+      }
+      
+      // endDate 업데이트
+      lockerHistory[targetIndex] = {
+        ...lockerHistory[targetIndex],
+        endDate: newEndDate
+      };
+      
+      await updateDoc(memberRef, {
+        lockerHistory: lockerHistory
+      });
+    } catch (error) {
+      console.error('Error updating locker history endDate:', error);
+      throw error;
+    }
+  }
+
+  /**
    * 회원의 락커 할당 해제
    * lockerHistory 배열에서 key로 항목을 찾아 endDate를 업데이트
    */
