@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { MembershipPlan, UserMembership } from '../types/membership';
 import { RevenueService } from './revenueService';
@@ -306,36 +306,45 @@ export class MembershipService {
   }
 
   /**
+   * 회원권이 현재 유효하고 활성 상태인지 확인
+   * (삭제되지 않았고, 환불되지 않았고, 현재 기간 내에 있는지 확인)
+   * 새 구조만 지원
+   */
+  static isValidActiveMembership(membership: UserMembership, now: Date = new Date()): boolean {
+    // 삭제된 회원권 제외
+    if (membership.deleted) {
+      return false;
+    }
+
+    // 환불된 회원권 제외
+    if (membership.refund && membership.refund.isRefunded) {
+      return false;
+    }
+
+    let startDate: Date;
+    let endDate: Date;
+
+    // 새 구조
+    if (membership.period) {
+      startDate = new Date(membership.period.startDate);
+      endDate = new Date(membership.period.endDate);
+    } 
+    // 둘 다 없으면 유효하지 않음
+    else {
+      return false;
+    }
+
+    // 현재 유효한 회원권인지 확인
+    return startDate <= now && endDate >= now;
+  }
+
+  /**
    * 현재 유효한 회원권 필터링 (레거시 및 새 구조 지원)
    */
   static getCurrentMemberships(memberships: UserMembership[]): UserMembership[] {
     const now = new Date();
     return memberships.filter(membership => {
-      // 삭제된 회원권 제외
-      if ((membership as any).deleted) {
-        return false;
-      }
-
-      // 환불된 회원권 제외
-      if ((membership as any).refund && (membership as any).refund.isRefunded) {
-        return false;
-      }
-      
-      // 새 구조
-      if ((membership as any).period) {
-        const startDate = new Date((membership as any).period.startDate);
-        const endDate = new Date((membership as any).period.endDate);
-        return startDate <= now && endDate >= now;
-      }
-      
-      // 레거시 구조
-      if ((membership as any).startDate && (membership as any).endDate) {
-        const startDate = new Date((membership as any).startDate);
-        const endDate = new Date((membership as any).endDate);
-        return startDate <= now && endDate >= now;
-      }
-      
-      return false;
+      return this.isValidActiveMembership(membership, now);
     });
   }
 
@@ -796,6 +805,172 @@ export class MembershipService {
 
     } catch (error) {
       console.error('Error removing user membership:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 전체 회원권 연장
+   * 현재 유효한 모든 회원권의 만료일을 연장하고, 기간 충돌을 자동 조정합니다.
+   */
+  static async extendAllMemberships(
+    days: number,
+    reason: string,
+    assignee: string
+  ): Promise<{ extendedCount: number }> {
+    try {
+      const boxName = this.getBoxName();
+      if (!boxName) {
+        throw new Error('박스 이름이 없습니다.');
+      }
+
+      // 모든 회원 조회
+      const path = `/box/${boxName}/member`;
+      const querySnapshot = await getDocs(collection(db, path));
+
+      let extendedCount = 0;
+      const now = new Date();
+
+      // 각 회원의 회원권 연장
+      for (const memberDoc of querySnapshot.docs) {
+        const email = memberDoc.id;
+        const data = memberDoc.data();
+        const memberships = data.memberships || [];
+
+        if (memberships.length === 0) continue;
+
+        let hasChanges = false;
+        let memberExtendedCount = 0;
+        
+        const updatedMemberships = memberships.map((membership: any, index: number) => {
+          // 현재 유효한 회원권인지 확인
+          if (this.isValidActiveMembership(membership, now)) {
+            const endDate = new Date(membership.period.endDate);
+            // 연장 전 기간 저장
+            const beforePeriod = {
+              startDate: new Date(membership.period.startDate),
+              endDate: new Date(membership.period.endDate)
+            };
+
+            // 만료일 연장
+            const newEndDate = new Date(endDate.getTime() + days * 24 * 60 * 60 * 1000);
+            membership.period.endDate = newEndDate;
+            membership.updatedAt = new Date();
+            hasChanges = true;
+            memberExtendedCount++;
+
+            // 조정 기록 추가
+            const adjustment = {
+              before: {
+                period: {
+                  startDate: beforePeriod.startDate,
+                  endDate: beforePeriod.endDate
+                }
+              },
+              after: {
+                period: {
+                  startDate: new Date(membership.period.startDate),
+                  endDate: newEndDate
+                }
+              },
+              reason: `[전체 연장] ${reason}`,
+              assignee,
+              at: new Date()
+            };
+
+            membership.adjustments = membership.adjustments || [];
+            membership.adjustments.push(adjustment);
+
+            // 홀딩 중인 경우 홀딩 종료일도 연장
+            if (membership.holds && membership.holds.length > 0) {
+              const activeHold = membership.holds.find((hold: any) => {
+                const holdStartDate = new Date(hold.startDate);
+                const holdEndDate = new Date(hold.endDate);
+                return now >= holdStartDate && now <= holdEndDate;
+              });
+
+              if (activeHold) {
+                const holdEndDate = new Date(activeHold.endDate);
+                activeHold.endDate = new Date(holdEndDate.getTime() + days * 24 * 60 * 60 * 1000);
+                activeHold.days = getDaysBetween(new Date(activeHold.startDate), activeHold.endDate);
+              }
+            }
+          }
+
+          return membership;
+        });
+        
+        extendedCount += memberExtendedCount;
+
+        // 기간 충돌 자동 조정
+        for (let i = 0; i < updatedMemberships.length - 1; i++) {
+          const currentMembership = updatedMemberships[i] as any;
+          const nextMembership = updatedMemberships[i + 1] as any;
+
+          // 유효한 회원권인지 확인 (기간 체크는 하지 않음 - 과거/미래 회원권도 포함)
+          if (!currentMembership.period || !nextMembership.period) continue;
+          if (currentMembership.deleted || nextMembership.deleted) continue;
+          if (currentMembership.refund?.isRefunded || nextMembership.refund?.isRefunded) continue;
+
+          const currentEndDate = new Date(currentMembership.period.endDate);
+          const nextStartDate = new Date(nextMembership.period.startDate);
+
+          // 현재 회원권의 만료일이 다음 회원권의 시작일보다 늦거나 같으면 충돌
+          if (currentEndDate >= nextStartDate) {
+            const overlapDays = getDaysBetween(nextStartDate, currentEndDate) + 1;
+            
+            // 조정 전 기간 저장
+            const beforePeriod = {
+              startDate: new Date(nextMembership.period.startDate),
+              endDate: new Date(nextMembership.period.endDate)
+            };
+            
+            // 다음 회원권의 만료일 연장
+            const nextEndDate = new Date(nextMembership.period.endDate);
+            const newNextEndDate = new Date(nextEndDate.getTime() + overlapDays * 24 * 60 * 60 * 1000);
+            
+            // 다음 회원권의 시작일 조정
+            const newNextStartDate = new Date(currentEndDate.getTime() + 24 * 60 * 60 * 1000);
+            
+            nextMembership.period.endDate = newNextEndDate;
+            nextMembership.period.startDate = newNextStartDate;
+            nextMembership.updatedAt = new Date();
+            hasChanges = true;
+
+            // 조정 기록 추가
+            const adjustment = {
+              before: {
+                period: {
+                  startDate: beforePeriod.startDate,
+                  endDate: beforePeriod.endDate
+                }
+              },
+              after: {
+                period: {
+                  startDate: newNextStartDate,
+                  endDate: newNextEndDate
+                }
+              },
+              reason: `[전체 연장] ${reason} (기간 충돌 자동 조정)`,
+              assignee,
+              at: new Date()
+            };
+
+            nextMembership.adjustments = nextMembership.adjustments || [];
+            nextMembership.adjustments.push(adjustment);
+          }
+        }
+
+        // 변경사항이 있으면 Firebase에 저장
+        if (hasChanges) {
+          const memberDocRef = doc(db, `box/${boxName}/member/${email}`);
+          await setDoc(memberDocRef, { memberships: updatedMemberships }, { merge: true });
+        }
+      }
+
+      return { extendedCount };
+    } catch (error) {
+      console.error('Error extending all memberships:', error);
       throw error;
     }
   }

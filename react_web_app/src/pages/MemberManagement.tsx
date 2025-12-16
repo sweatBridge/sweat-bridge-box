@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Users, UserPlus, CreditCard, Trash2, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Users, UserPlus, CreditCard, Trash2, Settings, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { Member, ToastMessageType } from '../types/member';
 import { useMemberManagement } from '../hooks/useMemberManagement';
 import MemberDeletionModal from '../components/modals/member/MemberDeletionModal';
 import MembershipPlanModal from '../components/modals/membership/MembershipPlanModal';
+import ExtendAllModal from '../components/modals/membership/ExtendAllModal';
 import MemberManagementModal from '../components/modals/member/MemberManagementModal';
 import WarningMembersModal from '../components/modals/member/WarningMembersModal';
 import NewMembersModal from '../components/modals/member/NewMembersModal';
@@ -41,6 +42,7 @@ const MemberManagement = () => {
   const [memberListModalVisible, setMemberListModalVisible] = useState(false);
   const [addMemberModalVisible, setAddMemberModalVisible] = useState(false);
   const [applyRequestModalVisible, setApplyRequestModalVisible] = useState(false);
+  const [extendAllModalVisible, setExtendAllModalVisible] = useState(false);
   
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
@@ -285,6 +287,10 @@ const MemberManagement = () => {
         <button className="btn btn-primary" onClick={handleManageMembershipPlans}>
           <CreditCard size={16} />
           회원권 관리
+        </button>
+        <button className="btn btn-primary" onClick={() => setExtendAllModalVisible(true)}>
+          <Calendar size={16} />
+          전체 연장
         </button>
       </div>
 
@@ -593,6 +599,32 @@ const MemberManagement = () => {
         visible={applyRequestModalVisible}
         onClose={() => {
           setApplyRequestModalVisible(false);
+          loadMembers(); // 회원 목록 새로고침
+        }}
+        onSuccess={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'success',
+              message
+            });
+          }
+          loadMembers(); // 회원 목록 새로고침
+        }}
+        onError={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'danger',
+              message
+            });
+          }
+        }}
+      />
+
+      {/* 전체 연장 모달 */}
+      <ExtendAllModal
+        visible={extendAllModalVisible}
+        onClose={() => {
+          setExtendAllModalVisible(false);
           loadMembers(); // 회원 목록 새로고침
         }}
         onSuccess={(message) => {

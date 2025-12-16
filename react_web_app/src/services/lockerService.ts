@@ -461,4 +461,84 @@ export class LockerService {
       tx.set(ref, { [lockerKey]: newValue }, { merge: true });
     });
   }
+
+  /**
+   * 전체 락커 연장
+   * 현재 사용 중인 모든 락커의 만료일을 연장합니다.
+   */
+  static async extendAllLockers(
+    box: string,
+    days: number
+  ): Promise<{ extendedCount: number }> {
+    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    return runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) {
+        return { extendedCount: 0 };
+      }
+
+      const data = snap.data() as Record<string, unknown>;
+      let extendedCount = 0;
+      const updates: Record<string, any> = {};
+
+      for (const [key, value] of Object.entries(data)) {
+        const num = Number(key);
+        if (!Number.isFinite(num)) {
+          continue;
+        }
+
+        let latestLocker: Locker | null = null;
+        let newValue: any;
+
+        if (Array.isArray(value)) {
+          if (value.length === 0) continue;
+          latestLocker = value[value.length - 1] as any;
+          newValue = [...value];
+        } else if (value && typeof value === 'object') {
+          latestLocker = value as any;
+          newValue = value;
+        } else {
+          continue;
+        }
+
+        // 사용 중인 락커만 연장
+        if (latestLocker?.state === LOCKER_STATE.USED && latestLocker.endDate) {
+          const endDate = new Date(latestLocker.endDate);
+          endDate.setHours(0, 0, 0, 0);
+
+          // 현재 유효한 락커인지 확인 (만료일이 오늘 이후)
+          if (endDate >= now) {
+            // 만료일 연장
+            const newEndDate = new Date(endDate.getTime() + days * 24 * 60 * 60 * 1000);
+            const newEndDateStr = newEndDate.toISOString().split('T')[0];
+
+            if (Array.isArray(newValue)) {
+              const updated = [...newValue];
+              updated[updated.length - 1] = {
+                ...latestLocker,
+                endDate: newEndDateStr
+              };
+              updates[key] = updated;
+            } else {
+              updates[key] = {
+                ...latestLocker,
+                endDate: newEndDateStr
+              };
+            }
+
+            extendedCount++;
+          }
+        }
+      }
+
+      if (Object.keys(updates).length > 0) {
+        tx.update(ref, updates);
+      }
+
+      return { extendedCount };
+    });
+  }
 }
