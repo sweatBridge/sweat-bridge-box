@@ -34,7 +34,7 @@ const AddLockerModal = ({ visible, onClose, onConfirm }: AddLockerModalProps) =>
       return;
     }
 
-    if (endNumber - startNumber > 200) {
+    if (endNumber - startNumber >= 200) {
       setAddError('1회 최대 200개까지 추가할 수 있습니다.');
       return;
     }
