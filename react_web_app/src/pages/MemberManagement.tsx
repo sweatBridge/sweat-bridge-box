@@ -8,6 +8,7 @@ import ExtendAllModal from '../components/modals/membership/ExtendAllModal';
 import MemberManagementModal from '../components/modals/member/MemberManagementModal';
 import WarningMembersModal from '../components/modals/member/WarningMembersModal';
 import NewMembersModal from '../components/modals/member/NewMembersModal';
+import ActiveMembersModal from '../components/modals/member/ActiveMembersModal';
 import AddMemberModal from '../components/modals/member/AddMemberModal';
 import ApplyRequestModal from '../components/modals/member/ApplyRequestModal';
 import ToastMessage from '../components/ToastMessage';
@@ -40,6 +41,7 @@ const MemberManagement = () => {
   const [membershipPlanModalVisible, setMembershipPlanModalVisible] = useState(false);
   const [warningMembersModalVisible, setWarningMembersModalVisible] = useState(false);
   const [newMembersModalVisible, setNewMembersModalVisible] = useState(false);
+  const [activeMembersModalVisible, setActiveMembersModalVisible] = useState(false);
   const [memberListModalVisible, setMemberListModalVisible] = useState(false);
   const [addMemberModalVisible, setAddMemberModalVisible] = useState(false);
   const [applyRequestModalVisible, setApplyRequestModalVisible] = useState(false);
@@ -82,6 +84,7 @@ const MemberManagement = () => {
     warningMembersCount, 
     newMembersCount,
     totalMembersCount, 
+    activeMembers,
     warningMembers,
     newMembers,
     memberBadgesMap 
@@ -89,6 +92,7 @@ const MemberManagement = () => {
     let active = 0;
     let warning = 0;
     let newMembers = 0;
+    const activeList: Member[] = [];
     const warningList: Member[] = [];
     const newMembersList: Member[] = [];
     const badgesMap = new Map<string, {
@@ -114,6 +118,7 @@ const MemberManagement = () => {
         newMembersList.push(member);
       } else if (memberStatusBadge.status === '활성') {
         active++;
+        activeList.push(member);
       } else if (memberStatusBadge.status === '주의') {
         warning++;
         warningList.push(member);
@@ -125,6 +130,7 @@ const MemberManagement = () => {
       warningMembersCount: warning,
       newMembersCount: newMembers,
       totalMembersCount: active + warning + newMembers,
+      activeMembers: activeList,
       warningMembers: warningList,
       newMembers: newMembersList,
       memberBadgesMap: badgesMap
@@ -261,8 +267,10 @@ const MemberManagement = () => {
   };
 
   // 회원 리스트 모달 열기
-  const handleOpenMemberList = (type: 'warning' | 'new') => {
-    if (type === 'warning') {
+  const handleOpenMemberList = (type: 'active' | 'warning' | 'new') => {
+    if (type === 'active') {
+      setActiveMembersModalVisible(true);
+    } else if (type === 'warning') {
       setWarningMembersModalVisible(true);
     } else if (type === 'new') {
       setNewMembersModalVisible(true);
@@ -272,6 +280,13 @@ const MemberManagement = () => {
   // 주의 회원 모달에서 회원 클릭 시
   const handleWarningMemberClick = (member: Member) => {
     setWarningMembersModalVisible(false);
+    setSelectedMember(member);
+    setMemberManagementModalVisible(true);
+  };
+
+  // 활성 회원 모달에서 회원 클릭 시
+  const handleActiveMemberClick = (member: Member) => {
+    setActiveMembersModalVisible(false);
     setSelectedMember(member);
     setMemberManagementModalVisible(true);
   };
@@ -317,7 +332,7 @@ const MemberManagement = () => {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => handleOpenMemberList('active')}>
           <div className="stat-card-icon active">
             <Users size={20} />
           </div>
@@ -577,6 +592,14 @@ const MemberManagement = () => {
             });
           }
         }}
+      />
+
+      {/* 활성 회원 모달 */}
+      <ActiveMembersModal
+        visible={activeMembersModalVisible}
+        members={activeMembers}
+        onClose={() => setActiveMembersModalVisible(false)}
+        onMemberClick={handleActiveMemberClick}
       />
 
       {/* 주의 회원 모달 */}
