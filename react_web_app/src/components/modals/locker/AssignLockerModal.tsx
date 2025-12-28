@@ -132,7 +132,7 @@ const AssignLockerModal = ({
                       onClick={() => handleSelectMember(member)}
                     >
                       <div className="member-name">{member.realName}</div>
-                      <div className="member-phone">{member.phone || member.phone}</div>
+                      <div className="member-phone">{member.phone}</div>
                     </div>
                   ))}
                 </div>

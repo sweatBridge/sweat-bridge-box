@@ -5,7 +5,7 @@ export interface MembershipInfo {
   remainingVisits: string | number;
 }
 
-export interface LockerHistory {
+export interface MemberLockerHistory {
   lockerNum: number;
   startDate: string;
   endDate: string;
@@ -25,7 +25,7 @@ export interface Member {
   membershipInfo: MembershipInfo;
   memberships: any[];
   futureMemberships: any[];
-  lockerHistory?: LockerHistory[];
+  lockerHistory?: MemberLockerHistory[];
   lockerPass?: string;
   memo?: string;
   joinedAt?: any; // Firebase Timestamp

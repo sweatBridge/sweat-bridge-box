@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { MembershipPlan, UserMembership } from '../types/membership';
 import { RevenueService } from './revenueService';
@@ -306,36 +306,88 @@ export class MembershipService {
   }
 
   /**
+   * 회원권이 현재 유효하고 활성 상태인지 확인
+   * (삭제되지 않았고, 환불되지 않았고, 현재 기간 내에 있는지 확인)
+   * 새 구조만 지원
+   */
+  static isValidActiveMembership(membership: UserMembership, now: Date = new Date()): boolean {
+    // 삭제된 회원권 제외
+    if (membership.deleted) {
+      return false;
+    }
+
+    // 환불된 회원권 제외
+    if (membership.refund && membership.refund.isRefunded) {
+      return false;
+    }
+
+    // Firebase Timestamp를 Date로 변환하는 헬퍼 함수
+    const toDate = (value: any): Date | null => {
+      if (!value) return null;
+      
+      // 이미 Date 객체인 경우
+      if (value instanceof Date) {
+        return value;
+      }
+      
+      // Firebase Timestamp인 경우
+      if (value instanceof Timestamp || (value.toDate && typeof value.toDate === 'function')) {
+        return value.toDate();
+      }
+      
+      // Timestamp 객체인 경우 (seconds 속성 확인)
+      if (value.seconds && typeof value.seconds === 'number') {
+        return new Date(value.seconds * 1000);
+      }
+      
+      // 문자열인 경우
+      if (typeof value === 'string') {
+        const date = new Date(value);
+        return isNaN(date.getTime()) ? null : date;
+      }
+      
+      return null;
+    };
+
+    let startDate: Date | null = null;
+    let endDate: Date | null = null;
+
+    // 새 구조
+    if (membership.period) {
+      startDate = toDate(membership.period.startDate);
+      endDate = toDate(membership.period.endDate);
+    }
+    // 레거시 구조
+    else if ((membership as any).startDate && (membership as any).endDate) {
+      startDate = toDate((membership as any).startDate);
+      endDate = toDate((membership as any).endDate);
+    }
+    // 둘 다 없으면 유효하지 않음
+    else {
+      return false;
+    }
+
+    // 날짜가 유효한지 확인
+    if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return false;
+    }
+
+    // 날짜만 비교하기 위해 시간을 00:00:00으로 설정
+    const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+    const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // 현재 유효한 회원권인지 확인 (시작일 <= 오늘 <= 종료일)
+    return startDateOnly <= nowDateOnly && endDateOnly >= nowDateOnly;
+  }
+
+  /**
    * 현재 유효한 회원권 필터링 (레거시 및 새 구조 지원)
    */
   static getCurrentMemberships(memberships: UserMembership[]): UserMembership[] {
     const now = new Date();
     return memberships.filter(membership => {
-      // 삭제된 회원권 제외
-      if ((membership as any).deleted) {
-        return false;
-      }
-
-      // 환불된 회원권 제외
-      if ((membership as any).refund && (membership as any).refund.isRefunded) {
-        return false;
-      }
-      
-      // 새 구조
-      if ((membership as any).period) {
-        const startDate = new Date((membership as any).period.startDate);
-        const endDate = new Date((membership as any).period.endDate);
-        return startDate <= now && endDate >= now;
-      }
-      
-      // 레거시 구조
-      if ((membership as any).startDate && (membership as any).endDate) {
-        const startDate = new Date((membership as any).startDate);
-        const endDate = new Date((membership as any).endDate);
-        return startDate <= now && endDate >= now;
-      }
-      
-      return false;
+      return this.isValidActiveMembership(membership, now);
     });
   }
 
@@ -796,6 +848,249 @@ export class MembershipService {
 
     } catch (error) {
       console.error('Error removing user membership:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 전체 회원권 연장
+   * 현재 유효한 모든 회원권의 만료일을 연장하고, 기간 충돌을 자동 조정합니다.
+   */
+  static async extendAllMemberships(
+    days: number,
+    reason: string,
+    assignee: string
+  ): Promise<{ extendedCount: number }> {
+    try {
+      const boxName = this.getBoxName();
+      if (!boxName) {
+        throw new Error('박스 이름이 없습니다.');
+      }
+
+      // 모든 회원 조회
+      const path = `/box/${boxName}/member`;
+      const querySnapshot = await getDocs(collection(db, path));
+
+      let extendedCount = 0;
+      const now = new Date();
+
+      // 각 회원의 회원권 연장
+      for (const memberDoc of querySnapshot.docs) {
+        const email = memberDoc.id;
+        const data = memberDoc.data();
+        const memberships = data.memberships || [];
+
+        if (memberships.length === 0) continue;
+
+        let hasChanges = false;
+        let memberExtendedCount = 0;
+        
+        // Firebase Timestamp를 Date로 변환하는 헬퍼 함수
+        const toDate = (value: any): Date | null => {
+          if (!value) return null;
+          
+          // 이미 Date 객체인 경우
+          if (value instanceof Date) {
+            return isNaN(value.getTime()) ? null : value;
+          }
+          
+          // Firebase Timestamp인 경우
+          if (value instanceof Timestamp || (value.toDate && typeof value.toDate === 'function')) {
+            return value.toDate();
+          }
+          
+          // Timestamp 객체인 경우 (seconds 속성 확인)
+          if (value.seconds && typeof value.seconds === 'number') {
+            return new Date(value.seconds * 1000);
+          }
+          
+          // 문자열인 경우
+          if (typeof value === 'string') {
+            const date = new Date(value);
+            return isNaN(date.getTime()) ? null : date;
+          }
+          
+          return null;
+        };
+
+        const updatedMemberships = memberships.map((membership: any, index: number) => {
+          // 현재 유효한 회원권인지 확인
+          if (this.isValidActiveMembership(membership, now)) {
+            const endDate = toDate(membership.period.endDate);
+            const startDate = toDate(membership.period.startDate);
+            
+            if (!endDate || !startDate || isNaN(endDate.getTime()) || isNaN(startDate.getTime())) {
+              console.warn('Invalid date in membership, skipping:', membership);
+              return membership;
+            }
+
+            // 연장 전 기간 저장
+            const beforePeriod = {
+              startDate: new Date(startDate),
+              endDate: new Date(endDate)
+            };
+
+            // 만료일 연장
+            const newEndDate = new Date(endDate.getTime() + days * 24 * 60 * 60 * 1000);
+            membership.period.endDate = Timestamp.fromDate(newEndDate);
+            membership.updatedAt = Timestamp.now();
+            hasChanges = true;
+            memberExtendedCount++;
+
+            // 조정 기록 추가
+            const adjustment = {
+              before: {
+                period: {
+                  startDate: Timestamp.fromDate(beforePeriod.startDate),
+                  endDate: Timestamp.fromDate(beforePeriod.endDate)
+                }
+              },
+              after: {
+                period: {
+                  startDate: Timestamp.fromDate(new Date(startDate)),
+                  endDate: Timestamp.fromDate(newEndDate)
+                }
+              },
+              reason: `[전체 연장] ${reason}`,
+              assignee,
+              at: Timestamp.now()
+            };
+
+            membership.adjustments = membership.adjustments || [];
+            membership.adjustments.push(adjustment);
+
+            // 홀딩 중인 경우 홀딩 종료일도 연장
+            if (membership.holds && membership.holds.length > 0) {
+              const activeHold = membership.holds.find((hold: any) => {
+                const holdStartDate = toDate(hold.startDate);
+                const holdEndDate = toDate(hold.endDate);
+                if (!holdStartDate || !holdEndDate || isNaN(holdStartDate.getTime()) || isNaN(holdEndDate.getTime())) {
+                  return false;
+                }
+                return now >= holdStartDate && now <= holdEndDate;
+              });
+
+              if (activeHold) {
+                const holdEndDate = toDate(activeHold.endDate);
+                if (holdEndDate && !isNaN(holdEndDate.getTime())) {
+                  const newHoldEndDate = new Date(holdEndDate.getTime() + days * 24 * 60 * 60 * 1000);
+                  activeHold.endDate = Timestamp.fromDate(newHoldEndDate);
+                  const holdStartDate = toDate(activeHold.startDate);
+                  if (holdStartDate && !isNaN(holdStartDate.getTime())) {
+                    activeHold.days = getDaysBetween(holdStartDate, newHoldEndDate);
+                  }
+                }
+              }
+            }
+          }
+
+          return membership;
+        });
+        
+        extendedCount += memberExtendedCount;
+
+        // 기간 충돌 자동 조정
+        // Firebase Timestamp를 Date로 변환하는 헬퍼 함수 (위에서 정의한 것 재사용)
+        const toDateForConflict = (value: any): Date | null => {
+          if (!value) return null;
+          
+          // 이미 Date 객체인 경우
+          if (value instanceof Date) {
+            return isNaN(value.getTime()) ? null : value;
+          }
+          
+          // Firebase Timestamp인 경우
+          if (value instanceof Timestamp || (value.toDate && typeof value.toDate === 'function')) {
+            return value.toDate();
+          }
+          
+          // Timestamp 객체인 경우 (seconds 속성 확인)
+          if (value.seconds && typeof value.seconds === 'number') {
+            return new Date(value.seconds * 1000);
+          }
+          
+          // 문자열인 경우
+          if (typeof value === 'string') {
+            const date = new Date(value);
+            return isNaN(date.getTime()) ? null : date;
+          }
+          
+          return null;
+        };
+
+        for (let i = 0; i < updatedMemberships.length - 1; i++) {
+          const currentMembership = updatedMemberships[i] as any;
+          const nextMembership = updatedMemberships[i + 1] as any;
+
+          // 유효한 회원권인지 확인 (기간 체크는 하지 않음 - 과거/미래 회원권도 포함)
+          if (!currentMembership.period || !nextMembership.period) continue;
+          if (currentMembership.deleted || nextMembership.deleted) continue;
+          if (currentMembership.refund?.isRefunded || nextMembership.refund?.isRefunded) continue;
+
+          const currentEndDate = toDateForConflict(currentMembership.period.endDate);
+          const nextStartDate = toDateForConflict(nextMembership.period.startDate);
+          const nextEndDate = toDateForConflict(nextMembership.period.endDate);
+
+          if (!currentEndDate || !nextStartDate || !nextEndDate || 
+              isNaN(currentEndDate.getTime()) || isNaN(nextStartDate.getTime()) || isNaN(nextEndDate.getTime())) {
+            continue;
+          }
+
+          // 현재 회원권의 만료일이 다음 회원권의 시작일보다 늦거나 같으면 충돌
+          if (currentEndDate >= nextStartDate) {
+            const overlapDays = getDaysBetween(nextStartDate, currentEndDate) + 1;
+            
+            // 조정 전 기간 저장
+            const beforePeriod = {
+              startDate: new Date(nextStartDate),
+              endDate: new Date(nextEndDate)
+            };
+            
+            // 다음 회원권의 만료일 연장
+            const newNextEndDate = new Date(nextEndDate.getTime() + overlapDays * 24 * 60 * 60 * 1000);
+            
+            // 다음 회원권의 시작일 조정
+            const newNextStartDate = new Date(currentEndDate.getTime() + 24 * 60 * 60 * 1000);
+            
+            nextMembership.period.endDate = Timestamp.fromDate(newNextEndDate);
+            nextMembership.period.startDate = Timestamp.fromDate(newNextStartDate);
+            nextMembership.updatedAt = Timestamp.now();
+            hasChanges = true;
+
+            // 조정 기록 추가
+            const adjustment = {
+              before: {
+                period: {
+                  startDate: Timestamp.fromDate(beforePeriod.startDate),
+                  endDate: Timestamp.fromDate(beforePeriod.endDate)
+                }
+              },
+              after: {
+                period: {
+                  startDate: Timestamp.fromDate(newNextStartDate),
+                  endDate: Timestamp.fromDate(newNextEndDate)
+                }
+              },
+              reason: `[전체 연장] ${reason} (기간 충돌 자동 조정)`,
+              assignee,
+              at: Timestamp.now()
+            };
+
+            nextMembership.adjustments = nextMembership.adjustments || [];
+            nextMembership.adjustments.push(adjustment);
+          }
+        }
+
+        // 변경사항이 있으면 Firebase에 저장
+        if (hasChanges) {
+          const memberDocRef = doc(db, `box/${boxName}/member/${email}`);
+          await setDoc(memberDocRef, { memberships: updatedMemberships }, { merge: true });
+        }
+      }
+
+      return { extendedCount };
+    } catch (error) {
+      console.error('Error extending all memberships:', error);
       throw error;
     }
   }

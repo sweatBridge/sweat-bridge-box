@@ -1,6 +1,8 @@
 import { getDoc, doc, runTransaction } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Locker, LOCKER_STATE, LockerState, isLockerState } from '../types/locker';
+import { Locker, LOCKER_STATE, LockerState } from '../types/locker';
+import { toLocker } from '../utils/lockerUtils';
+import { formatDateToString } from '../utils/dateUtils';
 
 export class LockerService {
   static async getLockers(box: string): Promise<Locker[]> {
@@ -20,31 +22,15 @@ export class LockerService {
         continue;
       }
 
-      const toLocker = (v: any): Locker => {
-        const state = isLockerState(v?.state) ? v.state : LOCKER_STATE.UNUSED;
-        return {
-          number: num, 
-          state,
-          id: v?.id ?? '',
-          realName: v?.realName ?? '',
-          phone: v?.phone ?? '',
-          assignee: v?.assignee ?? '',
-          note: v?.note ?? '',
-          startDate: v?.startDate ?? '',
-          endDate: v?.endDate ?? '',
-          createdAt: v?.createdAt ?? '',
-          key: v?.key ?? ''
-        };
-      };
 
       if (Array.isArray(value)) {
         // 배열인 경우 마지막 항목만 사용 (최신 상태)
         if (value.length > 0) {
           const latestItem = value[value.length - 1];
-          out.push(toLocker(latestItem));
+          out.push(toLocker(latestItem, num));
         }
       } else if (value && typeof value === 'object') {
-        out.push(toLocker(value as any));
+        out.push(toLocker(value as any, num));
       }
     }
     out.sort((a, b) => a.number - b.number);
@@ -343,28 +329,15 @@ export class LockerService {
     const value = data[key];
     const history: Locker[] = [];
 
-    const toLocker = (v: any): Locker => ({
-      number: lockerNumber,
-      state: v?.state ?? '',
-      id: v?.id ?? '',
-      realName: v?.realName ?? '',
-      phone: v?.phone ?? '',
-      assignee: v?.assignee ?? '',
-      note: v?.note ?? '',
-      startDate: v?.startDate ?? '',
-      endDate: v?.endDate ?? '',
-      createdAt: v?.createdAt ?? '',
-      key: v?.key ?? ''
-    });
 
     if (Array.isArray(value)) {
       // 배열인 경우 모든 항목을 히스토리로 반환
       for (const item of value) {
-        history.push(toLocker(item));
+        history.push(toLocker(item, lockerNumber));
       }
     } else if (value && typeof value === 'object') {
       // 객체인 경우 단일 항목
-      history.push(toLocker(value));
+      history.push(toLocker(value, lockerNumber));
     }
 
     return history;
@@ -459,6 +432,99 @@ export class LockerService {
       }
 
       tx.set(ref, { [lockerKey]: newValue }, { merge: true });
+    });
+  }
+
+  /**
+   * 전체 락커 연장
+   * 현재 사용 중인 모든 락커의 만료일을 연장합니다.
+   */
+  static async extendAllLockers(
+    box: string,
+    days: number
+  ): Promise<{ 
+    extendedCount: number;
+    extendedLockers: Array<{ id: string; key: string; endDate: string }>;
+  }> {
+    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    return runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) {
+        return { extendedCount: 0, extendedLockers: [] };
+      }
+
+      const data = snap.data() as Record<string, unknown>;
+      let extendedCount = 0;
+      const updates: Record<string, any> = {};
+      const extendedLockers: Array<{ id: string; key: string; endDate: string }> = [];
+
+      for (const [key, value] of Object.entries(data)) {
+        const num = Number(key);
+        if (!Number.isFinite(num)) {
+          continue;
+        }
+
+        let latestLocker: Locker | null = null;
+        let newValue: any;
+
+        if (Array.isArray(value)) {
+          if (value.length === 0) continue;
+          latestLocker = toLocker(value[value.length - 1], num);
+          newValue = [...value];
+        } else if (value && typeof value === 'object') {
+          latestLocker = toLocker(value as any, num);
+          newValue = value;
+        } else {
+          continue;
+        }
+
+        // 사용 중인 락커만 연장
+        if (latestLocker.state === LOCKER_STATE.USED && latestLocker.endDate) {
+          const endDate = new Date(latestLocker.endDate);
+          endDate.setHours(0, 0, 0, 0);
+
+          // 현재 유효한 락커인지 확인 (만료일이 오늘 이후)
+          if (endDate >= now) {
+            // 만료일 연장
+            const newEndDate = new Date(endDate.getTime() + days * 24 * 60 * 60 * 1000);
+            const newEndDateStr = formatDateToString(newEndDate);
+
+            // Locker 타입으로 업데이트된 객체 생성
+            const updatedLocker: Locker = {
+              ...latestLocker,
+              endDate: newEndDateStr
+            };
+
+            if (Array.isArray(newValue)) {
+              const updated = [...newValue];
+              updated[updated.length - 1] = updatedLocker;
+              updates[key] = updated;
+            } else {
+              updates[key] = updatedLocker;
+            }
+
+            // 연장된 락커 정보 저장 (id와 key가 있는 경우만)
+            if (latestLocker.id && latestLocker.key) {
+              extendedLockers.push({
+                id: latestLocker.id,
+                key: latestLocker.key,
+                endDate: newEndDateStr
+              });
+            }
+
+            extendedCount++;
+          }
+        }
+      }
+
+      if (Object.keys(updates).length > 0) {
+        tx.update(ref, updates);
+      }
+
+      return { extendedCount, extendedLockers };
     });
   }
 }
