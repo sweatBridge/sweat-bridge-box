@@ -7,6 +7,7 @@ import { MembershipService } from '../../../services/membershipService';
 import { MemberService } from '../../../services/memberService';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
+import { formatDateToString } from '../../../utils/dateUtils';
 import HoldMembershipModal from '../membership/HoldMembershipModal';
 import DeleteMembershipConfirmModal from '../membership/DeleteMembershipConfirmModal';
 import RefundMembershipModal from '../membership/RefundMembershipModal';
@@ -634,6 +635,21 @@ const MemberManagementModal = ({
                     <span className="info-value">{member.birthDate || '-'}</span>
                   </div>
                 </div>
+
+                <div className="info-item">
+                <div className="info-icon">
+                  <Calendar size={16} />
+                </div>
+                <div className="info-content">
+                  <span className="info-label">가입일</span>
+                  <span className="info-value">
+                    {member.joinedAt 
+                      ? formatDateToString(member.joinedAt.toDate())
+                      : '-'
+                    }
+                  </span>
+                </div>
+              </div>
               </div>
 
               {/* 메모 섹션 (기본 정보 안에 포함) */}

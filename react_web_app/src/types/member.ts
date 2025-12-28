@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export interface MembershipInfo {
   type: string;
   expiryDate: string;
@@ -28,7 +30,7 @@ export interface Member {
   lockerHistory?: MemberLockerHistory[];
   lockerPass?: string;
   memo?: string;
-  joinedAt?: any; // Firebase Timestamp
+  joinedAt?: Timestamp | null;
 }
 
 export interface MemberListProps {
@@ -65,4 +67,4 @@ export interface ToastMessageProps {
   onCreateToast: (createToastFn: (toast: ToastMessageType) => void) => void;
 }
 
-export type ToastMessageType = Omit<ToastMessage, 'id'>; 
+export type ToastMessageType = Omit<ToastMessage, 'id'>;

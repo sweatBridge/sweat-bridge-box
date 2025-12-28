@@ -21,7 +21,7 @@ const NewMembersModal = ({ visible, members, onClose, onMemberClick }: NewMember
       return '-';
     }
 
-    const joinedDate = member.joinedAt?.toDate?.() || new Date(member.joinedAt);
+    const joinedDate = member.joinedAt.toDate();
     const now = new Date();
     const daysSinceJoined = Math.floor((now.getTime() - joinedDate.getTime()) / (1000 * 60 * 60 * 24));
     

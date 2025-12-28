@@ -78,13 +78,13 @@ const Dashboard = () => {
     // 신규 회원 목록: 가입일 기준 최신순 정렬, 최대 5명
     const recentMembersList = newMembersList
       .sort((a, b) => {
-        const dateA = a.joinedAt?.toDate?.() || new Date(a.joinedAt || 0);
-        const dateB = b.joinedAt?.toDate?.() || new Date(b.joinedAt || 0);
+        const dateA = a.joinedAt?.toDate() || new Date(0);
+        const dateB = b.joinedAt?.toDate() || new Date(0);
         return dateB.getTime() - dateA.getTime(); // 최신순
       })
       .slice(0, 5) // 최대 5명만
       .map(member => {
-        const joinedDate = member.joinedAt?.toDate?.() || new Date(member.joinedAt || 0);
+        const joinedDate = member.joinedAt?.toDate() || new Date(0);
         const dateStr = joinedDate.toLocaleDateString('ko-KR', {
           year: 'numeric',
           month: '2-digit',
