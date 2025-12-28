@@ -415,22 +415,18 @@ export class MembershipService {
       // 날짜 겹침 체크
       for (const existingMembership of existingMemberships) {
         // 삭제된 회원권은 체크하지 않음
-        if ((existingMembership as any).deleted) {
+        if (existingMembership.deleted) {
           continue;
         }
         
-        let existingStartDate: Date;
-        let existingEndDate: Date;
-        
-        // 새 구조
-        if ((existingMembership as any).period) {
-          existingStartDate = new Date((existingMembership as any).period.startDate);
-          existingEndDate = new Date((existingMembership as any).period.endDate);
-        } else {
-          // 레거시 구조
-          existingStartDate = new Date((existingMembership as any).startDate);
-          existingEndDate = new Date((existingMembership as any).endDate);
+        // 환불된 회원권은 체크하지 않음
+        if (existingMembership.refund?.isRefunded) {
+          continue;
         }
+        
+        // UserMembership 타입은 period 필드가 필수
+        const existingStartDate = new Date(existingMembership.period.startDate);
+        const existingEndDate = new Date(existingMembership.period.endDate);
 
         if (newStartDate <= existingEndDate && existingStartDate <= newEndDate) {
           throw new Error(`일자가 겹치는 다른 회원권이 있습니다. 회원권의 일자를 다시 확인해주세요. 기존 멤버십: ${existingStartDate.toLocaleDateString()} ~ ${existingEndDate.toLocaleDateString()}`);
