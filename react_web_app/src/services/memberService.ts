@@ -47,12 +47,12 @@ export class MemberService {
         
         // memberships 배열을 과거/현재/미래로 구분
         const allMemberships = data.memberships || [];
-        const { pastMemberships, currentMemberships, futureMemberships } = categorizeMemberships(allMemberships);
+        const { pastMemberships, currentMemberships, futureMemberships, refundedMemberships } = categorizeMemberships(allMemberships);
         
         members.push({
           ...data,
           futureMemberships: futureMemberships,
-          membershipInfo: this.calculateMembershipInfo(pastMemberships, currentMemberships, futureMemberships)
+          membershipInfo: this.calculateMembershipInfo(pastMemberships, currentMemberships, futureMemberships, refundedMemberships)
         });
       });
       
@@ -547,8 +547,8 @@ export class MemberService {
   /**
    * 회원권 정보 계산
    */
-  private static calculateMembershipInfo(pastMemberships: MembershipData[], currentMemberships: MembershipData[], futureMemberships: MembershipData[]) {
+  private static calculateMembershipInfo(pastMemberships: MembershipData[], currentMemberships: MembershipData[], futureMemberships: MembershipData[], refundedMemberships: MembershipData[]) {
     // 회원권 정보 계산
-    return getMembershipInfo(currentMemberships, futureMemberships, pastMemberships);
+    return getMembershipInfo(currentMemberships, futureMemberships, pastMemberships, refundedMemberships);
   }
 } 

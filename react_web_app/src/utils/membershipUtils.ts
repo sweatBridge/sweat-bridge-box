@@ -143,13 +143,14 @@ export function convertTimestampToString(timestamp: Timestamp | { seconds: numbe
 export function getMembershipInfo(
   currentMemberships: MembershipData[], 
   futureMemberships: MembershipData[] = [],
-  pastMemberships: MembershipData[] = []
+  pastMemberships: MembershipData[] = [],
+  refundedMemberships: MembershipData[] = [],
 ): MembershipInfo {
   const currentMembership = currentMemberships?.[0];
   // 회원권을 등록한 적이 없는 경우
-  if (pastMemberships.length === 0 && currentMemberships.length === 0 && futureMemberships.length === 0) {
+  if (pastMemberships.length === 0 && currentMemberships.length === 0 && futureMemberships.length === 0 && refundedMemberships.length === 0) {
     return {
-      type: '없음',
+      type: '미등록',
       expiryDate: '-',
       remainingDays: 0,
       remainingVisits: 0
@@ -298,7 +299,7 @@ export function getExpiredMemberships(memberships: MembershipData[]): Membership
 }
 
 /**
- * 회원권 목록을 과거/현재/미래로 구분
+ * 회원권 목록을 과거/현재/미래/환불로 구분
  */
 export function categorizeMemberships(
   memberships: MembershipData[]
@@ -306,8 +307,14 @@ export function categorizeMemberships(
   pastMemberships: MembershipData[];
   currentMemberships: MembershipData[];
   futureMemberships: MembershipData[];
+  refundedMemberships: MembershipData[];
 } {
   const allMemberships = memberships || [];
+  
+  // 환불된 회원권 분리
+  const refundedMemberships = allMemberships.filter(membership => {
+    return membership.refund && membership.refund.isRefunded;
+  });
   
   // 삭제되지 않고 환불되지 않은 회원권만 필터링
   const validMemberships = allMemberships.filter(membership => {
@@ -362,6 +369,7 @@ export function categorizeMemberships(
   return {
     pastMemberships,
     currentMemberships,
-    futureMemberships
+    futureMemberships,
+    refundedMemberships
   };
 } 
