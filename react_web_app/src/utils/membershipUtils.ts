@@ -167,11 +167,21 @@ export function getMembershipInfo(
     };
   }
 
-  // 현재 회원권이 없는 경우
+  // 현재 회원권이 없고 과거 회원권이 있는 경우 (만료)
+  if (!currentMembership && (pastMemberships.length > 0 || refundedMemberships.length > 0)) {
+    return {
+      type: '만료',
+      expiryDate: '만료됨',
+      remainingDays: 0,
+      remainingVisits: 0
+    };
+  }
+
+  // 현재 회원권이 없는 경우 (회원권 없음)
   if (!currentMembership) {
     return {
       type: '없음',
-      expiryDate: '만료됨',
+      expiryDate: '-',
       remainingDays: 0,
       remainingVisits: 0
     };

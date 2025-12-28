@@ -34,6 +34,7 @@ const MemberManagement = () => {
   // 상태 관리
   const [searchValue, setSearchValue] = useState('');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [activeTab, setActiveTab] = useState<'current' | 'expired'>('current');
   const [memberManagementModalVisible, setMemberManagementModalVisible] = useState(false);
   const [deletionModalVisible, setDeletionModalVisible] = useState(false);
   const [membershipPlanModalVisible, setMembershipPlanModalVisible] = useState(false);
@@ -130,11 +131,21 @@ const MemberManagement = () => {
     };
   }, [members]);
 
-  // 검색된 회원 필터링
-  const filteredMembers = filterMembers(members, searchValue);
+  // 검색된 회원 필터링 (탭에 따라 추가 필터링)
+  const filteredMembers = useMemo(() => {
+    const filtered = filterMembers(members, searchValue);
+    
+    // 탭에 따라 추가 필터링
+    if (activeTab === 'expired') {
+      return filtered.filter(member => member.membershipInfo.type === '만료');
+    } else {
+      return filtered.filter(member => member.membershipInfo.type !== '만료');
+    }
+  }, [members, searchValue, activeTab]);
   
   // 2단계 정렬: 1순위 - 상태 뱃지, 2순위 - 회원권 타입 뱃지 (미리 계산된 뱃지 정보 사용)
-  const sortedMembers = [...filteredMembers].sort((a, b) => {
+  const sortedMembers = useMemo(() => {
+    return [...filteredMembers].sort((a, b) => {
     // 미리 계산된 뱃지 정보 사용
     const badgesA = memberBadgesMap.get(a.email);
     const badgesB = memberBadgesMap.get(b.email);
@@ -174,18 +185,18 @@ const MemberManagement = () => {
     const membershipPriorityB = membershipPriorityMap[membershipBadgeB.colorClass] || 999;
     
     return membershipPriorityA - membershipPriorityB;
-  });
+    });
+  }, [filteredMembers, memberBadgesMap]);
   
   // 페이지네이션 계산
   const totalPages = Math.ceil(sortedMembers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentMembers = sortedMembers.slice(startIndex, endIndex);
   
-  // 검색어가 변경되면 첫 페이지로 이동
+  // 검색어나 탭이 변경되면 첫 페이지로 이동
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchValue]);
+  }, [searchValue, activeTab]);
 
   // 회원 삭제
   const handleDeleteMember = useCallback((member: Member) => {
@@ -351,6 +362,21 @@ const MemberManagement = () => {
               className="search-input"
             />
           </div>
+          {/* 탭 메뉴 */}
+          <div className="table-tabs">
+            <button
+              className={`tab-button ${activeTab === 'current' ? 'active' : ''}`}
+              onClick={() => setActiveTab('current')}
+            >
+              현재
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'expired' ? 'active' : ''}`}
+              onClick={() => setActiveTab('expired')}
+            >
+              만료
+            </button>
+          </div>
         </div>
       </div>
 
@@ -363,6 +389,7 @@ const MemberManagement = () => {
           </div>
         ) : (
           <div className="members-table-container">
+            
             <div className="members-table">
               <div className="table-header">
                 <div className="table-cell">이름</div>
@@ -375,14 +402,14 @@ const MemberManagement = () => {
                 <div className="table-cell">관리</div>
               </div>
 
-              {filteredMembers.length === 0 ? (
+              {sortedMembers.length === 0 ? (
                 <div className="empty-state">
                   <Users size={48} className="empty-icon" />
                   <h3>회원이 없습니다</h3>
                   <p>{searchValue ? '검색 조건에 맞는 회원이 없습니다.' : '등록된 회원이 없습니다.'}</p>
                 </div>
               ) : (
-                currentMembers.map((member, index) => {
+                sortedMembers.slice(startIndex, endIndex).map((member, index) => {
                   // 미리 계산된 뱃지 정보 사용
                   const badges = memberBadgesMap.get(member.email) || {
                     membershipTypeBadges: [],
@@ -818,11 +845,17 @@ const MemberManagement = () => {
 
         .search-section {
           margin-bottom: 0;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 16px;
         }
 
         .search-container {
           position: relative;
           max-width: 400px;
+          flex: 1;
         }
 
         .search-icon {
@@ -850,6 +883,36 @@ const MemberManagement = () => {
 
         .members-table-container {
           overflow-x: auto;
+        }
+
+        .table-tabs {
+          display: flex;
+          gap: 0;
+          background-color: #f3f4f6;
+          border-radius: 8px;
+          padding: 4px;
+        }
+
+        .tab-button {
+          padding: 8px 16px;
+          border: none;
+          background: transparent;
+          color: #9ca3af;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          border-radius: 6px;
+          transition: all 0.2s;
+        }
+
+        .tab-button:hover {
+          color: #6b7280;
+        }
+
+        .tab-button.active {
+          background-color: #ffffff;
+          color: #374151;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
         .members-table {

@@ -283,7 +283,7 @@ export class MembershipService {
     const membershipType = member.membershipInfo?.type || '없음';
     
     // 회원권이 없는 경우
-    if (membershipType === '없음') {
+    if (membershipType === '없음' || membershipType === '만료') {
       return {
         status: '비활성',
         colorClass: 'inactive'
