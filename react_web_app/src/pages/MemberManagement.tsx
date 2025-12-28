@@ -410,8 +410,7 @@ const MemberManagement = () => {
                 <div className="table-cell">이름</div>
                 <div className="table-cell">닉네임</div>
                 <div className="table-cell">등록 타입</div>
-                <div className="table-cell">만료 일자</div>
-                <div className="table-cell">잔여 기간</div>
+                <div className="table-cell">만료일</div>
                 <div className="table-cell">잔여 횟수</div>
                 <div className="table-cell">성별</div>
                 <div className="table-cell">관리</div>
@@ -445,10 +444,10 @@ const MemberManagement = () => {
                       </div>
                       <div className="table-cell">
                         <div className="nickname-with-badge">
-                          <span>{member.nickName}</span>
                           <span className={`member-status-badge ${memberStatusBadge.colorClass}`}>
                             {memberStatusBadge.status}
                           </span>
+                          <span>{member.nickName}</span>
                         </div>
                       </div>
                       <div className="table-cell">
@@ -460,11 +459,25 @@ const MemberManagement = () => {
                           ))}
                         </div>
                       </div>
-                    <div className="table-cell">{member.membershipInfo.expiryDate}</div>
                     <div className="table-cell">
-                      <span className={`remaining-days ${member.membershipInfo.remainingDays <= 7 ? 'warning' : ''}`}>
-                        {member.membershipInfo.remainingDays}일
-                      </span>
+                      <div className="expiry-date-cell">
+                        <div className="expiry-status">
+                          {(() => {
+                            const remainingDays = member.membershipInfo.remainingDays;
+                            if (remainingDays === '-' || remainingDays === null || remainingDays === undefined) {
+                              return '-';
+                            }
+                            const days = typeof remainingDays === 'string' ? parseInt(remainingDays) : remainingDays;
+                            if (isNaN(days) || days <= 0) {
+                              return '-';
+                            }
+                            return `${days}일 남음`;
+                          })()}
+                        </div>
+                        <div className="expiry-date-label">
+                          만료: {member.membershipInfo.expiryDate === '-' || member.membershipInfo.expiryDate === '만료됨' ? '-' : member.membershipInfo.expiryDate}
+                        </div>
+                      </div>
                     </div>
                     <div className="table-cell">{member.membershipInfo.remainingVisits}회</div>
                     <div className="table-cell">{getGenderText(member.gender)}</div>
@@ -940,12 +953,12 @@ const MemberManagement = () => {
 
         .members-table {
           width: 100%;
-          min-width: 800px;
+          min-width: 700px;
         }
 
         .table-header {
           display: grid;
-          grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 80px 120px 80px;
+          grid-template-columns: 1fr 1fr 1fr 1.5fr 1fr 80px 120px;
           gap: 16px;
           padding: 16px;
           background-color: #f8fafc;
@@ -957,7 +970,7 @@ const MemberManagement = () => {
 
         .table-row {
           display: grid;
-          grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 80px 120px 80px;
+          grid-template-columns: 1fr 1fr 1fr 1.5fr 1fr 80px 120px;
           gap: 16px;
           padding: 16px;
           border-bottom: 1px solid #e5e7eb;
@@ -1065,15 +1078,21 @@ const MemberManagement = () => {
           color: #4b5563;
         }
 
-        .remaining-days {
-          font-weight: 600;
+        .expiry-date-cell {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
         }
 
-        .remaining-days.warning {
-          color: #dc2626;
-          background-color: #fee2e2;
-          padding: 2px 6px;
-          border-radius: 4px;
+        .expiry-status {
+          font-size: 14px;
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .expiry-date-label {
+          font-size: 12px;
+          color: #9ca3af;
         }
 
         .action-buttons {
