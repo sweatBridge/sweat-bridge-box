@@ -23,6 +23,15 @@ export interface MembershipData {
     days: number;
     assignee: string;
   }>;
+  // 삭제 및 환불 관련 필드
+  deleted?: boolean;
+  refund?: {
+    isRefunded: boolean;
+    at?: Date | Timestamp | { seconds: number } | null;
+    refundAmount?: number;
+    reason?: string | null;
+    assignee?: string | null;
+  };
 }
 
 export interface MembershipInfo {
@@ -69,12 +78,12 @@ export function getCurrentMemberships(memberships: MembershipData[]): Membership
   
   return memberships.filter(membership => {
     // 삭제된 회원권 제외
-    if ((membership as any).deleted) {
+    if (membership.deleted) {
       return false;
     }
 
     // 환불된 회원권 제외
-    if ((membership as any).refund && (membership as any).refund.isRefunded) {
+    if (membership.refund && membership.refund.isRefunded) {
       return false;
     }
     
@@ -133,7 +142,8 @@ export function convertTimestampToString(timestamp: Timestamp | { seconds: numbe
  */
 export function getMembershipInfo(
   currentMemberships: MembershipData[], 
-  futureMemberships: MembershipData[] = []
+  futureMemberships: MembershipData[] = [],
+  pastMemberships: MembershipData[] = []
 ): MembershipInfo {
   const currentMembership = currentMemberships?.[0];
   
@@ -253,6 +263,16 @@ export function getExpiredMemberships(memberships: MembershipData[]): Membership
   }
   
   return memberships.filter(membership => {
+    // 삭제된 회원권 제외
+    if (membership.deleted) {
+      return false;
+    }
+
+    // 환불된 회원권 제외
+    if (membership.refund && membership.refund.isRefunded) {
+      return false;
+    }
+
     // 새 구조 우선, 레거시 폴백
     const endDateTimestamp = membership.period?.endDate || membership.endDate;
     const endDate = endDateTimestamp && endDateTimestamp.seconds 
@@ -266,4 +286,73 @@ export function getExpiredMemberships(memberships: MembershipData[]): Membership
     const today = new Date();
     return endDate < today;
   });
+}
+
+/**
+ * 회원권 목록을 과거/현재/미래로 구분
+ */
+export function categorizeMemberships(
+  memberships: MembershipData[]
+): {
+  pastMemberships: MembershipData[];
+  currentMemberships: MembershipData[];
+  futureMemberships: MembershipData[];
+} {
+  const allMemberships = memberships || [];
+  
+  // 삭제되지 않고 환불되지 않은 회원권만 필터링
+  const validMemberships = allMemberships.filter(membership => {
+    if (membership.deleted) {
+      return false;
+    }
+    if (membership.refund && membership.refund.isRefunded) {
+      return false;
+    }
+    return true;
+  });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const pastMemberships: MembershipData[] = [];
+  const currentMemberships: MembershipData[] = [];
+  const futureMemberships: MembershipData[] = [];
+
+  validMemberships.forEach(membership => {
+    // 새 구조 우선, 레거시 폴백
+    const startDateTimestamp = membership.period?.startDate || membership.startDate;
+    const endDateTimestamp = membership.period?.endDate || membership.endDate;
+    
+    const startDate = startDateTimestamp && startDateTimestamp.seconds 
+      ? new Date(startDateTimestamp.seconds * 1000) 
+      : null;
+    const endDate = endDateTimestamp && endDateTimestamp.seconds 
+      ? new Date(endDateTimestamp.seconds * 1000) 
+      : null;
+
+    if (!startDate || !endDate) {
+      return; // 유효하지 않은 날짜는 제외
+    }
+
+    // 날짜 비교를 위해 시간을 00:00:00으로 설정
+    const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+    if (endDateOnly < today) {
+      // 만료된 회원권 (과거)
+      pastMemberships.push(membership);
+    } else if (startDateOnly > today) {
+      // 시작일이 미래인 회원권
+      futureMemberships.push(membership);
+    } else {
+      // 현재 유효한 회원권 (startDate <= today <= endDate)
+      currentMemberships.push(membership);
+    }
+  });
+
+  return {
+    pastMemberships,
+    currentMemberships,
+    futureMemberships
+  };
 } 

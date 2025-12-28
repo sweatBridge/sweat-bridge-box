@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Member, MemberLockerHistory } from '../types/member';
-import { getCurrentMemberships, getFutureMemberships, getMembershipInfo, MembershipData } from '../utils/membershipUtils';
+import { categorizeMemberships, getMembershipInfo, MembershipData } from '../utils/membershipUtils';
 
 export interface FirebaseMemberData {
   email: string;
@@ -45,12 +45,14 @@ export class MemberService {
           data.birthDate = data.birth;
         }
         
+        // memberships 배열을 과거/현재/미래로 구분
+        const allMemberships = data.memberships || [];
+        const { pastMemberships, currentMemberships, futureMemberships } = categorizeMemberships(allMemberships);
+        
         members.push({
           ...data,
-          membershipInfo: this.calculateMembershipInfo(
-            data.memberships || [], 
-            data.futureMemberships || []
-          )
+          futureMemberships: futureMemberships,
+          membershipInfo: this.calculateMembershipInfo(pastMemberships, currentMemberships, futureMemberships)
         });
       });
       
@@ -545,18 +547,8 @@ export class MemberService {
   /**
    * 회원권 정보 계산
    */
-  private static calculateMembershipInfo(memberships: MembershipData[], futureMemberships: MembershipData[]) {
-    // 안전하게 배열 처리
-    const safeMemberships = memberships || [];
-    const safeFutureMemberships = futureMemberships || [];
-    
-    // 현재 유효한 회원권들을 필터링
-    const currentMemberships = getCurrentMemberships(safeMemberships);
-    
-    // 미래 회원권들을 필터링 (필요한 경우)
-    const filteredFutureMemberships = getFutureMemberships(safeFutureMemberships);
-    
+  private static calculateMembershipInfo(pastMemberships: MembershipData[], currentMemberships: MembershipData[], futureMemberships: MembershipData[]) {
     // 회원권 정보 계산
-    return getMembershipInfo(currentMemberships, filteredFutureMemberships);
+    return getMembershipInfo(currentMemberships, futureMemberships, pastMemberships);
   }
 } 
