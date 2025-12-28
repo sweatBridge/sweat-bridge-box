@@ -659,13 +659,13 @@ const MemberManagementModal = ({
               {/* 메모 섹션 (기본 정보 안에 포함) */}
               <div className="memo-subsection">
                 <div className="memo-container">
-                  <input
-                    type="text"
+                  <textarea
                     className="memo-input"
                     value={memo}
                     onChange={(e) => setMemo(e.target.value)}
                     placeholder="회원에 대한 메모를 작성하세요..."
                     disabled={loading}
+                    rows={3}
                   />
                   <button 
                     className="btn btn-primary btn-sm"
@@ -1431,19 +1431,20 @@ const MemberManagementModal = ({
         }
 
         .memo-container {
-          display: flex;
-          align-items: center;
-          gap: 12px;
+          position: relative;
         }
 
         .memo-input {
-          flex: 1;
-          padding: 8px 12px;
+          width: 100%;
+          padding: 8px 80px 8px 12px;
           border: 1px solid #d1d5db;
           border-radius: 6px;
           font-size: 13px;
           font-family: inherit;
           transition: all 0.2s;
+          resize: vertical;
+          min-height: 60px;
+          box-sizing: border-box;
         }
 
         .memo-input:focus {
@@ -1460,6 +1461,12 @@ const MemberManagementModal = ({
 
         .memo-input::placeholder {
           color: #9ca3af;
+        }
+
+        .memo-container .btn-primary.btn-sm {
+          position: absolute;
+          bottom: 8px;
+          right: 8px;
         }
 
         .form-grid {
