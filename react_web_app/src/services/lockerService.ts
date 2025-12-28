@@ -2,6 +2,7 @@ import { getDoc, doc, runTransaction } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Locker, LOCKER_STATE, LockerState } from '../types/locker';
 import { toLocker } from '../utils/lockerUtils';
+import { formatDateToString } from '../utils/dateUtils';
 
 export class LockerService {
   static async getLockers(box: string): Promise<Locker[]> {
@@ -489,7 +490,7 @@ export class LockerService {
           if (endDate >= now) {
             // 만료일 연장
             const newEndDate = new Date(endDate.getTime() + days * 24 * 60 * 60 * 1000);
-            const newEndDateStr = newEndDate.toISOString().split('T')[0];
+            const newEndDateStr = formatDateToString(newEndDate);
 
             // Locker 타입으로 업데이트된 객체 생성
             const updatedLocker: Locker = {

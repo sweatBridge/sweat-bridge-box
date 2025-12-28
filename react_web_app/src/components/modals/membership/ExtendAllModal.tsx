@@ -97,7 +97,7 @@ const ExtendAllModal = ({ visible, onClose, onSuccess, onError }: ExtendAllModal
     try {
       setLoading(true);
       const boxName = localStorage.getItem('boxName') || 'SWEAT';
-      const assignee = localStorage.getItem('userEmail') || 'system';
+      const assignee = localStorage.getItem('realName') || 'system';
 
       let membershipCount = 0;
       let lockerCount = 0;
