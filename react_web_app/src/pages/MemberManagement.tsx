@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Users, UserPlus, CreditCard, Trash2, Settings, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { Search, Users, UserPlus, CreditCard, Trash2, Settings, ChevronLeft, ChevronRight, Calendar, Phone } from 'lucide-react';
 import { Member, ToastMessageType } from '../types/member';
 import { useMemberManagement } from '../hooks/useMemberManagement';
 import MemberDeletionModal from '../components/modals/member/MemberDeletionModal';
@@ -12,7 +12,7 @@ import ActiveMembersModal from '../components/modals/member/ActiveMembersModal';
 import AddMemberModal from '../components/modals/member/AddMemberModal';
 import ApplyRequestModal from '../components/modals/member/ApplyRequestModal';
 import ToastMessage from '../components/ToastMessage';
-import { getGenderText, filterMembers } from '../utils/memberUtils';
+import { filterMembers, formatPhoneNumber } from '../utils/memberUtils';
 import { MembershipService } from '../services/membershipService';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
@@ -410,9 +410,9 @@ const MemberManagement = () => {
                 <div className="table-cell">이름</div>
                 <div className="table-cell">닉네임</div>
                 <div className="table-cell">등록 타입</div>
+                <div className="table-cell">연락처</div>
                 <div className="table-cell">만료일</div>
-                <div className="table-cell">잔여 횟수</div>
-                <div className="table-cell">성별</div>
+                <div className="table-cell">횟수</div>
                 <div className="table-cell">관리</div>
               </div>
 
@@ -459,6 +459,12 @@ const MemberManagement = () => {
                           ))}
                         </div>
                       </div>
+                      <div className="table-cell">
+                        <div className="contact-cell">
+                          <Phone size={16} className="phone-icon" />
+                          <span>{formatPhoneNumber(member.phone)}</span>
+                        </div>
+                      </div>
                     <div className="table-cell">
                       <div className="expiry-date-cell">
                         <div className="expiry-status">
@@ -480,7 +486,6 @@ const MemberManagement = () => {
                       </div>
                     </div>
                     <div className="table-cell">{member.membershipInfo.remainingVisits}회</div>
-                    <div className="table-cell">{getGenderText(member.gender)}</div>
                     <div className="table-cell">
                       <div className="action-buttons">
                         <button 
@@ -958,7 +963,7 @@ const MemberManagement = () => {
 
         .table-header {
           display: grid;
-          grid-template-columns: 1fr 1fr 1fr 1.5fr 1fr 80px 120px;
+          grid-template-columns: 1fr 1fr 1fr 1.2fr 1.5fr 1fr 120px;
           gap: 16px;
           padding: 16px;
           background-color: #f8fafc;
@@ -970,7 +975,7 @@ const MemberManagement = () => {
 
         .table-row {
           display: grid;
-          grid-template-columns: 1fr 1fr 1fr 1.5fr 1fr 80px 120px;
+          grid-template-columns: 1fr 1fr 1fr 1.2fr 1.5fr 1fr 120px;
           gap: 16px;
           padding: 16px;
           border-bottom: 1px solid #e5e7eb;
@@ -1093,6 +1098,18 @@ const MemberManagement = () => {
         .expiry-date-label {
           font-size: 12px;
           color: #9ca3af;
+        }
+
+        .contact-cell {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #374151;
+        }
+
+        .phone-icon {
+          color: #374151;
+          flex-shrink: 0;
         }
 
         .action-buttons {
