@@ -146,14 +146,23 @@ export function getMembershipInfo(
   pastMemberships: MembershipData[] = []
 ): MembershipInfo {
   const currentMembership = currentMemberships?.[0];
+  // 회원권을 등록한 적이 없는 경우
+  if (pastMemberships.length === 0 && currentMemberships.length === 0 && futureMemberships.length === 0) {
+    return {
+      type: '없음',
+      expiryDate: '-',
+      remainingDays: 0,
+      remainingVisits: 0
+    };
+  }
   
   // 현재 회원권이 없고 미래 회원권이 있는 경우
   if (!currentMembership && futureMemberships && futureMemberships.length > 0) {
     return {
       type: '사용 예정',
       expiryDate: '-',
-      remainingDays: '-',
-      remainingVisits: '-'
+      remainingDays: 0,
+      remainingVisits: 0
     };
   }
 
