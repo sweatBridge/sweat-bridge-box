@@ -67,9 +67,7 @@ const MemberManagementModal = ({
       setMembershipPlans(plans);
       setUserMemberships(memberships);
       setCurrentMemberships(MembershipService.getCurrentMemberships(memberships));
-      
-      // 메모 불러오기
-      setMemo(member.memo || '');
+      // 메모는 useEffect에서 처리하므로 여기서는 설정하지 않음
     } catch (error) {
       console.error('Failed to load data:', error);
       if (onError) {
@@ -78,14 +76,20 @@ const MemberManagementModal = ({
     } finally {
       setLoading(false);
     }
-  }, [member, onError]);
+  }, [member?.email, onError]);
 
-  // 모달이 열릴 때 데이터 로드
+  // 모달이 열릴 때 데이터 로드 및 메모 초기화
   useEffect(() => {
     if (visible && member) {
+      // 모달이 열릴 때만 메모를 member.memo로 초기화
+      setMemo(member.memo || '');
       loadData();
+    } else if (!visible) {
+      // 모달이 닫힐 때 메모 초기화
+      setMemo('');
     }
-  }, [visible, member, loadData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, member?.email]); // loadData는 member.email이 변경될 때마다 실행되어야 하므로 의존성에서 제외
 
   const handlePlanChange = useCallback((planName: string) => {
     setFormData(prev => ({ ...prev, selectedPlanName: planName }));

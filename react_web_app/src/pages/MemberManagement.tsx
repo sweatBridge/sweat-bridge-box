@@ -578,6 +578,10 @@ const MemberManagement = () => {
         onMemoUpdate={async (email, memo) => {
           try {
             await updateMemberMemo(email, memo);
+            // selectedMember도 업데이트
+            if (selectedMember && selectedMember.email === email) {
+              setSelectedMember({ ...selectedMember, memo });
+            }
           } catch (error) {
             console.error('Failed to update member memo in parent:', error);
           }
