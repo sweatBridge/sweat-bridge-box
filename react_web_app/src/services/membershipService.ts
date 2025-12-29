@@ -637,6 +637,8 @@ export class MembershipService {
     membershipIndex: number,
     newStartDate: Date,
     newEndDate: Date,
+    newQuotaRemaining: number,
+    newQuotaUsed: number,
     reason: string,
     assignee: string,
     existingMemberships?: UserMembership[]
@@ -660,60 +662,77 @@ export class MembershipService {
         throw new Error('레거시 회원권은 수정을 지원하지 않습니다.');
       }
 
-      // 다른 회원권과 겹치는지 체크
-      for (let i = 0; i < memberships.length; i++) {
-        if (i === membershipIndex) continue; // 자기 자신은 제외
-        
-        const otherMembership = memberships[i];
-        
-        // 삭제되거나 환불된 회원권은 제외
-        if (otherMembership.deleted || (otherMembership.refund && otherMembership.refund.isRefunded)) {
-          continue;
-        }
+      // 시작일/종료일이 변경되었는지 확인
+      const dateChanged = 
+        newStartDate.getTime() !== membership.period.startDate.getTime() ||
+        newEndDate.getTime() !== membership.period.endDate.getTime();
 
-        const otherStartDate = new Date(otherMembership.period.startDate);
-        const otherEndDate = new Date(otherMembership.period.endDate);
-        
-        // 날짜 겹침 체크
-        if (newStartDate <= otherEndDate && otherStartDate <= newEndDate) {
-          throw new Error(
-            `수정하려는 기간이 다른 회원권과 겹칩니다.\n` +
-            `겹치는 회원권: ${formatDateToString(otherStartDate)} ~ ${formatDateToString(otherEndDate)}`
-          );
+      // 날짜가 변경된 경우에만 다른 회원권과 겹치는지 체크
+      if (dateChanged) {
+        for (let i = 0; i < memberships.length; i++) {
+          if (i === membershipIndex) continue; // 자기 자신은 제외
+          
+          const otherMembership = memberships[i];
+          
+          // 삭제되거나 환불된 회원권은 제외
+          if (otherMembership.deleted || (otherMembership.refund && otherMembership.refund.isRefunded)) {
+            continue;
+          }
+
+          const otherStartDate = new Date(otherMembership.period.startDate);
+          const otherEndDate = new Date(otherMembership.period.endDate);
+          
+          // 날짜 겹침 체크
+          if (newStartDate <= otherEndDate && otherStartDate <= newEndDate) {
+            throw new Error(
+              `수정하려는 기간이 다른 회원권과 겹칩니다.\n` +
+              `겹치는 회원권: ${formatDateToString(otherStartDate)} ~ ${formatDateToString(otherEndDate)}`
+            );
+          }
         }
       }
 
-      // 이전 기간 정보 저장
-      const beforePeriod = {
-        startDate: new Date(membership.period.startDate),
-        endDate: new Date(membership.period.endDate)
-      };
+      // 날짜가 변경된 경우에만 조정 기록 추가
+      if (dateChanged) {
+        // 이전 기간 정보 저장
+        const beforePeriod = {
+          startDate: new Date(membership.period.startDate),
+          endDate: new Date(membership.period.endDate)
+        };
 
-      // 조정 기록 추가
-      const adjustment = {
-        before: {
-          period: {
-            startDate: beforePeriod.startDate,
-            endDate: beforePeriod.endDate
-          }
-        },
-        after: {
-          period: {
-            startDate: newStartDate,
-            endDate: newEndDate
-          }
-        },
-        reason,
-        assignee,
-        at: new Date()
-      };
+        // 조정 기록 추가
+        const adjustment = {
+          before: {
+            period: {
+              startDate: beforePeriod.startDate,
+              endDate: beforePeriod.endDate
+            }
+          },
+          after: {
+            period: {
+              startDate: newStartDate,
+              endDate: newEndDate
+            }
+          },
+          reason,
+          assignee,
+          at: new Date()
+        };
 
-      membership.adjustments = membership.adjustments || [];
-      membership.adjustments.push(adjustment);
+        membership.adjustments = membership.adjustments || [];
+        membership.adjustments.push(adjustment);
 
-      // 기간 업데이트
-      membership.period.startDate = newStartDate;
-      membership.period.endDate = newEndDate;
+        // 기간 업데이트
+        membership.period.startDate = newStartDate;
+        membership.period.endDate = newEndDate;
+      }
+
+      // Quota 업데이트 (횟수권인 경우)
+      if (membership.type === 'countPass') {
+        membership.quota.remaining = newQuotaRemaining;
+        membership.quota.used = newQuotaUsed;
+        membership.quota.total = newQuotaRemaining + newQuotaUsed;
+      }
 
       // 업데이트된 시간 기록
       membership.updatedAt = new Date();
@@ -722,9 +741,9 @@ export class MembershipService {
       const memberDocRef = doc(db, `box/${boxName}/member/${email}`);
       await setDoc(memberDocRef, { memberships }, { merge: true });
 
-      console.log('Membership period updated successfully');
+      console.log('Membership updated successfully');
     } catch (error) {
-      console.error('Error editing membership period:', error);
+      console.error('Error editing membership:', error);
       throw error;
     }
   }

@@ -37,7 +37,7 @@ const MemberManagementModal = ({
   const [refundInfoData, setRefundInfoData] = useState<{ refundAt: Date; refundAmount: number; reason: string; assignee: string | null; plan: string } | null>(null);
   const [memo, setMemo] = useState('');
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [membershipToEdit, setMembershipToEdit] = useState<{ index: number; plan: string; type: string; startDate: Date; endDate: Date; price: string } | null>(null);
+  const [membershipToEdit, setMembershipToEdit] = useState<{ index: number; plan: string; type: string; startDate: Date; endDate: Date; price: string; quotaRemaining?: number; quotaUsed?: number } | null>(null);
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
   const [adjustmentHistory, setAdjustmentHistory] = useState<{ plan: string; adjustments: any[] } | null>(null);
 
@@ -505,7 +505,9 @@ const MemberManagementModal = ({
       type: displayInfo.type,
       startDate: new Date(displayInfo.startDate),
       endDate: new Date(displayInfo.endDate),
-      price: displayInfo.price
+      price: displayInfo.price,
+      quotaRemaining: membership.quota?.remaining ?? 0,
+      quotaUsed: membership.quota?.used ?? 0
     });
     setEditModalVisible(true);
   }, [userMemberships]);
@@ -514,6 +516,8 @@ const MemberManagementModal = ({
   const handleConfirmEdit = useCallback(async (
     newStartDate: Date,
     newEndDate: Date,
+    newQuotaRemaining: number,
+    newQuotaUsed: number,
     reason: string,
     assignee: string
   ) => {
@@ -526,6 +530,8 @@ const MemberManagementModal = ({
         membershipToEdit.index,
         newStartDate,
         newEndDate,
+        newQuotaRemaining,
+        newQuotaUsed,
         reason,
         assignee,
         userMemberships
@@ -1087,6 +1093,8 @@ const MemberManagementModal = ({
           currentStartDate={membershipToEdit.startDate}
           currentEndDate={membershipToEdit.endDate}
           membershipPrice={membershipToEdit.price}
+          currentQuotaRemaining={membershipToEdit.quotaRemaining}
+          currentQuotaUsed={membershipToEdit.quotaUsed}
           onClose={() => {
             setEditModalVisible(false);
             setMembershipToEdit(null);
