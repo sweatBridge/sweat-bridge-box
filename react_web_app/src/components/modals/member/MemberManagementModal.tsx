@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Pause, DollarSign, CheckCircle, Edit, History } from 'lucide-react';
 import { MemberManagementModalProps, MembershipPlan, UserMembership, AddMembershipData } from '../../../types/membership';
+import { MemberLockerHistory } from '../../../types/member';
 import { getGenderText, formatPhoneNumber } from '../../../utils/memberUtils';
 import { generateMembershipKey } from '../../../utils/keyGenerator';
 import { MembershipService } from '../../../services/membershipService';
@@ -40,6 +41,7 @@ const MemberManagementModal = ({
   const [membershipToEdit, setMembershipToEdit] = useState<{ index: number; plan: string; type: string; startDate: Date; endDate: Date; price: string; quotaRemaining?: number; quotaUsed?: number } | null>(null);
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
   const [adjustmentHistory, setAdjustmentHistory] = useState<{ plan: string; adjustments: any[] } | null>(null);
+  const [activeTab, setActiveTab] = useState<'membership' | 'locker'>('membership');
 
   // 회원권 추가 폼 상태
   const [formData, setFormData] = useState<AddMembershipData>({
@@ -920,107 +922,163 @@ const MemberManagementModal = ({
                 </div>
               </div>
 
-            {/* 회원권 목록 */}
-            <div className="membership-list">
-              <h4 className="section-title">회원권 목록</h4>
-                
-                {userMemberships.length === 0 ? (
-                  <div className="empty-memberships">
-                    <CreditCard size={48} className="empty-icon" />
-                    <p>등록된 회원권이 없습니다.</p>
-                  </div>
-                ) : (
-                  <div className="memberships-table">
-                    <div className="table-header">
-                      <div className="table-cell">시작일</div>
-                      <div className="table-cell">종료일</div>
-                      <div className="table-cell">타입</div>
-                      <div className="table-cell">가격</div>
-                      <div className="table-cell">플랜</div>
-                      <div className="table-cell">담당자</div>
-                      <div className="table-cell">조정 이력</div>
-                      <div className="table-cell">수정</div>
-                      <div className="table-cell">환불</div>
-                      <div className="table-cell">삭제</div>
+            {/* 회원권 목록 / 락커 목록 */}
+            <div className="history-section">
+              {/* 탭 */}
+              <div className="history-tabs">
+                <button
+                  className={`history-tab ${activeTab === 'membership' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('membership')}
+                >
+                  회원권 목록
+                </button>
+                <button
+                  className={`history-tab ${activeTab === 'locker' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('locker')}
+                >
+                  락커 목록
+                </button>
+              </div>
+
+              {/* 탭 컨텐츠 */}
+              {activeTab === 'membership' && (
+                <div className="tab-content">
+                  <h4 className="section-title">회원권 목록</h4>
+                  
+                  {userMemberships.length === 0 ? (
+                    <div className="empty-memberships">
+                      <CreditCard size={48} className="empty-icon" />
+                      <p>등록된 회원권이 없습니다.</p>
                     </div>
-                    
-                    {userMemberships.map((membership, index) => {
-                      const displayInfo = getMembershipDisplayInfo(membership);
-                      const refunded = isRefunded(membership);
-                      const hasAdjustments = (membership as any).adjustments && (membership as any).adjustments.length > 0;
-                      return (
-                        <div key={index} className={`table-row ${refunded ? 'refunded' : ''}`}>
-                          <div className="table-cell">{formatDate(displayInfo.startDate)}</div>
-                          <div className="table-cell">{formatDate(displayInfo.endDate)}</div>
-                          <div className="table-cell">
-                            <span className="membership-badge">
-                              {displayInfo.type === "countPass" ? "횟수권" : "기간권"}
-                            </span>
-                          </div>
-                          <div className="table-cell">{displayInfo.price}원</div>
-                          <div className="table-cell">{displayInfo.plan}</div>
-                          <div className="table-cell">{displayInfo.assignee}</div>
-                          <div className="table-cell">
-                            {hasAdjustments ? (
+                  ) : (
+                    <div className="memberships-table">
+                      <div className="table-header">
+                        <div className="table-cell">시작일</div>
+                        <div className="table-cell">종료일</div>
+                        <div className="table-cell">타입</div>
+                        <div className="table-cell">가격</div>
+                        <div className="table-cell">플랜</div>
+                        <div className="table-cell">담당자</div>
+                        <div className="table-cell">조정 이력</div>
+                        <div className="table-cell">수정</div>
+                        <div className="table-cell">환불</div>
+                        <div className="table-cell">삭제</div>
+                      </div>
+                      
+                      {userMemberships.map((membership, index) => {
+                        const displayInfo = getMembershipDisplayInfo(membership);
+                        const refunded = isRefunded(membership);
+                        const hasAdjustments = (membership as any).adjustments && (membership as any).adjustments.length > 0;
+                        return (
+                          <div key={index} className={`table-row ${refunded ? 'refunded' : ''}`}>
+                            <div className="table-cell">{formatDate(displayInfo.startDate)}</div>
+                            <div className="table-cell">{formatDate(displayInfo.endDate)}</div>
+                            <div className="table-cell">
+                              <span className="membership-badge">
+                                {displayInfo.type === "countPass" ? "횟수권" : "기간권"}
+                              </span>
+                            </div>
+                            <div className="table-cell">{displayInfo.price}원</div>
+                            <div className="table-cell">{displayInfo.plan}</div>
+                            <div className="table-cell">{displayInfo.assignee}</div>
+                            <div className="table-cell">
+                              {hasAdjustments ? (
+                                <button
+                                  onClick={() => handleOpenHistoryModal(index)}
+                                  disabled={loading}
+                                  className="btn btn-sm btn-history"
+                                  title="조정 이력 보기"
+                                >
+                                  <History size={14} />
+                                  <span className="history-count">{(membership as any).adjustments.length}</span>
+                                </button>
+                              ) : (
+                                <span className="no-history">-</span>
+                              )}
+                            </div>
+                            <div className="table-cell">
                               <button
-                                onClick={() => handleOpenHistoryModal(index)}
-                                disabled={loading}
-                                className="btn btn-sm btn-history"
-                                title="조정 이력 보기"
+                                onClick={() => handleOpenEditModal(index)}
+                                disabled={loading || refunded}
+                                className="btn btn-sm btn-edit"
+                                title={refunded ? "환불된 회원권은 수정할 수 없습니다" : "회원권 수정"}
                               >
-                                <History size={14} />
-                                <span className="history-count">{(membership as any).adjustments.length}</span>
+                                <Edit size={14} />
                               </button>
-                            ) : (
-                              <span className="no-history">-</span>
-                            )}
-                          </div>
-                          <div className="table-cell">
-                            <button
-                              onClick={() => handleOpenEditModal(index)}
-                              disabled={loading || refunded}
-                              className="btn btn-sm btn-edit"
-                              title={refunded ? "환불된 회원권은 수정할 수 없습니다" : "회원권 수정"}
-                            >
-                              <Edit size={14} />
-                            </button>
-                          </div>
-                          <div className="table-cell">
-                            {refunded ? (
+                            </div>
+                            <div className="table-cell">
+                              {refunded ? (
+                                <button
+                                  onClick={() => handleOpenRefundInfoModal(index)}
+                                  disabled={loading}
+                                  className="btn btn-sm btn-refunded"
+                                  title="환불 정보 보기"
+                                >
+                                  <CheckCircle size={14} />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleOpenRefundModal(index)}
+                                  disabled={loading}
+                                  className="btn btn-sm btn-refund"
+                                  title="회원권 환불"
+                                >
+                                  <DollarSign size={14} />
+                                </button>
+                              )}
+                            </div>
+                            <div className="table-cell">
                               <button
-                                onClick={() => handleOpenRefundInfoModal(index)}
-                                disabled={loading}
-                                className="btn btn-sm btn-refunded"
-                                title="환불 정보 보기"
+                                onClick={() => handleOpenDeleteModal(index)}
+                                disabled={loading || refunded}
+                                className="btn btn-sm btn-danger"
+                                title={refunded ? "환불된 회원권은 삭제할 수 없습니다" : "회원권 삭제"}
                               >
-                                <CheckCircle size={14} />
+                                <Trash2 size={14} />
                               </button>
-                            ) : (
-                              <button
-                                onClick={() => handleOpenRefundModal(index)}
-                                disabled={loading}
-                                className="btn btn-sm btn-refund"
-                                title="회원권 환불"
-                              >
-                                <DollarSign size={14} />
-                              </button>
-                            )}
+                            </div>
                           </div>
-                          <div className="table-cell">
-                            <button
-                              onClick={() => handleOpenDeleteModal(index)}
-                              disabled={loading || refunded}
-                              className="btn btn-sm btn-danger"
-                              title={refunded ? "환불된 회원권은 삭제할 수 없습니다" : "회원권 삭제"}
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'locker' && (
+                <div className="tab-content">
+                  <h4 className="section-title">락커 목록</h4>
+                  
+                  {!member.lockerHistory || member.lockerHistory.length === 0 ? (
+                    <div className="empty-memberships">
+                      <CreditCard size={48} className="empty-icon" />
+                      <p>등록된 락커가 없습니다.</p>
+                    </div>
+                  ) : (
+                    <div className="locker-table">
+                      <div className="locker-table-header">
+                        <div className="locker-table-cell">락커 번호</div>
+                        <div className="locker-table-cell">시작일</div>
+                        <div className="locker-table-cell">종료일</div>
+                        <div className="locker-table-cell">가격</div>
+                        <div className="locker-table-cell">결제수단</div>
+                      </div>
+                      
+                      {member.lockerHistory.map((locker: MemberLockerHistory, index: number) => (
+                        <div key={index} className="locker-table-row">
+                          <div className="locker-table-cell">{locker.lockerNum}번</div>
+                          <div className="locker-table-cell">{locker.startDate}</div>
+                          <div className="locker-table-cell">{locker.endDate}</div>
+                          <div className="locker-table-cell">{locker.price ? `${locker.price}원` : '-'}</div>
+                          <div className="locker-table-cell">
+                            {locker.paymentType === 'cash' ? '현금' : locker.paymentType === 'card' ? '카드' : '-'}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1154,8 +1212,48 @@ const MemberManagementModal = ({
 
         .info-section,
         .membership-form,
-        .membership-list {
+        .membership-list,
+        .history-section {
           margin-bottom: 24px;
+        }
+
+        .history-tabs {
+          display: flex;
+          background-color: #f3f4f6;
+          border-radius: 8px 8px 0 0;
+          padding: 4px;
+          gap: 4px;
+        }
+
+        .history-tab {
+          flex: 1;
+          padding: 10px 16px;
+          border: none;
+          background-color: transparent;
+          color: #9ca3af;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          border-radius: 6px;
+          transition: all 0.2s ease;
+        }
+
+        .history-tab:hover {
+          background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .history-tab.active {
+          background-color: white;
+          color: #1f2937;
+          font-weight: 600;
+        }
+
+        .tab-content {
+          background-color: white;
+          border: 1px solid #e5e7eb;
+          border-top: none;
+          border-radius: 0 0 8px 8px;
+          padding: 20px;
         }
 
         .section-title {
@@ -1610,6 +1708,52 @@ const MemberManagementModal = ({
         }
 
         .table-cell:nth-child(10) { /* 삭제 */
+          justify-content: center;
+        }
+
+        .locker-table {
+          width: 100%;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        .locker-table-header {
+          display: grid !important;
+          grid-template-columns: 1fr 2fr 2fr 1.5fr 1fr !important;
+          gap: 16px;
+          padding: 16px;
+          background-color: #f8fafc;
+          border-bottom: 2px solid #e2e8f0;
+          font-weight: 600;
+          color: #374151;
+          font-size: 14px;
+          width: 100%;
+        }
+
+        .locker-table-row {
+          display: grid !important;
+          grid-template-columns: 1fr 2fr 2fr 1.5fr 1fr !important;
+          gap: 16px;
+          padding: 16px;
+          border-bottom: 1px solid #e5e7eb;
+          transition: background-color 0.2s;
+          width: 100%;
+        }
+
+        .locker-table-row:hover {
+          background-color: #f9fafb;
+        }
+
+        .locker-table-cell {
+          display: flex;
+          align-items: center;
+          font-size: 14px;
+          color: #374151;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          min-width: 0;
           justify-content: center;
         }
 
