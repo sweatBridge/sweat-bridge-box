@@ -1,4 +1,3 @@
-import React from 'react';
 import { Gradients } from '../../../constants/gradients';
 import { User, Mail, Phone, Calendar, Users, Clock, CreditCard } from 'lucide-react';
 import { MemberDetailsModalProps } from '../../../types/member';

@@ -11,8 +11,17 @@ interface EditMembershipModalProps {
   currentStartDate: Date;
   currentEndDate: Date;
   membershipPrice: string;
+  currentQuotaRemaining?: number;
+  currentQuotaUsed?: number;
   onClose: () => void;
-  onConfirm: (newStartDate: Date, newEndDate: Date, reason: string, assignee: string) => void;
+  onConfirm: (
+    newStartDate: Date,
+    newEndDate: Date,
+    newQuotaRemaining: number,
+    newQuotaUsed: number,
+    reason: string,
+    assignee: string
+  ) => void;
   loading?: boolean;
 }
 
@@ -23,12 +32,16 @@ const EditMembershipModal = ({
   currentStartDate,
   currentEndDate,
   membershipPrice,
+  currentQuotaRemaining = 0,
+  currentQuotaUsed = 0,
   onClose,
   onConfirm,
   loading = false
 }: EditMembershipModalProps) => {
   const [newStartDate, setNewStartDate] = useState<Date | null>(currentStartDate);
   const [newEndDate, setNewEndDate] = useState<Date | null>(currentEndDate);
+  const [newQuotaRemaining, setNewQuotaRemaining] = useState<number>(currentQuotaRemaining);
+  const [newQuotaUsed, setNewQuotaUsed] = useState<number>(currentQuotaUsed);
   const [reason, setReason] = useState('');
   const [assignee, setAssignee] = useState('');
 
@@ -37,10 +50,12 @@ const EditMembershipModal = ({
     if (visible) {
       setNewStartDate(currentStartDate);
       setNewEndDate(currentEndDate);
+      setNewQuotaRemaining(currentQuotaRemaining);
+      setNewQuotaUsed(currentQuotaUsed);
       setReason('');
       setAssignee('');
     }
-  }, [visible, currentStartDate, currentEndDate]);
+  }, [visible, currentStartDate, currentEndDate, currentQuotaRemaining, currentQuotaUsed]);
 
   if (!visible) return null;
 
@@ -55,28 +70,44 @@ const EditMembershipModal = ({
       return;
     }
 
-    if (!reason.trim() || reason.trim().length < 2) {
-      alert('변경 사유는 최소 2자 이상 입력해주세요.');
-      return;
+    if (membershipType === 'countPass') {
+      if (newQuotaRemaining < 0 || newQuotaUsed < 0) {
+        alert('잔여 횟수와 사용 횟수는 0 이상이어야 합니다.');
+        return;
+      }
     }
 
-    if (!assignee.trim()) {
-      alert('담당자를 입력해주세요.');
-      return;
+    // 시작일/종료일이 변경된 경우에만 reason과 assignee 필수
+    const dateChanged = 
+      newStartDate.getTime() !== currentStartDate.getTime() ||
+      newEndDate.getTime() !== currentEndDate.getTime();
+
+    if (dateChanged) {
+      if (!reason.trim() || reason.trim().length < 2) {
+        alert('변경 사유는 최소 2자 이상 입력해주세요.');
+        return;
+      }
+
+      if (!assignee.trim()) {
+        alert('담당자를 입력해주세요.');
+        return;
+      }
+
+      if (assignee.trim().length > 10) {
+        alert('담당자는 10글자 이하로 입력해주세요.');
+        return;
+      }
     }
 
-    if (assignee.trim().length > 10) {
-      alert('담당자는 10글자 이하로 입력해주세요.');
-      return;
-    }
-
-    onConfirm(newStartDate, newEndDate, reason, assignee);
+    onConfirm(newStartDate, newEndDate, newQuotaRemaining, newQuotaUsed, reason, assignee);
   };
 
   const handleClose = () => {
     if (!loading) {
       setNewStartDate(currentStartDate);
       setNewEndDate(currentEndDate);
+      setNewQuotaRemaining(currentQuotaRemaining);
+      setNewQuotaUsed(currentQuotaUsed);
       setReason('');
       setAssignee('');
       onClose();
@@ -179,6 +210,46 @@ const EditMembershipModal = ({
                 readOnly
               />
             </div>
+
+            {membershipType === 'countPass' && (
+              <div className="form-row">
+                <div className="form-group">
+                  <label>
+                    <FileText size={16} />
+                    잔여 횟수
+                  </label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={newQuotaRemaining}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      setNewQuotaRemaining(value);
+                    }}
+                    min="0"
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>
+                    <FileText size={16} />
+                    사용 횟수
+                  </label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={newQuotaUsed}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      setNewQuotaUsed(value);
+                    }}
+                    min="0"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="form-group">
               <label>

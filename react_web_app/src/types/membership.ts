@@ -65,23 +65,6 @@ export interface UserMembership {
   boxName: string;
 }
 
-// 레거시 데이터 지원을 위한 타입
-export interface LegacyUserMembership {
-  key: string;
-  plan: string;
-  type: 'periodPass' | 'countPass';
-  count: string;
-  price: string;
-  paymentType: 'cash' | 'card';
-  assignee: string;
-  startDate: Date;
-  endDate: Date;
-  holdStartDate?: Date | null;
-  holdEndDate?: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface MembershipState {
   plans: MembershipPlan[];
   userMemberships: UserMembership[];
@@ -109,4 +92,32 @@ export interface AddMembershipData {
   paymentType: 'cash' | 'card';
   assignee: string;
   startDate: Date;
+}
+
+export class MembershipInfo {
+  type: string;
+  expiryDate: string;
+  remainingDays: string | number;
+  remainingVisits: string | number;
+
+  constructor(
+    type: string,
+    expiryDate: string,
+    remainingDays: string | number,
+    remainingVisits: string | number
+  ) {
+    this.type = type;
+    this.expiryDate = expiryDate;
+    this.remainingDays = remainingDays;
+    this.remainingVisits = remainingVisits;
+  }
+
+  static create(
+    type: string,
+    expiryDate: string,
+    remainingDays: string | number,
+    remainingVisits: string | number
+  ): MembershipInfo {
+    return new MembershipInfo(type, expiryDate, remainingDays, remainingVisits);
+  }
 } 

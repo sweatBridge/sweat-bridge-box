@@ -6,8 +6,8 @@ import { formatDateToString, parseStringToDate } from '../../../utils/dateUtils'
 
 interface HoldMembershipModalProps {
   visible: boolean;
-  membershipIndex: number;
-  memberEmail: string;
+  membershipStartDate: Date;
+  membershipEndDate: Date;
   onClose: () => void;
   onConfirm: (holdStartDate: Date, holdEndDate: Date, reason: string, assignee: string) => void;
   loading?: boolean;
@@ -15,8 +15,8 @@ interface HoldMembershipModalProps {
 
 const HoldMembershipModal = ({
   visible,
-  membershipIndex,
-  memberEmail,
+  membershipStartDate,
+  membershipEndDate,
   onClose,
   onConfirm,
   loading = false
@@ -36,6 +36,35 @@ const HoldMembershipModal = ({
 
     if (holdStartDate >= holdEndDate) {
       alert('종료일은 시작일보다 나중이어야 합니다.');
+      return;
+    }
+
+    // 홀딩 시작일이 회원권 시작일보다 뒤어야 함
+    const membershipStart = new Date(membershipStartDate);
+    membershipStart.setHours(0, 0, 0, 0);
+    const holdStart = new Date(holdStartDate);
+    holdStart.setHours(0, 0, 0, 0);
+    
+    if (holdStart <= membershipStart) {
+      alert('홀딩 시작일은 회원권 시작일보다 뒤여야 합니다.');
+      return;
+    }
+
+    // 홀딩 종료일은 (홀딩일 수를 회원권 종료일에 더한 일)보다 앞이어야 함
+    const membershipEnd = new Date(membershipEndDate);
+    membershipEnd.setHours(0, 0, 0, 0);
+    const holdEnd = new Date(holdEndDate);
+    holdEnd.setHours(0, 0, 0, 0);
+    
+    // 홀딩일 수 계산
+    const holdDays = Math.ceil((holdEnd.getTime() - holdStart.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // 회원권 종료일에 홀딩일 수를 더한 날짜
+    const extendedEndDate = new Date(membershipEnd);
+    extendedEndDate.setDate(extendedEndDate.getDate() + holdDays);
+    
+    if (holdEnd >= extendedEndDate) {
+      alert(`홀딩 종료일은 회원권 종료일(${formatDateToString(membershipEnd)})에 홀딩일 수(${holdDays}일)를 더한 날짜보다 앞이어야 합니다.`);
       return;
     }
 

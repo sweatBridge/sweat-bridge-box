@@ -36,7 +36,7 @@ const ManageClassModal = ({
   useEffect(() => {
     if (event && visible) {
       setCoach(event.extendedProps.coach || '');
-      setCap(event.extendedProps.cap || 12);
+      setCap(event.extendedProps.cap ?? 10);
     }
   }, [event, visible]);
 

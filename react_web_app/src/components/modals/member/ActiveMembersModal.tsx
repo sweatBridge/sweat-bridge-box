@@ -4,37 +4,25 @@ import {
   getGenderText 
 } from '../../../utils/memberUtils';
 import { Gradients } from '../../../constants/gradients';
-import { UserPlus, X } from 'lucide-react';
+import { CheckCircle, X } from 'lucide-react';
 
-interface NewMembersModalProps {
+interface ActiveMembersModalProps {
   visible: boolean;
   members: Member[];
   onClose: () => void;
   onMemberClick?: (member: Member) => void;
 }
 
-const NewMembersModal = ({ visible, members, onClose, onMemberClick }: NewMembersModalProps) => {
+const ActiveMembersModal = ({ visible, members, onClose, onMemberClick }: ActiveMembersModalProps) => {
   if (!visible) return null;
-
-  const getJoinedDate = (member: Member) => {
-    if (!member.joinedAt) {
-      return '-';
-    }
-
-    const joinedDate = member.joinedAt.toDate();
-    const now = new Date();
-    const daysSinceJoined = Math.floor((now.getTime() - joinedDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    return `${daysSinceJoined}일 전`;
-  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-header-content">
-            <UserPlus size={24} className="new-icon" />
-            <h3>신규 회원 목록</h3>
+            <CheckCircle size={24} className="active-icon" />
+            <h3>활성 회원 목록</h3>
           </div>
           <button className="modal-close" onClick={onClose}>
             <X size={24} />
@@ -43,26 +31,20 @@ const NewMembersModal = ({ visible, members, onClose, onMemberClick }: NewMember
         
         <div className="modal-body">
           <div className="modal-description">
-            <p>최근 30일 내 가입한 회원 목록입니다.</p>
-            <div className="legend">
-              <span className="legend-item new">
-                <span className="legend-dot"></span>
-                <strong>신규</strong> - 최근 30일 내 가입
-              </span>
-            </div>
+            <p>현재 활성 상태인 회원 목록입니다.</p>
           </div>
 
           {members.length === 0 ? (
             <div className="empty-state">
-              <UserPlus size={48} className="empty-icon" />
-              <p>신규 회원이 없습니다.</p>
+              <CheckCircle size={48} className="empty-icon" />
+              <p>활성 회원이 없습니다.</p>
             </div>
           ) : (
             <div className="table-container">
               <table className="members-table">
                 <thead>
                   <tr>
-                    <th className="text-center">가입일</th>
+                    <th className="text-center">상태</th>
                     <th>이름</th>
                     <th>성별</th>
                     <th>연락처</th>
@@ -77,8 +59,8 @@ const NewMembersModal = ({ visible, members, onClose, onMemberClick }: NewMember
                         onClick={() => onMemberClick?.(member)}
                       >
                         <td className="text-center">
-                          <span className="status-badge new">
-                            {getJoinedDate(member)}
+                          <span className="status-badge active">
+                            활성
                           </span>
                         </td>
                         <td className="member-name">{member.realName}</td>
@@ -142,8 +124,8 @@ const NewMembersModal = ({ visible, members, onClose, onMemberClick }: NewMember
           gap: 12px;
         }
 
-        .new-icon {
-          color: #60a5fa;
+        .active-icon {
+          color: #10b981;
         }
 
         .modal-header h3 {
@@ -184,40 +166,7 @@ const NewMembersModal = ({ visible, members, onClose, onMemberClick }: NewMember
         .modal-description p {
           color: #6b7280;
           font-size: 14px;
-          margin: 0 0 12px 0;
-        }
-
-        .legend {
-          display: flex;
-          gap: 16px;
-          flex-wrap: wrap;
-          background: #f9fafb;
-          padding: 12px 16px;
-          border-radius: 8px;
-          border: 1px solid #e5e7eb;
-        }
-
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 13px;
-          color: #374151;
-        }
-
-        .legend-item strong {
-          font-weight: 600;
-        }
-
-        .legend-item.new .legend-dot {
-          background: #60a5fa;
-          box-shadow: 0 0 0 2px #dbeafe;
-        }
-
-        .legend-dot {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
+          margin: 0;
         }
 
         .empty-state {
@@ -322,10 +271,9 @@ const NewMembersModal = ({ visible, members, onClose, onMemberClick }: NewMember
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        .status-badge.new {
-          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-          border: 1px solid #60a5fa;
-          color: #1e40af;
+        .status-badge.active {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
         }
 
         .modal-footer {
@@ -380,16 +328,11 @@ const NewMembersModal = ({ visible, members, onClose, onMemberClick }: NewMember
             padding: 12px 8px;
             font-size: 12px;
           }
-
-          .legend {
-            flex-direction: column;
-            gap: 8px;
-          }
         }
       `}</style>
     </div>
   );
 };
 
-export default NewMembersModal;
+export default ActiveMembersModal;
 

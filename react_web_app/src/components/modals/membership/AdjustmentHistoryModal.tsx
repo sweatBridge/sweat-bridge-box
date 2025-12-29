@@ -63,7 +63,7 @@ const AdjustmentHistoryModal = ({
             {adjustments.map((adjustment, index) => (
               <div key={index} className="adjustment-item">
                 <div className="adjustment-header">
-                  <div className="adjustment-number">#{adjustments.length - index}</div>
+                  <div className="adjustment-number">#{index + 1}</div>
                   <div className="adjustment-date">
                     <Calendar size={14} />
                     {formatDateTime(adjustment.at)}

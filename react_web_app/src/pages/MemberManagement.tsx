@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Users, UserPlus, CreditCard, Trash2, Settings, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { Search, Users, UserPlus, CreditCard, Trash2, Settings, ChevronLeft, ChevronRight, Calendar, Phone } from 'lucide-react';
 import { Member, ToastMessageType } from '../types/member';
 import { useMemberManagement } from '../hooks/useMemberManagement';
 import MemberDeletionModal from '../components/modals/member/MemberDeletionModal';
@@ -8,10 +8,11 @@ import ExtendAllModal from '../components/modals/membership/ExtendAllModal';
 import MemberManagementModal from '../components/modals/member/MemberManagementModal';
 import WarningMembersModal from '../components/modals/member/WarningMembersModal';
 import NewMembersModal from '../components/modals/member/NewMembersModal';
+import ActiveMembersModal from '../components/modals/member/ActiveMembersModal';
 import AddMemberModal from '../components/modals/member/AddMemberModal';
 import ApplyRequestModal from '../components/modals/member/ApplyRequestModal';
 import ToastMessage from '../components/ToastMessage';
-import { getGenderText, filterMembers } from '../utils/memberUtils';
+import { filterMembers, formatPhoneNumber } from '../utils/memberUtils';
 import { MembershipService } from '../services/membershipService';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
@@ -34,11 +35,13 @@ const MemberManagement = () => {
   // 상태 관리
   const [searchValue, setSearchValue] = useState('');
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [activeTab, setActiveTab] = useState<'current' | 'expired'>('current');
   const [memberManagementModalVisible, setMemberManagementModalVisible] = useState(false);
   const [deletionModalVisible, setDeletionModalVisible] = useState(false);
   const [membershipPlanModalVisible, setMembershipPlanModalVisible] = useState(false);
   const [warningMembersModalVisible, setWarningMembersModalVisible] = useState(false);
   const [newMembersModalVisible, setNewMembersModalVisible] = useState(false);
+  const [activeMembersModalVisible, setActiveMembersModalVisible] = useState(false);
   const [memberListModalVisible, setMemberListModalVisible] = useState(false);
   const [addMemberModalVisible, setAddMemberModalVisible] = useState(false);
   const [applyRequestModalVisible, setApplyRequestModalVisible] = useState(false);
@@ -81,6 +84,7 @@ const MemberManagement = () => {
     warningMembersCount, 
     newMembersCount,
     totalMembersCount, 
+    activeMembers,
     warningMembers,
     newMembers,
     memberBadgesMap 
@@ -88,6 +92,7 @@ const MemberManagement = () => {
     let active = 0;
     let warning = 0;
     let newMembers = 0;
+    const activeList: Member[] = [];
     const warningList: Member[] = [];
     const newMembersList: Member[] = [];
     const badgesMap = new Map<string, {
@@ -113,6 +118,7 @@ const MemberManagement = () => {
         newMembersList.push(member);
       } else if (memberStatusBadge.status === '활성') {
         active++;
+        activeList.push(member);
       } else if (memberStatusBadge.status === '주의') {
         warning++;
         warningList.push(member);
@@ -124,17 +130,28 @@ const MemberManagement = () => {
       warningMembersCount: warning,
       newMembersCount: newMembers,
       totalMembersCount: active + warning + newMembers,
+      activeMembers: activeList,
       warningMembers: warningList,
       newMembers: newMembersList,
       memberBadgesMap: badgesMap
     };
   }, [members]);
 
-  // 검색된 회원 필터링
-  const filteredMembers = filterMembers(members, searchValue);
+  // 검색된 회원 필터링 (탭에 따라 추가 필터링)
+  const filteredMembers = useMemo(() => {
+    const filtered = filterMembers(members, searchValue);
+    
+    // 탭에 따라 추가 필터링
+    if (activeTab === 'expired') {
+      return filtered.filter(member => member.membershipInfo.type === '만료');
+    } else {
+      return filtered.filter(member => member.membershipInfo.type !== '만료');
+    }
+  }, [members, searchValue, activeTab]);
   
   // 2단계 정렬: 1순위 - 상태 뱃지, 2순위 - 회원권 타입 뱃지 (미리 계산된 뱃지 정보 사용)
-  const sortedMembers = [...filteredMembers].sort((a, b) => {
+  const sortedMembers = useMemo(() => {
+    return [...filteredMembers].sort((a, b) => {
     // 미리 계산된 뱃지 정보 사용
     const badgesA = memberBadgesMap.get(a.email);
     const badgesB = memberBadgesMap.get(b.email);
@@ -174,18 +191,18 @@ const MemberManagement = () => {
     const membershipPriorityB = membershipPriorityMap[membershipBadgeB.colorClass] || 999;
     
     return membershipPriorityA - membershipPriorityB;
-  });
+    });
+  }, [filteredMembers, memberBadgesMap]);
   
   // 페이지네이션 계산
   const totalPages = Math.ceil(sortedMembers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentMembers = sortedMembers.slice(startIndex, endIndex);
   
-  // 검색어가 변경되면 첫 페이지로 이동
+  // 검색어나 탭이 변경되면 첫 페이지로 이동
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchValue]);
+  }, [searchValue, activeTab]);
 
   // 회원 삭제
   const handleDeleteMember = useCallback((member: Member) => {
@@ -250,8 +267,10 @@ const MemberManagement = () => {
   };
 
   // 회원 리스트 모달 열기
-  const handleOpenMemberList = (type: 'warning' | 'new') => {
-    if (type === 'warning') {
+  const handleOpenMemberList = (type: 'active' | 'warning' | 'new') => {
+    if (type === 'active') {
+      setActiveMembersModalVisible(true);
+    } else if (type === 'warning') {
       setWarningMembersModalVisible(true);
     } else if (type === 'new') {
       setNewMembersModalVisible(true);
@@ -261,6 +280,13 @@ const MemberManagement = () => {
   // 주의 회원 모달에서 회원 클릭 시
   const handleWarningMemberClick = (member: Member) => {
     setWarningMembersModalVisible(false);
+    setSelectedMember(member);
+    setMemberManagementModalVisible(true);
+  };
+
+  // 활성 회원 모달에서 회원 클릭 시
+  const handleActiveMemberClick = (member: Member) => {
+    setActiveMembersModalVisible(false);
     setSelectedMember(member);
     setMemberManagementModalVisible(true);
   };
@@ -306,7 +332,7 @@ const MemberManagement = () => {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div className="stat-card clickable" onClick={() => handleOpenMemberList('active')}>
           <div className="stat-card-icon active">
             <Users size={20} />
           </div>
@@ -351,6 +377,21 @@ const MemberManagement = () => {
               className="search-input"
             />
           </div>
+          {/* 탭 메뉴 */}
+          <div className="table-tabs">
+            <button
+              className={`tab-button ${activeTab === 'current' ? 'active' : ''}`}
+              onClick={() => setActiveTab('current')}
+            >
+              현재
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'expired' ? 'active' : ''}`}
+              onClick={() => setActiveTab('expired')}
+            >
+              만료
+            </button>
+          </div>
         </div>
       </div>
 
@@ -363,26 +404,26 @@ const MemberManagement = () => {
           </div>
         ) : (
           <div className="members-table-container">
+            
             <div className="members-table">
               <div className="table-header">
                 <div className="table-cell">이름</div>
                 <div className="table-cell">닉네임</div>
                 <div className="table-cell">등록 타입</div>
-                <div className="table-cell">만료 일자</div>
-                <div className="table-cell">잔여 기간</div>
-                <div className="table-cell">잔여 횟수</div>
-                <div className="table-cell">성별</div>
+                <div className="table-cell">연락처</div>
+                <div className="table-cell">만료일</div>
+                <div className="table-cell">횟수</div>
                 <div className="table-cell">관리</div>
               </div>
 
-              {filteredMembers.length === 0 ? (
+              {sortedMembers.length === 0 ? (
                 <div className="empty-state">
                   <Users size={48} className="empty-icon" />
                   <h3>회원이 없습니다</h3>
                   <p>{searchValue ? '검색 조건에 맞는 회원이 없습니다.' : '등록된 회원이 없습니다.'}</p>
                 </div>
               ) : (
-                currentMembers.map((member, index) => {
+                sortedMembers.slice(startIndex, endIndex).map((member, index) => {
                   // 미리 계산된 뱃지 정보 사용
                   const badges = memberBadgesMap.get(member.email) || {
                     membershipTypeBadges: [],
@@ -403,10 +444,10 @@ const MemberManagement = () => {
                       </div>
                       <div className="table-cell">
                         <div className="nickname-with-badge">
-                          <span>{member.nickName}</span>
                           <span className={`member-status-badge ${memberStatusBadge.colorClass}`}>
                             {memberStatusBadge.status}
                           </span>
+                          <span>{member.nickName}</span>
                         </div>
                       </div>
                       <div className="table-cell">
@@ -418,14 +459,33 @@ const MemberManagement = () => {
                           ))}
                         </div>
                       </div>
-                    <div className="table-cell">{member.membershipInfo.expiryDate}</div>
+                      <div className="table-cell">
+                        <div className="contact-cell">
+                          <Phone size={16} className="phone-icon" />
+                          <span>{formatPhoneNumber(member.phone)}</span>
+                        </div>
+                      </div>
                     <div className="table-cell">
-                      <span className={`remaining-days ${member.membershipInfo.remainingDays <= 7 ? 'warning' : ''}`}>
-                        {member.membershipInfo.remainingDays}일
-                      </span>
+                      <div className="expiry-date-cell">
+                        <div className="expiry-status">
+                          {(() => {
+                            const remainingDays = member.membershipInfo.remainingDays;
+                            if (remainingDays === '-' || remainingDays === null || remainingDays === undefined) {
+                              return '-';
+                            }
+                            const days = typeof remainingDays === 'string' ? parseInt(remainingDays) : remainingDays;
+                            if (isNaN(days) || days <= 0) {
+                              return '-';
+                            }
+                            return `${days}일 남음`;
+                          })()}
+                        </div>
+                        <div className="expiry-date-label">
+                          만료: {member.membershipInfo.expiryDate === '-' || member.membershipInfo.expiryDate === '만료됨' ? '-' : member.membershipInfo.expiryDate}
+                        </div>
+                      </div>
                     </div>
                     <div className="table-cell">{member.membershipInfo.remainingVisits}회</div>
-                    <div className="table-cell">{getGenderText(member.gender)}</div>
                     <div className="table-cell">
                       <div className="action-buttons">
                         <button 
@@ -518,6 +578,10 @@ const MemberManagement = () => {
         onMemoUpdate={async (email, memo) => {
           try {
             await updateMemberMemo(email, memo);
+            // selectedMember도 업데이트
+            if (selectedMember && selectedMember.email === email) {
+              setSelectedMember({ ...selectedMember, memo });
+            }
           } catch (error) {
             console.error('Failed to update member memo in parent:', error);
           }
@@ -550,6 +614,14 @@ const MemberManagement = () => {
             });
           }
         }}
+      />
+
+      {/* 활성 회원 모달 */}
+      <ActiveMembersModal
+        visible={activeMembersModalVisible}
+        members={activeMembers}
+        onClose={() => setActiveMembersModalVisible(false)}
+        onMemberClick={handleActiveMemberClick}
       />
 
       {/* 주의 회원 모달 */}
@@ -818,11 +890,17 @@ const MemberManagement = () => {
 
         .search-section {
           margin-bottom: 0;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 16px;
         }
 
         .search-container {
           position: relative;
           max-width: 400px;
+          flex: 1;
         }
 
         .search-icon {
@@ -852,14 +930,44 @@ const MemberManagement = () => {
           overflow-x: auto;
         }
 
+        .table-tabs {
+          display: flex;
+          gap: 0;
+          background-color: #f3f4f6;
+          border-radius: 8px;
+          padding: 4px;
+        }
+
+        .tab-button {
+          padding: 8px 16px;
+          border: none;
+          background: transparent;
+          color: #9ca3af;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          border-radius: 6px;
+          transition: all 0.2s;
+        }
+
+        .tab-button:hover {
+          color: #6b7280;
+        }
+
+        .tab-button.active {
+          background-color: #ffffff;
+          color: #374151;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
         .members-table {
           width: 100%;
-          min-width: 800px;
+          min-width: 700px;
         }
 
         .table-header {
           display: grid;
-          grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 80px 120px 80px;
+          grid-template-columns: 1fr 1fr 1fr 1.2fr 1.5fr 1fr 120px;
           gap: 16px;
           padding: 16px;
           background-color: #f8fafc;
@@ -871,7 +979,7 @@ const MemberManagement = () => {
 
         .table-row {
           display: grid;
-          grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 80px 120px 80px;
+          grid-template-columns: 1fr 1fr 1fr 1.2fr 1.5fr 1fr 120px;
           gap: 16px;
           padding: 16px;
           border-bottom: 1px solid #e5e7eb;
@@ -979,15 +1087,33 @@ const MemberManagement = () => {
           color: #4b5563;
         }
 
-        .remaining-days {
-          font-weight: 600;
+        .expiry-date-cell {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
         }
 
-        .remaining-days.warning {
-          color: #dc2626;
-          background-color: #fee2e2;
-          padding: 2px 6px;
-          border-radius: 4px;
+        .expiry-status {
+          font-size: 14px;
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .expiry-date-label {
+          font-size: 12px;
+          color: #9ca3af;
+        }
+
+        .contact-cell {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #374151;
+        }
+
+        .phone-icon {
+          color: #374151;
+          flex-shrink: 0;
         }
 
         .action-buttons {
