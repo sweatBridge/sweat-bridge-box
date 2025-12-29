@@ -1091,14 +1091,16 @@ const MemberManagementModal = ({
       </div>
 
       {/* 홀딩 모달 */}
-      <HoldMembershipModal
-        visible={holdModalVisible}
-        membershipIndex={selectedMembershipIndex}
-        memberEmail={member?.email || ''}
-        onClose={() => setHoldModalVisible(false)}
-        onConfirm={handleConfirmHold}
-        loading={loading}
-      />
+      {userMemberships[selectedMembershipIndex] && (
+        <HoldMembershipModal
+          visible={holdModalVisible}
+          membershipStartDate={new Date(userMemberships[selectedMembershipIndex].period.startDate)}
+          membershipEndDate={new Date(userMemberships[selectedMembershipIndex].period.endDate)}
+          onClose={() => setHoldModalVisible(false)}
+          onConfirm={handleConfirmHold}
+          loading={loading}
+        />
+      )}
 
       {/* 회원권 삭제 확인 모달 */}
       <DeleteMembershipConfirmModal
