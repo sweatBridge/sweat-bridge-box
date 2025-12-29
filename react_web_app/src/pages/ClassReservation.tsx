@@ -186,6 +186,7 @@ const ClassReservation = () => {
   function loadSaveModal(selectInfo: DateSelectArg) {
     let start = new Date(selectInfo.startStr);
     let end = new Date(selectInfo.endStr);
+    const isAllDay = selectInfo.allDay || false;
 
     // If time is not included (monthly calendar), add default time
     if (start.getHours() === 0 && end.getHours() === 0) {
@@ -199,6 +200,7 @@ const ClassReservation = () => {
       ...selectInfo,
       startStr: start.toISOString(),
       endStr: end.toISOString(),
+      allDay: isAllDay,
     };
 
     setSelectInfo(adjustedSelectInfo);

@@ -85,17 +85,33 @@ const SaveClassModal = ({
         </div>
         
         <div className="modal-body">
-          {selectInfo && (
-            <div className="selected-date-card">
-              <div className="date-icon">
-                <Calendar size={18} />
+          {selectInfo && (() => {
+            // all-day 선택인지 확인
+            const isAllDay = selectInfo.allDay || false;
+            
+            // 날짜만 표시하는 함수
+            const formatDateOnly = (dateTimeString: string) => {
+              const date = new Date(dateTimeString);
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              return `${year}.${month}.${day}`;
+            };
+            
+            return (
+              <div className="selected-date-card">
+                <div className="date-icon">
+                  <Calendar size={18} />
+                </div>
+                <div className="date-info">
+                  <span className="date-label">선택된 날짜</span>
+                  <span className="date-value">
+                    {isAllDay ? formatDateOnly(selectInfo.startStr) : formatDateTime(selectInfo.startStr)}
+                  </span>
+                </div>
               </div>
-              <div className="date-info">
-                <span className="date-label">선택된 날짜</span>
-                <span className="date-value">{formatDateTime(selectInfo.startStr)}</span>
-              </div>
-            </div>
-          )}
+            );
+          })()}
           
           <div className="form-section">
             <div className="form-group">
