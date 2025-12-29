@@ -14,7 +14,7 @@ const SaveClassModal = ({
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [coach, setCoach] = useState('');
-  const [cap, setCap] = useState(12);
+  const [cap, setCap] = useState(10);
   const [applyToFourWeeks, setApplyToFourWeeks] = useState(false);
 
   useEffect(() => {
@@ -33,6 +33,24 @@ const SaveClassModal = ({
   }, [selectInfo, visible]);
 
   const handleSave = () => {
+    // 시작 시간이 종료 시간보다 앞서 있는지 검증
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
+    const [endHours, endMinutes] = endTime.split(':').map(Number);
+    
+    const startTotalMinutes = startHours * 60 + startMinutes;
+    const endTotalMinutes = endHours * 60 + endMinutes;
+    
+    if (startTotalMinutes >= endTotalMinutes) {
+      alert('시작 시간은 종료 시간보다 앞서야 합니다.');
+      return;
+    }
+    
+    // 정원이 1 이상인지 검증
+    if (cap < 1) {
+      alert('정원은 1명 이상이어야 합니다.');
+      return;
+    }
+    
     const result: SaveClassResult = {
       startTime,
       endTime,
@@ -48,7 +66,7 @@ const SaveClassModal = ({
     setStartTime('09:00');
     setEndTime('10:00');
     setCoach('');
-    setCap(12);
+    setCap(10);
     setApplyToFourWeeks(false);
     onClose();
   };
