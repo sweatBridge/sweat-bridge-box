@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Member, MemberLockerHistory } from '../types/member';
-import { categorizeMemberships, getMembershipInfo, MembershipData } from '../utils/membershipUtils';
+import { UserMembership, MembershipInfo } from '../types/membership';
 
 export interface FirebaseMemberData {
   email: string;
@@ -23,8 +23,8 @@ export interface FirebaseMemberData {
   gender: 'M' | 'F';
   birthDate: string;
   phone: string;
-  memberships: MembershipData[];
-  futureMemberships: MembershipData[];
+  memberships: UserMembership[];
+  futureMemberships: UserMembership[];
 }
 
 export class MemberService {
@@ -45,9 +45,69 @@ export class MemberService {
           data.birthDate = data.birth;
         }
         
-        // memberships 배열을 과거/현재/미래로 구분
-        const allMemberships = data.memberships || [];
-        const { pastMemberships, currentMemberships, futureMemberships, refundedMemberships } = categorizeMemberships(allMemberships);
+        // memberships 배열을 UserMembership으로 변환
+        // MembershipService.getUserMemberships와 동일한 변환 로직 사용
+        const rawMemberships = data.memberships || [];
+        const allMemberships = rawMemberships.map((membership: any) => {
+          // 이미 UserMembership 형식이면 그대로 사용
+          if (membership.period && membership.period.startDate instanceof Date) {
+            return membership;
+          }
+          
+          // Firebase 데이터를 UserMembership 형식으로 변환
+          if (membership.period && membership.purchase) {
+            return {
+              ...membership,
+              purchase: {
+                ...membership.purchase,
+                at: membership.purchase.at?.toDate?.() ?? new Date(membership.purchase.at)
+              },
+              period: {
+                startDate: membership.period.startDate?.toDate?.() ?? new Date(membership.period.startDate),
+                endDate: membership.period.endDate?.toDate?.() ?? new Date(membership.period.endDate),
+                originalEndDate: membership.period.originalEndDate?.toDate?.() ?? new Date(membership.period.originalEndDate)
+              },
+              holds: (membership.holds || []).map((hold: any) => ({
+                ...hold,
+                startDate: hold.startDate?.toDate?.() ?? new Date(hold.startDate),
+                endDate: hold.endDate?.toDate?.() ?? new Date(hold.endDate)
+              })),
+              refund: {
+                ...membership.refund,
+                at: membership.refund?.at?.toDate?.() ?? (membership.refund?.at ? new Date(membership.refund.at) : null)
+              },
+              adjustments: (membership.adjustments || []).map((adj: any) => ({
+                ...adj,
+                at: adj.at?.toDate?.() ?? new Date(adj.at),
+                before: {
+                  period: {
+                    startDate: adj.before.period.startDate?.toDate?.() ?? new Date(adj.before.period.startDate),
+                    endDate: adj.before.period.endDate?.toDate?.() ?? new Date(adj.before.period.endDate)
+                  }
+                },
+                after: {
+                  period: {
+                    startDate: adj.after.period.startDate?.toDate?.() ?? new Date(adj.after.period.startDate),
+                    endDate: adj.after.period.endDate?.toDate?.() ?? new Date(adj.after.period.endDate)
+                  }
+                }
+              })),
+              createdAt: membership.createdAt?.toDate?.() ?? new Date(membership.createdAt),
+              updatedAt: membership.updatedAt?.toDate?.() ?? new Date(membership.updatedAt),
+              deletedAt: membership.deletedAt?.toDate?.() ?? (membership.deletedAt ? new Date(membership.deletedAt) : null)
+            };
+          }
+          
+          // 레거시 구조는 UserMembership 형식으로 변환
+          // 레거시 구조는 period 필드가 없으므로 필터링에서 제외됨
+          // 하지만 타입 안전성을 위해 기본 구조는 유지
+          return membership as UserMembership;
+        }).filter((membership: UserMembership): membership is UserMembership => {
+          // period 필드가 있는 것만 필터링 (레거시 구조 제외)
+          return !!(membership as any).period;
+        });
+        
+        const { pastMemberships, currentMemberships, futureMemberships, refundedMemberships } = this.categorizeMemberships(allMemberships);
         
         members.push({
           ...data,
@@ -545,10 +605,207 @@ export class MemberService {
   }
 
   /**
+   * Date를 문자열로 변환
+   */
+  private static convertDateToString(date: Date): string {
+    if (!date) return '-';
+    
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  }
+
+  /**
+   * 회원권이 현재 홀딩 중인지 확인
+   */
+  private static isCurrentlyOnHold(membership: UserMembership): boolean {
+    if (!membership.holds || membership.holds.length === 0) {
+      return false;
+    }
+
+    const now = new Date();
+    
+    // holds 배열이 있는 경우
+    if (Array.isArray(membership.holds)) {
+      return membership.holds.some((hold) => {
+        const holdStartDate = hold.startDate instanceof Date 
+          ? hold.startDate 
+          : new Date(hold.startDate);
+        const holdEndDate = hold.endDate instanceof Date
+          ? hold.endDate
+          : new Date(hold.endDate);
+        
+        return now >= holdStartDate && now <= holdEndDate;
+      });
+    }
+    
+    return false;
+  }
+
+  /**
+   * 회원권 목록을 과거/현재/미래/환불로 구분
+   */
+  private static categorizeMemberships(
+    memberships: UserMembership[]
+  ): {
+    pastMemberships: UserMembership[];
+    currentMemberships: UserMembership[];
+    futureMemberships: UserMembership[];
+    refundedMemberships: UserMembership[];
+  } {
+    const allMemberships = memberships || [];
+    
+    // 환불된 회원권 분리
+    const refundedMemberships = allMemberships.filter(membership => {
+      return membership.refund?.isRefunded;
+    });
+    
+    // 삭제되지 않고 환불되지 않은 회원권만 필터링
+    const validMemberships = allMemberships.filter(membership => {
+      if (membership.deleted) {
+        return false;
+      }
+      if (membership.refund?.isRefunded) {
+        return false;
+      }
+      return true;
+    });
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const pastMemberships: UserMembership[] = [];
+    const currentMemberships: UserMembership[] = [];
+    const futureMemberships: UserMembership[] = [];
+
+    validMemberships.forEach(membership => {
+      // period 필드가 없으면 레거시 구조이거나 유효하지 않은 데이터
+      if (!membership.period) {
+        return; // 유효하지 않은 데이터는 제외
+      }
+      
+      const startDate = membership.period.startDate instanceof Date
+        ? membership.period.startDate
+        : new Date(membership.period.startDate);
+      const endDate = membership.period.endDate instanceof Date
+        ? membership.period.endDate
+        : new Date(membership.period.endDate);
+
+      if (!startDate || isNaN(startDate.getTime()) || !endDate || isNaN(endDate.getTime())) {
+        return; // 유효하지 않은 날짜는 제외
+      }
+
+      // 날짜 비교를 위해 시간을 00:00:00으로 설정
+      const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+      const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+      if (endDateOnly < today) {
+        // 만료된 회원권 (과거)
+        pastMemberships.push(membership);
+      } else if (startDateOnly > today) {
+        // 시작일이 미래인 회원권
+        futureMemberships.push(membership);
+      } else {
+        // 현재 유효한 회원권 (startDate <= today <= endDate)
+        currentMemberships.push(membership);
+      }
+    });
+
+    return {
+      pastMemberships,
+      currentMemberships,
+      futureMemberships,
+      refundedMemberships
+    };
+  }
+
+  /**
+   * 회원권 정보를 계산하여 반환
+   */
+  private static getMembershipInfo(
+    currentMemberships: UserMembership[], 
+    futureMemberships: UserMembership[] = [],
+    pastMemberships: UserMembership[] = [],
+    refundedMemberships: UserMembership[] = [],
+  ): MembershipInfo {
+    const currentMembership = currentMemberships?.[0];
+    // 회원권을 등록한 적이 없는 경우
+    if (pastMemberships.length === 0 && currentMemberships.length === 0 && futureMemberships.length === 0 && refundedMemberships.length === 0) {
+      return MembershipInfo.create('미등록', '-', 0, 0);
+    }
+    
+    // 현재 회원권이 없고 미래 회원권이 있는 경우
+    if (!currentMembership && futureMemberships && futureMemberships.length > 0) {
+      return MembershipInfo.create('사용 예정', '-', 0, 0);
+    }
+
+    // 현재 회원권이 없고 과거 회원권이 있는 경우 (만료)
+    if (!currentMembership && (pastMemberships.length > 0 || refundedMemberships.length > 0)) {
+      return MembershipInfo.create('만료', '만료됨', 0, 0);
+    }
+
+    // 현재 회원권이 없는 경우 (회원권 없음)
+    if (!currentMembership) {
+      return MembershipInfo.create('없음', '-', 0, 0);
+    }
+
+    // 홀딩 중인지 확인
+    const isOnHold = this.isCurrentlyOnHold(currentMembership);
+    
+    // 등록 타입
+    let type = '-';
+    if (isOnHold) {
+      type = '홀딩';
+    } else if (currentMembership.type) {
+      switch(currentMembership.type) {
+        case 'periodPass':
+          type = '기간권';
+          break;
+        case 'countPass':
+          type = '횟수권';
+          break;
+        default:
+          type = currentMembership.type;
+      }
+    }
+
+    // 만료 일자
+    const endDate = currentMembership.period.endDate instanceof Date
+      ? currentMembership.period.endDate
+      : new Date(currentMembership.period.endDate);
+    
+    const expiryDate = this.convertDateToString(endDate);
+
+    // 잔여 기간 계산
+    let remainingDays: string | number = '-';
+    const today = new Date();
+    const diff = endDate.getTime() - today.getTime();
+    
+    if (diff > 0) {
+      const days = Math.ceil(diff / (1000 * 3600 * 24));
+      remainingDays = days;
+    } else {
+      remainingDays = 0;
+    }
+
+    // 잔여 횟수 계산
+    let remainingVisits: string | number = '-';
+    if (currentMembership.type === 'periodPass') {
+      remainingVisits = '∞';
+    } else if (currentMembership.type === 'countPass') {
+      remainingVisits = currentMembership.quota.remaining;
+    }
+
+    return MembershipInfo.create(type, expiryDate, remainingDays, remainingVisits);
+  }
+
+  /**
    * 회원권 정보 계산
    */
-  private static calculateMembershipInfo(pastMemberships: MembershipData[], currentMemberships: MembershipData[], futureMemberships: MembershipData[], refundedMemberships: MembershipData[]) {
+  private static calculateMembershipInfo(pastMemberships: UserMembership[], currentMemberships: UserMembership[], futureMemberships: UserMembership[], refundedMemberships: UserMembership[]) {
     // 회원권 정보 계산
-    return getMembershipInfo(currentMemberships, futureMemberships, pastMemberships, refundedMemberships);
+    return this.getMembershipInfo(currentMemberships, futureMemberships, pastMemberships, refundedMemberships);
   }
 } 

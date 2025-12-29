@@ -1,11 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-
-export interface MembershipInfo {
-  type: string;
-  expiryDate: string;
-  remainingDays: string | number;
-  remainingVisits: string | number;
-}
+import { MembershipInfo } from './membership';
 
 export interface MemberLockerHistory {
   lockerNum: number;
