@@ -23,6 +23,8 @@ const HoldMembershipModal = ({
 }: HoldMembershipModalProps) => {
   const [holdStartDate, setHoldStartDate] = useState<Date | null>(null);
   const [holdEndDate, setHoldEndDate] = useState<Date | null>(null);
+  const [holdStartDateStr, setHoldStartDateStr] = useState<string>('');
+  const [holdEndDateStr, setHoldEndDateStr] = useState<string>('');
   const [reason, setReason] = useState('');
   const [assignee, setAssignee] = useState('');
 
@@ -85,6 +87,8 @@ const HoldMembershipModal = ({
     if (!loading) {
       setHoldStartDate(null);
       setHoldEndDate(null);
+      setHoldStartDateStr('');
+      setHoldEndDateStr('');
       setReason('');
       setAssignee('');
       onClose();
@@ -117,8 +121,46 @@ const HoldMembershipModal = ({
               <input
                 type="date"
                 className="form-input"
-                value={formatDateToString(holdStartDate)}
-                onChange={(e) => setHoldStartDate(parseStringToDate(e.target.value))}
+                value={holdStartDateStr !== '' ? holdStartDateStr : formatDateToString(holdStartDate)}
+                onChange={(e) => {
+                  const dateValue = e.target.value;
+                  
+                  // 연도가 4자리인지 확인
+                  if (dateValue) {
+                    const parts = dateValue.split('-');
+                    if (parts.length === 3 && parts[0] && parts[0].length > 4) {
+                      // 연도가 4자리를 초과하면 이전 값 유지
+                      return;
+                    }
+                  }
+                  
+                  // 입력 값을 문자열로 저장 (부분 입력도 허용)
+                  setHoldStartDateStr(dateValue);
+                  
+                  // 완전한 날짜가 입력될 때만 Date 객체로 변환
+                  const parsedDate = parseStringToDate(dateValue);
+                  if (parsedDate) {
+                    setHoldStartDate(parsedDate);
+                    // 유효한 날짜로 파싱되면 문자열도 정규화
+                    setHoldStartDateStr(formatDateToString(parsedDate));
+                  }
+                }}
+                onBlur={(e) => {
+                  // 포커스를 잃을 때 유효한 날짜인지 확인
+                  const parsedDate = parseStringToDate(e.target.value);
+                  if (parsedDate) {
+                    setHoldStartDate(parsedDate);
+                    setHoldStartDateStr(formatDateToString(parsedDate));
+                  } else if (!e.target.value) {
+                    setHoldStartDate(null);
+                    setHoldStartDateStr('');
+                  } else {
+                    // 유효하지 않은 날짜면 이전 유효한 날짜로 복원
+                    if (holdStartDate) {
+                      setHoldStartDateStr(formatDateToString(holdStartDate));
+                    }
+                  }
+                }}
                 disabled={loading}
               />
             </div>
@@ -131,8 +173,46 @@ const HoldMembershipModal = ({
               <input
                 type="date"
                 className="form-input"
-                value={formatDateToString(holdEndDate)}
-                onChange={(e) => setHoldEndDate(parseStringToDate(e.target.value))}
+                value={holdEndDateStr !== '' ? holdEndDateStr : formatDateToString(holdEndDate)}
+                onChange={(e) => {
+                  const dateValue = e.target.value;
+                  
+                  // 연도가 4자리인지 확인
+                  if (dateValue) {
+                    const parts = dateValue.split('-');
+                    if (parts.length === 3 && parts[0] && parts[0].length > 4) {
+                      // 연도가 4자리를 초과하면 이전 값 유지
+                      return;
+                    }
+                  }
+                  
+                  // 입력 값을 문자열로 저장 (부분 입력도 허용)
+                  setHoldEndDateStr(dateValue);
+                  
+                  // 완전한 날짜가 입력될 때만 Date 객체로 변환
+                  const parsedDate = parseStringToDate(dateValue);
+                  if (parsedDate) {
+                    setHoldEndDate(parsedDate);
+                    // 유효한 날짜로 파싱되면 문자열도 정규화
+                    setHoldEndDateStr(formatDateToString(parsedDate));
+                  }
+                }}
+                onBlur={(e) => {
+                  // 포커스를 잃을 때 유효한 날짜인지 확인
+                  const parsedDate = parseStringToDate(e.target.value);
+                  if (parsedDate) {
+                    setHoldEndDate(parsedDate);
+                    setHoldEndDateStr(formatDateToString(parsedDate));
+                  } else if (!e.target.value) {
+                    setHoldEndDate(null);
+                    setHoldEndDateStr('');
+                  } else {
+                    // 유효하지 않은 날짜면 이전 유효한 날짜로 복원
+                    if (holdEndDate) {
+                      setHoldEndDateStr(formatDateToString(holdEndDate));
+                    }
+                  }
+                }}
                 disabled={loading}
               />
             </div>
