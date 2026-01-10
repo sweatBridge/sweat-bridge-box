@@ -9,6 +9,7 @@ import { MemberService } from '../../../services/memberService';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
 import { formatDateToString } from '../../../utils/dateUtils';
+import DateInput from '../../DateInput';
 import HoldMembershipModal from '../membership/HoldMembershipModal';
 import DeleteMembershipConfirmModal from '../membership/DeleteMembershipConfirmModal';
 import RefundMembershipModal from '../membership/RefundMembershipModal';
@@ -901,11 +902,10 @@ const MemberManagementModal = ({
 
                   <div className="form-group">
                     <label>시작일</label>
-                    <input
-                      type="date"
-                      value={formData.startDate.toISOString().split('T')[0]}
-                      onChange={(e) => setFormData(prev => ({ ...prev, startDate: new Date(e.target.value) }))}
-                      className="form-input"
+                    <DateInput
+                      selected={formData.startDate}
+                      onChange={(date) => setFormData(prev => ({ ...prev, startDate: date || new Date() }))}
+                      placeholder="시작일 선택"
                     />
                   </div>
                 </div>

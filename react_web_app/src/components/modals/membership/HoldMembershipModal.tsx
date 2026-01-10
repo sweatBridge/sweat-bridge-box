@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Pause, Calendar, User, FileText } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
-import { formatDateToString, parseStringToDate } from '../../../utils/dateUtils';
+import { formatDateToString } from '../../../utils/dateUtils';
+import DateInput from '../../DateInput';
 
 interface HoldMembershipModalProps {
   visible: boolean;
@@ -114,12 +115,11 @@ const HoldMembershipModal = ({
                 <Calendar size={16} />
                 홀딩 시작일
               </label>
-              <input
-                type="date"
-                className="form-input"
-                value={formatDateToString(holdStartDate)}
-                onChange={(e) => setHoldStartDate(parseStringToDate(e.target.value))}
+              <DateInput
+                selected={holdStartDate}
+                onChange={(date) => setHoldStartDate(date)}
                 disabled={loading}
+                placeholder="홀딩 시작일 선택"
               />
             </div>
 
@@ -128,12 +128,11 @@ const HoldMembershipModal = ({
                 <Calendar size={16} />
                 홀딩 종료일
               </label>
-              <input
-                type="date"
-                className="form-input"
-                value={formatDateToString(holdEndDate)}
-                onChange={(e) => setHoldEndDate(parseStringToDate(e.target.value))}
+              <DateInput
+                selected={holdEndDate}
+                onChange={(date) => setHoldEndDate(date)}
                 disabled={loading}
+                placeholder="홀딩 종료일 선택"
               />
             </div>
 

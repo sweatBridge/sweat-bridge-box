@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import type { Member } from '../../../types/member';
+import DateInput from '../../DateInput';
+import { format } from 'date-fns';
 
 interface AssignLockerModalProps {
   visible: boolean;
@@ -25,8 +27,8 @@ const AssignLockerModal = ({
   const [assignSearchText, setAssignSearchText] = useState('');
   const [assignSearchResults, setAssignSearchResults] = useState<Member[]>([]);
   const [assignSelectedMember, setAssignSelectedMember] = useState<Member | null>(null);
-  const [assignStartDate, setAssignStartDate] = useState('');
-  const [assignEndDate, setAssignEndDate] = useState('');
+  const [assignStartDate, setAssignStartDate] = useState<Date | null>(null);
+  const [assignEndDate, setAssignEndDate] = useState<Date | null>(null);
   const [assignPrice, setAssignPrice] = useState('');
   const [assignPaymentType, setAssignPaymentType] = useState<'cash' | 'card'>('cash');
 
@@ -67,7 +69,9 @@ const AssignLockerModal = ({
       return;
     }
 
-    onConfirm(assignSelectedMember, assignStartDate, assignEndDate, assignPrice, assignPaymentType);
+    const startDateStr = format(assignStartDate, 'yyyy-MM-dd');
+    const endDateStr = format(assignEndDate, 'yyyy-MM-dd');
+    onConfirm(assignSelectedMember, startDateStr, endDateStr, assignPrice, assignPaymentType);
   };
 
   return (
@@ -142,24 +146,22 @@ const AssignLockerModal = ({
             {/* 시작 날짜 */}
             <div className="form-group">
               <label>시작 날짜</label>
-              <input
-                type="date"
-                className="form-input"
-                value={assignStartDate}
-                onChange={(e) => setAssignStartDate(e.target.value)}
+              <DateInput
+                selected={assignStartDate}
+                onChange={(date) => setAssignStartDate(date)}
                 disabled={assigning}
+                placeholder="시작 날짜 선택"
               />
             </div>
 
             {/* 종료 날짜 */}
             <div className="form-group">
               <label>종료 날짜</label>
-              <input
-                type="date"
-                className="form-input"
-                value={assignEndDate}
-                onChange={(e) => setAssignEndDate(e.target.value)}
+              <DateInput
+                selected={assignEndDate}
+                onChange={(date) => setAssignEndDate(date)}
                 disabled={assigning}
+                placeholder="종료 날짜 선택"
               />
             </div>
 

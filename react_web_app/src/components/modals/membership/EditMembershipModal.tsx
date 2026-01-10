@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Edit, Calendar, User, FileText, CreditCard } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
-import { formatDateToString, parseStringToDate } from '../../../utils/dateUtils';
+import DateInput from '../../DateInput';
 
 interface EditMembershipModalProps {
   visible: boolean;
@@ -157,12 +157,11 @@ const EditMembershipModal = ({
                   <Calendar size={16} />
                   새 시작일
                 </label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={formatDateToString(newStartDate)}
-                  onChange={(e) => setNewStartDate(parseStringToDate(e.target.value))}
+                <DateInput
+                  selected={newStartDate}
+                  onChange={(date) => setNewStartDate(date)}
                   disabled={loading}
+                  placeholder="시작일 선택"
                 />
               </div>
 
@@ -171,12 +170,11 @@ const EditMembershipModal = ({
                   <Calendar size={16} />
                   새 종료일
                 </label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={formatDateToString(newEndDate)}
-                  onChange={(e) => setNewEndDate(parseStringToDate(e.target.value))}
+                <DateInput
+                  selected={newEndDate}
+                  onChange={(date) => setNewEndDate(date)}
                   disabled={loading}
+                  placeholder="종료일 선택"
                 />
               </div>
             </div>
