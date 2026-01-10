@@ -932,7 +932,26 @@ const MemberManagementModal = ({
                     <input
                       type="date"
                       value={formData.startDate.toISOString().split('T')[0]}
-                      onChange={(e) => setFormData(prev => ({ ...prev, startDate: new Date(e.target.value) }))}
+                      onChange={(e) => {
+                        const dateValue = e.target.value;
+                        
+                        // 연도가 4자리인지 확인
+                        if (dateValue) {
+                          const parts = dateValue.split('-');
+                          if (parts.length === 3 && parts[0] && parts[0].length > 4) {
+                            // 연도가 4자리를 초과하면 이전 값 유지
+                            return;
+                          }
+                        }
+                        
+                        // 유효한 날짜만 업데이트
+                        if (dateValue) {
+                          const parsedDate = new Date(dateValue);
+                          if (!isNaN(parsedDate.getTime())) {
+                            setFormData(prev => ({ ...prev, startDate: parsedDate }));
+                          }
+                        }
+                      }}
                       className="form-input"
                     />
                   </div>

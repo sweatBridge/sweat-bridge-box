@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Plus } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import type { Member } from '../../../types/member';
+import { parseStringToDate, formatDateToString } from '../../../utils/dateUtils';
 
 interface AssignLockerModalProps {
   visible: boolean;
@@ -27,8 +28,14 @@ const AssignLockerModal = ({
   const [assignSelectedMember, setAssignSelectedMember] = useState<Member | null>(null);
   const [assignStartDate, setAssignStartDate] = useState('');
   const [assignEndDate, setAssignEndDate] = useState('');
+  const [assignStartDateStr, setAssignStartDateStr] = useState<string>('');
+  const [assignEndDateStr, setAssignEndDateStr] = useState<string>('');
   const [assignPrice, setAssignPrice] = useState('');
   const [assignPaymentType, setAssignPaymentType] = useState<'cash' | 'card'>('cash');
+  
+  // 이전 값을 추적하기 위한 ref
+  const prevEndDateStrRef = useRef<string>('');
+  const prevStartDateStrRef = useRef<string>('');
 
   if (!visible) return null;
 
@@ -57,7 +64,11 @@ const AssignLockerModal = ({
       return;
     }
 
-    if (!assignStartDate || !assignEndDate) {
+    // 실제 저장된 날짜 값 사용
+    const startDate = assignStartDateStr !== '' ? assignStartDateStr : assignStartDate;
+    const endDate = assignEndDateStr !== '' ? assignEndDateStr : assignEndDate;
+
+    if (!startDate || !endDate) {
       alert('시작 날짜와 종료 날짜를 입력해주세요.');
       return;
     }
@@ -67,7 +78,7 @@ const AssignLockerModal = ({
       return;
     }
 
-    onConfirm(assignSelectedMember, assignStartDate, assignEndDate, assignPrice, assignPaymentType);
+    onConfirm(assignSelectedMember, startDate, endDate, assignPrice, assignPaymentType);
   };
 
   return (
@@ -145,8 +156,65 @@ const AssignLockerModal = ({
               <input
                 type="date"
                 className="form-input"
-                value={assignStartDate}
-                onChange={(e) => setAssignStartDate(e.target.value)}
+                value={assignStartDateStr !== '' ? assignStartDateStr : assignStartDate}
+                onChange={(e) => {
+                  const dateValue = e.target.value;
+                  
+                  // 연도가 4자리인지 엄격하게 확인
+                  if (dateValue) {
+                    const parts = dateValue.split('-');
+                    // 연도 부분이 존재하는 경우
+                    if (parts.length >= 1 && parts[0]) {
+                      const yearStr = parts[0].trim();
+                      // 연도가 4자리를 초과하면 이전 값 유지
+                      if (yearStr.length > 4) {
+                        // 이전 값으로 복원
+                        const prevValue = prevStartDateStrRef.current || assignStartDate || '';
+                        if (prevValue !== assignStartDateStr) {
+                          setAssignStartDateStr(prevValue);
+                        }
+                        return;
+                      }
+                    }
+                  }
+                  
+                  // 이전 값을 저장 (업데이트 전)
+                  prevStartDateStrRef.current = assignStartDateStr || assignStartDate || '';
+                  
+                  // 입력 값을 문자열로 저장 (부분 입력도 허용)
+                  setAssignStartDateStr(dateValue);
+                  
+                  // 완전한 날짜가 입력될 때만 실제 날짜 상태 업데이트
+                  const parsedDate = parseStringToDate(dateValue);
+                  if (parsedDate) {
+                    const formattedDate = formatDateToString(parsedDate);
+                    setAssignStartDate(formattedDate);
+                    // 유효한 날짜로 파싱되면 문자열도 정규화
+                    setAssignStartDateStr(formattedDate);
+                    prevStartDateStrRef.current = formattedDate;
+                  } else if (!dateValue) {
+                    setAssignStartDate('');
+                    prevStartDateStrRef.current = '';
+                  }
+                }}
+                onBlur={(e) => {
+                  // 포커스를 잃을 때 유효한 날짜인지 확인
+                  const parsedDate = parseStringToDate(e.target.value);
+                  if (parsedDate) {
+                    setAssignStartDate(formatDateToString(parsedDate));
+                    setAssignStartDateStr(formatDateToString(parsedDate));
+                  } else if (!e.target.value) {
+                    setAssignStartDate('');
+                    setAssignStartDateStr('');
+                  } else {
+                    // 유효하지 않은 날짜면 이전 유효한 날짜로 복원
+                    if (assignStartDate) {
+                      setAssignStartDateStr(assignStartDate);
+                    } else {
+                      setAssignStartDateStr('');
+                    }
+                  }
+                }}
                 disabled={assigning}
               />
             </div>
@@ -157,8 +225,65 @@ const AssignLockerModal = ({
               <input
                 type="date"
                 className="form-input"
-                value={assignEndDate}
-                onChange={(e) => setAssignEndDate(e.target.value)}
+                value={assignEndDateStr !== '' ? assignEndDateStr : assignEndDate}
+                onChange={(e) => {
+                  const dateValue = e.target.value;
+                  
+                  // 연도가 4자리인지 엄격하게 확인
+                  if (dateValue) {
+                    const parts = dateValue.split('-');
+                    // 연도 부분이 존재하는 경우
+                    if (parts.length >= 1 && parts[0]) {
+                      const yearStr = parts[0].trim();
+                      // 연도가 4자리를 초과하면 이전 값 유지
+                      if (yearStr.length > 4) {
+                        // 이전 값으로 복원
+                        const prevValue = prevEndDateStrRef.current || assignEndDate || '';
+                        if (prevValue !== assignEndDateStr) {
+                          setAssignEndDateStr(prevValue);
+                        }
+                        return;
+                      }
+                    }
+                  }
+                  
+                  // 이전 값을 저장 (업데이트 전)
+                  prevEndDateStrRef.current = assignEndDateStr || assignEndDate || '';
+                  
+                  // 입력 값을 문자열로 저장 (부분 입력도 허용)
+                  setAssignEndDateStr(dateValue);
+                  
+                  // 완전한 날짜가 입력될 때만 실제 날짜 상태 업데이트
+                  const parsedDate = parseStringToDate(dateValue);
+                  if (parsedDate) {
+                    const formattedDate = formatDateToString(parsedDate);
+                    setAssignEndDate(formattedDate);
+                    // 유효한 날짜로 파싱되면 문자열도 정규화
+                    setAssignEndDateStr(formattedDate);
+                    prevEndDateStrRef.current = formattedDate;
+                  } else if (!dateValue) {
+                    setAssignEndDate('');
+                    prevEndDateStrRef.current = '';
+                  }
+                }}
+                onBlur={(e) => {
+                  // 포커스를 잃을 때 유효한 날짜인지 확인
+                  const parsedDate = parseStringToDate(e.target.value);
+                  if (parsedDate) {
+                    setAssignEndDate(formatDateToString(parsedDate));
+                    setAssignEndDateStr(formatDateToString(parsedDate));
+                  } else if (!e.target.value) {
+                    setAssignEndDate('');
+                    setAssignEndDateStr('');
+                  } else {
+                    // 유효하지 않은 날짜면 이전 유효한 날짜로 복원
+                    if (assignEndDate) {
+                      setAssignEndDateStr(assignEndDate);
+                    } else {
+                      setAssignEndDateStr('');
+                    }
+                  }
+                }}
                 disabled={assigning}
               />
             </div>
@@ -169,9 +294,15 @@ const AssignLockerModal = ({
                 <label>가격</label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   className="form-input"
                   value={assignPrice}
-                  onChange={(e) => setAssignPrice(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // 정수만 허용: 숫자가 아닌 문자 제거
+                    const integerValue = value.replace(/[^0-9]/g, '');
+                    setAssignPrice(integerValue);
+                  }}
                   placeholder="가격"
                   disabled={assigning}
                 />
