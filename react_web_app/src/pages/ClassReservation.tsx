@@ -249,6 +249,17 @@ const ClassReservation = () => {
   }, [createToast, selectInfo, createClass, createRecurringClasses]);
 
   const handleSaveModalResult = useCallback(async (modalResult: SaveClassResult) => {
+    // 코치 필드 검증
+    if (!modalResult.coach || modalResult.coach.trim() === '') {
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: '코치를 입력해주세요.'
+        });
+      }
+      return;
+    }
+    
     if (modalResult.applyToFourWeeks) {
       // 4주간 적용 로직
       for (let i = 0; i < 4; i++) {
@@ -258,11 +269,22 @@ const ClassReservation = () => {
       await saveClass(modalResult);
     }
     setSaveModalVisible(false);
-  }, [saveClass]);
+  }, [saveClass, createToast]);
 
   const handleUpdateClass = useCallback(async (result: UpdateClassResult) => {
     try {
       if (!selectedEvent) return;
+      
+      // 코치 필드 검증
+      if (!result.coach || result.coach.trim() === '') {
+        if (createToast) {
+          createToast({
+            type: 'warning',
+            message: '코치를 입력해주세요.'
+          });
+        }
+        return;
+      }
       
       await updateClass(selectedEvent.id, result);
       
@@ -398,6 +420,14 @@ const ClassReservation = () => {
         selectInfo={selectInfo}
         onClose={() => setSaveModalVisible(false)}
         onSave={handleSaveModalResult}
+        onError={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'warning',
+              message
+            });
+          }
+        }}
       />
 
       <ManageClassModal
@@ -406,6 +436,14 @@ const ClassReservation = () => {
         onClose={() => setManageModalVisible(false)}
         onUpdate={handleUpdateClass}
         onDelete={handleDeleteClass}
+        onError={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'warning',
+              message
+            });
+          }
+        }}
       />
 
       {/* Toast Messages */}
