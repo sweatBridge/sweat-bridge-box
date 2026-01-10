@@ -12,6 +12,8 @@ interface AssignLockerModalProps {
   onClose: () => void;
   onConfirm: (member: Member, startDate: string, endDate: string, price: string, paymentType: 'cash' | 'card') => void;
   onSearch: (searchText: string) => Promise<Member[]>;
+  onError?: (message: string) => void;
+  createToast?: (toast: { type: 'success' | 'danger' | 'warning' | 'info'; message: string }) => void;
 }
 
 const AssignLockerModal = ({
@@ -21,7 +23,9 @@ const AssignLockerModal = ({
   searching,
   onClose,
   onConfirm,
-  onSearch
+  onSearch,
+  onError,
+  createToast
 }: AssignLockerModalProps) => {
   const [assignSearchText, setAssignSearchText] = useState('');
   const [assignSearchResults, setAssignSearchResults] = useState<Member[]>([]);
@@ -60,7 +64,15 @@ const AssignLockerModal = ({
 
   const handleConfirm = () => {
     if (!assignSelectedMember) {
-      alert('회원을 선택해주세요.');
+      const errorMessage = '회원을 선택해주세요.';
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: errorMessage
+        });
+      } else if (onError) {
+        onError(errorMessage);
+      }
       return;
     }
 
@@ -69,12 +81,45 @@ const AssignLockerModal = ({
     const endDate = assignEndDateStr !== '' ? assignEndDateStr : assignEndDate;
 
     if (!startDate || !endDate) {
-      alert('시작 날짜와 종료 날짜를 입력해주세요.');
+      const errorMessage = '시작 날짜와 종료 날짜를 입력해주세요.';
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: errorMessage
+        });
+      } else if (onError) {
+        onError(errorMessage);
+      }
+      return;
+    }
+
+    // 시작 날짜와 종료 날짜 비교 검증
+    const parsedStartDate = parseStringToDate(startDate);
+    const parsedEndDate = parseStringToDate(endDate);
+    if (parsedStartDate && parsedEndDate && parsedStartDate > parsedEndDate) {
+      const errorMessage = '종료 날짜가 시작 날짜 이전입니다.';
+      // createToast를 우선적으로 사용
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: errorMessage
+        });
+      } else if (onError) {
+        onError(errorMessage);
+      }
       return;
     }
 
     if (!assignPrice || assignPrice === '0') {
-      alert('가격을 입력해주세요.');
+      const errorMessage = '가격을 입력해주세요.';
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: errorMessage
+        });
+      } else if (onError) {
+        onError(errorMessage);
+      }
       return;
     }
 
@@ -166,11 +211,11 @@ const AssignLockerModal = ({
                     // 연도 부분이 존재하는 경우
                     if (parts.length >= 1 && parts[0]) {
                       const yearStr = parts[0].trim();
-                      // 연도가 4자리를 초과하면 이전 값 유지
+                      // 연도가 4자리를 초과하면 입력 무시
                       if (yearStr.length > 4) {
                         // 이전 값으로 복원
                         const prevValue = prevStartDateStrRef.current || assignStartDate || '';
-                        if (prevValue !== assignStartDateStr) {
+                        if (prevValue !== assignStartDateStr && prevValue !== '') {
                           setAssignStartDateStr(prevValue);
                         }
                         return;
@@ -179,10 +224,8 @@ const AssignLockerModal = ({
                   }
                   
                   // 이전 값을 저장 (업데이트 전)
-                  prevStartDateStrRef.current = assignStartDateStr || assignStartDate || '';
-                  
-                  // 입력 값을 문자열로 저장 (부분 입력도 허용)
-                  setAssignStartDateStr(dateValue);
+                  const currentValue = assignStartDateStr || assignStartDate || '';
+                  prevStartDateStrRef.current = currentValue;
                   
                   // 완전한 날짜가 입력될 때만 실제 날짜 상태 업데이트
                   const parsedDate = parseStringToDate(dateValue);
@@ -194,7 +237,23 @@ const AssignLockerModal = ({
                     prevStartDateStrRef.current = formattedDate;
                   } else if (!dateValue) {
                     setAssignStartDate('');
+                    setAssignStartDateStr('');
                     prevStartDateStrRef.current = '';
+                  } else {
+                    // 부분 입력인 경우 문자열만 저장
+                    // 하지만 연도가 4자리를 초과하면 저장하지 않음
+                    const parts = dateValue.split('-');
+                    if (parts.length >= 1 && parts[0]) {
+                      const yearStr = parts[0].trim();
+                      if (yearStr.length > 4) {
+                        // 연도가 4자리를 초과하면 이전 값 유지
+                        setAssignStartDateStr(currentValue);
+                        prevStartDateStrRef.current = currentValue;
+                        return;
+                      }
+                    }
+                    // 연도가 4자리 이하인 경우에만 저장
+                    setAssignStartDateStr(dateValue);
                   }
                 }}
                 onBlur={(e) => {
@@ -235,11 +294,11 @@ const AssignLockerModal = ({
                     // 연도 부분이 존재하는 경우
                     if (parts.length >= 1 && parts[0]) {
                       const yearStr = parts[0].trim();
-                      // 연도가 4자리를 초과하면 이전 값 유지
+                      // 연도가 4자리를 초과하면 입력 무시
                       if (yearStr.length > 4) {
                         // 이전 값으로 복원
                         const prevValue = prevEndDateStrRef.current || assignEndDate || '';
-                        if (prevValue !== assignEndDateStr) {
+                        if (prevValue !== assignEndDateStr && prevValue !== '') {
                           setAssignEndDateStr(prevValue);
                         }
                         return;
@@ -248,10 +307,8 @@ const AssignLockerModal = ({
                   }
                   
                   // 이전 값을 저장 (업데이트 전)
-                  prevEndDateStrRef.current = assignEndDateStr || assignEndDate || '';
-                  
-                  // 입력 값을 문자열로 저장 (부분 입력도 허용)
-                  setAssignEndDateStr(dateValue);
+                  const currentValue = assignEndDateStr || assignEndDate || '';
+                  prevEndDateStrRef.current = currentValue;
                   
                   // 완전한 날짜가 입력될 때만 실제 날짜 상태 업데이트
                   const parsedDate = parseStringToDate(dateValue);
@@ -263,7 +320,23 @@ const AssignLockerModal = ({
                     prevEndDateStrRef.current = formattedDate;
                   } else if (!dateValue) {
                     setAssignEndDate('');
+                    setAssignEndDateStr('');
                     prevEndDateStrRef.current = '';
+                  } else {
+                    // 부분 입력인 경우 문자열만 저장
+                    // 하지만 연도가 4자리를 초과하면 저장하지 않음
+                    const parts = dateValue.split('-');
+                    if (parts.length >= 1 && parts[0]) {
+                      const yearStr = parts[0].trim();
+                      if (yearStr.length > 4) {
+                        // 연도가 4자리를 초과하면 이전 값 유지
+                        setAssignEndDateStr(currentValue);
+                        prevEndDateStrRef.current = currentValue;
+                        return;
+                      }
+                    }
+                    // 연도가 4자리 이하인 경우에만 저장
+                    setAssignEndDateStr(dateValue);
                   }
                 }}
                 onBlur={(e) => {
