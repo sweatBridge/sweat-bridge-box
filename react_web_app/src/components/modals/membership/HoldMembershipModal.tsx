@@ -57,8 +57,8 @@ const HoldMembershipModal = ({
     const holdEnd = new Date(holdEndDate);
     holdEnd.setHours(0, 0, 0, 0);
     
-    // 홀딩일 수 계산
-    const holdDays = Math.ceil((holdEnd.getTime() - holdStart.getTime()) / (1000 * 60 * 60 * 24));
+    // 홀딩일 수 계산 (시작일과 종료일 모두 포함)
+    const holdDays = Math.ceil((holdEnd.getTime() - holdStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     
     // 회원권 종료일에 홀딩일 수를 더한 날짜
     const extendedEndDate = new Date(membershipEnd);
