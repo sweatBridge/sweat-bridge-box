@@ -21,6 +21,7 @@ Sweat Bridge Box is a gym/fitness box management app built with React 19, TypeSc
 - **Firebase**: Firestore (database) + Auth (authentication)
 - **React Router DOM 7**: Routing with protected routes
 - **FullCalendar**: Class scheduling calendar
+- **react-datepicker + date-fns**: Date input handling
 - **Lucide React**: Icon library
 
 ### State Management
@@ -53,6 +54,7 @@ Box name is stored in localStorage as `boxName`.
 - Heavy use of modal dialogs for CRUD operations
 - `ProtectedRoute` component guards authenticated routes
 - `MainLayout` wraps all authenticated pages with sidebar + header
+- `DateInput` component for all date inputs (uses react-datepicker with Korean locale, year range 2000-2999)
 
 ### Color Theme
 - Primary: `#2563EB` (blue)
@@ -60,6 +62,11 @@ Box name is stored in localStorage as `boxName`.
 - Warning: `#F59E0B` (orange)
 - Error: `#DC2626` (red)
 - Background: `#F8FAFC` (light gray)
+
+### Date Utilities
+- `src/utils/dateUtils.ts`: Date formatting and calculation utilities
+- `getDaysBetween(start, end)`: Returns inclusive day count (both start and end dates included)
+  - Example: 01.04 ~ 01.05 = 2 days
 
 ## Firebase Configuration
 
