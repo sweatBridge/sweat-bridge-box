@@ -115,22 +115,52 @@ export class MembershipService {
                 ...membership.refund,
                 at: membership.refund?.at?.toDate?.() ?? null
               },
-              adjustments: (membership.adjustments || []).map((adj: any) => ({
-                ...adj,
-                before: {
-                  period: {
-                    startDate: adj.before?.period?.startDate?.toDate?.() ?? new Date(adj.before?.period?.startDate),
-                    endDate: adj.before?.period?.endDate?.toDate?.() ?? new Date(adj.before?.period?.endDate)
+              adjustments: (membership.adjustments || []).map((adj: any) => {
+                const result: any = {
+                  ...adj,
+                  type: adj.type || 'edit',
+                  at: adj.at?.toDate?.() ?? new Date(adj.at)
+                };
+
+                // before 처리
+                if (adj.before) {
+                  result.before = {};
+                  if (adj.before.period) {
+                    result.before.period = {
+                      startDate: adj.before.period.startDate?.toDate?.() ?? new Date(adj.before.period.startDate),
+                      endDate: adj.before.period.endDate?.toDate?.() ?? new Date(adj.before.period.endDate)
+                    };
                   }
-                },
-                after: {
-                  period: {
-                    startDate: adj.after?.period?.startDate?.toDate?.() ?? new Date(adj.after?.period?.startDate),
-                    endDate: adj.after?.period?.endDate?.toDate?.() ?? new Date(adj.after?.period?.endDate)
+                  if (adj.before.quota) {
+                    result.before.quota = adj.before.quota;
                   }
-                },
-                at: adj.at?.toDate?.() ?? new Date(adj.at)
-              })),
+                }
+
+                // after 처리
+                if (adj.after) {
+                  result.after = {};
+                  if (adj.after.period) {
+                    result.after.period = {
+                      startDate: adj.after.period.startDate?.toDate?.() ?? new Date(adj.after.period.startDate),
+                      endDate: adj.after.period.endDate?.toDate?.() ?? new Date(adj.after.period.endDate)
+                    };
+                  }
+                  if (adj.after.quota) {
+                    result.after.quota = adj.after.quota;
+                  }
+                }
+
+                // hold 처리
+                if (adj.hold) {
+                  result.hold = {
+                    ...adj.hold,
+                    startDate: adj.hold.startDate?.toDate?.() ?? new Date(adj.hold.startDate),
+                    endDate: adj.hold.endDate?.toDate?.() ?? new Date(adj.hold.endDate)
+                  };
+                }
+
+                return result;
+              }),
               createdAt: membership.createdAt?.toDate?.() ?? new Date(membership.createdAt),
               updatedAt: membership.updatedAt?.toDate?.() ?? new Date(membership.updatedAt),
               deletedAt: membership.deletedAt?.toDate?.() ?? null
@@ -308,9 +338,14 @@ export class MembershipService {
   /**
    * 회원권이 현재 유효하고 활성 상태인지 확인
    * (삭제되지 않았고, 환불되지 않았고, 현재 기간 내에 있는지 확인)
-   * 새 구조만 지원
+   * 새 구조(period 필드 있음)만 지원, 레거시 구조는 무시
    */
   static isValidActiveMembership(membership: UserMembership, now: Date = new Date()): boolean {
+    // 새 구조(period 필드)가 없으면 레거시 구조이므로 유효하지 않음
+    if (!membership.period) {
+      return false;
+    }
+
     // 삭제된 회원권 제외
     if (membership.deleted) {
       return false;
@@ -324,48 +359,33 @@ export class MembershipService {
     // Firebase Timestamp를 Date로 변환하는 헬퍼 함수
     const toDate = (value: any): Date | null => {
       if (!value) return null;
-      
+
       // 이미 Date 객체인 경우
       if (value instanceof Date) {
         return value;
       }
-      
+
       // Firebase Timestamp인 경우
       if (value instanceof Timestamp || (value.toDate && typeof value.toDate === 'function')) {
         return value.toDate();
       }
-      
+
       // Timestamp 객체인 경우 (seconds 속성 확인)
       if (value.seconds && typeof value.seconds === 'number') {
         return new Date(value.seconds * 1000);
       }
-      
+
       // 문자열인 경우
       if (typeof value === 'string') {
         const date = new Date(value);
         return isNaN(date.getTime()) ? null : date;
       }
-      
+
       return null;
     };
 
-    let startDate: Date | null = null;
-    let endDate: Date | null = null;
-
-    // 새 구조
-    if (membership.period) {
-      startDate = toDate(membership.period.startDate);
-      endDate = toDate(membership.period.endDate);
-    }
-    // 레거시 구조
-    else if ((membership as any).startDate && (membership as any).endDate) {
-      startDate = toDate((membership as any).startDate);
-      endDate = toDate((membership as any).endDate);
-    }
-    // 둘 다 없으면 유효하지 않음
-    else {
-      return false;
-    }
+    const startDate = toDate(membership.period.startDate);
+    const endDate = toDate(membership.period.endDate);
 
     // 날짜가 유효한지 확인
     if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
@@ -499,6 +519,22 @@ export class MembershipService {
       membership.holds = membership.holds || [];
       membership.holds.push(newHold);
 
+      // 홀딩 조정 기록 추가
+      const holdAdjustment = {
+        type: 'hold',
+        hold: {
+          startDate: holdStartDate,
+          endDate: holdEndDate,
+          reason
+        },
+        reason: `[홀딩 등록] ${reason}`,
+        assignee,
+        at: new Date()
+      };
+
+      membership.adjustments = membership.adjustments || [];
+      membership.adjustments.push(holdAdjustment);
+
       // 만료일 연장
       const currentEndDate = new Date(membership.period.endDate);
       const newEndDate = new Date(currentEndDate.getTime() + holdDays * 24 * 60 * 60 * 1000);
@@ -616,6 +652,22 @@ export class MembershipService {
       const newEndDate = new Date(currentEndDate.getTime() - daysDifference * 24 * 60 * 60 * 1000);
       membership.period.endDate = newEndDate;
 
+      // 홀딩 해제 조정 기록 추가
+      const holdReleaseAdjustment = {
+        type: 'hold_release',
+        hold: {
+          startDate: holdStartDate,
+          endDate: yesterday,
+          reason: currentHold.reason
+        },
+        reason: `[홀딩 해제] ${currentHold.reason}`,
+        assignee: currentHold.assignee,
+        at: now
+      };
+
+      membership.adjustments = membership.adjustments || [];
+      membership.adjustments.push(holdReleaseAdjustment);
+
       // 업데이트된 시간 기록
       membership.updatedAt = new Date();
 
@@ -664,17 +716,23 @@ export class MembershipService {
       }
 
       // 시작일/종료일이 변경되었는지 확인
-      const dateChanged = 
+      const dateChanged =
         newStartDate.getTime() !== membership.period.startDate.getTime() ||
         newEndDate.getTime() !== membership.period.endDate.getTime();
+
+      // quota 변경 확인 (횟수권인 경우)
+      const quotaChanged = membership.type === 'countPass' && (
+        membership.quota.remaining !== newQuotaRemaining ||
+        membership.quota.used !== newQuotaUsed
+      );
 
       // 날짜가 변경된 경우에만 다른 회원권과 겹치는지 체크
       if (dateChanged) {
         for (let i = 0; i < memberships.length; i++) {
           if (i === membershipIndex) continue; // 자기 자신은 제외
-          
+
           const otherMembership = memberships[i];
-          
+
           // 삭제되거나 환불된 회원권은 제외
           if (otherMembership.deleted || (otherMembership.refund && otherMembership.refund.isRefunded)) {
             continue;
@@ -682,7 +740,7 @@ export class MembershipService {
 
           const otherStartDate = new Date(otherMembership.period.startDate);
           const otherEndDate = new Date(otherMembership.period.endDate);
-          
+
           // 날짜 겹침 체크
           if (newStartDate <= otherEndDate && otherStartDate <= newEndDate) {
             throw new Error(
@@ -693,39 +751,48 @@ export class MembershipService {
         }
       }
 
-      // 날짜가 변경된 경우에만 조정 기록 추가
-      if (dateChanged) {
-        // 이전 기간 정보 저장
-        const beforePeriod = {
-          startDate: new Date(membership.period.startDate),
-          endDate: new Date(membership.period.endDate)
-        };
-
-        // 조정 기록 추가
-        const adjustment = {
-          before: {
-            period: {
-              startDate: beforePeriod.startDate,
-              endDate: beforePeriod.endDate
-            }
-          },
-          after: {
-            period: {
-              startDate: newStartDate,
-              endDate: newEndDate
-            }
-          },
+      // 날짜 또는 quota가 변경된 경우 조정 기록 추가
+      if (dateChanged || quotaChanged) {
+        // 조정 기록 생성
+        const adjustment: any = {
+          type: 'edit',
+          before: {},
+          after: {},
           reason,
           assignee,
           at: new Date()
         };
 
+        // 기간 변경이 있는 경우
+        if (dateChanged) {
+          adjustment.before.period = {
+            startDate: new Date(membership.period.startDate),
+            endDate: new Date(membership.period.endDate)
+          };
+          adjustment.after.period = {
+            startDate: newStartDate,
+            endDate: newEndDate
+          };
+
+          // 기간 업데이트
+          membership.period.startDate = newStartDate;
+          membership.period.endDate = newEndDate;
+        }
+
+        // quota 변경이 있는 경우
+        if (quotaChanged) {
+          adjustment.before.quota = {
+            used: membership.quota.used,
+            remaining: membership.quota.remaining
+          };
+          adjustment.after.quota = {
+            used: newQuotaUsed,
+            remaining: newQuotaRemaining
+          };
+        }
+
         membership.adjustments = membership.adjustments || [];
         membership.adjustments.push(adjustment);
-
-        // 기간 업데이트
-        membership.period.startDate = newStartDate;
-        membership.period.endDate = newEndDate;
       }
 
       // Quota 업데이트 (횟수권인 경우)
@@ -955,6 +1022,7 @@ export class MembershipService {
 
             // 조정 기록 추가
             const adjustment = {
+              type: 'edit',
               before: {
                 period: {
                   startDate: Timestamp.fromDate(beforePeriod.startDate),
@@ -1075,6 +1143,7 @@ export class MembershipService {
 
             // 조정 기록 추가
             const adjustment = {
+              type: 'edit',
               before: {
                 period: {
                   startDate: Timestamp.fromDate(beforePeriod.startDate),
