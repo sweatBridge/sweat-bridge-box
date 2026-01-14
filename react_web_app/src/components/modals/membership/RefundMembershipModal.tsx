@@ -24,9 +24,25 @@ const RefundMembershipModal = ({
 
   if (!visible) return null;
 
+  const handleRefundAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // 숫자만 허용 (음수 입력 방지)
+    if (value === '' || /^\d+$/.test(value)) {
+      setRefundAmount(value);
+    }
+  };
+
   const handleConfirm = () => {
-    if (!refundAmount || parseInt(refundAmount) <= 0) {
+    const refundAmountNum = parseInt(refundAmount) || 100;
+    const membershipPriceNum = parseInt(membershipPrice.replace(/,/g, '')) || 0;
+
+    if (!refundAmount || refundAmountNum <= 0) {
       alert('환불 금액을 입력해주세요.');
+      return;
+    }
+
+    if (refundAmountNum > membershipPriceNum) {
+      alert('환불 금액은 결제 금액을 초과할 수 없습니다.');
       return;
     }
 
@@ -89,8 +105,8 @@ const RefundMembershipModal = ({
               <input
                 type="text"
                 className="form-input"
-                value={refundAmount}
-                onChange={(e) => setRefundAmount(e.target.value)}
+                value={membershipPrice}
+                onChange={handleRefundAmountChange}
                 disabled={loading}
                 placeholder="환불 금액"
               />
