@@ -40,7 +40,7 @@ const Locker: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   // Toast message
-  const [createToast, setCreateToast] = useState<((toast: ToastMessageType) => void) | null>(null);
+  const [, setCreateToast] = useState<((toast: ToastMessageType) => void) | null>(null);
 
   // 모달 상태
   const [showAdd, setShowAdd] = useState(false);
