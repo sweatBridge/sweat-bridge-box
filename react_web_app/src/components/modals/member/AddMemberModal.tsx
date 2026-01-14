@@ -3,6 +3,8 @@ import { Timestamp } from 'firebase/firestore';
 import { Gradients } from '../../../constants/gradients';
 import { X, UserPlus, Search } from 'lucide-react';
 import { MemberService } from '../../../services/memberService';
+import DateInput from '../../DateInput';
+import { format } from 'date-fns';
 
 interface AddMemberModalProps {
   visible: boolean;
@@ -27,9 +29,9 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError }: AddMemberModal
     realName: '',
     nickName: '',
     phone: '',
-    gender: 'M' as 'M' | 'F',
-    birthDate: ''
+    gender: 'M' as 'M' | 'F'
   });
+  const [birthDate, setBirthDate] = useState<Date | null>(null);
 
   const [isManualMode, setIsManualMode] = useState(false);
 
@@ -150,7 +152,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError }: AddMemberModal
       if (onError) onError('전화번호를 입력하세요.');
       return;
     }
-    if (!formData.birthDate.trim()) {
+    if (!birthDate) {
       if (onError) onError('생년월일을 입력하세요.');
       return;
     }
@@ -161,6 +163,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError }: AddMemberModal
 
       const memberData = {
         ...formData,
+        birthDate: format(birthDate, 'yyyy-MM-dd'),
         boxName: boxName,
         joinedAt: Timestamp.now()
       };
@@ -194,9 +197,9 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError }: AddMemberModal
       realName: '',
       nickName: '',
       phone: '',
-      gender: 'M',
-      birthDate: ''
+      gender: 'M'
     });
+    setBirthDate(null);
   };
 
   const handleClose = () => {
@@ -429,11 +432,11 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError }: AddMemberModal
               <div className="form-row">
                 <div className="form-group">
                   <label>생년월일 *</label>
-                  <input
-                    type="date"
-                    value={formData.birthDate}
-                    onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                    className="form-input"
+                  <DateInput
+                    selected={birthDate}
+                    onChange={(date) => setBirthDate(date)}
+                    placeholder="생년월일 선택"
+                    isBirthDate={true}
                   />
                 </div>
               </div>

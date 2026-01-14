@@ -14,6 +14,7 @@ import ApplyRequestModal from '../components/modals/member/ApplyRequestModal';
 import ToastMessage from '../components/ToastMessage';
 import { filterMembers, formatPhoneNumber } from '../utils/memberUtils';
 import { MembershipService } from '../services/membershipService';
+import { MemberService } from '../services/memberService';
 import { usePageContext } from '../contexts/PageContext';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
@@ -46,7 +47,8 @@ const MemberManagement = () => {
   const [addMemberModalVisible, setAddMemberModalVisible] = useState(false);
   const [applyRequestModalVisible, setApplyRequestModalVisible] = useState(false);
   const [extendAllModalVisible, setExtendAllModalVisible] = useState(false);
-  
+  const [pendingApplicantsCount, setPendingApplicantsCount] = useState(0);
+
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -66,6 +68,22 @@ const MemberManagement = () => {
   useEffect(() => {
     loadMembers();
   }, [loadMembers]);
+
+  // 승인 대기 회원 수 로드
+  const loadPendingApplicantsCount = useCallback(async () => {
+    const boxName = localStorage.getItem('boxName') || '';
+    if (!boxName) return;
+    try {
+      const applicants = await MemberService.fetchApplicants(boxName);
+      setPendingApplicantsCount(applicants.length);
+    } catch (error) {
+      console.error('Failed to load pending applicants count:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPendingApplicantsCount();
+  }, [loadPendingApplicantsCount]);
 
   // 에러 처리
   useEffect(() => {
@@ -302,9 +320,12 @@ const MemberManagement = () => {
     <div className="dashboard">
       {/* 액션 버튼들 */}
       <div className="actions-bar">
-        <button className="btn btn-info" onClick={() => setApplyRequestModalVisible(true)}>
+        <button className="btn btn-info btn-with-badge" onClick={() => setApplyRequestModalVisible(true)}>
           <Users size={16} />
           승인 대기 목록
+          {pendingApplicantsCount > 0 && (
+            <span className="notification-badge">{pendingApplicantsCount}</span>
+          )}
         </button>
         <button className="btn btn-primary" onClick={handleAddMember}>
           <UserPlus size={16} />
@@ -672,6 +693,7 @@ const MemberManagement = () => {
         onClose={() => {
           setApplyRequestModalVisible(false);
           loadMembers(); // 회원 목록 새로고침
+          loadPendingApplicantsCount(); // 승인 대기 수 갱신
         }}
         onSuccess={(message) => {
           if (createToast) {
@@ -681,6 +703,7 @@ const MemberManagement = () => {
             });
           }
           loadMembers(); // 회원 목록 새로고침
+          loadPendingApplicantsCount(); // 승인 대기 수 갱신
         }}
         onError={(message) => {
           if (createToast) {
@@ -886,6 +909,28 @@ const MemberManagement = () => {
             background: #3b82f6;
             color: white;
             transform: translateY(-1px);
+          }
+
+          .btn-with-badge {
+            position: relative;
+          }
+
+          .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
           }
 
         .search-section {

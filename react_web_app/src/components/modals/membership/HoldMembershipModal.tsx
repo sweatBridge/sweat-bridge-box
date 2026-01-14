@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Pause, Calendar, User, FileText } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
-import { formatDateToString, parseStringToDate } from '../../../utils/dateUtils';
+import { formatDateToString } from '../../../utils/dateUtils';
+import DateInput from '../../DateInput';
 
 interface HoldMembershipModalProps {
   visible: boolean;
@@ -56,8 +57,8 @@ const HoldMembershipModal = ({
     const holdEnd = new Date(holdEndDate);
     holdEnd.setHours(0, 0, 0, 0);
     
-    // 홀딩일 수 계산
-    const holdDays = Math.ceil((holdEnd.getTime() - holdStart.getTime()) / (1000 * 60 * 60 * 24));
+    // 홀딩일 수 계산 (시작일과 종료일 모두 포함)
+    const holdDays = Math.ceil((holdEnd.getTime() - holdStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     
     // 회원권 종료일에 홀딩일 수를 더한 날짜
     const extendedEndDate = new Date(membershipEnd);
@@ -114,12 +115,11 @@ const HoldMembershipModal = ({
                 <Calendar size={16} />
                 홀딩 시작일
               </label>
-              <input
-                type="date"
-                className="form-input"
-                value={formatDateToString(holdStartDate)}
-                onChange={(e) => setHoldStartDate(parseStringToDate(e.target.value))}
+              <DateInput
+                selected={holdStartDate}
+                onChange={(date) => setHoldStartDate(date)}
                 disabled={loading}
+                placeholder="홀딩 시작일 선택"
               />
             </div>
 
@@ -128,12 +128,11 @@ const HoldMembershipModal = ({
                 <Calendar size={16} />
                 홀딩 종료일
               </label>
-              <input
-                type="date"
-                className="form-input"
-                value={formatDateToString(holdEndDate)}
-                onChange={(e) => setHoldEndDate(parseStringToDate(e.target.value))}
+              <DateInput
+                selected={holdEndDate}
+                onChange={(date) => setHoldEndDate(date)}
                 disabled={loading}
+                placeholder="홀딩 종료일 선택"
               />
             </div>
 

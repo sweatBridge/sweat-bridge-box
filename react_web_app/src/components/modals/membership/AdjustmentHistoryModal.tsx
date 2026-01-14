@@ -1,13 +1,6 @@
-import { History, Calendar, User, FileText, ArrowRight } from 'lucide-react';
+import { History, Calendar, User, FileText, ArrowRight, Pause, Play } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
-
-interface Adjustment {
-  before: { period: { startDate: Date; endDate: Date }};
-  after: { period: { startDate: Date; endDate: Date }};
-  reason: string;
-  assignee: string;
-  at: Date;
-}
+import { Adjustment } from '../../../types/membership';
 
 interface AdjustmentHistoryModalProps {
   visible: boolean;
@@ -42,6 +35,24 @@ const AdjustmentHistoryModal = ({
     }).format(date);
   };
 
+  const getTypeLabel = (type: string) => {
+    switch (type) {
+      case 'edit': return '수정';
+      case 'hold': return '홀딩';
+      case 'hold_release': return '홀딩 해제';
+      default: return '조정';
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'edit': return '#2563EB';
+      case 'hold': return '#F59E0B';
+      case 'hold_release': return '#16A34A';
+      default: return '#64748b';
+    }
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content history-modal" onClick={(e) => e.stopPropagation()}>
@@ -52,7 +63,7 @@ const AdjustmentHistoryModal = ({
           </div>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
-        
+
         <div className="modal-body">
           <div className="membership-info">
             <span className="plan-name">{membershipPlan}</span>
@@ -63,7 +74,15 @@ const AdjustmentHistoryModal = ({
             {adjustments.map((adjustment, index) => (
               <div key={index} className="adjustment-item">
                 <div className="adjustment-header">
-                  <div className="adjustment-number">#{index + 1}</div>
+                  <div className="adjustment-number-wrap">
+                    <div className="adjustment-number">#{index + 1}</div>
+                    <div
+                      className="adjustment-type-badge"
+                      style={{ backgroundColor: getTypeColor(adjustment.type) }}
+                    >
+                      {getTypeLabel(adjustment.type)}
+                    </div>
+                  </div>
                   <div className="adjustment-date">
                     <Calendar size={14} />
                     {formatDateTime(adjustment.at)}
@@ -71,23 +90,77 @@ const AdjustmentHistoryModal = ({
                 </div>
 
                 <div className="adjustment-details">
-                  <div className="period-change">
-                    <div className="period-box before">
-                      <span className="period-label">변경 전</span>
-                      <span className="period-value">
-                        {formatDate(adjustment.before.period.startDate)} ~ {formatDate(adjustment.before.period.endDate)}
-                      </span>
+                  {/* 홀딩 등록 정보 표시 */}
+                  {adjustment.type === 'hold' && adjustment.hold && (
+                    <div className="hold-info-box">
+                      <Pause size={16} />
+                      <div className="hold-info-content">
+                        <span className="hold-period">
+                          {formatDate(adjustment.hold.startDate)} ~ {formatDate(adjustment.hold.endDate)}
+                        </span>
+                      </div>
                     </div>
-                    
-                    <ArrowRight size={20} className="arrow-icon" />
-                    
-                    <div className="period-box after">
-                      <span className="period-label">변경 후</span>
-                      <span className="period-value">
-                        {formatDate(adjustment.after.period.startDate)} ~ {formatDate(adjustment.after.period.endDate)}
-                      </span>
+                  )}
+
+                  {/* 홀딩 해제 정보 표시 */}
+                  {adjustment.type === 'hold_release' && adjustment.hold && (
+                    <div className="hold-release-info-box">
+                      <Play size={16} />
+                      <div className="hold-info-content">
+                        <span className="hold-period">
+                          {formatDate(adjustment.hold.startDate)} ~ {formatDate(adjustment.hold.endDate)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* 기간 변경 표시 */}
+                  {adjustment.before?.period && adjustment.after?.period && (
+                    <div className="change-section">
+                      <div className="change-label">기간</div>
+                      <div className="period-change">
+                        <div className="period-box before">
+                          <span className="period-label">변경 전</span>
+                          <span className="period-value">
+                            {formatDate(adjustment.before.period.startDate)} ~ {formatDate(adjustment.before.period.endDate)}
+                          </span>
+                        </div>
+
+                        <ArrowRight size={20} className="arrow-icon" />
+
+                        <div className="period-box after">
+                          <span className="period-label">변경 후</span>
+                          <span className="period-value">
+                            {formatDate(adjustment.after.period.startDate)} ~ {formatDate(adjustment.after.period.endDate)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 횟수 변경 표시 */}
+                  {adjustment.before?.quota && adjustment.after?.quota && (
+                    <div className="change-section">
+                      <div className="change-label">횟수</div>
+                      <div className="quota-change">
+                        <div className="quota-box before">
+                          <span className="quota-label">변경 전</span>
+                          <span className="quota-value">
+                            사용 {adjustment.before.quota.used}회 / 잔여 {adjustment.before.quota.remaining}회
+                          </span>
+                        </div>
+
+                        <ArrowRight size={20} className="arrow-icon" />
+
+                        <div className="quota-box after">
+                          <span className="quota-label">변경 후</span>
+                          <span className="quota-value">
+                            사용 {adjustment.after.quota.used}회 / 잔여 {adjustment.after.quota.remaining}회
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="adjustment-info">
                     <div className="info-row">
@@ -248,12 +321,26 @@ const AdjustmentHistoryModal = ({
           border-bottom: 1px solid #e5e7eb;
         }
 
+        .adjustment-number-wrap {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
         .adjustment-number {
           background: ${Gradients.primary};
           color: white;
           padding: 4px 12px;
           border-radius: 12px;
           font-size: 12px;
+          font-weight: 600;
+        }
+
+        .adjustment-type-badge {
+          color: white;
+          padding: 4px 10px;
+          border-radius: 12px;
+          font-size: 11px;
           font-weight: 600;
         }
 
@@ -271,13 +358,82 @@ const AdjustmentHistoryModal = ({
           gap: 12px;
         }
 
-        .period-change {
+        .hold-info-box {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 16px;
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          border: 1px solid #fbbf24;
+          border-radius: 8px;
+        }
+
+        .hold-info-box svg {
+          color: #92400e;
+        }
+
+        .hold-release-info-box {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 16px;
+          background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+          border: 1px solid #6ee7b7;
+          border-radius: 8px;
+        }
+
+        .hold-release-info-box svg {
+          color: #065f46;
+        }
+
+        .hold-release-info-box .hold-period {
+          color: #064e3b;
+        }
+
+        .hold-release-info-box .hold-days {
+          color: #065f46;
+        }
+
+        .hold-info-content {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .hold-period {
+          font-size: 14px;
+          font-weight: 600;
+          color: #78350f;
+        }
+
+        .hold-days {
+          font-size: 12px;
+          font-weight: 500;
+          color: #92400e;
+        }
+
+        .change-section {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .change-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: #64748b;
+          text-transform: uppercase;
+        }
+
+        .period-change,
+        .quota-change {
           display: flex;
           align-items: center;
           gap: 12px;
         }
 
-        .period-box {
+        .period-box,
+        .quota-box {
           flex: 1;
           padding: 10px 12px;
           border-radius: 6px;
@@ -286,40 +442,48 @@ const AdjustmentHistoryModal = ({
           gap: 4px;
         }
 
-        .period-box.before {
+        .period-box.before,
+        .quota-box.before {
           background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
           border: 1px solid #fca5a5;
         }
 
-        .period-box.after {
+        .period-box.after,
+        .quota-box.after {
           background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
           border: 1px solid #6ee7b7;
         }
 
-        .period-label {
+        .period-label,
+        .quota-label {
           font-size: 11px;
           font-weight: 600;
           text-transform: uppercase;
         }
 
-        .period-box.before .period-label {
+        .period-box.before .period-label,
+        .quota-box.before .quota-label {
           color: #991b1b;
         }
 
-        .period-box.after .period-label {
+        .period-box.after .period-label,
+        .quota-box.after .quota-label {
           color: #065f46;
         }
 
-        .period-value {
+        .period-value,
+        .quota-value {
           font-size: 13px;
           font-weight: 600;
         }
 
-        .period-box.before .period-value {
+        .period-box.before .period-value,
+        .quota-box.before .quota-value {
           color: #7f1d1d;
         }
 
-        .period-box.after .period-value {
+        .period-box.after .period-value,
+        .quota-box.after .quota-value {
           color: #064e3b;
         }
 
