@@ -40,7 +40,7 @@ const Locker: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   
   // Toast message
-  const [, setCreateToast] = useState<((toast: ToastMessageType) => void) | null>(null);
+  const [createToast, setCreateToast] = useState<((toast: ToastMessageType) => void) | null>(null);
 
   // 모달 상태
   const [showAdd, setShowAdd] = useState(false);
@@ -496,6 +496,7 @@ const Locker: React.FC = () => {
           onClose={() => setShowAssignModal(false)}
           onConfirm={onConfirmAssign}
           onSearch={onSearchMembers}
+          createToast={createToast || undefined}
         />
       )}
 

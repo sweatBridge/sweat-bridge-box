@@ -13,6 +13,8 @@ interface AssignLockerModalProps {
   onClose: () => void;
   onConfirm: (member: Member, startDate: string, endDate: string, price: string, paymentType: 'cash' | 'card') => void;
   onSearch: (searchText: string) => Promise<Member[]>;
+  onError?: (message: string) => void;
+  createToast?: (toast: { type: 'success' | 'danger' | 'warning' | 'info'; message: string }) => void;
 }
 
 const AssignLockerModal = ({
@@ -22,7 +24,9 @@ const AssignLockerModal = ({
   searching,
   onClose,
   onConfirm,
-  onSearch
+  onSearch,
+  onError,
+  createToast
 }: AssignLockerModalProps) => {
   const [assignSearchText, setAssignSearchText] = useState('');
   const [assignSearchResults, setAssignSearchResults] = useState<Member[]>([]);
@@ -53,19 +57,34 @@ const AssignLockerModal = ({
     setAssignSearchResults([]);
   };
 
+  const showError = (message: string) => {
+    if (createToast) {
+      createToast({ type: 'warning', message });
+    } else if (onError) {
+      onError(message);
+    } else {
+      alert(message);
+    }
+  };
+
   const handleConfirm = () => {
     if (!assignSelectedMember) {
-      alert('회원을 선택해주세요.');
+      showError('회원을 선택해주세요.');
       return;
     }
 
     if (!assignStartDate || !assignEndDate) {
-      alert('시작 날짜와 종료 날짜를 입력해주세요.');
+      showError('시작 날짜와 종료 날짜를 입력해주세요.');
+      return;
+    }
+
+    if (assignStartDate > assignEndDate) {
+      showError('종료 날짜가 시작 날짜 이전입니다.');
       return;
     }
 
     if (!assignPrice || assignPrice === '0') {
-      alert('가격을 입력해주세요.');
+      showError('가격을 입력해주세요.');
       return;
     }
 
@@ -171,9 +190,15 @@ const AssignLockerModal = ({
                 <label>가격</label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   className="form-input"
                   value={assignPrice}
-                  onChange={(e) => setAssignPrice(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // 정수만 허용: 숫자가 아닌 문자 제거
+                    const integerValue = value.replace(/[^0-9]/g, '');
+                    setAssignPrice(integerValue);
+                  }}
                   placeholder="가격"
                   disabled={assigning}
                 />
