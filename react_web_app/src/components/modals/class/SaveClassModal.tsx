@@ -9,6 +9,7 @@ const SaveClassModal = ({
   visible, 
   onClose, 
   onSave,
+  onError,
   selectInfo 
 }: SaveClassModalProps) => {
   const [startTime, setStartTime] = useState('09:00');
@@ -33,6 +34,14 @@ const SaveClassModal = ({
   }, [selectInfo, visible]);
 
   const handleSave = () => {
+    // 코치 필드 검증
+    if (!coach || coach.trim() === '') {
+      if (onError) {
+        onError('코치를 입력해주세요.');
+      }
+      return;
+    }
+    
     // 시작 시간이 종료 시간보다 앞서 있는지 검증
     const [startHours, startMinutes] = startTime.split(':').map(Number);
     const [endHours, endMinutes] = endTime.split(':').map(Number);
@@ -41,13 +50,17 @@ const SaveClassModal = ({
     const endTotalMinutes = endHours * 60 + endMinutes;
     
     if (startTotalMinutes >= endTotalMinutes) {
-      alert('시작 시간은 종료 시간보다 앞서야 합니다.');
+      if (onError) {
+        onError('시작 시간은 종료 시간보다 앞서야 합니다.');
+      }
       return;
     }
     
     // 정원이 1 이상인지 검증
     if (cap < 1) {
-      alert('정원은 1명 이상이어야 합니다.');
+      if (onError) {
+        onError('정원은 1명 이상이어야 합니다.');
+      }
       return;
     }
     

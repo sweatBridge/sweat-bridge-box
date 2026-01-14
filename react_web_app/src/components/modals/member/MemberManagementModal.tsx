@@ -38,6 +38,7 @@ const MemberManagementModal = ({
   const [refundInfoModalVisible, setRefundInfoModalVisible] = useState(false);
   const [refundInfoData, setRefundInfoData] = useState<{ refundAt: Date; refundAmount: number; reason: string; assignee: string | null; plan: string } | null>(null);
   const [memo, setMemo] = useState('');
+  const [isMemoEditing, setIsMemoEditing] = useState(true);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [membershipToEdit, setMembershipToEdit] = useState<{ index: number; plan: string; type: string; startDate: Date; endDate: Date; price: string; quotaRemaining?: number; quotaUsed?: number } | null>(null);
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
@@ -85,11 +86,15 @@ const MemberManagementModal = ({
   useEffect(() => {
     if (visible && member) {
       // 모달이 열릴 때만 메모를 member.memo로 초기화
-      setMemo(member.memo || '');
+      const memberMemo = member.memo || '';
+      setMemo(memberMemo);
+      // 메모가 비어있으면 편집 모드, 있으면 읽기 전용 모드
+      setIsMemoEditing(!memberMemo);
       loadData();
     } else if (!visible) {
       // 모달이 닫힐 때 메모 초기화
       setMemo('');
+      setIsMemoEditing(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, member?.email]); // loadData는 member.email이 변경될 때마다 실행되어야 하므로 의존성에서 제외
@@ -485,6 +490,14 @@ const MemberManagementModal = ({
         onMemoUpdate(member.email, memo);
       }
       
+      // 저장 후: 메모가 비어있으면 편집 모드 유지, 있으면 편집 모드 종료
+      if (memo.trim()) {
+        setIsMemoEditing(false);
+      } else {
+        // 메모가 비어있으면 항상 편집 모드 유지
+        setIsMemoEditing(true);
+      }
+      
       if (onSuccess) {
         onSuccess('메모가 저장되었습니다.');
       }
@@ -496,6 +509,11 @@ const MemberManagementModal = ({
       setLoading(false);
     }
   }, [member, memo, onSuccess, onError, onMemoUpdate]);
+
+  // 메모 수정 모드 토글
+  const handleEditMemo = useCallback(() => {
+    setIsMemoEditing(true);
+  }, []);
 
   // 회원권 수정 모달 열기
   const handleOpenEditModal = useCallback((index: number) => {
@@ -673,16 +691,26 @@ const MemberManagementModal = ({
                     value={memo}
                     onChange={(e) => setMemo(e.target.value)}
                     placeholder="회원에 대한 메모를 작성하세요..."
-                    disabled={loading}
+                    disabled={loading || (!isMemoEditing && memo.trim() !== '')}
                     rows={3}
                   />
-                  <button 
-                    className="btn btn-primary btn-sm"
-                    onClick={handleSaveMemo}
-                    disabled={loading}
-                  >
-                    저장
-                  </button>
+                  {!memo.trim() || isMemoEditing ? (
+                    <button 
+                      className="btn btn-primary btn-sm"
+                      onClick={handleSaveMemo}
+                      disabled={loading}
+                    >
+                      저장
+                    </button>
+                  ) : (
+                    <button 
+                      className="btn btn-secondary btn-sm"
+                      onClick={handleEditMemo}
+                      disabled={loading}
+                    >
+                      수정
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -1544,7 +1572,7 @@ const MemberManagementModal = ({
 
         .memo-input {
           width: 100%;
-          padding: 8px 80px 8px 12px;
+          padding: 8px 80px 32px 12px;
           border: 1px solid #d1d5db;
           border-radius: 6px;
           font-size: 13px;
@@ -1571,10 +1599,12 @@ const MemberManagementModal = ({
           color: #9ca3af;
         }
 
-        .memo-container .btn-primary.btn-sm {
+        .memo-container .btn-primary.btn-sm,
+        .memo-container .btn-secondary.btn-sm {
           position: absolute;
           bottom: 8px;
           right: 8px;
+          z-index: 10;
         }
 
         .form-grid {

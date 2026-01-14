@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Plus } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import type { Member } from '../../../types/member';
@@ -13,6 +13,8 @@ interface AssignLockerModalProps {
   onClose: () => void;
   onConfirm: (member: Member, startDate: string, endDate: string, price: string, paymentType: 'cash' | 'card') => void;
   onSearch: (searchText: string) => Promise<Member[]>;
+  onError?: (message: string) => void;
+  createToast?: (toast: { type: 'success' | 'danger' | 'warning' | 'info'; message: string }) => void;
 }
 
 const AssignLockerModal = ({
@@ -22,7 +24,9 @@ const AssignLockerModal = ({
   searching,
   onClose,
   onConfirm,
-  onSearch
+  onSearch,
+  onError,
+  createToast
 }: AssignLockerModalProps) => {
   const [assignSearchText, setAssignSearchText] = useState('');
   const [assignSearchResults, setAssignSearchResults] = useState<Member[]>([]);
@@ -31,6 +35,10 @@ const AssignLockerModal = ({
   const [assignEndDate, setAssignEndDate] = useState<Date | null>(null);
   const [assignPrice, setAssignPrice] = useState('');
   const [assignPaymentType, setAssignPaymentType] = useState<'cash' | 'card'>('cash');
+  
+  // 이전 값을 추적하기 위한 ref
+  const prevEndDateStrRef = useRef<string>('');
+  const prevStartDateStrRef = useRef<string>('');
 
   if (!visible) return null;
 
@@ -55,17 +63,62 @@ const AssignLockerModal = ({
 
   const handleConfirm = () => {
     if (!assignSelectedMember) {
-      alert('회원을 선택해주세요.');
+      const errorMessage = '회원을 선택해주세요.';
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: errorMessage
+        });
+      } else if (onError) {
+        onError(errorMessage);
+      }
       return;
     }
 
-    if (!assignStartDate || !assignEndDate) {
-      alert('시작 날짜와 종료 날짜를 입력해주세요.');
+    // 실제 저장된 날짜 값 사용
+    const startDate = assignStartDateStr !== '' ? assignStartDateStr : assignStartDate;
+    const endDate = assignEndDateStr !== '' ? assignEndDateStr : assignEndDate;
+
+    if (!startDate || !endDate) {
+      const errorMessage = '시작 날짜와 종료 날짜를 입력해주세요.';
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: errorMessage
+        });
+      } else if (onError) {
+        onError(errorMessage);
+      }
+      return;
+    }
+
+    // 시작 날짜와 종료 날짜 비교 검증
+    const parsedStartDate = parseStringToDate(startDate);
+    const parsedEndDate = parseStringToDate(endDate);
+    if (parsedStartDate && parsedEndDate && parsedStartDate > parsedEndDate) {
+      const errorMessage = '종료 날짜가 시작 날짜 이전입니다.';
+      // createToast를 우선적으로 사용
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: errorMessage
+        });
+      } else if (onError) {
+        onError(errorMessage);
+      }
       return;
     }
 
     if (!assignPrice || assignPrice === '0') {
-      alert('가격을 입력해주세요.');
+      const errorMessage = '가격을 입력해주세요.';
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: errorMessage
+        });
+      } else if (onError) {
+        onError(errorMessage);
+      }
       return;
     }
 
@@ -171,9 +224,15 @@ const AssignLockerModal = ({
                 <label>가격</label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   className="form-input"
                   value={assignPrice}
-                  onChange={(e) => setAssignPrice(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // 정수만 허용: 숫자가 아닌 문자 제거
+                    const integerValue = value.replace(/[^0-9]/g, '');
+                    setAssignPrice(integerValue);
+                  }}
                   placeholder="가격"
                   disabled={assigning}
                 />
