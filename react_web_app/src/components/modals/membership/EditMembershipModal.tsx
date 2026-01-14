@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Edit, Calendar, User, FileText, CreditCard } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
-import { formatDateToString, parseStringToDate } from '../../../utils/dateUtils';
+import DateInput from '../../DateInput';
 
 interface EditMembershipModalProps {
   visible: boolean;
@@ -40,8 +40,6 @@ const EditMembershipModal = ({
 }: EditMembershipModalProps) => {
   const [newStartDate, setNewStartDate] = useState<Date | null>(currentStartDate);
   const [newEndDate, setNewEndDate] = useState<Date | null>(currentEndDate);
-  const [newStartDateStr, setNewStartDateStr] = useState<string>('');
-  const [newEndDateStr, setNewEndDateStr] = useState<string>('');
   const [newQuotaRemaining, setNewQuotaRemaining] = useState<number>(currentQuotaRemaining);
   const [newQuotaUsed, setNewQuotaUsed] = useState<number>(currentQuotaUsed);
   const [reason, setReason] = useState('');
@@ -52,8 +50,6 @@ const EditMembershipModal = ({
     if (visible) {
       setNewStartDate(currentStartDate);
       setNewEndDate(currentEndDate);
-      setNewStartDateStr('');
-      setNewEndDateStr('');
       setNewQuotaRemaining(currentQuotaRemaining);
       setNewQuotaUsed(currentQuotaUsed);
       setReason('');
@@ -110,8 +106,6 @@ const EditMembershipModal = ({
     if (!loading) {
       setNewStartDate(currentStartDate);
       setNewEndDate(currentEndDate);
-      setNewStartDateStr('');
-      setNewEndDateStr('');
       setNewQuotaRemaining(currentQuotaRemaining);
       setNewQuotaUsed(currentQuotaUsed);
       setReason('');
@@ -163,50 +157,11 @@ const EditMembershipModal = ({
                   <Calendar size={16} />
                   새 시작일
                 </label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={newStartDateStr !== '' ? newStartDateStr : (newStartDate ? formatDateToString(newStartDate) : '')}
-                  onChange={(e) => {
-                    const dateValue = e.target.value;
-                    
-                    // 연도가 4자리인지 확인
-                    if (dateValue) {
-                      const parts = dateValue.split('-');
-                      if (parts.length === 3 && parts[0] && parts[0].length > 4) {
-                        // 연도가 4자리를 초과하면 이전 값 유지
-                        return;
-                      }
-                    }
-                    
-                    // 입력 값을 문자열로 저장
-                    setNewStartDateStr(dateValue);
-                    
-                    // 완전한 날짜가 입력될 때만 Date 객체로 변환
-                    const parsedDate = parseStringToDate(dateValue);
-                    if (parsedDate) {
-                      setNewStartDate(parsedDate);
-                      // 유효한 날짜로 파싱되면 문자열도 정규화
-                      setNewStartDateStr(formatDateToString(parsedDate));
-                    }
-                  }}
-                  onBlur={(e) => {
-                    // 포커스를 잃을 때 유효한 날짜인지 확인
-                    const parsedDate = parseStringToDate(e.target.value);
-                    if (parsedDate) {
-                      setNewStartDate(parsedDate);
-                      setNewStartDateStr(formatDateToString(parsedDate));
-                    } else if (!e.target.value) {
-                      setNewStartDate(currentStartDate);
-                      setNewStartDateStr('');
-                    } else {
-                      // 유효하지 않은 날짜면 이전 유효한 날짜로 복원
-                      if (newStartDate) {
-                        setNewStartDateStr(formatDateToString(newStartDate));
-                      }
-                    }
-                  }}
+                <DateInput
+                  selected={newStartDate}
+                  onChange={(date) => setNewStartDate(date)}
                   disabled={loading}
+                  placeholder="시작일 선택"
                 />
               </div>
 
@@ -215,50 +170,11 @@ const EditMembershipModal = ({
                   <Calendar size={16} />
                   새 종료일
                 </label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={newEndDateStr !== '' ? newEndDateStr : (newEndDate ? formatDateToString(newEndDate) : '')}
-                  onChange={(e) => {
-                    const dateValue = e.target.value;
-                    
-                    // 연도가 4자리인지 확인
-                    if (dateValue) {
-                      const parts = dateValue.split('-');
-                      if (parts.length === 3 && parts[0] && parts[0].length > 4) {
-                        // 연도가 4자리를 초과하면 이전 값 유지
-                        return;
-                      }
-                    }
-                    
-                    // 입력 값을 문자열로 저장
-                    setNewEndDateStr(dateValue);
-                    
-                    // 완전한 날짜가 입력될 때만 Date 객체로 변환
-                    const parsedDate = parseStringToDate(dateValue);
-                    if (parsedDate) {
-                      setNewEndDate(parsedDate);
-                      // 유효한 날짜로 파싱되면 문자열도 정규화
-                      setNewEndDateStr(formatDateToString(parsedDate));
-                    }
-                  }}
-                  onBlur={(e) => {
-                    // 포커스를 잃을 때 유효한 날짜인지 확인
-                    const parsedDate = parseStringToDate(e.target.value);
-                    if (parsedDate) {
-                      setNewEndDate(parsedDate);
-                      setNewEndDateStr(formatDateToString(parsedDate));
-                    } else if (!e.target.value) {
-                      setNewEndDate(currentEndDate);
-                      setNewEndDateStr('');
-                    } else {
-                      // 유효하지 않은 날짜면 이전 유효한 날짜로 복원
-                      if (newEndDate) {
-                        setNewEndDateStr(formatDateToString(newEndDate));
-                      }
-                    }
-                  }}
+                <DateInput
+                  selected={newEndDate}
+                  onChange={(date) => setNewEndDate(date)}
                   disabled={loading}
+                  placeholder="종료일 선택"
                 />
               </div>
             </div>
