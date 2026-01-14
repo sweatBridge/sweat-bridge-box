@@ -86,14 +86,15 @@ export const formatDateToKorean = (date: Date): string => {
 };
 
 /**
- * 두 날짜 사이의 일수를 계산합니다.
+ * 두 날짜 사이의 일수를 계산합니다. (시작일과 종료일 모두 포함)
+ * 예: 01.04 ~ 01.05 = 2일
  * @param startDate 시작 날짜
  * @param endDate 종료 날짜
- * @returns 일수 (endDate - startDate), 올림 처리
+ * @returns 일수 (endDate - startDate + 1), 시작일과 종료일 모두 포함
  */
 export const getDaysBetween = (startDate: Date, endDate: Date): number => {
   const msPerDay = 1000 * 60 * 60 * 24;
   const diffMs = endDate.getTime() - startDate.getTime();
-  return Math.ceil(diffMs / msPerDay);
+  return Math.ceil(diffMs / msPerDay) + 1;
 };
 

@@ -6,6 +6,26 @@ export interface MembershipPlan {
   price: string;
 }
 
+export interface Adjustment {
+  type: 'edit' | 'hold' | 'hold_release';
+  before?: {
+    period?: { startDate: Date; endDate: Date };
+    quota?: { used: number; remaining: number };
+  };
+  after?: {
+    period?: { startDate: Date; endDate: Date };
+    quota?: { used: number; remaining: number };
+  };
+  hold?: {
+    startDate: Date;
+    endDate: Date;
+    reason: string;
+  };
+  reason: string;
+  assignee: string;
+  at: Date;
+}
+
 // 새로운 회원권 구조
 export interface UserMembership {
   key: string;
@@ -47,13 +67,7 @@ export interface UserMembership {
     assignee: string | null;
   };
   
-  adjustments: Array<{
-    before: { period: { startDate: Date; endDate: Date }};
-    after: { period: { startDate: Date; endDate: Date }};
-    reason: string;
-    assignee: string;
-    at: Date;
-  }>;
+  adjustments: Adjustment[];
   
   createdAt: Date;
   updatedAt: Date;

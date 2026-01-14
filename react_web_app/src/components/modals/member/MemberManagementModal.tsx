@@ -9,6 +9,7 @@ import { MemberService } from '../../../services/memberService';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
 import { formatDateToString } from '../../../utils/dateUtils';
+import DateInput from '../../DateInput';
 import HoldMembershipModal from '../membership/HoldMembershipModal';
 import DeleteMembershipConfirmModal from '../membership/DeleteMembershipConfirmModal';
 import RefundMembershipModal from '../membership/RefundMembershipModal';
@@ -929,30 +930,10 @@ const MemberManagementModal = ({
 
                   <div className="form-group">
                     <label>시작일</label>
-                    <input
-                      type="date"
-                      value={formData.startDate.toISOString().split('T')[0]}
-                      onChange={(e) => {
-                        const dateValue = e.target.value;
-                        
-                        // 연도가 4자리인지 확인
-                        if (dateValue) {
-                          const parts = dateValue.split('-');
-                          if (parts.length === 3 && parts[0] && parts[0].length > 4) {
-                            // 연도가 4자리를 초과하면 이전 값 유지
-                            return;
-                          }
-                        }
-                        
-                        // 유효한 날짜만 업데이트
-                        if (dateValue) {
-                          const parsedDate = new Date(dateValue);
-                          if (!isNaN(parsedDate.getTime())) {
-                            setFormData(prev => ({ ...prev, startDate: parsedDate }));
-                          }
-                        }
-                      }}
-                      className="form-input"
+                    <DateInput
+                      selected={formData.startDate}
+                      onChange={(date) => setFormData(prev => ({ ...prev, startDate: date || new Date() }))}
+                      placeholder="시작일 선택"
                     />
                   </div>
                 </div>

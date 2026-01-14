@@ -76,22 +76,52 @@ export class MemberService {
                 ...membership.refund,
                 at: membership.refund?.at?.toDate?.() ?? (membership.refund?.at ? new Date(membership.refund.at) : null)
               },
-              adjustments: (membership.adjustments || []).map((adj: any) => ({
-                ...adj,
-                at: adj.at?.toDate?.() ?? new Date(adj.at),
-                before: {
-                  period: {
-                    startDate: adj.before.period.startDate?.toDate?.() ?? new Date(adj.before.period.startDate),
-                    endDate: adj.before.period.endDate?.toDate?.() ?? new Date(adj.before.period.endDate)
+              adjustments: (membership.adjustments || []).map((adj: any) => {
+                const result: any = {
+                  ...adj,
+                  type: adj.type || 'edit',
+                  at: adj.at?.toDate?.() ?? new Date(adj.at)
+                };
+
+                // before 처리
+                if (adj.before) {
+                  result.before = {};
+                  if (adj.before.period) {
+                    result.before.period = {
+                      startDate: adj.before.period.startDate?.toDate?.() ?? new Date(adj.before.period.startDate),
+                      endDate: adj.before.period.endDate?.toDate?.() ?? new Date(adj.before.period.endDate)
+                    };
                   }
-                },
-                after: {
-                  period: {
-                    startDate: adj.after.period.startDate?.toDate?.() ?? new Date(adj.after.period.startDate),
-                    endDate: adj.after.period.endDate?.toDate?.() ?? new Date(adj.after.period.endDate)
+                  if (adj.before.quota) {
+                    result.before.quota = adj.before.quota;
                   }
                 }
-              })),
+
+                // after 처리
+                if (adj.after) {
+                  result.after = {};
+                  if (adj.after.period) {
+                    result.after.period = {
+                      startDate: adj.after.period.startDate?.toDate?.() ?? new Date(adj.after.period.startDate),
+                      endDate: adj.after.period.endDate?.toDate?.() ?? new Date(adj.after.period.endDate)
+                    };
+                  }
+                  if (adj.after.quota) {
+                    result.after.quota = adj.after.quota;
+                  }
+                }
+
+                // hold 처리
+                if (adj.hold) {
+                  result.hold = {
+                    ...adj.hold,
+                    startDate: adj.hold.startDate?.toDate?.() ?? new Date(adj.hold.startDate),
+                    endDate: adj.hold.endDate?.toDate?.() ?? new Date(adj.hold.endDate)
+                  };
+                }
+
+                return result;
+              }),
               createdAt: membership.createdAt?.toDate?.() ?? new Date(membership.createdAt),
               updatedAt: membership.updatedAt?.toDate?.() ?? new Date(membership.updatedAt),
               deletedAt: membership.deletedAt?.toDate?.() ?? (membership.deletedAt ? new Date(membership.deletedAt) : null)

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Pause, Calendar, User, FileText } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
-import { formatDateToString, parseStringToDate } from '../../../utils/dateUtils';
+import { formatDateToString } from '../../../utils/dateUtils';
+import DateInput from '../../DateInput';
 
 interface HoldMembershipModalProps {
   visible: boolean;
@@ -58,8 +59,8 @@ const HoldMembershipModal = ({
     const holdEnd = new Date(holdEndDate);
     holdEnd.setHours(0, 0, 0, 0);
     
-    // 홀딩일 수 계산
-    const holdDays = Math.ceil((holdEnd.getTime() - holdStart.getTime()) / (1000 * 60 * 60 * 24));
+    // 홀딩일 수 계산 (시작일과 종료일 모두 포함)
+    const holdDays = Math.ceil((holdEnd.getTime() - holdStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     
     // 회원권 종료일에 홀딩일 수를 더한 날짜
     const extendedEndDate = new Date(membershipEnd);
@@ -118,50 +119,11 @@ const HoldMembershipModal = ({
                 <Calendar size={16} />
                 홀딩 시작일
               </label>
-              <input
-                type="date"
-                className="form-input"
-                value={holdStartDateStr !== '' ? holdStartDateStr : formatDateToString(holdStartDate)}
-                onChange={(e) => {
-                  const dateValue = e.target.value;
-                  
-                  // 연도가 4자리인지 확인
-                  if (dateValue) {
-                    const parts = dateValue.split('-');
-                    if (parts.length === 3 && parts[0] && parts[0].length > 4) {
-                      // 연도가 4자리를 초과하면 이전 값 유지
-                      return;
-                    }
-                  }
-                  
-                  // 입력 값을 문자열로 저장 (부분 입력도 허용)
-                  setHoldStartDateStr(dateValue);
-                  
-                  // 완전한 날짜가 입력될 때만 Date 객체로 변환
-                  const parsedDate = parseStringToDate(dateValue);
-                  if (parsedDate) {
-                    setHoldStartDate(parsedDate);
-                    // 유효한 날짜로 파싱되면 문자열도 정규화
-                    setHoldStartDateStr(formatDateToString(parsedDate));
-                  }
-                }}
-                onBlur={(e) => {
-                  // 포커스를 잃을 때 유효한 날짜인지 확인
-                  const parsedDate = parseStringToDate(e.target.value);
-                  if (parsedDate) {
-                    setHoldStartDate(parsedDate);
-                    setHoldStartDateStr(formatDateToString(parsedDate));
-                  } else if (!e.target.value) {
-                    setHoldStartDate(null);
-                    setHoldStartDateStr('');
-                  } else {
-                    // 유효하지 않은 날짜면 이전 유효한 날짜로 복원
-                    if (holdStartDate) {
-                      setHoldStartDateStr(formatDateToString(holdStartDate));
-                    }
-                  }
-                }}
+              <DateInput
+                selected={holdStartDate}
+                onChange={(date) => setHoldStartDate(date)}
                 disabled={loading}
+                placeholder="홀딩 시작일 선택"
               />
             </div>
 
@@ -170,50 +132,11 @@ const HoldMembershipModal = ({
                 <Calendar size={16} />
                 홀딩 종료일
               </label>
-              <input
-                type="date"
-                className="form-input"
-                value={holdEndDateStr !== '' ? holdEndDateStr : formatDateToString(holdEndDate)}
-                onChange={(e) => {
-                  const dateValue = e.target.value;
-                  
-                  // 연도가 4자리인지 확인
-                  if (dateValue) {
-                    const parts = dateValue.split('-');
-                    if (parts.length === 3 && parts[0] && parts[0].length > 4) {
-                      // 연도가 4자리를 초과하면 이전 값 유지
-                      return;
-                    }
-                  }
-                  
-                  // 입력 값을 문자열로 저장 (부분 입력도 허용)
-                  setHoldEndDateStr(dateValue);
-                  
-                  // 완전한 날짜가 입력될 때만 Date 객체로 변환
-                  const parsedDate = parseStringToDate(dateValue);
-                  if (parsedDate) {
-                    setHoldEndDate(parsedDate);
-                    // 유효한 날짜로 파싱되면 문자열도 정규화
-                    setHoldEndDateStr(formatDateToString(parsedDate));
-                  }
-                }}
-                onBlur={(e) => {
-                  // 포커스를 잃을 때 유효한 날짜인지 확인
-                  const parsedDate = parseStringToDate(e.target.value);
-                  if (parsedDate) {
-                    setHoldEndDate(parsedDate);
-                    setHoldEndDateStr(formatDateToString(parsedDate));
-                  } else if (!e.target.value) {
-                    setHoldEndDate(null);
-                    setHoldEndDateStr('');
-                  } else {
-                    // 유효하지 않은 날짜면 이전 유효한 날짜로 복원
-                    if (holdEndDate) {
-                      setHoldEndDateStr(formatDateToString(holdEndDate));
-                    }
-                  }
-                }}
+              <DateInput
+                selected={holdEndDate}
+                onChange={(date) => setHoldEndDate(date)}
                 disabled={loading}
+                placeholder="홀딩 종료일 선택"
               />
             </div>
 
