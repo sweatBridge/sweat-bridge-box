@@ -496,15 +496,6 @@ const Locker: React.FC = () => {
           onClose={() => setShowAssignModal(false)}
           onConfirm={onConfirmAssign}
           onSearch={onSearchMembers}
-          onError={(message) => {
-            if (createToast) {
-              createToast({
-                type: 'warning',
-                message
-              });
-            }
-          }}
-          createToast={createToast || undefined}
         />
       )}
 
