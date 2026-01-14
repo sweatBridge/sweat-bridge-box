@@ -25,8 +25,6 @@ import ReleaseLockerConfirmModal from '../components/modals/locker/ReleaseLocker
 import UpdateLockerModal from '../components/modals/locker/UpdateLockerModal';
 import LockerHistoryModal from '../components/modals/locker/LockerHistoryModal';
 import AssignLockerModal from '../components/modals/locker/AssignLockerModal';
-import ToastMessage from '../components/ToastMessage';
-import type { ToastMessageType } from '../types/class';
 
 type LockerBox = { number: number; users: string[]; state: LockerState };
 
@@ -38,9 +36,6 @@ const Locker: React.FC = () => {
   const [raw, setRaw] = useState<LockerItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Toast message
-  const [createToast, setCreateToast] = useState<((toast: ToastMessageType) => void) | null>(null);
 
   // 모달 상태
   const [showAdd, setShowAdd] = useState(false);
@@ -496,22 +491,8 @@ const Locker: React.FC = () => {
           onClose={() => setShowAssignModal(false)}
           onConfirm={onConfirmAssign}
           onSearch={onSearchMembers}
-          onError={(message) => {
-            if (createToast) {
-              createToast({
-                type: 'warning',
-                message
-              });
-            }
-          }}
-          createToast={createToast || undefined}
         />
       )}
-
-      {/* Toast Message */}
-      <ToastMessage
-        onCreateToast={(createToastFn) => setCreateToast(() => createToastFn)}
-      />
 
       <style>{`
         .content-card {

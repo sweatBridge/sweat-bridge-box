@@ -10,8 +10,7 @@ const ManageClassModal = ({
   event, 
   onClose, 
   onUpdate, 
-  onDelete,
-  onError
+  onDelete 
 }: ManageClassModalProps) => {
   const [coach, setCoach] = useState('');
   const [cap, setCap] = useState(10);
@@ -42,14 +41,6 @@ const ManageClassModal = ({
   }, [event, visible]);
 
   const handleUpdate = () => {
-    // 코치 필드 검증
-    if (!coach || coach.trim() === '') {
-      if (onError) {
-        onError('코치를 입력해주세요.');
-      }
-      return;
-    }
-    
     // 현재 예약된 회원들을 파싱한 후 다시 문자열로 변환
     const parsedMembers = parseReservedMembers(event?.extendedProps?.reserved || []);
     const reservedStringList = stringifyReservedMembers(parsedMembers);

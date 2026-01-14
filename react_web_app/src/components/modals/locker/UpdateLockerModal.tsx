@@ -54,7 +54,6 @@ const UpdateLockerModal = ({
                 value={updateState}
                 onChange={(e) => setUpdateState(e.target.value as LockerUpdatableState)}
                 disabled={updating}
-                style={{ backgroundColor: 'white', background: 'white' }}
               >
                 <option value={UNUSED} disabled={currentState === UNUSED}>사용 가능</option>
                 <option value={NA} disabled={currentState === NA}>고장</option>
@@ -202,12 +201,6 @@ const UpdateLockerModal = ({
           background-color: #fafbfc;
         }
 
-        /* select를 제외한 입력 필드에만 회색 배경 적용 */
-        input.form-input:not([type="checkbox"]):not([type="radio"]),
-        textarea.form-input {
-          background-color: #fafbfc;
-        }
-
         .form-input:focus {
           outline: none;
           border-color: #3b82f6;
@@ -232,42 +225,12 @@ const UpdateLockerModal = ({
           background-color: #f3f4f6;
         }
 
-        .update-modal select.form-input {
+        select.form-input {
           cursor: pointer;
-          background-color: white !important;
-          background: white !important;
         }
 
-        .update-modal select.form-input:not(:disabled) {
-          background-color: white !important;
-          background: white !important;
-        }
-
-        .update-modal select.form-input:focus {
-          background-color: white !important;
-          background: white !important;
-        }
-
-        .update-modal select.form-input:hover {
-          background-color: white !important;
-          background: white !important;
-        }
-
-        .update-modal select.form-input:disabled {
+        select.form-input:disabled {
           cursor: not-allowed;
-          background-color: #f3f4f6 !important;
-          background: #f3f4f6 !important;
-        }
-
-        .update-modal select.form-input option {
-          background-color: white !important;
-          background: white !important;
-        }
-
-        .update-modal select.form-input option:disabled {
-          color: #9ca3af !important;
-          background-color: #f3f4f6 !important;
-          background: #f3f4f6 !important;
         }
 
         .modal-footer {

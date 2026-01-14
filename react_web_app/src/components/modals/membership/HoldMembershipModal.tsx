@@ -24,8 +24,6 @@ const HoldMembershipModal = ({
 }: HoldMembershipModalProps) => {
   const [holdStartDate, setHoldStartDate] = useState<Date | null>(null);
   const [holdEndDate, setHoldEndDate] = useState<Date | null>(null);
-  const [holdStartDateStr, setHoldStartDateStr] = useState<string>('');
-  const [holdEndDateStr, setHoldEndDateStr] = useState<string>('');
   const [reason, setReason] = useState('');
   const [assignee, setAssignee] = useState('');
 
@@ -88,8 +86,6 @@ const HoldMembershipModal = ({
     if (!loading) {
       setHoldStartDate(null);
       setHoldEndDate(null);
-      setHoldStartDateStr('');
-      setHoldEndDateStr('');
       setReason('');
       setAssignee('');
       onClose();

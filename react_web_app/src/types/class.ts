@@ -14,7 +14,6 @@ export interface SaveClassModalProps {
   visible: boolean;
   onClose: () => void;
   onSave: (result: SaveClassResult) => void;
-  onError?: (message: string) => void;
   selectInfo?: DateSelectInfo;
 }
 
@@ -24,7 +23,6 @@ export interface ManageClassModalProps {
   onClose: () => void;
   onUpdate: (result: UpdateClassResult) => void;
   onDelete: (result: DeleteClassResult) => void;
-  onError?: (message: string) => void;
 }
 
 export interface SaveClassResult {

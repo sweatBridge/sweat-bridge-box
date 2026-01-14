@@ -40,8 +40,6 @@ const EditMembershipModal = ({
 }: EditMembershipModalProps) => {
   const [newStartDate, setNewStartDate] = useState<Date | null>(currentStartDate);
   const [newEndDate, setNewEndDate] = useState<Date | null>(currentEndDate);
-  const [newStartDateStr, setNewStartDateStr] = useState<string>('');
-  const [newEndDateStr, setNewEndDateStr] = useState<string>('');
   const [newQuotaRemaining, setNewQuotaRemaining] = useState<number>(currentQuotaRemaining);
   const [newQuotaUsed, setNewQuotaUsed] = useState<number>(currentQuotaUsed);
   const [reason, setReason] = useState('');
@@ -52,8 +50,6 @@ const EditMembershipModal = ({
     if (visible) {
       setNewStartDate(currentStartDate);
       setNewEndDate(currentEndDate);
-      setNewStartDateStr('');
-      setNewEndDateStr('');
       setNewQuotaRemaining(currentQuotaRemaining);
       setNewQuotaUsed(currentQuotaUsed);
       setReason('');
@@ -110,8 +106,6 @@ const EditMembershipModal = ({
     if (!loading) {
       setNewStartDate(currentStartDate);
       setNewEndDate(currentEndDate);
-      setNewStartDateStr('');
-      setNewEndDateStr('');
       setNewQuotaRemaining(currentQuotaRemaining);
       setNewQuotaUsed(currentQuotaUsed);
       setReason('');
