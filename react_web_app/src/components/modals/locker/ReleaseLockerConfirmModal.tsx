@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 
@@ -7,7 +7,8 @@ interface ReleaseLockerConfirmModalProps {
   lockerNo: number;
   releasing: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (note: string, assignee: string) => void;
+  createToast?: (toast: { type: 'success' | 'danger' | 'warning' | 'info'; message: string }) => void;
 }
 
 const ReleaseLockerConfirmModal = ({
@@ -15,30 +16,88 @@ const ReleaseLockerConfirmModal = ({
   lockerNo,
   releasing,
   onClose,
-  onConfirm
+  onConfirm,
+  createToast
 }: ReleaseLockerConfirmModalProps) => {
+  const [note, setNote] = useState('');
+  const [assignee, setAssignee] = useState('');
+
+  const handleConfirm = () => {
+    // 검증: 두 필드 모두 필수
+    if (!note.trim()) {
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: '해지 사유를 입력해주세요.'
+        });
+      }
+      return;
+    }
+    if (!assignee.trim()) {
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: '담당자를 입력해주세요.'
+        });
+      }
+      return;
+    }
+    onConfirm(note, assignee);
+  };
+
+  const handleClose = () => {
+    setNote('');
+    setAssignee('');
+    onClose();
+  };
+
   if (!visible) return null;
 
   return (
-    <div className="modal-overlay" onClick={() => !releasing && onClose()}>
+    <div className="modal-overlay" onClick={() => !releasing && handleClose()}>
       <div className="modal-content release-confirm-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="header-title">
             <Info size={20} className="header-icon" />
             <h3>회원 해지 확인</h3>
           </div>
-          <button className="close-button" onClick={() => !releasing && onClose()}>×</button>
+          <button className="close-button" onClick={() => !releasing && handleClose()}>×</button>
         </div>
         
         <div className="modal-body">
           <div className="release-message">
             <p className="release-title">회원의 락커를 해지하시겠습니까?</p>
           </div>
+
+          <div className="form-section">
+            <div className="form-group">
+              <label>해지 사유</label>
+              <input
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="해지 사유를 입력하세요"
+                className="form-input"
+                disabled={releasing}
+              />
+            </div>
+            <div className="form-group">
+              <label>담당자</label>
+              <input
+                type="text"
+                value={assignee}
+                onChange={(e) => setAssignee(e.target.value)}
+                placeholder="담당자 이름을 입력하세요"
+                className="form-input"
+                disabled={releasing}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose} disabled={releasing}>취소</button>
-          <button className="btn btn-primary" onClick={onConfirm} disabled={releasing}>
+          <button className="btn btn-secondary" onClick={handleClose} disabled={releasing}>취소</button>
+          <button className="btn btn-primary" onClick={handleConfirm} disabled={releasing}>
             {releasing ? '해지 중…' : '해지'}
           </button>
         </div>
@@ -134,6 +193,44 @@ const ReleaseLockerConfirmModal = ({
           font-weight: 600;
           color: #111827;
           margin: 0;
+          margin-bottom: 20px;
+        }
+
+        .form-section {
+          margin-top: 20px;
+        }
+
+        .form-group {
+          margin-bottom: 16px;
+        }
+
+        .form-group label {
+          display: block;
+          margin-bottom: 8px;
+          font-weight: 500;
+          color: #374151;
+          font-size: 14px;
+        }
+
+        .form-input {
+          width: 100%;
+          padding: 10px 12px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 14px;
+          transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-input:disabled {
+          background-color: #f3f4f6;
+          color: #6b7280;
+          cursor: not-allowed;
         }
 
         .modal-footer {
