@@ -11,11 +11,12 @@ interface AddMemberModalProps {
   onClose: () => void;
   onSuccess?: (message: string) => void;
   onError?: (message: string) => void;
+  createToast?: (toast: { type: 'success' | 'danger' | 'warning' | 'info'; message: string }) => void;
 }
 
 type SearchType = 'email' | 'phone' | 'realName' | 'nickName';
 
-const AddMemberModal = ({ visible, onClose, onSuccess, onError }: AddMemberModalProps) => {
+const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: AddMemberModalProps) => {
   const [loading, setLoading] = useState(false);
   const [searchType, setSearchType] = useState<SearchType>('email');
   const [searchValue, setSearchValue] = useState('');
@@ -154,6 +155,19 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError }: AddMemberModal
     }
     if (!birthDate) {
       if (onError) onError('생년월일을 입력하세요.');
+      return;
+    }
+
+    // 생년월일이 오늘 날짜 이후인지 확인
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(birthDate);
+    selectedDate.setHours(0, 0, 0, 0);
+    
+    if (selectedDate > today) {
+      if (onError) {
+        onError('생년월일은 오늘 날짜보다 이전이어야 합니다.');
+      }
       return;
     }
 
@@ -410,9 +424,13 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError }: AddMemberModal
                   <label>전화번호 *</label>
                   <input
                     type="tel"
-                    placeholder="010-1234-5678"
+                    placeholder="01012345678"
                     value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    onChange={(e) => {
+                      // 숫자만 허용
+                      const numericValue = e.target.value.replace(/[^0-9]/g, '');
+                      handleInputChange('phone', numericValue);
+                    }}
                     className="form-input"
                   />
                 </div>
@@ -434,7 +452,25 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError }: AddMemberModal
                   <label>생년월일 *</label>
                   <DateInput
                     selected={birthDate}
-                    onChange={(date) => setBirthDate(date)}
+                    onChange={(date) => {
+                      if (date) {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const selectedDate = new Date(date);
+                        selectedDate.setHours(0, 0, 0, 0);
+                        
+                        if (selectedDate > today) {
+                          if (createToast) {
+                            createToast({
+                              type: 'danger',
+                              message: '생년월일은 오늘 날짜보다 이전이어야 합니다.'
+                            });
+                          }
+                          return;
+                        }
+                      }
+                      setBirthDate(date);
+                    }}
                     placeholder="생년월일 선택"
                     isBirthDate={true}
                   />

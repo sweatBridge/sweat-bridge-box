@@ -87,22 +87,23 @@ export class ClassService {
   }
 
   /**
-   * 월별 수업 데이터 가져오기
+   * 날짜 범위별 수업 데이터 가져오기
    */
-  static async getMonthlyClasses(box: string): Promise<ClassEvent[]> {
+  static async getMonthlyClasses(box: string, startDate: Date, endDate: Date): Promise<ClassEvent[]> {
     try {
-      const today = new Date();
-      const startDt = new Date();
-      const endDt = new Date();
+      // 시작일의 00:00:00
+      const startDt = new Date(startDate);
+      startDt.setHours(0, 0, 0, 0);
       
-      startDt.setDate(today.getDate() - 1);
-      endDt.setDate(startDt.getDate() + 30);
+      // 종료일의 23:59:59
+      const endDt = new Date(endDate);
+      endDt.setHours(23, 59, 59, 999);
       
       const path = `/box/${box}/class`;
       const q = query(
         collection(db, path),
-        where('date', '>=', startDt),
-        where('date', '<', endDt)
+        where('date', '>=', Timestamp.fromDate(startDt)),
+        where('date', '<=', Timestamp.fromDate(endDt))
       );
       
       const querySnap = await getDocs(q);

@@ -346,6 +346,30 @@ const MemberManagementModal = ({
     assignee: string
   ) => {
     try {
+      // 기존 홀딩과 겹치는지 확인
+      const currentMembership = userMemberships[selectedMembershipIndex];
+      if (currentMembership && currentMembership.holds && currentMembership.holds.length > 0) {
+        const newStart = new Date(holdStartDate);
+        newStart.setHours(0, 0, 0, 0);
+        const newEnd = new Date(holdEndDate);
+        newEnd.setHours(23, 59, 59, 999);
+        
+        for (const existingHold of currentMembership.holds) {
+          const existingStart = new Date(existingHold.startDate);
+          existingStart.setHours(0, 0, 0, 0);
+          const existingEnd = new Date(existingHold.endDate);
+          existingEnd.setHours(23, 59, 59, 999);
+          
+          // 날짜 범위가 겹치는지 확인
+          if (newStart <= existingEnd && existingStart <= newEnd) {
+            if (onError) {
+              onError('기존 홀딩과 겹칩니다.');
+            }
+            return;
+          }
+        }
+      }
+      
       setLoading(true);
       
       await MembershipService.addHold(
