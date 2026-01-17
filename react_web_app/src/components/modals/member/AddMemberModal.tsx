@@ -73,7 +73,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
       setSearchResults(results);
 
       if (results.length === 0) {
-        if (onError) onError('검색 결과가 없습니다.');
+        if (onError) onError('해당 사용자를 찾을 수 없습니다.');
       }
     } catch (error) {
       console.error('Search error:', error);
