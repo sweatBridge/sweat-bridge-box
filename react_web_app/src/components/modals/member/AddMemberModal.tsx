@@ -165,8 +165,11 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
     selectedDate.setHours(0, 0, 0, 0);
     
     if (selectedDate > today) {
-      if (onError) {
-        onError('생년월일은 오늘 날짜보다 이전이어야 합니다.');
+      if (createToast) {
+        createToast({
+          type: 'danger',
+          message: '생년월일은 오늘 날짜보다 이전이어야 합니다.'
+        });
       }
       return;
     }
