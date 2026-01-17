@@ -4,7 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 // FullCalendar CSS는 패키지에서 자동으로 로드됩니다
-import { DateSelectArg, EventClickArg, EventApi } from '@fullcalendar/core';
+import { DateSelectArg, EventClickArg, EventApi, DatesSetArg } from '@fullcalendar/core';
 import { Calendar, BarChart3, RefreshCw } from 'lucide-react';
 import { ClassEvent, SaveClassResult, UpdateClassResult, DeleteClassResult, ToastMessageType } from '../types/class';
 import { useClassManagement } from '../hooks/useClassManagement';
@@ -48,9 +48,35 @@ const ClassReservation = () => {
     });
   }, [setPageInfo]);
 
-  // 컴포넌트 마운트 시 데이터 로드
+  // 초기 뷰의 날짜 범위 계산 및 datesSet 핸들러
+  const handleDatesSet = useCallback((info: DatesSetArg) => {
+    const start = new Date(info.start);
+    const end = new Date(info.end);
+    
+    // 주간 뷰: info.end는 다음날이므로 1일 빼기
+    // 월간 뷰: info.end는 다음달 1일이므로 그대로 사용
+    if (info.view.type === 'timeGridWeek') {
+      end.setDate(end.getDate() - 1);
+    }
+    
+    loadMonthlyClasses(start, end);
+  }, [loadMonthlyClasses]);
+
+  // 컴포넌트 마운트 시 초기 날짜 범위 계산
   useEffect(() => {
-    loadMonthlyClasses();
+    // 캘린더가 마운트된 후 현재 뷰의 날짜 범위를 가져와서 로드
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      const view = calendarApi.view;
+      const start = new Date(view.activeStart);
+      const end = new Date(view.activeEnd);
+      
+      if (view.type === 'timeGridWeek') {
+        end.setDate(end.getDate() - 1);
+      }
+      
+      loadMonthlyClasses(start, end);
+    }
   }, [loadMonthlyClasses]);
 
   // 에러 처리
@@ -106,7 +132,7 @@ const ClassReservation = () => {
     },
     initialView: 'timeGridWeek',
     events: classes,
-    editable: true,
+    editable: false,
     selectable: true,
     selectMirror: true,
     dayMaxEvents: true,
@@ -114,8 +140,8 @@ const ClassReservation = () => {
     select: handleDateSelect,
     eventClick: handleEventClick,
     eventsSet: handleEvents,
+    datesSet: handleDatesSet,
     height: 'auto',
-    // datesSet: handleDatesSet,
   };
 
   // function handleDatesSet(info: any) {
@@ -334,7 +360,18 @@ const ClassReservation = () => {
 
   // 새로고침 핸들러
   const handleRefresh = useCallback(() => {
-    loadMonthlyClasses();
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      const view = calendarApi.view;
+      const start = new Date(view.activeStart);
+      const end = new Date(view.activeEnd);
+      
+      if (view.type === 'timeGridWeek') {
+        end.setDate(end.getDate() - 1);
+      }
+      
+      loadMonthlyClasses(start, end);
+    }
     if (createToast) {
       createToast({
         type: 'info',

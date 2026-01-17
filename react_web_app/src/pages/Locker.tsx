@@ -166,11 +166,21 @@ const Locker: React.FC = () => {
     const endNumber = parseInt(endNo, 10);
     try {
       const { added, skipped } = await LockerService.addLockers(BOX_NAME, startNumber, endNumber);
-      alert(`추가: ${added.length}개, 건너뜀(이미 존재): ${skipped.length}개`);
+      if (createToast) {
+        createToast({
+          type: 'success',
+          message: `추가: ${added.length}개, 건너뜀(이미 존재): ${skipped.length}개`
+        });
+      }
       setShowAdd(false);
       await loadLockers();
     } catch (err: any) {
-      alert(err?.message ?? String(err));
+      if (createToast) {
+        createToast({
+          type: 'danger',
+          message: err?.message ?? String(err)
+        });
+      }
       throw err; // re-throw to let modal handle loading state
     }
   };
@@ -185,12 +195,22 @@ const Locker: React.FC = () => {
     setDeleting(true);
     try {
       await LockerService.deleteLocker(BOX_NAME, selectedNo);
-      alert('락커가 삭제되었습니다.');
+      if (createToast) {
+        createToast({
+          type: 'success',
+          message: '락커가 삭제되었습니다.'
+        });
+      }
       setShowDeleteConfirm(false);
       setShowEdit(false);
       await loadLockers();
     } catch (err: any) {
-      alert(`삭제 실패: ${err?.message ?? String(err)}`);
+      if (createToast) {
+        createToast({
+          type: 'danger',
+          message: `삭제 실패: ${err?.message ?? String(err)}`
+        });
+      }
     } finally {
       setDeleting(false);
     }
@@ -200,7 +220,7 @@ const Locker: React.FC = () => {
     setShowReleaseConfirm(true);
   };
 
-  const onConfirmRelease = async () => {
+  const onConfirmRelease = async (note: string, assignee: string) => {
     if (selectedNo === null) return;
 
     setReleasing(true);
@@ -209,7 +229,7 @@ const Locker: React.FC = () => {
       const candidates = raw.filter(r => r.number === selectedNo);
       const currentLocker = candidates.find(c => (c.realName || '').trim().length > 0);
 
-      await LockerService.releaseLocker(BOX_NAME, selectedNo);
+      await LockerService.releaseLocker(BOX_NAME, selectedNo, note, assignee);
       
       // 회원의 locker 필드 제거 (이메일로 찾아야 함)
       // 현재는 realName만 있으므로 회원 전체를 검색해서 해당 락커를 가진 회원 찾기
@@ -240,12 +260,22 @@ const Locker: React.FC = () => {
         }
       }
       
-      alert('락커가 해지되었습니다.');
+      if (createToast) {
+        createToast({
+          type: 'success',
+          message: '락커가 해지되었습니다.'
+        });
+      }
       setShowReleaseConfirm(false);
       setShowEdit(false);
       await loadLockers();
     } catch (err: any) {
-      alert(`해지 실패: ${err?.message ?? String(err)}`);
+      if (createToast) {
+        createToast({
+          type: 'danger',
+          message: `해지 실패: ${err?.message ?? String(err)}`
+        });
+      }
     } finally {
       setReleasing(false);
     }
@@ -253,7 +283,12 @@ const Locker: React.FC = () => {
 
   const onOpenUpdateModal = () => {
     if (editName.trim()) {
-      alert('회원을 먼저 해지하시기 바랍니다.');
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: '회원을 먼저 해지하시기 바랍니다.'
+        });
+      }
       return;
     }
     setShowUpdateModal(true);
@@ -265,12 +300,22 @@ const Locker: React.FC = () => {
     setUpdating(true);
     try {
       await LockerService.updateLocker(BOX_NAME, selectedNo, state, note, assignee);
-      alert('락커가 수정되었습니다.');
+      if (createToast) {
+        createToast({
+          type: 'success',
+          message: '락커가 수정되었습니다.'
+        });
+      }
       setShowUpdateModal(false);
       setShowEdit(false);
       await loadLockers();
     } catch (err: any) {
-      alert(`수정 실패: ${err?.message ?? String(err)}`);
+      if (createToast) {
+        createToast({
+          type: 'danger',
+          message: `수정 실패: ${err?.message ?? String(err)}`
+        });
+      }
     } finally {
       setUpdating(false);
     }
@@ -285,7 +330,12 @@ const Locker: React.FC = () => {
       setHistoryData(history);
       setShowHistory(true);
     } catch (err: any) {
-      alert(`히스토리 조회 실패: ${err?.message ?? String(err)}`);
+      if (createToast) {
+        createToast({
+          type: 'danger',
+          message: `히스토리 조회 실패: ${err?.message ?? String(err)}`
+        });
+      }
     }
   };
 
@@ -299,7 +349,12 @@ const Locker: React.FC = () => {
       const results = await MemberService.searchMembersByName(BOX_NAME, searchText);
       return results;
     } catch (err: any) {
-      alert(`검색 실패: ${err?.message ?? String(err)}`);
+      if (createToast) {
+        createToast({
+          type: 'danger',
+          message: `검색 실패: ${err?.message ?? String(err)}`
+        });
+      }
       return [];
     } finally {
       setSearching(false);
@@ -351,12 +406,22 @@ const Locker: React.FC = () => {
         paymentType
       );
       
-      alert('락커가 배정되었습니다.');
+      if (createToast) {
+        createToast({
+          type: 'success',
+          message: '락커가 배정되었습니다.'
+        });
+      }
       setShowAssignModal(false);
       setShowEdit(false);
       await loadLockers();
     } catch (err: any) {
-      alert(`배정 실패: ${err?.message ?? String(err)}`);
+      if (createToast) {
+        createToast({
+          type: 'danger',
+          message: `배정 실패: ${err?.message ?? String(err)}`
+        });
+      }
     } finally {
       setAssigning(false);
     }
@@ -461,6 +526,7 @@ const Locker: React.FC = () => {
           releasing={releasing}
           onClose={() => setShowReleaseConfirm(false)}
           onConfirm={onConfirmRelease}
+          createToast={createToast ? (toast) => createToast(toast) : undefined}
         />
       )}
 
@@ -473,6 +539,7 @@ const Locker: React.FC = () => {
           updating={updating}
           onClose={() => setShowUpdateModal(false)}
           onConfirm={onConfirmUpdate}
+          createToast={createToast ? (toast) => createToast(toast) : undefined}
         />
       )}
 

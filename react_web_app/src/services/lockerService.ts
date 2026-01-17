@@ -180,7 +180,7 @@ export class LockerService {
     });
   }
 
-  static async releaseLocker(box: string, lockerNumber: number): Promise<void> {
+  static async releaseLocker(box: string, lockerNumber: number, note: string = '', assignee: string = ''): Promise<void> {
     const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
 
     return runTransaction(db, async (tx) => {
@@ -197,14 +197,17 @@ export class LockerService {
       }
 
       const existingValue = data[key];
+      // 해지 사유 앞에 "[해지] " 접두사 추가
+      const releaseNote = note.trim() ? `[해지] ${note}` : note;
+      
       const unusedEntry: Locker = {
         number: lockerNumber,
         state: LOCKER_STATE.UNUSED,
         id: '',
         realName: '',
         phone: '',
-        assignee: '',
-        note: '',
+        assignee: assignee,
+        note: releaseNote,
         startDate: '',
         endDate: '',
         createdAt: new Date().toISOString().split('T')[0],

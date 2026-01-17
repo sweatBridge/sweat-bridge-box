@@ -12,6 +12,7 @@ interface UpdateLockerModalProps {
   updating: boolean;
   onClose: () => void;
   onConfirm: (state: LockerUpdatableState, note: string, assignee: string) => void;
+  createToast?: (toast: { type: 'success' | 'danger' | 'warning' | 'info'; message: string }) => void;
 }
 
 const UpdateLockerModal = ({
@@ -20,7 +21,8 @@ const UpdateLockerModal = ({
   currentState,
   updating,
   onClose,
-  onConfirm
+  onConfirm,
+  createToast
 }: UpdateLockerModalProps) => {
   const [updateState, setUpdateState] = useState<LockerUpdatableState>(
     currentState === NA ? NA : UNUSED
@@ -31,6 +33,25 @@ const UpdateLockerModal = ({
   if (!visible) return null;
 
   const handleConfirm = () => {
+    // 검증: 사유와 담당자 필드 모두 필수
+    if (!updateNote.trim()) {
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: '사유를 입력해주세요.'
+        });
+      }
+      return;
+    }
+    if (!updateAssignee.trim()) {
+      if (createToast) {
+        createToast({
+          type: 'warning',
+          message: '담당자를 입력해주세요.'
+        });
+      }
+      return;
+    }
     onConfirm(updateState, updateNote, updateAssignee);
   };
 

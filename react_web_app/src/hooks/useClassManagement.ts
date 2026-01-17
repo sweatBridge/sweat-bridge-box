@@ -6,11 +6,11 @@ import { SaveClassResult, UpdateClassResult, ClassEvent } from '../types/class';
 export const useClassManagement = () => {
   const { state, dispatch } = useClassContext();
 
-  // 월별 수업 데이터 로드
-  const loadMonthlyClasses = useCallback(async () => {
+  // 날짜 범위별 수업 데이터 로드
+  const loadMonthlyClasses = useCallback(async (startDate: Date, endDate: Date) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const classes = await ClassService.getMonthlyClasses(state.currentBox);
+      const classes = await ClassService.getMonthlyClasses(state.currentBox, startDate, endDate);
       dispatch({ type: 'SET_CLASSES', payload: classes });
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: (error as Error).message });

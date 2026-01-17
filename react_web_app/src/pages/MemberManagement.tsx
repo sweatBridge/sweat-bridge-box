@@ -685,6 +685,7 @@ const MemberManagement = () => {
             });
           }
         }}
+        createToast={createToast ? (toast) => createToast(toast) : undefined}
       />
 
       {/* 승인 대기 목록 모달 */}

@@ -112,7 +112,7 @@ const AppHeader = () => {
                 >
                   박스 설정
                 </div>
-                <div 
+                {/* <div 
                   className="settings-menu-item"
                   onClick={() => {
                     console.log('시스템 설정');
@@ -120,7 +120,7 @@ const AppHeader = () => {
                   }}
                 >
                   시스템 설정
-                </div>
+                </div> */}
               </div>
             )}
           </div>

@@ -83,15 +83,16 @@ const LockerDetailsModal = ({
           </div>
 
           <div className="form-section">
-            <div className="form-group">
+            <div className="form-group name-input-group">
               <label>회원 이름</label>
               <input
                 type="text"
                 value={name}
                 readOnly
                 placeholder="—"
-                className="form-input"
+                className="form-input name-input"
               />
+              <button className="btn btn-primary history-btn" onClick={onHistory}>히스토리</button>
             </div>
             <div className="form-group">
               <label>회원 전화 번호</label>
@@ -123,10 +124,6 @@ const LockerDetailsModal = ({
               />
             </div>
           </div>
-        </div>
-
-        <div className="modal-footer">
-          <button className="btn btn-primary" onClick={onHistory}>히스토리</button>
         </div>
       </div>
 
@@ -271,6 +268,23 @@ const LockerDetailsModal = ({
 
         .form-group {
           margin-bottom: 20px;
+        }
+
+        .name-input-group {
+          position: relative;
+        }
+
+        .name-input {
+          padding-right: 90px;
+        }
+
+        .history-btn {
+          position: absolute;
+          right: 2px;
+          top: 29px;
+          height: 40px;
+          margin: 0;
+          padding: 9px 12px;
         }
 
         .form-group label {
