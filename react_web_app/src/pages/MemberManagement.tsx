@@ -892,9 +892,9 @@ const MemberManagement = () => {
           }
 
           .btn-info {
-            background: white;
-            border: 2px solid #3b82f6;
-            color: #3b82f6;
+            background: ${Gradients.primary};
+            border: none;
+            color: white;
             font-size: 14px;
             font-weight: 500;
             padding: 10px 20px;
@@ -904,11 +904,12 @@ const MemberManagement = () => {
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
           }
 
           .btn-info:hover {
-            background: #3b82f6;
-            color: white;
+            background: ${Gradients.primaryHover};
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
             transform: translateY(-1px);
           }
 
@@ -920,18 +921,19 @@ const MemberManagement = () => {
             position: absolute;
             top: -8px;
             right: -8px;
-            background: #ef4444;
-            color: white;
+            background: white;
+            color: ${AppColors.primary};
             font-size: 12px;
-            font-weight: 600;
-            min-width: 20px;
-            height: 20px;
+            font-weight: 700;
+            min-width: 22px;
+            height: 22px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 0 4px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            border: 2px solid ${AppColors.primary};
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
           }
 
         .search-section {
