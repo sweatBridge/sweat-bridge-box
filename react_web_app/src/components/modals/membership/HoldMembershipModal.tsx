@@ -58,7 +58,7 @@ const HoldMembershipModal = ({
     holdEnd.setHours(0, 0, 0, 0);
 
     if (holdStart > membershipEnd) {
-      alert('홀딩은 현재 이용 중인 회원권에만 설정할 수 있습니다. 홀딩 시작일은 회원권 종료일까지 선택해주세요.');
+      alert(`홀딩 시작일은 회원권 종료일(${formatDateToString(membershipEnd)}) 이내로 설정해주세요.`);
       return;
     }
 
@@ -72,7 +72,7 @@ const HoldMembershipModal = ({
     extendedEndDate.setDate(extendedEndDate.getDate() + holdDays);
     
     if (holdEnd >= extendedEndDate) {
-      alert(`홀딩 종료일은 회원권 종료일(${formatDateToString(membershipEnd)})에 홀딩일 수(${holdDays}일)를 더한 날짜보다 앞이어야 합니다.`);
+      alert(`홀딩 종료일은 ${formatDateToString(extendedEndDate)} 이전으로 설정해주세요.`);
       return;
     }
 
