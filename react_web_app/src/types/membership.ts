@@ -91,7 +91,7 @@ export interface MembershipState {
 export interface MemberManagementModalProps {
   visible: boolean;
   member: any; // Member 타입 사용
-  onClose: () => void;
+  onClose: (hasDataChanged?: boolean) => void;
   onSuccess?: (message: string) => void;
   onError?: (message: string) => void;
   onMemoUpdate?: (email: string, memo: string) => void;
