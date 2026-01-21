@@ -851,17 +851,15 @@ const MemberManagementModal = ({
                             <span className="hold-value">{hold.assignee}</span>
                           </div>
                         </div>
-                        {!isFuture && (
-                          <div className="hold-history-actions">
-                            <button
-                              className="btn-release-hold"
-                              onClick={handleReleaseHold}
-                              disabled={loading}
-                            >
-                              해제
-                            </button>
-                          </div>
-                        )}
+                        <div className="hold-history-actions">
+                          <button
+                            className="btn-release-hold"
+                            onClick={handleReleaseHold}
+                            disabled={loading}
+                          >
+                            해제
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
