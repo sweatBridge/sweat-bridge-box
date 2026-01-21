@@ -189,7 +189,7 @@ export class MembershipService {
   }
 
   /**
-   * 회원권이 현재 홀딩 중인지 확인
+   * 회원권이 현재 홀딩 중인지 확인 (오늘 날짜 기준)
    */
   static isHold(membership: any): boolean {
     if (!membership.holds || membership.holds.length === 0) {
@@ -197,26 +197,51 @@ export class MembershipService {
     }
 
     const now = new Date();
-    
+    now.setHours(0, 0, 0, 0);
+
     // 가장 최신 홀딩 찾기 (마지막 요소)
     const latestHold = membership.holds[membership.holds.length - 1];
-    
+
     const holdStartDate = new Date(latestHold.startDate);
+    holdStartDate.setHours(0, 0, 0, 0);
     const holdEndDate = new Date(latestHold.endDate);
-    
+    holdEndDate.setHours(0, 0, 0, 0);
+
     // 오늘이 홀딩 기간 내에 있는지 확인
     return now >= holdStartDate && now <= holdEndDate;
   }
 
   /**
+   * 회원권이 미래에 홀딩 예정인지 확인 (시작일이 오늘보다 미래)
+   */
+  static isFutureHold(membership: any): boolean {
+    if (!membership.holds || membership.holds.length === 0) {
+      return false;
+    }
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    // 가장 최신 홀딩 찾기 (마지막 요소)
+    const latestHold = membership.holds[membership.holds.length - 1];
+
+    const holdStartDate = new Date(latestHold.startDate);
+    holdStartDate.setHours(0, 0, 0, 0);
+
+    // 홀딩 시작일이 오늘보다 미래인지 확인
+    return holdStartDate > now;
+  }
+
+  /**
    * 회원의 회원권 상태 뱃지 정보 반환
+   * 홀딩 중이면 '홀딩', 홀딩 예정이면 기존 타입 유지
    */
   static getMembershipStatusBadges(member: any): Array<{ label: string; colorClass: string }> {
     const membershipType = member.membershipInfo?.type || '없음';
-    
+
     // 타입에 따라 색상 클래스 결정
     let colorClass: string;
-    
+
     if (membershipType === '기간권') {
       colorClass = 'primary';
     } else if (membershipType === '횟수권') {
@@ -229,7 +254,7 @@ export class MembershipService {
       // 기타 알 수 없는 타입
       colorClass = 'primary';
     }
-    
+
     return [{ label: membershipType, colorClass }];
   }
 

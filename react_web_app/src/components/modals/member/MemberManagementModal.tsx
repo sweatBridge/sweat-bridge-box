@@ -471,7 +471,17 @@ const MemberManagementModal = ({
     if (!MembershipService.isHold(membership)) {
       return null;
     }
-    
+
+    // 가장 최신 홀딩 반환
+    return membership.holds[membership.holds.length - 1];
+  };
+
+  // 미래 홀딩 찾기
+  const getFutureHold = (membership: any) => {
+    if (!MembershipService.isFutureHold(membership)) {
+      return null;
+    }
+
     // 가장 최신 홀딩 반환
     return membership.holds[membership.holds.length - 1];
   };
@@ -763,10 +773,10 @@ const MemberManagementModal = ({
                               {displayInfo.type === "countPass" ? "횟수권" : "기간권"}
                             </span>
                           </div>
-                          <button 
+                          <button
                             className="btn btn-hold"
                             onClick={handleOpenHoldModal}
-                            disabled={loading || !!getCurrentHold(currentMemberships[0])}
+                            disabled={loading || !!getCurrentHold(currentMemberships[0]) || !!getFutureHold(currentMemberships[0])}
                           >
                             <Pause size={16} />
                             홀딩
@@ -811,40 +821,47 @@ const MemberManagementModal = ({
                   })()
                 )}
 
-                {/* 현재 홀딩 중인 경우에만 표시 */}
+                {/* 현재 홀딩 중이거나 미래 홀딩이 있는 경우 표시 */}
                 {currentMemberships.length > 0 && (() => {
                   const currentHold = getCurrentHold(currentMemberships[0]);
-                  if (!currentHold) return null;
-                  
+                  const futureHold = getFutureHold(currentMemberships[0]);
+                  const hold = currentHold || futureHold;
+
+                  if (!hold) return null;
+
+                  const isFuture = !!futureHold;
+
                   return (
                     <div className="hold-history-section">
-                      <h5 className="subsection-title">홀딩</h5>
+                      <h5 className="subsection-title">{isFuture ? '홀딩 예정' : '홀딩'}</h5>
                       <div className="hold-history-item">
                         <div className="hold-history-details">
                           <div className="hold-detail-row">
                             <span className="hold-label">기간:</span>
                             <span className="hold-value">
-                              {formatDate(currentHold.startDate)} ~ {formatDate(currentHold.endDate)} ({currentHold.days}일)
+                              {formatDate(hold.startDate)} ~ {formatDate(hold.endDate)} ({hold.days}일)
                             </span>
                           </div>
                           <div className="hold-detail-row">
                             <span className="hold-label">사유:</span>
-                            <span className="hold-value">{currentHold.reason}</span>
+                            <span className="hold-value">{hold.reason}</span>
                           </div>
                           <div className="hold-detail-row">
                             <span className="hold-label">담당자:</span>
-                            <span className="hold-value">{currentHold.assignee}</span>
+                            <span className="hold-value">{hold.assignee}</span>
                           </div>
                         </div>
-                        <div className="hold-history-actions">
-                          <button 
-                            className="btn-release-hold"
-                            onClick={handleReleaseHold}
-                            disabled={loading}
-                          >
-                            해제
-                          </button>
-                        </div>
+                        {!isFuture && (
+                          <div className="hold-history-actions">
+                            <button
+                              className="btn-release-hold"
+                              onClick={handleReleaseHold}
+                              disabled={loading}
+                            >
+                              해제
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
