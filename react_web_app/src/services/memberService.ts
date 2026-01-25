@@ -656,21 +656,26 @@ export class MemberService {
     }
 
     const now = new Date();
-    
+    now.setHours(0, 0, 0, 0);
+
     // holds 배열이 있는 경우
     if (Array.isArray(membership.holds)) {
       return membership.holds.some((hold) => {
-        const holdStartDate = hold.startDate instanceof Date 
-          ? hold.startDate 
+        const holdStartDate = hold.startDate instanceof Date
+          ? hold.startDate
           : new Date(hold.startDate);
+        holdStartDate.setHours(0, 0, 0, 0);
+
         const holdEndDate = hold.endDate instanceof Date
           ? hold.endDate
           : new Date(hold.endDate);
-        
+        holdEndDate.setHours(0, 0, 0, 0);
+
+        // 오늘이 홀딩 기간 내에 있는지 확인 (미래 홀딩은 제외)
         return now >= holdStartDate && now <= holdEndDate;
       });
     }
-    
+
     return false;
   }
 

@@ -189,7 +189,7 @@ export class MembershipService {
   }
 
   /**
-   * 회원권이 현재 홀딩 중인지 확인
+   * 회원권이 현재 홀딩 중인지 확인 (오늘 날짜 기준)
    */
   static isHold(membership: any): boolean {
     if (!membership.holds || membership.holds.length === 0) {
@@ -197,26 +197,51 @@ export class MembershipService {
     }
 
     const now = new Date();
-    
+    now.setHours(0, 0, 0, 0);
+
     // 가장 최신 홀딩 찾기 (마지막 요소)
     const latestHold = membership.holds[membership.holds.length - 1];
-    
+
     const holdStartDate = new Date(latestHold.startDate);
+    holdStartDate.setHours(0, 0, 0, 0);
     const holdEndDate = new Date(latestHold.endDate);
-    
+    holdEndDate.setHours(0, 0, 0, 0);
+
     // 오늘이 홀딩 기간 내에 있는지 확인
     return now >= holdStartDate && now <= holdEndDate;
   }
 
   /**
+   * 회원권이 미래에 홀딩 예정인지 확인 (시작일이 오늘보다 미래)
+   */
+  static isFutureHold(membership: any): boolean {
+    if (!membership.holds || membership.holds.length === 0) {
+      return false;
+    }
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    // 가장 최신 홀딩 찾기 (마지막 요소)
+    const latestHold = membership.holds[membership.holds.length - 1];
+
+    const holdStartDate = new Date(latestHold.startDate);
+    holdStartDate.setHours(0, 0, 0, 0);
+
+    // 홀딩 시작일이 오늘보다 미래인지 확인
+    return holdStartDate > now;
+  }
+
+  /**
    * 회원의 회원권 상태 뱃지 정보 반환
+   * 홀딩 중이면 '홀딩', 홀딩 예정이면 기존 타입 유지
    */
   static getMembershipStatusBadges(member: any): Array<{ label: string; colorClass: string }> {
     const membershipType = member.membershipInfo?.type || '없음';
-    
+
     // 타입에 따라 색상 클래스 결정
     let colorClass: string;
-    
+
     if (membershipType === '기간권') {
       colorClass = 'primary';
     } else if (membershipType === '횟수권') {
@@ -229,7 +254,7 @@ export class MembershipService {
       // 기타 알 수 없는 타입
       colorClass = 'primary';
     }
-    
+
     return [{ label: membershipType, colorClass }];
   }
 
@@ -580,7 +605,7 @@ export class MembershipService {
   }
 
   /**
-   * 회원권 홀딩 해제
+   * 회원권 홀딩 해제 (현재 홀딩 및 미래 홀딩 모두 지원)
    */
   static async releaseHold(
     email: string,
@@ -594,13 +619,13 @@ export class MembershipService {
       }
 
       const memberships = existingMemberships || await this.getUserMemberships(email);
-      
+
       if (membershipIndex < 0 || membershipIndex >= memberships.length) {
         throw new Error('유효하지 않은 회원권 인덱스입니다.');
       }
 
       const membership = memberships[membershipIndex] as any;
-      
+
       // 새 구조만 지원
       if (!membership.period) {
         throw new Error('레거시 회원권은 홀딩 해제를 지원하지 않습니다.');
@@ -610,63 +635,126 @@ export class MembershipService {
         throw new Error('홀딩 정보가 없습니다.');
       }
 
-      // 현재 활성화된 홀딩 찾기
       const now = new Date();
-      const currentHoldIndex = membership.holds.findIndex((hold: any) => {
-        const holdStartDate = new Date(hold.startDate);
-        const holdEndDate = new Date(hold.endDate);
-        return now >= holdStartDate && now <= holdEndDate;
-      });
+      now.setHours(0, 0, 0, 0);
 
-      if (currentHoldIndex === -1) {
-        throw new Error('현재 활성화된 홀딩이 없습니다.');
+      // 가장 최신 홀딩 가져오기 (현재 홀딩 또는 미래 홀딩)
+      const latestHold = membership.holds[membership.holds.length - 1];
+      const holdStartDate = new Date(latestHold.startDate);
+      holdStartDate.setHours(0, 0, 0, 0);
+      const holdEndDate = new Date(latestHold.endDate);
+      holdEndDate.setHours(0, 0, 0, 0);
+
+      // 미래 홀딩인지 확인
+      const isFutureHold = holdStartDate > now;
+
+      if (isFutureHold) {
+        // 미래 홀딩 해제: 홀딩 정보를 완전히 삭제하고 종료일 원상복구
+        const originalHoldDays = latestHold.days;
+
+        // 홀딩을 배열에서 제거
+        membership.holds.pop();
+
+        // 회원권 만료일 원상복구 (홀딩일수만큼 빼기)
+        const currentEndDate = new Date(membership.period.endDate);
+        const restoredEndDate = new Date(currentEndDate.getTime() - originalHoldDays * 24 * 60 * 60 * 1000);
+        membership.period.endDate = restoredEndDate;
+
+        // 다음 회원권들도 원상복구
+        for (let i = membershipIndex + 1; i < memberships.length; i++) {
+          const nextMembership = memberships[i] as any;
+
+          if (nextMembership.period) {
+            const nextStartDate = new Date(nextMembership.period.startDate);
+            const nextEndDate = new Date(nextMembership.period.endDate);
+
+            // 앞 회원권의 복구된 만료일
+            const prevEndDate = new Date((memberships[i - 1] as any).period.endDate);
+            const prevOriginalEndDate = new Date(prevEndDate.getTime() - originalHoldDays * 24 * 60 * 60 * 1000);
+
+            // 겹치는지 확인 (복구 전 상태에서 겹쳤는지)
+            if (prevEndDate >= nextStartDate) {
+              // 홀딩일수만큼 다시 빼기
+              nextMembership.period.endDate = new Date(nextEndDate.getTime() - originalHoldDays * 24 * 60 * 60 * 1000);
+              nextMembership.period.startDate = new Date(prevOriginalEndDate.getTime() + 24 * 60 * 60 * 1000);
+            }
+          }
+        }
+
+        // 홀딩 해제 조정 기록 추가
+        const holdReleaseAdjustment = {
+          type: 'hold_release',
+          hold: {
+            startDate: latestHold.startDate,
+            endDate: latestHold.endDate,
+            reason: latestHold.reason
+          },
+          reason: `[미래 홀딩 해제] ${latestHold.reason}`,
+          assignee: latestHold.assignee,
+          at: new Date()
+        };
+
+        membership.adjustments = membership.adjustments || [];
+        membership.adjustments.push(holdReleaseAdjustment);
+      } else {
+        // 현재 홀딩 해제: 종료일을 어제로 변경
+        const currentHoldIndex = membership.holds.findIndex((hold: any) => {
+          const start = new Date(hold.startDate);
+          start.setHours(0, 0, 0, 0);
+          const end = new Date(hold.endDate);
+          end.setHours(0, 0, 0, 0);
+          return now >= start && now <= end;
+        });
+
+        if (currentHoldIndex === -1) {
+          throw new Error('현재 활성화된 홀딩이 없습니다.');
+        }
+
+        const currentHold = membership.holds[currentHoldIndex];
+        const originalHoldDays = currentHold.days;
+
+        // 홀딩 종료일을 어제로 변경
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        // 새로운 홀딩 일수 계산
+        const holdStart = new Date(currentHold.startDate);
+        const newHoldDays = getDaysBetween(holdStart, yesterday);
+
+        if (newHoldDays < 0) {
+          throw new Error('홀딩 시작 전에는 해제할 수 없습니다.');
+        }
+
+        // 홀딩 정보 업데이트
+        currentHold.endDate = yesterday;
+        currentHold.days = newHoldDays;
+        currentHold.released = true;
+        currentHold.releasedAt = new Date();
+
+        // 원래 홀딩 일수와 실제 홀딩 일수의 차이 계산
+        const daysDifference = originalHoldDays - newHoldDays;
+
+        // 회원권 만료일 조정 (차이만큼 빼기)
+        const currentEndDate = new Date(membership.period.endDate);
+        const newEndDate = new Date(currentEndDate.getTime() - daysDifference * 24 * 60 * 60 * 1000);
+        membership.period.endDate = newEndDate;
+
+        // 홀딩 해제 조정 기록 추가
+        const holdReleaseAdjustment = {
+          type: 'hold_release',
+          hold: {
+            startDate: holdStart,
+            endDate: yesterday,
+            reason: currentHold.reason
+          },
+          reason: `[홀딩 해제] ${currentHold.reason}`,
+          assignee: currentHold.assignee,
+          at: new Date()
+        };
+
+        membership.adjustments = membership.adjustments || [];
+        membership.adjustments.push(holdReleaseAdjustment);
       }
-
-      const currentHold = membership.holds[currentHoldIndex];
-      const originalHoldDays = currentHold.days;
-
-      // 홀딩 종료일을 어제(오늘 하루 전)로 변경
-      const yesterday = new Date(now);
-      yesterday.setHours(0, 0, 0, 0);
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      // 새로운 홀딩 일수 계산
-      const holdStartDate = new Date(currentHold.startDate);
-      const newHoldDays = getDaysBetween(holdStartDate, yesterday);
-      // 홀딩이 시작되지 않았거나 음수인 경우 처리
-      if (newHoldDays < 0) {
-        throw new Error('홀딩 시작 전에는 해제할 수 없습니다.');
-      }
-
-      // 홀딩 정보 업데이트
-      currentHold.endDate = yesterday;
-      currentHold.days = newHoldDays;
-      currentHold.released = true;
-      currentHold.releasedAt = now;
-
-      // 원래 홀딩 일수와 실제 홀딩 일수의 차이 계산
-      const daysDifference = originalHoldDays - newHoldDays;
-
-      // 회원권 만료일 조정 (차이만큼 빼기)
-      const currentEndDate = new Date(membership.period.endDate);
-      const newEndDate = new Date(currentEndDate.getTime() - daysDifference * 24 * 60 * 60 * 1000);
-      membership.period.endDate = newEndDate;
-
-      // 홀딩 해제 조정 기록 추가
-      const holdReleaseAdjustment = {
-        type: 'hold_release',
-        hold: {
-          startDate: holdStartDate,
-          endDate: yesterday,
-          reason: currentHold.reason
-        },
-        reason: `[홀딩 해제] ${currentHold.reason}`,
-        assignee: currentHold.assignee,
-        at: now
-      };
-
-      membership.adjustments = membership.adjustments || [];
-      membership.adjustments.push(holdReleaseAdjustment);
 
       // 업데이트된 시간 기록
       membership.updatedAt = new Date();

@@ -44,6 +44,7 @@ const MemberManagementModal = ({
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
   const [adjustmentHistory, setAdjustmentHistory] = useState<{ plan: string; adjustments: any[] } | null>(null);
   const [activeTab, setActiveTab] = useState<'membership' | 'locker'>('membership');
+  const [hasDataChanged, setHasDataChanged] = useState(false);
 
   // 회원권 추가 폼 상태
   const [formData, setFormData] = useState<AddMembershipData>({
@@ -90,6 +91,7 @@ const MemberManagementModal = ({
       setMemo(memberMemo);
       // 메모가 비어있으면 편집 모드, 있으면 읽기 전용 모드
       setIsMemoEditing(!memberMemo);
+      setHasDataChanged(false); // 변경 추적 초기화
       loadData();
     } else if (!visible) {
       // 모달이 닫힐 때 메모 초기화
@@ -208,7 +210,9 @@ const MemberManagementModal = ({
     try {
       setLoading(true);
       await MembershipService.addUserMembership(member.email, newMembership, member.realName);
-      
+
+      setHasDataChanged(true); // 데이터 변경 플래그 설정
+
       if (onSuccess) {
         onSuccess('회원권이 성공적으로 추가되었습니다.');
       }
@@ -224,7 +228,7 @@ const MemberManagementModal = ({
         assignee: '',
         startDate: new Date()
       });
-      
+
       await loadData();
     } catch (error: any) {
       if (onError) {
@@ -253,15 +257,17 @@ const MemberManagementModal = ({
     try {
       setLoading(true);
       await MembershipService.removeUserMembership(
-        member.email, 
+        member.email,
         membershipToDelete.index,
         userMemberships
       );
-      
+
+      setHasDataChanged(true); // 데이터 변경 플래그 설정
+
       if (onSuccess) {
         onSuccess('회원권이 성공적으로 삭제되었습니다.');
       }
-      
+
       setDeleteModalVisible(false);
       setMembershipToDelete(null);
       await loadData();
@@ -292,18 +298,20 @@ const MemberManagementModal = ({
     try {
       setLoading(true);
       await MembershipService.refundUserMembership(
-        member.email, 
-        membershipToRefund.index, 
-        refundAmount, 
+        member.email,
+        membershipToRefund.index,
+        refundAmount,
         reason,
         assignee,
         userMemberships
       );
-      
+
+      setHasDataChanged(true); // 데이터 변경 플래그 설정
+
       if (onSuccess) {
         onSuccess('회원권이 성공적으로 환불되었습니다.');
       }
-      
+
       setRefundModalVisible(false);
       setMembershipToRefund(null);
       await loadData();
@@ -371,7 +379,7 @@ const MemberManagementModal = ({
       }
       
       setLoading(true);
-      
+
       await MembershipService.addHold(
         member.email,
         selectedMembershipIndex,
@@ -381,11 +389,13 @@ const MemberManagementModal = ({
         assignee,
         userMemberships
       );
-      
+
+      setHasDataChanged(true); // 데이터 변경 플래그 설정
+
       if (onSuccess) {
         onSuccess('홀딩이 성공적으로 적용되었습니다.');
       }
-      
+
       setHoldModalVisible(false);
       await loadData();
     } catch (error: any) {
@@ -418,11 +428,13 @@ const MemberManagementModal = ({
       }
 
       await MembershipService.releaseHold(member.email, index, userMemberships);
-      
+
+      setHasDataChanged(true); // 데이터 변경 플래그 설정
+
       if (onSuccess) {
         onSuccess('홀딩이 성공적으로 해제되었습니다.');
       }
-      
+
       await loadData();
     } catch (error: any) {
       if (onError) {
@@ -471,7 +483,17 @@ const MemberManagementModal = ({
     if (!MembershipService.isHold(membership)) {
       return null;
     }
-    
+
+    // 가장 최신 홀딩 반환
+    return membership.holds[membership.holds.length - 1];
+  };
+
+  // 미래 홀딩 찾기
+  const getFutureHold = (membership: any) => {
+    if (!MembershipService.isFutureHold(membership)) {
+      return null;
+    }
+
     // 가장 최신 홀딩 반환
     return membership.holds[membership.holds.length - 1];
   };
@@ -581,11 +603,13 @@ const MemberManagementModal = ({
         assignee,
         userMemberships
       );
-      
+
+      setHasDataChanged(true); // 데이터 변경 플래그 설정
+
       if (onSuccess) {
         onSuccess('회원권이 성공적으로 수정되었습니다.');
       }
-      
+
       setEditModalVisible(false);
       setMembershipToEdit(null);
       await loadData();
@@ -612,17 +636,21 @@ const MemberManagementModal = ({
     }
   }, [userMemberships]);
 
+  const handleClose = () => {
+    onClose(hasDataChanged);
+  };
+
   if (!visible || !member) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-content member-management-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="header-title">
             <User size={20} className="header-icon" />
             <h3>{member.realName} 회원 관리</h3>
           </div>
-          <button className="close-button" onClick={onClose}>×</button>
+          <button className="close-button" onClick={handleClose}>×</button>
         </div>
 
         <div className="modal-body">
@@ -763,10 +791,10 @@ const MemberManagementModal = ({
                               {displayInfo.type === "countPass" ? "횟수권" : "기간권"}
                             </span>
                           </div>
-                          <button 
+                          <button
                             className="btn btn-hold"
                             onClick={handleOpenHoldModal}
-                            disabled={loading || !!getCurrentHold(currentMemberships[0])}
+                            disabled={loading || !!getCurrentHold(currentMemberships[0]) || !!getFutureHold(currentMemberships[0])}
                           >
                             <Pause size={16} />
                             홀딩
@@ -811,33 +839,38 @@ const MemberManagementModal = ({
                   })()
                 )}
 
-                {/* 현재 홀딩 중인 경우에만 표시 */}
+                {/* 현재 홀딩 중이거나 미래 홀딩이 있는 경우 표시 */}
                 {currentMemberships.length > 0 && (() => {
                   const currentHold = getCurrentHold(currentMemberships[0]);
-                  if (!currentHold) return null;
-                  
+                  const futureHold = getFutureHold(currentMemberships[0]);
+                  const hold = currentHold || futureHold;
+
+                  if (!hold) return null;
+
+                  const isFuture = !!futureHold;
+
                   return (
                     <div className="hold-history-section">
-                      <h5 className="subsection-title">홀딩</h5>
+                      <h5 className="subsection-title">{isFuture ? '홀딩 예정' : '홀딩'}</h5>
                       <div className="hold-history-item">
                         <div className="hold-history-details">
                           <div className="hold-detail-row">
                             <span className="hold-label">기간:</span>
                             <span className="hold-value">
-                              {formatDate(currentHold.startDate)} ~ {formatDate(currentHold.endDate)} ({currentHold.days}일)
+                              {formatDate(hold.startDate)} ~ {formatDate(hold.endDate)} ({hold.days}일)
                             </span>
                           </div>
                           <div className="hold-detail-row">
                             <span className="hold-label">사유:</span>
-                            <span className="hold-value">{currentHold.reason}</span>
+                            <span className="hold-value">{hold.reason}</span>
                           </div>
                           <div className="hold-detail-row">
                             <span className="hold-label">담당자:</span>
-                            <span className="hold-value">{currentHold.assignee}</span>
+                            <span className="hold-value">{hold.assignee}</span>
                           </div>
                         </div>
                         <div className="hold-history-actions">
-                          <button 
+                          <button
                             className="btn-release-hold"
                             onClick={handleReleaseHold}
                             disabled={loading}
@@ -1136,7 +1169,7 @@ const MemberManagementModal = ({
         </div>
         
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>
+          <button className="btn btn-secondary" onClick={handleClose}>
             닫기
           </button>
         </div>
