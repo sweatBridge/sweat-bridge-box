@@ -1,45 +1,69 @@
 import React, { useState, useEffect } from 'react';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
-import { Calendar, Clock, User, Users, Settings, UserCheck } from 'lucide-react';
+import { Calendar, Clock, User, Users, Settings, UserPlus, Eye } from 'lucide-react';
 import { ManageClassModalProps, UpdateClassResult, DeleteClassResult } from '../../../types/class';
 import { formatDateTime } from '../../../utils/classCalendarUtils';
+import { useAuth } from '../../../contexts/AuthContext';
+import AddReserveMemberModal from './AddReserveMemberModal';
+import ReservedMembersModal from './ReservedMembersModal';
 
-const ManageClassModal = ({ 
-  visible, 
-  event, 
-  onClose, 
-  onUpdate, 
+const ManageClassModal = ({
+  visible,
+  event,
+  onClose,
+  onUpdate,
   onDelete,
   onError
 }: ManageClassModalProps) => {
+  const { user } = useAuth();
   const [coach, setCoach] = useState('');
   const [cap, setCap] = useState(10);
-  const [showReservedMembers, setShowReservedMembers] = useState(false);
-
-  // 예약된 회원 데이터 파싱 함수
-  const parseReservedMembers = (reservedList: string[]) => {
-    return reservedList.map(memberString => {
-      const [email, realName, nickName] = memberString.split(',');
-      return {
-        email: email?.trim() || '',
-        realName: realName?.trim() || '',
-        nickName: nickName?.trim() || ''
-      };
-    });
-  };
-
-  // 파싱된 회원 데이터를 다시 문자열로 변환하는 함수
-  const stringifyReservedMembers = (parsedMembers: { email: string; realName: string; nickName: string }[]) => {
-    return parsedMembers.map(member => `${member.email},${member.realName},${member.nickName}`);
-  };
+  const [reservedMembersModalVisible, setReservedMembersModalVisible] = useState(false);
+  const [addMemberModalVisible, setAddMemberModalVisible] = useState(false);
+  const [reservedList, setReservedList] = useState<string[]>([]);
 
   useEffect(() => {
     if (event && visible) {
       setCoach(event.extendedProps.coach || '');
       setCap(event.extendedProps.cap ?? 10);
+      setReservedList(event.extendedProps.reserved || []);
     }
   }, [event, visible]);
+
+  const handleAddMember = (member: { email: string; realName: string; nickName: string; phone: string }) => {
+    // 회원 추가: "email,realName,nickName" 형식
+    const memberString = `${member.email},${member.realName},${member.nickName}`;
+    const updatedReserved = [...reservedList, memberString];
+    setReservedList(updatedReserved);
+    setAddMemberModalVisible(false);
+
+    // 즉시 업데이트
+    const result: UpdateClassResult = {
+      coach,
+      cap,
+      reserved: updatedReserved
+    };
+    onUpdate(result);
+  };
+
+  const handleDeleteMember = (email: string) => {
+    if (!window.confirm('이 회원을 예약 목록에서 삭제하시겠습니까?')) {
+      return;
+    }
+
+    // reserved 배열에서 해당 이메일을 포함하는 항목 제거
+    const updatedReserved = reservedList.filter(memberString => !memberString.includes(email));
+    setReservedList(updatedReserved);
+
+    // 즉시 업데이트
+    const result: UpdateClassResult = {
+      coach,
+      cap,
+      reserved: updatedReserved
+    };
+    onUpdate(result);
+  };
 
   const handleUpdate = () => {
     // 코치 필드 검증
@@ -49,15 +73,11 @@ const ManageClassModal = ({
       }
       return;
     }
-    
-    // 현재 예약된 회원들을 파싱한 후 다시 문자열로 변환
-    const parsedMembers = parseReservedMembers(event?.extendedProps?.reserved || []);
-    const reservedStringList = stringifyReservedMembers(parsedMembers);
-    
+
     const result: UpdateClassResult = {
       coach,
       cap,
-      reserved: reservedStringList
+      reserved: reservedList
     };
     onUpdate(result);
   };
@@ -72,7 +92,6 @@ const ManageClassModal = ({
   };
 
   const handleClose = () => {
-    setShowReservedMembers(false);
     onClose();
   };
 
@@ -140,39 +159,24 @@ const ManageClassModal = ({
 
           <div className="reserved-section">
             <div className="reserved-header">
-              <span>예약된 회원 ({event.extendedProps.reserved.length}명)</span>
-              <button 
-                className="btn btn-outline"
-                onClick={() => setShowReservedMembers(!showReservedMembers)}
+              <div className="reserved-info">
+                <span>예약된 회원 ({reservedList.length}명)</span>
+                <button
+                  className="btn btn-view"
+                  onClick={() => setReservedMembersModalVisible(true)}
+                >
+                  <Eye size={16} />
+                  보기
+                </button>
+              </div>
+              <button
+                className="btn btn-add"
+                onClick={() => setAddMemberModalVisible(true)}
               >
-                {showReservedMembers ? '숨기기' : '보기'}
+                <UserPlus size={16} />
+                직접 추가하기
               </button>
             </div>
-            
-            {showReservedMembers && (
-              <div className="reserved-list">
-                {event.extendedProps.reserved.length > 0 ? (
-                  <div className="members-grid">
-                    {parseReservedMembers(event.extendedProps.reserved).map((member, index) => (
-                      <div key={index} className="reserved-member-card">
-                        <div className="member-avatar">
-                          <UserCheck size={16} />
-                        </div>
-                        <div className="member-info">
-                          <div className="member-name">{member.realName}</div>
-                          <div className="member-nickname">@{member.nickName}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="no-members">
-                    <User size={24} className="no-members-icon" />
-                    <p>예약된 회원이 없습니다.</p>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
         
@@ -190,6 +194,23 @@ const ManageClassModal = ({
           </div>
         </div>
       </div>
+
+      {/* 회원 추가 모달 */}
+      <AddReserveMemberModal
+        visible={addMemberModalVisible}
+        onClose={() => setAddMemberModalVisible(false)}
+        onAddMember={handleAddMember}
+        reservedMembers={reservedList}
+        boxName={user?.boxName || ''}
+      />
+
+      {/* 예약 인원 모달 */}
+      <ReservedMembersModal
+        visible={reservedMembersModalVisible}
+        onClose={() => setReservedMembersModalVisible(false)}
+        reservedMembers={reservedList}
+        onDeleteMember={handleDeleteMember}
+      />
 
       <style>{`
         .modal-overlay {
@@ -380,93 +401,21 @@ const ManageClassModal = ({
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 12px;
-        }
-
-        .members-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 12px;
-          margin-top: 12px;
-        }
-
-        .reserved-member-card {
-          display: flex;
-          align-items: center;
-          padding: 12px;
+          padding: 16px;
           background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-          border: 1px solid #e2e8f0;
+          border: 1px solid #e5e7eb;
           border-radius: 8px;
-          transition: all 0.2s ease;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
-        .reserved-member-card:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          border-color: #cbd5e1;
-        }
-
-        .member-avatar {
+        .reserved-info {
           display: flex;
           align-items: center;
-          justify-content: center;
-          width: 32px;
-          height: 32px;
-          background: ${Gradients.primary};
-          color: white;
-          border-radius: 50%;
-          margin-right: 12px;
-          flex-shrink: 0;
+          gap: 12px;
         }
 
-        .member-info {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .member-name {
-          font-weight: 600;
-          color: #1e293b;
-          font-size: 14px;
-          margin-bottom: 2px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .member-nickname {
-          font-size: 12px;
-          color: #64748b;
+        .reserved-info > span {
           font-weight: 500;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .no-members {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 30px 20px;
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-          border: 2px dashed #cbd5e1;
-          border-radius: 12px;
-          margin: 12px 0 0 0;
-        }
-
-        .no-members-icon {
-          color: #94a3b8;
-          margin-bottom: 8px;
-        }
-
-        .no-members p {
-          color: #64748b;
-          font-style: italic;
-          text-align: center;
-          margin: 0;
-          font-size: 14px;
+          color: #374151;
         }
 
         .modal-footer {
@@ -525,17 +474,38 @@ const ManageClassModal = ({
           border-color: #b91c1c;
         }
 
-        .btn-outline {
+        .btn-view {
           background-color: transparent;
           border-color: #d1d5db;
           color: #374151;
-          font-size: 12px;
-          padding: 4px 8px;
+          font-size: 13px;
+          padding: 6px 12px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
         }
 
-        .btn-outline:hover {
+        .btn-view:hover {
           background-color: #f3f4f6;
           border-color: #9ca3af;
+        }
+
+        .btn-add {
+          background-color: #3b82f6;
+          border-color: #3b82f6;
+          color: white;
+          font-size: 14px;
+          padding: 8px 16px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .btn-add:hover {
+          background-color: ${AppColors.primary};
+          border-color: ${AppColors.primary};
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
       `}</style>
     </div>
