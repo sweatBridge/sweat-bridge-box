@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pause, Calendar, User, FileText } from 'lucide-react';
+import { Square, Calendar, User, FileText } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
 import { formatDateToString } from '../../../utils/dateUtils';
@@ -104,7 +104,7 @@ const HoldMembershipModal = ({
       <div className="modal-content hold-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="header-title">
-            <Pause size={20} className="header-icon" />
+            <Square size={20} className="header-icon" />
             <h3>회원권 홀딩</h3>
           </div>
           <button className="close-button" onClick={handleClose} disabled={loading}>×</button>
@@ -112,7 +112,7 @@ const HoldMembershipModal = ({
         
         <div className="modal-body">
           <div className="info-message">
-            <Pause size={16} />
+            <Square size={16} />
             <p>홀딩 기간 동안 회원권 만료일이 자동으로 연장됩니다.</p>
           </div>
 
@@ -371,8 +371,8 @@ const HoldMembershipModal = ({
         }
 
         .btn-primary:hover:not(:disabled) {
-          background-color: #1d4ed8;
-          border-color: #1d4ed8;
+          background-color: ${AppColors.primaryActive};
+          border-color: ${AppColors.primaryActive};
         }
 
         .btn-secondary {
