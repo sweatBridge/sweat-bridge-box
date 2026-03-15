@@ -1,5 +1,6 @@
-import { History, Calendar, User, FileText, ArrowRight, Pause, Play } from 'lucide-react';
+import { History, Calendar, User, FileText, ArrowRight, Square, Play } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
+import { AppColors } from '../../../constants/colors';
 import { Adjustment } from '../../../types/membership';
 
 interface AdjustmentHistoryModalProps {
@@ -46,7 +47,7 @@ const AdjustmentHistoryModal = ({
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'edit': return '#2563EB';
+      case 'edit': return AppColors.primary;
       case 'hold': return '#F59E0B';
       case 'hold_release': return '#16A34A';
       default: return '#64748b';
@@ -93,7 +94,7 @@ const AdjustmentHistoryModal = ({
                   {/* 홀딩 등록 정보 표시 */}
                   {adjustment.type === 'hold' && adjustment.hold && (
                     <div className="hold-info-box">
-                      <Pause size={16} />
+                      <Square size={16} />
                       <div className="hold-info-content">
                         <span className="hold-period">
                           {formatDate(adjustment.hold.startDate)} ~ {formatDate(adjustment.hold.endDate)}

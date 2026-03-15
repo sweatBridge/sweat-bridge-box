@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
+import { AppColors } from '../../../constants/colors';
 
 interface AddLockerModalProps {
   visible: boolean;
@@ -247,7 +248,7 @@ const AddLockerModal = ({ visible, onClose, onConfirm }: AddLockerModalProps) =>
 
         .form-input:focus {
           outline: none;
-          border-color: #3b82f6;
+          border-color: ${AppColors.primary};
           box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
           background-color: white;
         }
@@ -282,14 +283,14 @@ const AddLockerModal = ({ visible, onClose, onConfirm }: AddLockerModalProps) =>
         }
 
         .btn-primary {
-          background-color: #3b82f6;
-          border-color: #3b82f6;
+          background-color: ${AppColors.primary};
+          border-color: ${AppColors.primary};
           color: white;
         }
 
         .btn-primary:hover:not(:disabled) {
-          background-color: #2563eb;
-          border-color: #2563eb;
+          background-color: ${AppColors.primaryHover};
+          border-color: ${AppColors.primaryHover};
         }
 
         .btn-secondary {

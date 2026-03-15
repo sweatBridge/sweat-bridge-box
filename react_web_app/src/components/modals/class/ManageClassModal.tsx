@@ -453,8 +453,8 @@ const ManageClassModal = ({
         }
 
         .btn-primary {
-          background-color: #3b82f6;
-          border-color: #3b82f6;
+          background-color: ${AppColors.primary};
+          border-color: ${AppColors.primary};
           color: white;
         }
 
@@ -491,8 +491,8 @@ const ManageClassModal = ({
         }
 
         .btn-add {
-          background-color: #3b82f6;
-          border-color: #3b82f6;
+          background-color: ${AppColors.primary};
+          border-color: ${AppColors.primary};
           color: white;
           font-size: 14px;
           padding: 8px 16px;

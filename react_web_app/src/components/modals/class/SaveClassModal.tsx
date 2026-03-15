@@ -427,8 +427,8 @@ const SaveClassModal = ({
         }
 
         .btn-primary {
-          background-color: #3b82f6;
-          border-color: #3b82f6;
+          background-color: ${AppColors.primary};
+          border-color: ${AppColors.primary};
           color: white;
         }
 
