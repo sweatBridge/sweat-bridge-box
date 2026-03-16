@@ -125,7 +125,6 @@ export const getActiveMembersCount = (members: any[]): number => {
  * @deprecated MembershipService.filterWarningMembers를 직접 사용하세요
  */
 export const getWarningMembers = (members: any[]): any[] => {
-  // MembershipService의 함수를 사용하도록 위임
   return MembershipService.filterWarningMembers(members);
 };
 

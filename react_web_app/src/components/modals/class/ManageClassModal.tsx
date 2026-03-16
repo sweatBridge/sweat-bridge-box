@@ -3,7 +3,7 @@ import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
 import { Calendar, Clock, User, Users, Settings, UserPlus, Eye } from 'lucide-react';
 import { ManageClassModalProps, UpdateClassResult, DeleteClassResult } from '../../../types/class';
-import { formatDateTime } from '../../../utils/classCalendarUtils';
+import { ClassService } from '../../../services/classService';
 import { useAuth } from '../../../contexts/AuthContext';
 import AddReserveMemberModal from './AddReserveMemberModal';
 import ReservedMembersModal from './ReservedMembersModal';
@@ -125,7 +125,7 @@ const ManageClassModal = ({
               </div>
               <div className="info-content">
                 <span className="info-label">시간</span>
-                <span className="info-value">{formatDateTime(event.start)} ~ {formatDateTime(event.end)}</span>
+                <span className="info-value">{ClassService.formatDateTime(event.start)} ~ {ClassService.formatDateTime(event.end)}</span>
               </div>
             </div>
           </div>

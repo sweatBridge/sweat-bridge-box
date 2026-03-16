@@ -106,7 +106,7 @@ export class LockerService {
 
       for (let n = lo; n <= hi; n++) {
         const key = String(n);
-        
+
         const defaultEntry: Locker = {
           number: n,
           state: LOCKER_STATE.UNUSED,
@@ -120,18 +120,18 @@ export class LockerService {
           createdAt: new Date().toISOString().split('T')[0],
           key: ''
         };
-        
+
         // 키가 존재하는지 확인
         if (Object.prototype.hasOwnProperty.call(existing, key)) {
           const lockerEntry = existing[key];
           let isDeleted = false;
-          
+
           // 배열인 경우와 객체인 경우 모두 확인
           if (Array.isArray(lockerEntry)) {
             // 배열의 마지막 항목이 deleted 상태인지 확인
             const lastItem = lockerEntry[lockerEntry.length - 1];
             isDeleted = lastItem?.state === LOCKER_STATE.DELETED;
-            
+
             if (isDeleted) {
               // deleted 상태면 배열에 새 항목 추가
               toSet[key] = [...lockerEntry, defaultEntry];
@@ -141,7 +141,7 @@ export class LockerService {
             }
           } else if (lockerEntry && typeof lockerEntry === 'object') {
             isDeleted = (lockerEntry as any)?.state === LOCKER_STATE.DELETED;
-            
+
             if (isDeleted) {
               // 객체를 배열로 변환하고 새 항목 추가
               toSet[key] = [lockerEntry, defaultEntry];
@@ -265,7 +265,7 @@ export class LockerService {
       const lockerEntry = data[key];
       // 해지 사유 앞에 "[해지] " 접두사 추가
       const releaseNote = note.trim() ? `[해지] ${note}` : note;
-      
+
       const unusedEntry: Locker = {
         number: lockerNumber,
         state: LOCKER_STATE.UNUSED,
@@ -334,7 +334,7 @@ export class LockerService {
       }
 
       const lockerEntry = data[key];
-      
+
       const hasUser = this.hasActiveAssignedUser(lockerEntry, lockerNumber);
 
       if (hasUser) {
@@ -468,7 +468,7 @@ export class LockerService {
       }
 
       const lockerEntry = data[lockerKey];
-      
+
       const hasUser = this.hasActiveAssignedUser(lockerEntry, lockerNumber);
 
       if (hasUser) {
@@ -496,7 +496,7 @@ export class LockerService {
       if (Array.isArray(lockerEntry)) {
         const lastItem = lockerEntry[lockerEntry.length - 1];
         const isUnusedWithNoNote = lastItem?.state === LOCKER_STATE.UNUSED && (!lastItem?.note || lastItem.note.trim() === '');
-        
+
         if (isUnusedWithNoNote) {
           // 사용 가능 상태이고 note가 없으면 마지막 항목 덮어쓰기
           const updated = [...lockerEntry];
@@ -507,9 +507,9 @@ export class LockerService {
           newValue = [...lockerEntry, assignedEntry];
         }
       } else if (lockerEntry && typeof lockerEntry === 'object') {
-        const isUnusedWithNoNote = (lockerEntry as any)?.state === LOCKER_STATE.UNUSED && 
+        const isUnusedWithNoNote = (lockerEntry as any)?.state === LOCKER_STATE.UNUSED &&
                                      (!(lockerEntry as any)?.note || (lockerEntry as any).note.trim() === '');
-        
+
         if (isUnusedWithNoNote) {
           // 사용 가능 상태이고 note가 없으면 객체 덮어쓰기
           newValue = assignedEntry;
@@ -538,7 +538,7 @@ export class LockerService {
   static async extendAllLockers(
     box: string,
     days: number
-  ): Promise<{ 
+  ): Promise<{
     extendedCount: number;
     extendedLockers: Array<{ id: string; key: string; endDate: string }>;
   }> {

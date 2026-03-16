@@ -3,7 +3,7 @@ import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
 import { Calendar, Clock, User, Users, Plus } from 'lucide-react';
 import { SaveClassModalProps, SaveClassResult } from '../../../types/class';
-import { formatDateTime } from '../../../utils/classCalendarUtils';
+import { ClassService } from '../../../services/classService';
 
 const SaveClassModal = ({ 
   visible, 
@@ -119,7 +119,7 @@ const SaveClassModal = ({
                 <div className="date-info">
                   <span className="date-label">선택된 날짜</span>
                   <span className="date-value">
-                    {isAllDay ? formatDateOnly(selectInfo.startStr) : formatDateTime(selectInfo.startStr)}
+                    {isAllDay ? formatDateOnly(selectInfo.startStr) : ClassService.formatDateTime(selectInfo.startStr)}
                   </span>
                 </div>
               </div>
