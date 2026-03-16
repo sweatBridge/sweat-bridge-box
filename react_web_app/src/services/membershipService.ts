@@ -246,8 +246,10 @@ export class MembershipService {
       colorClass = 'primary';
     } else if (membershipType === '횟수권') {
       colorClass = 'primary';
-    } else if (membershipType === '없음') {
+    } else if (membershipType === '없음' || membershipType === '미등록') {
       colorClass = 'none';
+    } else if (membershipType === '만료') {
+      colorClass = 'expired';
     } else if (membershipType === '홀딩') {
       colorClass = 'hold';
     } else {

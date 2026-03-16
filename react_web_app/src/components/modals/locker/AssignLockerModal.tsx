@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
+import { AppColors } from '../../../constants/colors';
 import type { Member } from '../../../types/member';
 import DateInput from '../../DateInput';
 import { format } from 'date-fns';
@@ -428,7 +429,7 @@ const AssignLockerModal = ({
 
         .form-input:focus {
           outline: none;
-          border-color: #3b82f6;
+          border-color: ${AppColors.primary};
           box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
           background-color: white;
         }
@@ -473,14 +474,14 @@ const AssignLockerModal = ({
         }
 
         .btn-primary {
-          background-color: #3b82f6;
-          border-color: #3b82f6;
+          background-color: ${AppColors.primary};
+          border-color: ${AppColors.primary};
           color: white;
         }
 
         .btn-primary:hover:not(:disabled) {
-          background-color: #2563eb;
-          border-color: #2563eb;
+          background-color: ${AppColors.primaryHover};
+          border-color: ${AppColors.primaryHover};
         }
 
         .btn-secondary {

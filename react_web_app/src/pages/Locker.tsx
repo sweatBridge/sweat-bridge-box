@@ -611,8 +611,8 @@ const Locker: React.FC = () => {
           border: 1px solid #e5e7eb;
         }
         .btn-primary {
-          background-color: #3b82f6;
-          border-color: #3b82f6;
+          background-color: ${AppColors.primary};
+          border-color: ${AppColors.primary};
           color: white;
         }
         .btn-primary:hover {
@@ -721,10 +721,10 @@ const Locker: React.FC = () => {
           transition: transform .05s ease, box-shadow .1s ease;
         }
         .locker-card:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.08); transform: translateY(-1px); }
-        .locker-card.used   { background: #dcfce7; } /* light green */
-        .locker-card.unused { background: #e0f2fe; } /* light blue */
-        .locker-card.na     { background: #fee2e2; } /* red */
-        .locker-card.deleted { background: #f3f4f6; } /* gray */
+        .locker-card.used   { background: ${AppColors.successSoft}; }   /* 사용 중: 연한 green */
+        .locker-card.unused { background: ${AppColors.primarySoft}; }   /* 사용 가능: 연한 blue */
+        .locker-card.na     { background: ${AppColors.errorSoft}; }     /* 고장/사용불가: 연한 red */
+        .locker-card.deleted { background: ${AppColors.background}; }   /* 삭제됨: 연한 gray */
         .locker-number {
           font-weight: 800;
           font-size: 18px;

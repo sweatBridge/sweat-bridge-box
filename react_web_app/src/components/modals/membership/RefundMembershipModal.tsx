@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { DollarSign, Calendar, User } from 'lucide-react';
+import { Gradients } from '../../../constants/gradients';
+import { AppColors } from '../../../constants/colors';
 
 interface RefundMembershipModalProps {
   visible: boolean;
@@ -186,7 +188,7 @@ const RefundMembershipModal = ({
           justify-content: space-between;
           align-items: center;
           padding: 20px;
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          background: ${Gradients.primary};
           border-bottom: none;
           border-radius: 8px 8px 0 0;
           box-shadow: 0 2px 10px rgba(37, 99, 235, 0.15);
@@ -320,7 +322,7 @@ const RefundMembershipModal = ({
 
         .form-input:focus {
           outline: none;
-          border-color: #2563eb;
+          border-color: ${AppColors.primary};
           box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
@@ -375,15 +377,15 @@ const RefundMembershipModal = ({
         }
 
         .btn-primary {
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-          border-color: #2563eb;
+          background: ${Gradients.primary};
+          border-color: ${AppColors.primary};
           color: white;
           box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
         }
 
         .btn-primary:hover:not(:disabled) {
-          background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-          border-color: #1d4ed8;
+          background: ${Gradients.primaryHover};
+          border-color: ${AppColors.primaryHover};
           box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
           transform: translateY(-1px);
         }

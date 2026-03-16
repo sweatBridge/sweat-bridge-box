@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Pause, DollarSign, CheckCircle, Edit, History } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Square, DollarSign, CheckCircle, Edit, History } from 'lucide-react';
 import { MemberManagementModalProps, MembershipPlan, UserMembership, AddMembershipData } from '../../../types/membership';
 import { MemberLockerHistory } from '../../../types/member';
 import { getGenderText, formatPhoneNumber } from '../../../utils/memberUtils';
@@ -42,6 +42,9 @@ const MemberManagementModal = ({
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [membershipToEdit, setMembershipToEdit] = useState<{ index: number; plan: string; type: string; startDate: Date; endDate: Date; price: string; quotaRemaining?: number; quotaUsed?: number } | null>(null);
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
+  const [isPlanDropdownOpen, setIsPlanDropdownOpen] = useState(false);
+  const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
+  const [isPaymentDropdownOpen, setIsPaymentDropdownOpen] = useState(false);
   const [adjustmentHistory, setAdjustmentHistory] = useState<{ plan: string; adjustments: any[] } | null>(null);
   const [activeTab, setActiveTab] = useState<'membership' | 'locker'>('membership');
   const [hasDataChanged, setHasDataChanged] = useState(false);
@@ -796,7 +799,7 @@ const MemberManagementModal = ({
                             onClick={handleOpenHoldModal}
                             disabled={loading || !!getCurrentHold(currentMemberships[0]) || !!getFutureHold(currentMemberships[0])}
                           >
-                            <Pause size={16} />
+                            <Square size={16} />
                             홀딩
                           </button>
                         </div>
@@ -898,19 +901,59 @@ const MemberManagementModal = ({
                 <div className="form-grid">
                   <div className="form-group">
                     <label>회원권 플랜</label>
-                    <select
-                      value={formData.selectedPlanName}
-                      onChange={(e) => handlePlanChange(e.target.value)}
-                      className="form-select"
-                    >
-                      <option value="">플랜 선택</option>
-                      {membershipPlans.map((plan) => (
-                        <option key={plan.plan} value={plan.plan}>
-                          {plan.plan}
-                        </option>
-                      ))}
-                      <option value="custom">커스텀 플랜</option>
-                    </select>
+                    <div className="plan-select">
+                      <button
+                        type="button"
+                        className="plan-select-button"
+                        onClick={() => setIsPlanDropdownOpen((prev) => !prev)}
+                      >
+                        <span className={`plan-select-label ${formData.selectedPlanName ? '' : 'placeholder'}`}>
+                          {formData.selectedPlanName || '플랜 선택'}
+                        </span>
+                        <span className="plan-select-icon">▾</span>
+                      </button>
+                      {isPlanDropdownOpen && (
+                        <div className="plan-select-dropdown">
+                          <button
+                            type="button"
+                            className={`plan-select-option ${formData.selectedPlanName === '' ? 'selected' : ''}`}
+                            onClick={() => {
+                              handlePlanChange('');
+                              setIsPlanDropdownOpen(false);
+                            }}
+                          >
+                            플랜 선택
+                          </button>
+                          {membershipPlans.map((plan) => (
+                            <button
+                              type="button"
+                              key={plan.plan}
+                              className={`plan-select-option ${
+                                formData.selectedPlanName === plan.plan ? 'selected' : ''
+                              }`}
+                              onClick={() => {
+                                handlePlanChange(plan.plan);
+                                setIsPlanDropdownOpen(false);
+                              }}
+                            >
+                              {plan.plan}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            className={`plan-select-option ${
+                              formData.selectedPlanName === 'custom' ? 'selected' : ''
+                            }`}
+                            onClick={() => {
+                              handlePlanChange('custom');
+                              setIsPlanDropdownOpen(false);
+                            }}
+                          >
+                            커스텀 플랜
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="form-group">
@@ -926,14 +969,46 @@ const MemberManagementModal = ({
 
                   <div className="form-group">
                     <label>회원권 타입</label>
-                    <select
-                      value={formData.membershipType}
-                      onChange={(e) => handleTypeChange(e.target.value as 'periodPass' | 'countPass')}
-                      className="form-select"
-                    >
-                      <option value="periodPass">기간권</option>
-                      <option value="countPass">횟수권</option>
-                    </select>
+                    <div className="plan-select">
+                      <button
+                        type="button"
+                        className="plan-select-button"
+                        onClick={() => setIsTypeDropdownOpen((prev) => !prev)}
+                      >
+                        <span className="plan-select-label">
+                          {formData.membershipType === 'periodPass' ? '기간권' : '횟수권'}
+                        </span>
+                        <span className="plan-select-icon">▾</span>
+                      </button>
+                      {isTypeDropdownOpen && (
+                        <div className="plan-select-dropdown">
+                          <button
+                            type="button"
+                            className={`plan-select-option ${
+                              formData.membershipType === 'periodPass' ? 'selected' : ''
+                            }`}
+                            onClick={() => {
+                              handleTypeChange('periodPass');
+                              setIsTypeDropdownOpen(false);
+                            }}
+                          >
+                            기간권
+                          </button>
+                          <button
+                            type="button"
+                            className={`plan-select-option ${
+                              formData.membershipType === 'countPass' ? 'selected' : ''
+                            }`}
+                            onClick={() => {
+                              handleTypeChange('countPass');
+                              setIsTypeDropdownOpen(false);
+                            }}
+                          >
+                            횟수권
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="form-row">
@@ -964,14 +1039,46 @@ const MemberManagementModal = ({
 
                   <div className="form-group">
                     <label>결제수단</label>
-                    <select
-                      value={formData.paymentType || 'cash'}
-                      onChange={(e) => setFormData(prev => ({ ...prev, paymentType: e.target.value as 'cash' | 'card' }))}
-                      className="form-input"
-                    >
-                      <option value="cash">현금</option>
-                      <option value="card">카드</option>
-                    </select>
+                    <div className="plan-select">
+                      <button
+                        type="button"
+                        className="plan-select-button"
+                        onClick={() => setIsPaymentDropdownOpen((prev) => !prev)}
+                      >
+                        <span className="plan-select-label">
+                          {formData.paymentType === 'card' ? '카드' : '현금'}
+                        </span>
+                        <span className="plan-select-icon">▾</span>
+                      </button>
+                      {isPaymentDropdownOpen && (
+                        <div className="plan-select-dropdown">
+                          <button
+                            type="button"
+                            className={`plan-select-option ${
+                              (formData.paymentType || 'cash') === 'cash' ? 'selected' : ''
+                            }`}
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, paymentType: 'cash' }));
+                              setIsPaymentDropdownOpen(false);
+                            }}
+                          >
+                            현금
+                          </button>
+                          <button
+                            type="button"
+                            className={`plan-select-option ${
+                              formData.paymentType === 'card' ? 'selected' : ''
+                            }`}
+                            onClick={() => {
+                              setFormData(prev => ({ ...prev, paymentType: 'card' }));
+                              setIsPaymentDropdownOpen(false);
+                            }}
+                          >
+                            카드
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="form-group">
@@ -1685,7 +1792,7 @@ const MemberManagementModal = ({
 
         .form-input,
         .form-select {
-          padding: 10px 12px;
+          padding: 10px 14px;
           border: 1px solid #d1d5db;
           border-radius: 6px;
           font-size: 14px;
@@ -1697,6 +1804,75 @@ const MemberManagementModal = ({
           outline: none;
           border-color: ${AppColors.primary};
           box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* 플랜 선택 커스텀 셀렉트 */
+        .plan-select {
+          position: relative;
+        }
+
+        .plan-select-button {
+          width: 100%;
+          padding: 10px 14px;
+          border-radius: 6px;
+          border: 1px solid #d1d5db;
+          background-color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .plan-select-button:hover {
+          border-color: #9ca3af;
+          background-color: #f9fafb;
+        }
+
+        .plan-select-label.placeholder {
+          color: #9ca3af;
+        }
+
+        .plan-select-icon {
+          font-size: 12px;
+          color: #6b7280;
+        }
+
+        .plan-select-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          margin-top: 4px;
+          background-color: #ffffff;
+          border-radius: 8px;
+          border: 1px solid #e5e7eb;
+          box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+          padding: 4px 0;
+          max-height: 260px;
+          overflow-y: auto;
+          z-index: 20;
+        }
+
+        .plan-select-option {
+          width: 100%;
+          padding: 8px 14px;
+          border: none;
+          background: none;
+          text-align: left;
+          font-size: 14px;
+          cursor: pointer;
+          transition: background-color 0.15s, color 0.15s;
+        }
+
+        .plan-select-option:hover {
+          background-color: #f3f4f6;
+        }
+
+        .plan-select-option.selected {
+          background-color: #eff6ff;
+          color: ${AppColors.primary};
         }
 
         .form-actions {
@@ -1904,6 +2080,11 @@ const MemberManagementModal = ({
           color: white;
         }
 
+        /* 제목 색이 다른 전역 스타일에 덮어쓰이지 않도록 명시적으로 한 번 더 지정 */
+        .member-management-modal .modal-header h3 {
+          color: white;
+        }
+
         .close-button {
           background: none;
           border: none;
@@ -1969,8 +2150,8 @@ const MemberManagementModal = ({
         }
 
         .btn-primary:hover:not(:disabled) {
-          background-color: #1d4ed8;
-          border-color: #1d4ed8;
+          background-color: ${AppColors.primaryActive};
+          border-color: ${AppColors.primaryActive};
         }
 
         .btn-secondary {
@@ -2035,14 +2216,14 @@ const MemberManagementModal = ({
         }
 
         .btn-refund {
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-          border-color: #2563eb;
+          background: ${Gradients.primary};
+          border-color: ${AppColors.primary};
           color: white;
         }
 
         .btn-refund:hover:not(:disabled) {
-          background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-          border-color: #1d4ed8;
+          background: ${Gradients.primaryHover};
+          border-color: ${AppColors.primaryHover};
         }
 
         .btn-refunded {

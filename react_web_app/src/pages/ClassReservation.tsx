@@ -393,8 +393,8 @@ const ClassReservation = () => {
   return (
     <div className="dashboard">
 
-      {/* 컨트롤 카드 */}
-      <div className="content-card">
+      {/* 수업 요약 + 캘린더 (단일 카드) */}
+      <div className="content-card" style={{ flex: 1 }}>
         <div className="card-header">
           <div className="header-left">
             <Calendar size={20} />
@@ -439,10 +439,7 @@ const ClassReservation = () => {
             </span>
           </div>
         </div>
-      </div>
-      
-      {/* 캘린더 카드 */}
-      <div className="content-card" style={{ flex: 1 }}>
+
         <div className="calendar-container">
           <FullCalendar
             ref={calendarRef}
@@ -585,67 +582,100 @@ const ClassReservation = () => {
         }
 
         .fc .fc-toolbar {
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-          padding: 16px 20px;
-          border-bottom: 1px solid #e2e8f0;
+          background: #ffffff;
+          padding: 12px 16px;
+          border-bottom: 1px solid #e5e7eb;
           margin-bottom: 0 !important;
         }
 
         .fc .fc-toolbar-title {
-          font-size: 18px !important;
+          font-size: 16px !important;
           font-weight: 600 !important;
-          color: #1f2937 !important;
+          color: #111827 !important;
         }
 
         .fc .fc-button-primary {
-          background: ${AppColors.primary} !important;
-          border: none !important;
+          background: #ffffff !important;
+          color: #111827 !important; /* 기본은 중립 텍스트 */
+          border: 1px solid #e5e7eb !important;
           border-radius: 6px !important;
           padding: 6px 12px !important;
           font-weight: 500 !important;
-          transition: all 0.2s !important;
-        }
-
-        .fc .fc-button-primary:hover {
-          transform: translateY(-1px) !important;
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
-        }
-
-        .fc .fc-button-primary:disabled {
-          opacity: 0.5 !important;
-          transform: none !important;
+          transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
           box-shadow: none !important;
         }
 
+        .fc .fc-button-primary:hover {
+          background-color: #f3f4f6 !important;
+          border-color: #d1d5db !important;
+          color: ${AppColors.primary} !important; /* hover 시에만 primary */
+        }
+
+        .fc .fc-button-primary:disabled {
+          opacity: 0.4 !important;
+          background-color: #f9fafb !important;
+          color: #9ca3af !important;
+          border-color: #e5e7eb !important;
+          box-shadow: none !important;
+        }
+
+        /* 오늘 버튼은 캘린더 오늘 셀과 톤을 맞춤 */
+        .fc .fc-today-button {
+          background-color: #eff6ff !important;
+          border-color: #dbeafe !important;
+          color: ${AppColors.primary} !important;
+        }
+
+        .fc .fc-today-button:disabled {
+          opacity: 1 !important;
+          background-color: #eff6ff !important;
+          border-color: #dbeafe !important;
+          color: ${AppColors.primary} !important;
+        }
+
+        /* 이전/다음, 주/월 등 FullCalendar 버튼 그룹 사이 간 간격 */
+        .fc .fc-button-group .fc-button:not(:last-child) {
+          margin-right: 6px !important;
+        }
+
+        /* 네비게이션(이전/다음)과 오늘 버튼 간 간격을 명확히 분리 */
+        .fc .fc-toolbar-chunk:last-child {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        /* 수업 블록 스타일 – 전체 primary 배경 */
         .fc .fc-event {
           background: ${AppColors.primary} !important;
+          color: #ffffff !important;
           border: none !important;
           border-radius: 6px !important;
-          padding: 2px 6px !important;
-          font-weight: 500 !important;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-          transition: all 0.2s !important;
+          padding: 4px 8px !important;
+          font-size: 13px !important;
+          font-weight: 600 !important;
+          box-shadow: none !important;
         }
 
         .fc .fc-event:hover {
-          transform: translateY(-1px) !important;
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+          background: ${AppColors.primaryHover} !important;
+          color: #ffffff !important;
         }
 
         .fc .fc-daygrid-day:hover {
-          background-color: rgba(102, 126, 234, 0.05) !important;
+          background-color: #f9fafb !important;
         }
 
         .fc .fc-day-today {
-          background-color: rgba(102, 126, 234, 0.1) !important;
+          background-color: #eff6ff !important;
         }
 
         .fc .fc-timegrid-slot:hover {
-          background-color: rgba(102, 126, 234, 0.05) !important;
+          background-color: #f9fafb !important;
         }
 
         .fc .fc-highlight {
-          background-color: rgba(102, 126, 234, 0.2) !important;
+          background-color: rgba(49, 130, 246, 0.12) !important;
         }
 
         /* 스크롤바 스타일링 */
@@ -654,17 +684,16 @@ const ClassReservation = () => {
         }
 
         .calendar-container::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 4px;
+          background: transparent;
         }
 
         .calendar-container::-webkit-scrollbar-thumb {
-          background: ${Gradients.primary};
-          border-radius: 4px;
+          background: rgba(148, 163, 184, 0.8);
+          border-radius: 999px;
         }
 
         .calendar-container::-webkit-scrollbar-thumb:hover {
-          background: ${Gradients.primaryHover};
+          background: rgba(100, 116, 139, 0.9);
         }
 
         /* 달력 내부 스크롤 영역 조정 */

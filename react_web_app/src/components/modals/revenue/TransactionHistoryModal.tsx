@@ -1,6 +1,7 @@
 import { Calendar, CreditCard } from 'lucide-react';
 import { RevenueData } from '../../../types/revenue';
 import { Gradients } from '../../../constants/gradients';
+import { AppColors } from '../../../constants/colors';
 
 interface TransactionHistoryModalProps {
   visible: boolean;
@@ -263,7 +264,7 @@ const TransactionHistoryModal = ({
           }
 
           .transaction-price.cash {
-            color: #3b82f6; /* 파란색 */
+            color: ${AppColors.primary};
           }
 
           .transaction-price.card {
@@ -339,8 +340,8 @@ const TransactionHistoryModal = ({
           }
 
           .payment-button.active.cash {
-            background: #3b82f6;
-            border-color: #3b82f6;
+            background: ${AppColors.primary};
+            border-color: ${AppColors.primary};
             color: white;
           }
 

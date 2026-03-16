@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Users, UserPlus, CreditCard, Trash2, Settings, ChevronLeft, ChevronRight, Calendar, Phone } from 'lucide-react';
+import { Search, Users, User, UserPlus, CircleUser, CreditCard, Trash2, Settings, ChevronLeft, ChevronRight, Calendar, Phone } from 'lucide-react';
 import { Member, ToastMessageType } from '../types/member';
 import { useMemberManagement } from '../hooks/useMemberManagement';
 import MemberDeletionModal from '../components/modals/member/MemberDeletionModal';
@@ -355,7 +355,7 @@ const MemberManagement = () => {
 
         <div className="stat-card clickable" onClick={() => handleOpenMemberList('active')}>
           <div className="stat-card-icon active">
-            <Users size={20} />
+            <User size={20} />
           </div>
           <div className="stat-card-content">
             <div className="stat-card-label">활성 회원</div>
@@ -365,7 +365,7 @@ const MemberManagement = () => {
 
         <div className="stat-card clickable" onClick={() => handleOpenMemberList('warning')}>
           <div className="stat-card-icon warning">
-            <Users size={20} />
+            <User size={20} />
           </div>
           <div className="stat-card-content">
             <div className="stat-card-label">주의 회원</div>
@@ -375,7 +375,7 @@ const MemberManagement = () => {
 
         <div className="stat-card clickable" onClick={() => handleOpenMemberList('new')}>
           <div className="stat-card-icon new">
-            <UserPlus size={20} />
+            <User size={20} />
           </div>
           <div className="stat-card-content">
             <div className="stat-card-label">신규 회원</div>
@@ -384,9 +384,8 @@ const MemberManagement = () => {
         </div>
       </div>
 
-      {/* 검색 및 테이블 카드 */}
-      <div className="content-card">
-
+      {/* 검색 + 회원 목록 카드 (단일 컨테이너) */}
+      <div className="content-card" style={{ flex: 1 }}>
         <div className="search-section">
           <div className="search-container">
             <Search size={18} className="search-icon" />
@@ -414,10 +413,6 @@ const MemberManagement = () => {
             </button>
           </div>
         </div>
-      </div>
-
-      {/* 회원 목록 카드 */}
-      <div className="content-card" style={{ flex: 1 }}>
         {loading ? (
           <div className="loading-container">
             <div className="loading-spinner"></div>
@@ -458,7 +453,7 @@ const MemberManagement = () => {
                       <div className="table-cell">
                         <div className="member-name-cell">
                           <div className="member-avatar">
-                            <Users size={16} />
+                            <CircleUser size={16} />
                           </div>
                           <span>{member.realName}</span>
                         </div>
@@ -507,7 +502,7 @@ const MemberManagement = () => {
                       </div>
                     </div>
                     <div className="table-cell">{member.membershipInfo.remainingVisits}회</div>
-                    <div className="table-cell">
+                    <div className="table-cell actions-cell">
                       <div className="action-buttons">
                         <button 
                           className="btn btn-sm btn-info"
@@ -810,24 +805,27 @@ const MemberManagement = () => {
           width: 48px;
           height: 48px;
           border-radius: 10px;
-          background: ${Gradients.primary};
+          background-color: ${AppColors.primary};
           display: flex;
           align-items: center;
           justify-content: center;
-          color: white;
+          color: #ffffff;
           flex-shrink: 0;
         }
 
         .stat-card-icon.active {
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          background-color: ${AppColors.success};
+          color: #ffffff;
         }
 
         .stat-card-icon.warning {
-          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          background-color: ${AppColors.warning};
+          color: #ffffff;
         }
 
         .stat-card-icon.new {
-          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+          background-color: ${AppColors.info};
+          color: #ffffff;
         }
 
         .stat-card-content {
@@ -836,7 +834,7 @@ const MemberManagement = () => {
 
         .stat-card-label {
           font-size: 13px;
-          color: #6b7280;
+          color: ${AppColors.textSecondary};
           margin-bottom: 6px;
           font-weight: 500;
         }
@@ -844,7 +842,7 @@ const MemberManagement = () => {
         .stat-card-value {
           font-size: 20px;
           font-weight: 700;
-          color: #374151;
+          color: ${AppColors.textPrimary};
         }
 
         .actions-bar {
@@ -897,7 +895,8 @@ const MemberManagement = () => {
             transform: translateY(-1px);
           }
 
-          .btn-info {
+          /* 상단 액션 영역 - 승인 대기 버튼 전용 스타일 */
+          .actions-bar .btn-info {
             background: ${Gradients.primary};
             border: none;
             color: white;
@@ -913,10 +912,14 @@ const MemberManagement = () => {
             box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
           }
 
-          .btn-info:hover {
+          .actions-bar .btn-info:hover {
             background: ${Gradients.primaryHover};
             box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
             transform: translateY(-1px);
+          }
+
+          .actions-bar .btn-info svg {
+            color: white;
           }
 
           .btn-with-badge {
@@ -962,7 +965,7 @@ const MemberManagement = () => {
           left: 12px;
           top: 50%;
           transform: translateY(-50%);
-          color: #9ca3af;
+          color: ${AppColors.secondary};
         }
 
         .search-input {
@@ -976,8 +979,8 @@ const MemberManagement = () => {
 
         .search-input:focus {
           outline: none;
-          border-color: #667eea;
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+          border-color: ${AppColors.primary};
+          box-shadow: 0 0 0 3px rgba(49, 130, 246, 0.1);
         }
 
         .members-table-container {
@@ -996,7 +999,7 @@ const MemberManagement = () => {
           padding: 8px 16px;
           border: none;
           background: transparent;
-          color: #9ca3af;
+          color: ${AppColors.secondary};
           font-size: 14px;
           font-weight: 500;
           cursor: pointer;
@@ -1005,12 +1008,12 @@ const MemberManagement = () => {
         }
 
         .tab-button:hover {
-          color: #6b7280;
+          color: ${AppColors.textSecondary};
         }
 
         .tab-button.active {
-          background-color: #ffffff;
-          color: #374151;
+          background-color: ${AppColors.surface};
+          color: ${AppColors.textPrimary};
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
@@ -1024,10 +1027,10 @@ const MemberManagement = () => {
           grid-template-columns: 1fr 1fr 1fr 1.2fr 1.5fr 1fr 120px;
           gap: 16px;
           padding: 16px;
-          background-color: #f8fafc;
+          background-color: ${AppColors.background};
           border-bottom: 2px solid #e2e8f0;
           font-weight: 600;
-          color: #374151;
+          color: ${AppColors.textPrimary};
           font-size: 14px;
         }
 
@@ -1048,7 +1051,12 @@ const MemberManagement = () => {
           display: flex;
           align-items: center;
           font-size: 14px;
-          color: #374151;
+          color: ${AppColors.textPrimary};
+        }
+
+        /* 헤더/바디 모두에서 관리 컬럼을 중앙 정렬 */
+        .table-header .table-cell:last-child {
+          justify-content: center;
         }
 
         .member-name-cell {
@@ -1077,28 +1085,40 @@ const MemberManagement = () => {
         }
 
         .membership-badge {
-          padding: 4px 8px;
-          border-radius: 12px;
-          font-size: 12px;
+          padding: 2px 10px;
+          border-radius: 9999px;
+          font-size: 11px;
           font-weight: 500;
+          border-width: 1px;
         }
 
+        /* 등록 타입 뱃지 – outline 스타일 */
         .membership-badge.primary {
-          background-color: #dbeafe;
-          color: #1e40af;
-          border: 1px solid #bfdbfe;
+          background-color: transparent;
+          border-style: solid;
+          border-color: rgba(49, 130, 246, 0.35);
+          color: ${AppColors.primary};
         }
 
         .membership-badge.none {
-          background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-          border: 1px solid #fca5a5;
-          color: #991b1b;
+          background-color: transparent;
+          border-style: solid;
+          border-color: rgba(234, 179, 8, 0.5);
+          color: #a16207;
         }
 
         .membership-badge.hold {
-          background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%) !important;
-          border: 1px solid #fb923c !important;
-          color: #7c2d12 !important;
+          background-color: transparent;
+          border-style: solid;
+          border-color: rgba(249, 115, 22, 0.5);
+          color: #c05621;
+        }
+
+        .membership-badge.expired {
+          background-color: transparent;
+          border-style: solid;
+          border-color: rgba(156, 163, 175, 0.6);
+          color: #4b5563;
         }
 
         .nickname-with-badge {
@@ -1109,35 +1129,31 @@ const MemberManagement = () => {
 
         .member-status-badge {
           display: inline-block;
-          padding: 3px 8px;
-          border-radius: 10px;
+          padding: 2px 10px;
+          border-radius: 12px;
           font-size: 11px;
-          font-weight: 600;
-          border: none;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+          font-weight: 500;
+          border-width: 0;
         }
 
+        /* 상태 뱃지 – 소프트 필 스타일 */
         .member-status-badge.new {
-          background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-          border: 1px solid #60a5fa;
-          color: #1e40af;
+          background-color: rgba(49, 130, 246, 0.1);
+          color: ${AppColors.primary};
         }
 
         .member-status-badge.warning {
-          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-          border: 1px solid #fbbf24;
-          color: #92400e;
+          background-color: rgba(234, 179, 8, 0.12);
+          color: #b45309;
         }
 
         .member-status-badge.active {
-          background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-          border: 1px solid #10b981;
-          color: #065f46;
+          background-color: rgba(34, 197, 94, 0.12);
+          color: #15803d;
         }
 
         .member-status-badge.inactive {
-          background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-          border: 1px solid #9ca3af;
+          background-color: rgba(148, 163, 184, 0.14);
           color: #4b5563;
         }
 
@@ -1150,29 +1166,36 @@ const MemberManagement = () => {
         .expiry-status {
           font-size: 14px;
           font-weight: 600;
-          color: #374151;
+          color: ${AppColors.textPrimary};
         }
 
         .expiry-date-label {
           font-size: 12px;
-          color: #9ca3af;
+          color: ${AppColors.secondary};
         }
 
         .contact-cell {
           display: flex;
           align-items: center;
           gap: 8px;
-          color: #374151;
+          color: ${AppColors.textPrimary};
         }
 
         .phone-icon {
-          color: #374151;
+          color: ${AppColors.textPrimary};
           flex-shrink: 0;
         }
 
         .action-buttons {
           display: flex;
           gap: 6px;
+          justify-content: center;
+          align-items: center;
+        }
+
+        .actions-cell {
+          display: flex;
+          justify-content: center;
         }
 
         .btn {
@@ -1192,26 +1215,27 @@ const MemberManagement = () => {
           font-size: 12px;
         }
 
-        .btn-info {
-          background-color: #3b82f6;
-          border-color: #3b82f6;
-          color: white;
+        /* 테이블 관리 컬럼 - 아이콘 전용 버튼 스타일 */
+        .members-table .btn-sm.btn-info {
+          background-color: transparent;
+          border-color: transparent;
+          color: ${AppColors.textSecondary}; /* 설정 아이콘: 회색 */
         }
 
-        .btn-info:hover {
-          background-color: #2563eb;
-          border-color: #2563eb;
+        .members-table .btn-sm.btn-info:hover {
+          background-color: rgba(15, 23, 42, 0.04);
+          border-color: transparent;
         }
 
-        .btn-danger {
-          background-color: #dc2626;
-          border-color: #dc2626;
-          color: white;
+        .members-table .btn-sm.btn-danger {
+          background-color: transparent;
+          border-color: transparent;
+          color: ${AppColors.error}; /* 휴지통 아이콘: 빨간색 */
         }
 
-        .btn-danger:hover {
-          background-color: #b91c1c;
-          border-color: #b91c1c;
+        .members-table .btn-sm.btn-danger:hover {
+          background-color: rgba(239, 68, 68, 0.08);
+          border-color: transparent;
         }
 
         .btn-light {
@@ -1241,13 +1265,13 @@ const MemberManagement = () => {
 
         .empty-state h3 {
           margin: 0 0 8px 0;
-          color: #374151;
+          color: ${AppColors.textPrimary};
           font-size: 18px;
         }
 
         .empty-state p {
           margin: 0;
-          color: #6b7280;
+          color: ${AppColors.textSecondary};
           font-size: 14px;
         }
 
@@ -1263,7 +1287,7 @@ const MemberManagement = () => {
           width: 32px;
           height: 32px;
           border: 3px solid #f3f4f6;
-          border-top: 3px solid #667eea;
+          border-top: 3px solid ${AppColors.primary};
           border-radius: 50%;
           animation: spin 1s linear infinite;
           margin-bottom: 16px;
@@ -1276,7 +1300,7 @@ const MemberManagement = () => {
 
         .loading-container p {
           margin: 0;
-          color: #6b7280;
+          color: ${AppColors.textSecondary};
           font-size: 14px;
         }
 
@@ -1291,7 +1315,7 @@ const MemberManagement = () => {
 
         .pagination-info {
           font-size: 14px;
-          color: #6b7280;
+          color: ${AppColors.textSecondary};
         }
 
         .pagination-controls {
@@ -1311,7 +1335,7 @@ const MemberManagement = () => {
           border-radius: 6px;
           cursor: pointer;
           transition: all 0.2s;
-          color: #6b7280;
+          color: ${AppColors.textSecondary};
         }
 
         .pagination-btn:hover:not(:disabled) {
@@ -1341,7 +1365,7 @@ const MemberManagement = () => {
           border-radius: 6px;
           cursor: pointer;
           transition: all 0.2s;
-          color: #374151;
+          color: ${AppColors.textPrimary};
           font-size: 14px;
           font-weight: 500;
         }

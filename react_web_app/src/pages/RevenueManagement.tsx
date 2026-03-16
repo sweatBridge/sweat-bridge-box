@@ -540,15 +540,15 @@ const RevenueManagement = () => {
         }
 
         .legend-color.cash {
-          background: #3b82f6; /* 파란색 */
+          background: ${AppColors.primary};
         }
 
         .legend-color.card {
-          background: #10b981; /* 녹색 */
+          background: ${AppColors.success}; /* 녹색 */
         }
 
         .legend-color.refund {
-          background: #dc2626; /* 빨간색 */
+          background: ${AppColors.error}; /* 빨간색 */
         }
 
         .calendar-container {
@@ -589,7 +589,7 @@ const RevenueManagement = () => {
         .react-calendar__navigation button {
           min-width: 44px;
           background: none;
-          border: 1px solid #e5e7eb;
+          border: none;
           border-radius: 6px;
           color: #374151;
           font-size: 14px;
@@ -599,12 +599,18 @@ const RevenueManagement = () => {
 
         .react-calendar__navigation button:hover {
           background-color: #f3f4f6;
-          border-color: #9ca3af;
         }
 
         .react-calendar__navigation button:disabled {
           background-color: #f9fafb;
           color: #9ca3af;
+        }
+
+        /* 가운데 년/월 라벨 버튼은 테두리/배경 없이 텍스트만 보이도록 */
+        .react-calendar__navigation button.react-calendar__navigation__label {
+          flex: 1;
+          border: none;
+          background: transparent;
         }
 
         .react-calendar__navigation__label {
@@ -627,7 +633,7 @@ const RevenueManagement = () => {
         .react-calendar__month-view__days__day {
           position: relative;
           height: 80px;
-          border: 1px solid #f3f4f6;
+          border: none;
           background: white;
           transition: all 0.2s;
         }
@@ -658,13 +664,13 @@ const RevenueManagement = () => {
         }
 
         .react-calendar__tile--active {
-          background: ${Gradients.primary} !important;
-          color: white !important;
-          border-color: ${AppColors.primary} !important;
+          background: rgba(49, 130, 246, 0.08) !important;
+          color: ${AppColors.textPrimary} !important;
+          border-color: transparent !important;
         }
 
         .react-calendar__tile--active:hover {
-          background: ${Gradients.primaryHover} !important;
+          background: rgba(49, 130, 246, 0.12) !important;
         }
 
         .calendar-tile-content {
@@ -691,15 +697,15 @@ const RevenueManagement = () => {
         }
 
         .revenue-line.cash-revenue {
-          color: #3b82f6; /* 파란색 */
+          color: ${AppColors.primary};
         }
 
         .revenue-line.card-revenue {
-          color: #10b981; /* 녹색 */
+          color: ${AppColors.success}; /* 녹색 */
         }
 
         .revenue-line.refund-revenue {
-          color: #dc2626; /* 빨간색 */
+          color: ${AppColors.error}; /* 빨간색 */
         }
 
         .details-section {
@@ -769,15 +775,15 @@ const RevenueManagement = () => {
         }
 
         .breakdown-item:nth-child(1) {
-          border-left-color: #3b82f6; /* 현금 매출 */
+          border-left-color: ${AppColors.primary};
         }
 
         .breakdown-item:nth-child(2) {
-          border-left-color: #10b981; /* 카드 매출 */
+          border-left-color: ${AppColors.success}; /* 카드 매출 */
         }
 
         .breakdown-item:nth-child(3) {
-          border-left-color: #dc2626; /* 환불액 */
+          border-left-color: ${AppColors.error}; /* 환불액 */
         }
 
         .breakdown-header {
@@ -793,15 +799,15 @@ const RevenueManagement = () => {
         }
 
         .breakdown-color.cash {
-          background: #3b82f6; /* 파란색 */
+          background: ${AppColors.primary};
         }
 
         .breakdown-color.card {
-          background: #10b981; /* 초록색 */
+          background: ${AppColors.success}; /* 초록색 */
         }
 
         .breakdown-color.refund {
-          background: #dc2626; /* 빨간색 */
+          background: ${AppColors.error}; /* 빨간색 */
         }
 
         .breakdown-label {
@@ -838,11 +844,11 @@ const RevenueManagement = () => {
         }
 
         .chart-segment.cash {
-          background: #3b82f6; /* 파란색 */
+          background: ${AppColors.primary};
         }
 
         .chart-segment.card {
-          background: #10b981; /* 초록색 */
+          background: ${AppColors.success}; /* 초록색 */
         }
 
         .chart-title {
@@ -966,11 +972,11 @@ const RevenueManagement = () => {
         }
 
         .transaction-price.cash {
-          color: #3b82f6; /* 파란색 */
+          color: ${AppColors.primary};
         }
 
         .transaction-price.card {
-          color: #10b981; /* 초록색 */
+          color: ${AppColors.success}; /* 초록색 */
         }
 
         .transaction-card-body {
@@ -1019,14 +1025,14 @@ const RevenueManagement = () => {
         }
 
         .payment-button.active.cash {
-          background: #3b82f6;
-          border-color: #3b82f6;
+          background: ${AppColors.primary};
+          border-color: ${AppColors.primary};
           color: white;
         }
 
         .payment-button.active.card {
-          background: #10b981;
-          border-color: #10b981;
+          background: ${AppColors.success};
+          border-color: ${AppColors.success};
           color: white;
         }
 

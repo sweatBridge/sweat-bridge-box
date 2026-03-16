@@ -1,6 +1,8 @@
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { ko } from 'date-fns/locale';
 import 'react-datepicker/dist/react-datepicker.css';
+import { Gradients } from '../constants/gradients';
+import { AppColors } from '../constants/colors';
 
 registerLocale('ko', ko);
 
@@ -69,7 +71,7 @@ const DateInput = ({
         }
 
         .react-datepicker__header {
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          background: ${Gradients.primary};
           border-bottom: none;
           border-radius: 8px 8px 0 0;
           padding: 12px;
@@ -112,13 +114,13 @@ const DateInput = ({
         }
 
         .react-datepicker__day--selected {
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          background: ${Gradients.primary};
           border-radius: 50%;
           font-weight: 600;
         }
 
         .react-datepicker__day--selected:hover {
-          background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+          background: ${Gradients.primaryHover};
         }
 
         .react-datepicker__day--keyboard-selected {
@@ -128,7 +130,7 @@ const DateInput = ({
 
         .react-datepicker__day--today {
           font-weight: 600;
-          color: #2563eb;
+          color: ${AppColors.primary};
         }
 
         .react-datepicker__day--outside-month {
@@ -168,7 +170,7 @@ const DateInput = ({
 
         .react-datepicker__year-option--selected,
         .react-datepicker__month-option--selected {
-          background-color: #2563eb;
+          background-color: ${AppColors.primary};
           color: white;
         }
 

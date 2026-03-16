@@ -492,8 +492,8 @@ const EditMembershipModal = ({
         }
 
         .btn-primary:hover:not(:disabled) {
-          background-color: #1d4ed8;
-          border-color: #1d4ed8;
+          background-color: ${AppColors.primaryHover};
+          border-color: ${AppColors.primaryHover};
         }
 
         .btn-secondary {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Building, MapPin, User, Phone, Mail, Users, Plus, Trash2, Search, Save, RefreshCw } from 'lucide-react';
+import { Building, MapPin, User, Phone, Mail, Users, Plus, Trash2, Search, Pencil, RefreshCw } from 'lucide-react';
 import { BoxInfo, Coach } from '../types/box';
 import { useBoxManagement } from '../hooks/useBoxManagement';
 import { usePageContext } from '../contexts/PageContext';
@@ -270,7 +270,7 @@ const BoxSettings = () => {
               onClick={handleUpdate} 
               disabled={isUpdating || loading}
             >
-              <Save size={16} />
+              <Pencil size={16} />
               {isUpdating ? '저장 중...' : '수정'}
             </button>
           </div>
@@ -777,8 +777,8 @@ const BoxSettings = () => {
         }
 
         .btn-primary {
-          background-color: #3b82f6;
-          border-color: #3b82f6;
+          background-color: ${AppColors.primary};
+          border-color: ${AppColors.primary};
           color: white;
         }
 
