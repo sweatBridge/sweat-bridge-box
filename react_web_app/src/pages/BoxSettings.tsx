@@ -252,7 +252,7 @@ const BoxSettings = () => {
   }, [loadBoxInfo, createToast]);
 
   return (
-    <div className="dashboard">
+    <div className="dashboard box-settings-page">
       {/* 컨트롤 카드 */}
       <div className="content-card">
         <div className="card-header">
@@ -678,11 +678,11 @@ const BoxSettings = () => {
           margin-top: 22px;
         }
 
-        .coaches-table {
+        .box-settings-page .coaches-table {
           width: 100%;
         }
 
-        .table-header {
+        .box-settings-page .table-header {
           display: grid;
           grid-template-columns: 1fr 1fr 1fr 80px;
           gap: 16px;
@@ -694,7 +694,7 @@ const BoxSettings = () => {
           font-size: 14px;
         }
 
-        .table-row {
+        .box-settings-page .table-row {
           display: grid;
           grid-template-columns: 1fr 1fr 1fr 80px;
           gap: 16px;
@@ -703,11 +703,11 @@ const BoxSettings = () => {
           transition: all 0.2s;
         }
 
-        .table-row:hover {
+        .box-settings-page .table-row:hover {
           background-color: #f9fafb;
         }
 
-        .table-cell {
+        .box-settings-page .table-cell {
           display: flex;
           align-items: center;
           font-size: 14px;
@@ -849,13 +849,13 @@ const BoxSettings = () => {
             margin-top: 12px;
           }
 
-          .table-header,
-          .table-row {
+          .box-settings-page .table-header,
+          .box-settings-page .table-row {
             grid-template-columns: 1fr;
             gap: 8px;
           }
 
-          .table-cell {
+          .box-settings-page .table-cell {
             padding: 8px 0;
           }
         }

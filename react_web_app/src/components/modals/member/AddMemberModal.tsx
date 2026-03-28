@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Timestamp } from 'firebase/firestore';
 import { Gradients } from '../../../constants/gradients';
 import { X, UserPlus, Search } from 'lucide-react';
@@ -226,9 +227,9 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
 
   if (!visible) return null;
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content add-member-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">
             <UserPlus size={20} />
@@ -514,7 +515,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
             z-index: 1000;
           }
 
-          .modal-content {
+          .add-member-modal {
             background: white;
             border-radius: 12px;
             width: 90%;
@@ -525,7 +526,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
             flex-direction: column;
           }
 
-          .modal-header {
+          .add-member-modal .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -534,7 +535,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
             color: white;
           }
 
-          .modal-title {
+          .add-member-modal .modal-title {
             margin: 0;
             font-size: 18px;
             font-weight: 600;
@@ -543,7 +544,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
             gap: 8px;
           }
 
-          .close-button {
+          .add-member-modal .close-button {
             background: none;
             border: none;
             color: white;
@@ -553,11 +554,11 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
             transition: background-color 0.2s;
           }
 
-          .close-button:hover {
+          .add-member-modal .close-button:hover {
             background-color: rgba(255, 255, 255, 0.1);
           }
 
-          .modal-body {
+          .add-member-modal .modal-body {
             flex: 1;
             overflow-y: auto;
             padding: 24px;
@@ -664,7 +665,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
             overflow: hidden;
           }
 
-          .table-header {
+          .add-member-modal .table-header {
             display: grid;
             grid-template-columns: 1fr 1fr 2fr 1.5fr 100px;
             gap: 16px;
@@ -676,7 +677,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
             font-size: 14px;
           }
 
-          .table-row {
+          .add-member-modal .table-row {
             display: grid;
             grid-template-columns: 1fr 1fr 2fr 1.5fr 100px;
             gap: 16px;
@@ -685,15 +686,15 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
             transition: background-color 0.2s;
           }
 
-          .table-row:hover {
+          .add-member-modal .table-row:hover {
             background-color: #f9fafb;
           }
 
-          .table-row:last-child {
+          .add-member-modal .table-row:last-child {
             border-bottom: none;
           }
 
-          .table-cell {
+          .add-member-modal .table-cell {
             display: flex;
             align-items: center;
             font-size: 14px;
@@ -759,7 +760,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
             gap: 12px;
           }
 
-          .btn {
+          .add-member-modal .btn {
             padding: 8px 16px;
             border-radius: 6px;
             border: 1px solid;
@@ -772,40 +773,40 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
             font-size: 14px;
           }
 
-          .btn:disabled {
+          .add-member-modal .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
           }
 
-          .btn-sm {
+          .add-member-modal .btn-sm {
             padding: 6px 12px;
             font-size: 12px;
           }
 
-          .btn-primary {
+          .add-member-modal .btn-primary {
             background: ${Gradients.primary};
             border-color: #667eea;
             color: white;
           }
 
-          .btn-primary:hover:not(:disabled) {
+          .add-member-modal .btn-primary:hover:not(:disabled) {
             background: ${Gradients.primaryHover};
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
           }
 
-          .btn-secondary {
+          .add-member-modal .btn-secondary {
             background-color: #f8fafc;
             border-color: #e2e8f0;
             color: #64748b;
           }
 
-          .btn-secondary:hover {
+          .add-member-modal .btn-secondary:hover {
             background-color: #f1f5f9;
             border-color: #cbd5e1;
           }
 
-          .modal-footer {
+          .add-member-modal .modal-footer {
             display: flex;
             justify-content: flex-end;
             gap: 12px;
@@ -815,9 +816,9 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
           }
         `}</style>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
 export default AddMemberModal;
-
