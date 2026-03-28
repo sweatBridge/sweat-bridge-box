@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Gradients } from '../../../constants/gradients';
 import { X, Users, Check, XCircle } from 'lucide-react';
 import { MemberService } from '../../../services/memberService';
@@ -92,9 +93,9 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
 
   if (!visible) return null;
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content apply-request-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">
             <Users size={20} />
@@ -174,7 +175,7 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             z-index: 1000;
           }
 
-          .modal-content {
+          .apply-request-modal {
             background: white;
             border-radius: 12px;
             width: 90%;
@@ -185,7 +186,7 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             flex-direction: column;
           }
 
-          .modal-header {
+          .apply-request-modal .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -194,7 +195,7 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             color: white;
           }
 
-          .modal-title {
+          .apply-request-modal .modal-title {
             margin: 0;
             font-size: 18px;
             font-weight: 600;
@@ -203,7 +204,7 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             gap: 8px;
           }
 
-          .close-button {
+          .apply-request-modal .close-button {
             background: none;
             border: none;
             color: white;
@@ -213,11 +214,11 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             transition: background-color 0.2s;
           }
 
-          .close-button:hover {
+          .apply-request-modal .close-button:hover {
             background-color: rgba(255, 255, 255, 0.1);
           }
 
-          .modal-body {
+          .apply-request-modal .modal-body {
             flex: 1;
             overflow-y: auto;
             padding: 24px;
@@ -225,7 +226,7 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             box-sizing: border-box;
           }
 
-          .loading-container {
+          .apply-request-modal .loading-container {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -233,7 +234,7 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             padding: 40px 20px;
           }
 
-          .loading-spinner {
+          .apply-request-modal .loading-spinner {
             width: 32px;
             height: 32px;
             border: 3px solid #f3f4f6;
@@ -248,7 +249,7 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             100% { transform: rotate(360deg); }
           }
 
-          .empty-state {
+          .apply-request-modal .empty-state {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -257,25 +258,25 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             text-align: center;
           }
 
-          .empty-icon {
+          .apply-request-modal .empty-icon {
             color: #9ca3af;
             margin-bottom: 16px;
           }
 
-          .empty-state p {
+          .apply-request-modal .empty-state p {
             margin: 0;
             color: #6b7280;
             font-size: 14px;
           }
 
-          .applicants-table {
+          .apply-request-modal .applicants-table {
             background: white;
             border-radius: 8px;
             border: 1px solid #e2e8f0;
             overflow: hidden;
           }
 
-          .table-header {
+          .apply-request-modal .table-header {
             display: grid !important;
             grid-template-columns: 2fr 3fr 2fr 100px !important;
             gap: 16px;
@@ -288,7 +289,7 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             width: 100%;
           }
 
-          .table-row {
+          .apply-request-modal .table-row {
             display: grid !important;
             grid-template-columns: 2fr 3fr 2fr 100px !important;
             gap: 16px;
@@ -298,15 +299,15 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             width: 100%;
           }
 
-          .table-row:hover {
+          .apply-request-modal .table-row:hover {
             background-color: #f9fafb;
           }
 
-          .table-row:last-child {
+          .apply-request-modal .table-row:last-child {
             border-bottom: none;
           }
 
-          .table-cell {
+          .apply-request-modal .table-cell {
             display: flex;
             align-items: center;
             font-size: 14px;
@@ -317,13 +318,13 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             min-width: 0;
           }
 
-          .actions-cell {
+          .apply-request-modal .actions-cell {
             display: flex;
             gap: 8px;
             justify-content: center;
           }
 
-          .btn {
+          .apply-request-modal .btn {
             padding: 8px 16px;
             border-radius: 6px;
             border: 1px solid;
@@ -336,50 +337,50 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
             font-size: 14px;
           }
 
-          .btn:disabled {
+          .apply-request-modal .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
           }
 
-          .btn-sm {
+          .apply-request-modal .btn-sm {
             padding: 6px 10px;
             font-size: 12px;
           }
 
-          .btn-success {
+          .apply-request-modal .btn-success {
             background-color: #10b981;
             border-color: #10b981;
             color: white;
           }
 
-          .btn-success:hover:not(:disabled) {
+          .apply-request-modal .btn-success:hover:not(:disabled) {
             background-color: #059669;
             border-color: #059669;
           }
 
-          .btn-danger {
+          .apply-request-modal .btn-danger {
             background-color: #dc2626;
             border-color: #dc2626;
             color: white;
           }
 
-          .btn-danger:hover:not(:disabled) {
+          .apply-request-modal .btn-danger:hover:not(:disabled) {
             background-color: #b91c1c;
             border-color: #b91c1c;
           }
 
-          .btn-secondary {
+          .apply-request-modal .btn-secondary {
             background-color: #f8fafc;
             border-color: #e2e8f0;
             color: #64748b;
           }
 
-          .btn-secondary:hover {
+          .apply-request-modal .btn-secondary:hover {
             background-color: #f1f5f9;
             border-color: #cbd5e1;
           }
 
-          .modal-footer {
+          .apply-request-modal .modal-footer {
             display: flex;
             justify-content: flex-end;
             gap: 12px;
@@ -389,9 +390,9 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
           }
         `}</style>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
 export default ApplyRequestModal;
-

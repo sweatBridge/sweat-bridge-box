@@ -166,7 +166,7 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="dashboard">
+    <div className="dashboard dashboard-page">
       {/* 통계 카드들 */}
       <div className="stats-grid">
         {statsData.map((stat, index) => (
@@ -329,12 +329,12 @@ const Dashboard = () => {
           overflow-x: auto;
         }
 
-        .classes-table {
+        .dashboard-page .classes-table {
           width: 100%;
           min-width: 600px;
         }
 
-        .table-header {
+        .dashboard-page .table-header {
           display: grid;
           grid-template-columns: 120px 1fr 120px 150px 120px;
           gap: 16px;
@@ -346,7 +346,7 @@ const Dashboard = () => {
           font-size: 14px;
         }
 
-        .table-row {
+        .dashboard-page .table-row {
           display: grid;
           grid-template-columns: 120px 1fr 120px 150px 120px;
           gap: 16px;
@@ -355,11 +355,11 @@ const Dashboard = () => {
           transition: all 0.2s;
         }
 
-        .table-row:hover {
+        .dashboard-page .table-row:hover {
           background-color: #f9fafb;
         }
 
-        .table-cell {
+        .dashboard-page .table-cell {
           display: flex;
           align-items: center;
           font-size: 14px;

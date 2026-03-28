@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { User, Mail, Phone, Calendar, Users, Clock, CreditCard, Plus, Trash2, Square, DollarSign, CheckCircle, Edit, History } from 'lucide-react';
 import { MemberManagementModalProps, MembershipPlan, UserMembership, AddMembershipData } from '../../../types/membership';
 import { MemberLockerHistory } from '../../../types/member';
@@ -645,7 +646,7 @@ const MemberManagementModal = ({
 
   if (!visible || !member) return null;
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-content member-management-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
@@ -1889,7 +1890,7 @@ const MemberManagementModal = ({
           overflow: hidden;
         }
 
-        .table-header {
+        .member-management-modal .table-header {
           display: grid !important;
           grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 90px 80px 80px 80px !important;
           gap: 16px;
@@ -1902,7 +1903,7 @@ const MemberManagementModal = ({
           width: 100%;
         }
 
-        .table-row {
+        .member-management-modal .table-row {
           display: grid !important;
           grid-template-columns: 2fr 2fr 1fr 1fr 2fr 1fr 90px 80px 80px 80px !important;
           gap: 16px;
@@ -1912,20 +1913,20 @@ const MemberManagementModal = ({
           width: 100%;
         }
 
-        .table-row:hover {
+        .member-management-modal .table-row:hover {
           background-color: #f9fafb;
         }
 
-        .table-row.refunded {
+        .member-management-modal .table-row.refunded {
           background-color: #fff7ed;
           opacity: 0.8;
         }
 
-        .table-row.refunded:hover {
+        .member-management-modal .table-row.refunded:hover {
           background-color: #ffedd5;
         }
 
-        .table-cell {
+        .member-management-modal .table-cell {
           display: flex;
           align-items: center;
           font-size: 14px;
@@ -1936,43 +1937,43 @@ const MemberManagementModal = ({
           min-width: 0;
         }
 
-        .table-cell:nth-child(1) { /* 시작일 */
+        .member-management-modal .table-cell:nth-child(1) { /* 시작일 */
           justify-content: center;
         }
 
-        .table-cell:nth-child(2) { /* 종료일 */
+        .member-management-modal .table-cell:nth-child(2) { /* 종료일 */
           justify-content: center;
         }
 
-        .table-cell:nth-child(3) { /* 타입 */
+        .member-management-modal .table-cell:nth-child(3) { /* 타입 */
           justify-content: center;
         }
 
-        .table-cell:nth-child(4) { /* 가격 */
+        .member-management-modal .table-cell:nth-child(4) { /* 가격 */
           justify-content: center;
         }
 
-        .table-cell:nth-child(5) { /* 플랜 */
+        .member-management-modal .table-cell:nth-child(5) { /* 플랜 */
           justify-content: center;
         }
 
-        .table-cell:nth-child(6) { /* 담당자 */
+        .member-management-modal .table-cell:nth-child(6) { /* 담당자 */
           justify-content: center;
         }
 
-        .table-cell:nth-child(7) { /* 조정 이력 */
+        .member-management-modal .table-cell:nth-child(7) { /* 조정 이력 */
           justify-content: center;
         }
 
-        .table-cell:nth-child(8) { /* 수정 */
+        .member-management-modal .table-cell:nth-child(8) { /* 수정 */
           justify-content: center;
         }
 
-        .table-cell:nth-child(9) { /* 환불 */
+        .member-management-modal .table-cell:nth-child(9) { /* 환불 */
           justify-content: center;
         }
 
-        .table-cell:nth-child(10) { /* 삭제 */
+        .member-management-modal .table-cell:nth-child(10) { /* 삭제 */
           justify-content: center;
         }
 
@@ -2256,13 +2257,13 @@ const MemberManagementModal = ({
             grid-template-columns: 1fr;
           }
 
-          .table-header,
-          .table-row {
+          .member-management-modal .table-header,
+          .member-management-modal .table-row {
             grid-template-columns: 1fr;
             gap: 8px;
           }
 
-          .table-cell {
+          .member-management-modal .table-cell {
             padding: 8px 0;
           }
         }
@@ -2277,7 +2278,8 @@ const MemberManagementModal = ({
           margin-bottom: 0;
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 };
 

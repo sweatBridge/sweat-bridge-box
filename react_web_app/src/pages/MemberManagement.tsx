@@ -317,7 +317,7 @@ const MemberManagement = () => {
   };
 
   return (
-    <div className="dashboard">
+    <div className="dashboard member-management-page">
       {/* 액션 버튼들 */}
       <div className="actions-bar">
         <button className="btn btn-info btn-with-badge" onClick={() => setApplyRequestModalVisible(true)}>
@@ -1017,12 +1017,12 @@ const MemberManagement = () => {
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
-        .members-table {
+        .member-management-page .members-table {
           width: 100%;
           min-width: 700px;
         }
 
-        .table-header {
+        .member-management-page .table-header {
           display: grid;
           grid-template-columns: 1fr 1fr 1fr 1.2fr 1.5fr 1fr 120px;
           gap: 16px;
@@ -1034,7 +1034,7 @@ const MemberManagement = () => {
           font-size: 14px;
         }
 
-        .table-row {
+        .member-management-page .table-row {
           display: grid;
           grid-template-columns: 1fr 1fr 1fr 1.2fr 1.5fr 1fr 120px;
           gap: 16px;
@@ -1043,11 +1043,11 @@ const MemberManagement = () => {
           transition: all 0.2s;
         }
 
-        .table-row:hover {
+        .member-management-page .table-row:hover {
           background-color: #f9fafb;
         }
 
-        .table-cell {
+        .member-management-page .table-cell {
           display: flex;
           align-items: center;
           font-size: 14px;
@@ -1055,7 +1055,7 @@ const MemberManagement = () => {
         }
 
         /* 헤더/바디 모두에서 관리 컬럼을 중앙 정렬 */
-        .table-header .table-cell:last-child {
+        .member-management-page .table-header .table-cell:last-child {
           justify-content: center;
         }
 
