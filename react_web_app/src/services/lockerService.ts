@@ -4,8 +4,21 @@ import { Locker, LOCKER_STATE, LockerState, getLockerState } from '../types/lock
 import { toLocker } from '../utils/lockerUtils';
 import { formatDateToString } from '../utils/dateUtils';
 
+type LockerDocumentEntry = Locker | Locker[];
+type LockerDocumentData = Record<string, LockerDocumentEntry>;
+
 export class LockerService {
-  private static hasActiveAssignedUser(lockerEntryData: unknown, lockerNumber: number): boolean {
+  /**
+   * 특정 락커 엔트리에 현재 활성 배정 회원이 있는지 확인합니다.
+   *
+   * 최신 엔트리를 기준으로 회원 이름이 존재하고, 날짜 기준 실제 상태가
+   * `used`인 경우에만 배정 중으로 판단합니다.
+   *
+   * @param lockerEntryData 락커 문서에 저장된 단일 엔트리 또는 히스토리 배열
+   * @param lockerNumber 확인할 락커 번호
+   * @returns 현재 배정된 회원이 있으면 `true`
+   */
+  private static hasActiveAssignedUser(lockerEntryData: LockerDocumentEntry, lockerNumber: number): boolean {
     if (Array.isArray(lockerEntryData)) {
       if (lockerEntryData.length === 0) {
         return false;
@@ -23,13 +36,21 @@ export class LockerService {
     return false;
   }
 
+  /**
+   * 박스의 전체 락커 목록을 조회합니다.
+   *
+   * 각 락커 번호별로 최신 엔트리만 꺼내 `Locker` 형태로 반환합니다.
+   *
+   * @param box 박스 이름
+   * @returns 최신 상태 기준의 락커 목록
+   */
   static async getLockers(box: string): Promise<Locker[]> {
     // lockerdoc 은 "문서"이므로 getDoc + doc 사용
     const ref = doc(db, `box/${box}/lockers/lockerdoc`);
     const snap = await getDoc(ref);
     if (!snap.exists()) return [];
 
-    const data = snap.data() as Record<string, unknown>;
+    const data = snap.data() as LockerDocumentData;
     const out: Locker[] = [];
 
     for (const [key, value] of Object.entries(data)) {
@@ -56,6 +77,16 @@ export class LockerService {
     return out;
   }
 
+  /**
+   * 지정한 번호 범위의 락커를 추가합니다.
+   *
+   * 이미 존재하는 락커는 건너뛰고, 삭제 상태였던 락커는 다시 활성화합니다.
+   *
+   * @param box 박스 이름
+   * @param start 시작 번호
+   * @param end 종료 번호
+   * @returns 추가된 번호와 건너뛴 번호 목록
+   */
   static async addLockers(
     box: string,
     start: number,
@@ -67,9 +98,9 @@ export class LockerService {
 
     return runTransaction(db, async (tx) => {
       const snap = await tx.get(ref);
-      const existing = snap.exists() ? (snap.data() as Record<string, unknown>) : {};
+      const existing: LockerDocumentData = snap.exists() ? (snap.data() as LockerDocumentData) : {};
 
-      const toSet: Record<string, unknown> = {};
+      const toSet: LockerDocumentData = {};
       const added: number[] = [];
       const skipped: number[] = [];
 
@@ -134,6 +165,15 @@ export class LockerService {
     });
   }
 
+  /**
+   * 락커를 삭제 상태로 변경합니다.
+   *
+   * 회원이 배정된 이력이 있으면 삭제 히스토리를 추가하고,
+   * 그렇지 않으면 최신 엔트리의 상태만 삭제로 바꿉니다.
+   *
+   * @param box 박스 이름
+   * @param lockerNumber 삭제할 락커 번호
+   */
   static async deleteLocker(box: string, lockerNumber: number): Promise<void> {
     const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
 
@@ -143,7 +183,7 @@ export class LockerService {
         throw new Error('락커 문서를 찾을 수 없습니다.');
       }
 
-      const data = snap.data() as Record<string, unknown>;
+      const data = snap.data() as LockerDocumentData;
       const key = String(lockerNumber);
 
       if (!Object.prototype.hasOwnProperty.call(data, key)) {
@@ -198,6 +238,14 @@ export class LockerService {
     });
   }
 
+  /**
+   * 사용 중인 락커를 해지하고 사용 가능 상태 엔트리를 추가합니다.
+   *
+   * @param box 박스 이름
+   * @param lockerNumber 해지할 락커 번호
+   * @param note 해지 사유 메모
+   * @param assignee 처리자 이름
+   */
   static async releaseLocker(box: string, lockerNumber: number, note: string = '', assignee: string = ''): Promise<void> {
     const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
 
@@ -207,7 +255,7 @@ export class LockerService {
         throw new Error('락커 문서를 찾을 수 없습니다.');
       }
 
-      const data = snap.data() as Record<string, unknown>;
+      const data = snap.data() as LockerDocumentData;
       const key = String(lockerNumber);
 
       if (!Object.prototype.hasOwnProperty.call(data, key)) {
@@ -248,6 +296,17 @@ export class LockerService {
     });
   }
 
+  /**
+   * 비어 있는 락커의 상태를 변경합니다.
+   *
+   * 회원이 배정된 락커는 변경할 수 없으며, `unused` 또는 `na` 상태만 지원합니다.
+   *
+   * @param box 박스 이름
+   * @param lockerNumber 변경할 락커 번호
+   * @param state 변경할 상태
+   * @param note 변경 사유 메모
+   * @param assignee 처리자 이름
+   */
   static async updateLocker(
     box: string,
     lockerNumber: number,
@@ -267,7 +326,7 @@ export class LockerService {
         throw new Error('락커 문서를 찾을 수 없습니다.');
       }
 
-      const data = snap.data() as Record<string, unknown>;
+      const data = snap.data() as LockerDocumentData;
       const key = String(lockerNumber);
 
       if (!Object.prototype.hasOwnProperty.call(data, key)) {
@@ -325,6 +384,13 @@ export class LockerService {
     });
   }
 
+  /**
+   * 특정 락커 번호의 전체 히스토리를 조회합니다.
+   *
+   * @param box 박스 이름
+   * @param lockerNumber 조회할 락커 번호
+   * @returns 오래된 순서대로 정리된 락커 히스토리 목록
+   */
   static async getLockerHistory(box: string, lockerNumber: number): Promise<Locker[]> {
     const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
     const snap = await getDoc(ref);
@@ -333,7 +399,7 @@ export class LockerService {
       return [];
     }
 
-    const data = snap.data() as Record<string, unknown>;
+    const data = snap.data() as LockerDocumentData;
     const key = String(lockerNumber);
 
     if (!Object.prototype.hasOwnProperty.call(data, key)) {
@@ -357,6 +423,23 @@ export class LockerService {
     return history;
   }
 
+  /**
+   * 회원을 락커에 배정합니다.
+   *
+   * 현재 활성 배정 회원이 없는 경우에만 배정 가능하며,
+   * 기존 최신 엔트리 상태에 따라 덮어쓰기 또는 히스토리 추가를 수행합니다.
+   *
+   * @param box 박스 이름
+   * @param lockerNumber 배정할 락커 번호
+   * @param userId 회원 식별자
+   * @param userName 회원 이름
+   * @param phoneNumber 회원 연락처
+   * @param startDate 사용 시작일
+   * @param endDate 사용 종료일
+   * @param key 락커 배정 고유 키
+   * @param price 결제 금액
+   * @param paymentType 결제 수단
+   */
   static async assignLocker(
     box: string,
     lockerNumber: number,
@@ -377,7 +460,7 @@ export class LockerService {
         throw new Error('락커 문서를 찾을 수 없습니다.');
       }
 
-      const data = snap.data() as Record<string, unknown>;
+      const data = snap.data() as LockerDocumentData;
       const lockerKey = String(lockerNumber);
 
       if (!Object.prototype.hasOwnProperty.call(data, lockerKey)) {
@@ -443,8 +526,14 @@ export class LockerService {
   }
 
   /**
-   * 전체 락커 연장
-   * 현재 사용 중인 모든 락커의 만료일을 연장합니다.
+   * 현재 사용 중인 모든 락커의 만료일을 일괄 연장합니다.
+   *
+   * 만료되지 않은 활성 락커만 대상으로 하며, 회원 히스토리 갱신에 필요한
+   * 최소 정보도 함께 반환합니다.
+   *
+   * @param box 박스 이름
+   * @param days 연장할 일수
+   * @returns 연장된 개수와 후속 처리용 락커 정보
    */
   static async extendAllLockers(
     box: string,
@@ -463,7 +552,7 @@ export class LockerService {
         return { extendedCount: 0, extendedLockers: [] };
       }
 
-      const data = snap.data() as Record<string, unknown>;
+      const data = snap.data() as LockerDocumentData;
       let extendedCount = 0;
       const updates: Record<string, any> = {};
       const extendedLockers: Array<{ id: string; key: string; endDate: string }> = [];
