@@ -1,18 +1,16 @@
 import {
-  getDocs,
   collection,
-  query,
-  getDoc,
+  deleteDoc,
   doc,
+  getDoc,
+  getDocs,
+  query,
   setDoc,
-  where,
   Timestamp,
   updateDoc,
-  deleteDoc
+  where
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { extractDateTimeFromDocKey } from '../models/classModel';
-import { ClassEvent } from '../types/class';
 
 export interface FirebaseClassData {
   cap: number;
@@ -29,142 +27,81 @@ export interface ClassPayload {
   reserved?: string[];
 }
 
+export interface FirebaseClassDocument {
+  docKey: string;
+  data: FirebaseClassData;
+}
+
 export class ClassRepository {
-  static async getTodayClasses(box: string): Promise<ClassEvent[]> {
-    try {
-      const today = new Date();
-      const startOfDay = new Date(today);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(today);
-      endOfDay.setHours(23, 59, 59, 999);
+  /**
+   * 지정한 기간의 클래스 문서를 조회합니다.
+   *
+   * @param box 박스 이름
+   * @param startDate 조회 시작 시각
+   * @param endDate 조회 종료 시각
+   * @returns 클래스 문서 목록
+   */
+  static async getClassesInRange(box: string, startDate: Date, endDate: Date): Promise<FirebaseClassDocument[]> {
+    const q = query(
+      collection(db, `/box/${box}/class`),
+      where('date', '>=', Timestamp.fromDate(startDate)),
+      where('date', '<=', Timestamp.fromDate(endDate))
+    );
 
-      const q = query(
-        collection(db, `/box/${box}/class`),
-        where('date', '>=', Timestamp.fromDate(startOfDay)),
-        where('date', '<=', Timestamp.fromDate(endOfDay))
-      );
-
-      const snap = await getDocs(q);
-      const events: ClassEvent[] = [];
-
-      snap.forEach(docSnap => {
-        try {
-          const docKey = docSnap.id;
-          const data = docSnap.data() as FirebaseClassData;
-          const { year, month, day, startHour, startMin, endHour, endMin } = extractDateTimeFromDocKey(docKey);
-
-          events.push({
-            id: docKey,
-            title: `${box} WOD`,
-            start: `${year}-${month}-${day}T${startHour}:${startMin}:00+09:00`,
-            end: `${year}-${month}-${day}T${endHour}:${endMin}:00+09:00`,
-            extendedProps: { coach: data.coach, cap: data.cap, reserved: data.reserved || [] }
-          });
-        } catch (err) {
-          console.error('Error processing class document:', docSnap.id, err);
-        }
-      });
-
-      return events.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
-    } catch (error) {
-      console.error('Error fetching today classes:', error);
-      throw error;
-    }
+    const snap = await getDocs(q);
+    return snap.docs.map((docSnap) => ({
+      docKey: docSnap.id,
+      data: docSnap.data() as FirebaseClassData
+    }));
   }
 
-  static async getMonthlyClasses(box: string, startDate: Date, endDate: Date): Promise<ClassEvent[]> {
-    try {
-      const startDt = new Date(startDate);
-      startDt.setHours(0, 0, 0, 0);
-      const endDt = new Date(endDate);
-      endDt.setHours(23, 59, 59, 999);
-
-      const q = query(
-        collection(db, `/box/${box}/class`),
-        where('date', '>=', Timestamp.fromDate(startDt)),
-        where('date', '<=', Timestamp.fromDate(endDt))
-      );
-
-      const snap = await getDocs(q);
-      const events: ClassEvent[] = [];
-
-      snap.forEach(docSnap => {
-        try {
-          const docKey = docSnap.id;
-          const data = docSnap.data() as FirebaseClassData;
-          const { year, month, day, startHour, startMin, endHour, endMin } = extractDateTimeFromDocKey(docKey);
-
-          events.push({
-            id: docKey,
-            title: `${box} WOD`,
-            start: `${year}-${month}-${day}T${startHour}:${startMin}:00+09:00`,
-            end: `${year}-${month}-${day}T${endHour}:${endMin}:00+09:00`,
-            extendedProps: { coach: data.coach, cap: data.cap, reserved: data.reserved || [] }
-          });
-        } catch (err) {
-          console.error('Error processing class document:', docSnap.id, err);
-        }
-      });
-
-      return events;
-    } catch (error) {
-      console.error('Error fetching monthly classes:', error);
-      throw error;
-    }
-  }
-
+  /**
+   * 특정 클래스 문서를 조회합니다.
+   *
+   * @param box 박스 이름
+   * @param date 레거시 날짜 경로
+   * @param time 레거시 시간 경로
+   * @returns 클래스 문서 또는 `null`
+   */
   static async getClass(box: string, date: string, time: string): Promise<FirebaseClassData | null> {
-    try {
-      const snap = await getDoc(doc(db, `/box/${box}/class/${date}/time`, time));
-      return snap.exists() ? (snap.data() as FirebaseClassData) : null;
-    } catch (error) {
-      console.error('Error fetching class:', error);
-      throw error;
-    }
+    const snap = await getDoc(doc(db, `/box/${box}/class/${date}/time`, time));
+    return snap.exists() ? (snap.data() as FirebaseClassData) : null;
   }
 
-  static async setClass(payload: ClassPayload): Promise<void> {
-    try {
-      const { docKey, box, coach, cap } = payload;
-      const { year, month, day, startHour, startMin } = extractDateTimeFromDocKey(docKey);
-      const date = new Date(`${year}-${month}-${day}T${startHour}:${startMin}:00+09:00`);
-
-      await setDoc(doc(db, `/box/${box}/class`, docKey), {
-        cap,
-        coach,
-        date: Timestamp.fromDate(date),
-        reserved: []
-      });
-    } catch (error) {
-      console.error('Error creating class:', error);
-      throw error;
-    }
+  /**
+   * 클래스 문서를 생성합니다.
+   *
+   * @param box 박스 이름
+   * @param docKey 클래스 문서 키
+   * @param data 저장할 클래스 데이터
+   */
+  static async setClassDocument(box: string, docKey: string, data: FirebaseClassData): Promise<void> {
+    await setDoc(doc(db, `/box/${box}/class`, docKey), data);
   }
 
-  static async updateClass(payload: ClassPayload): Promise<void> {
-    try {
-      const { docKey, box, coach, cap, reserved } = payload;
-      const { year, month, day, startHour, startMin } = extractDateTimeFromDocKey(docKey);
-      const date = new Date(`${year}-${month}-${day}T${startHour}:${startMin}:00+09:00`);
-
-      await updateDoc(doc(db, `/box/${box}/class`, docKey), {
-        cap,
-        coach,
-        date: Timestamp.fromDate(date),
-        reserved: reserved || []
-      });
-    } catch (error) {
-      console.error('Error updating class:', error);
-      throw error;
-    }
+  /**
+   * 클래스 문서를 수정합니다.
+   *
+   * @param box 박스 이름
+   * @param docKey 클래스 문서 키
+   * @param data 수정할 클래스 데이터
+   */
+  static async updateClassDocument(box: string, docKey: string, data: FirebaseClassData): Promise<void> {
+    await updateDoc(doc(db, `/box/${box}/class`, docKey), {
+      cap: data.cap,
+      coach: data.coach,
+      date: data.date,
+      reserved: data.reserved
+    });
   }
 
-  static async deleteClass(docKey: string, box: string): Promise<void> {
-    try {
-      await deleteDoc(doc(db, `/box/${box}/class`, docKey));
-    } catch (error) {
-      console.error('Error deleting class:', error);
-      throw error;
-    }
+  /**
+   * 클래스 문서를 삭제합니다.
+   *
+   * @param docKey 클래스 문서 키
+   * @param box 박스 이름
+   */
+  static async deleteClassDocument(docKey: string, box: string): Promise<void> {
+    await deleteDoc(doc(db, `/box/${box}/class`, docKey));
   }
 }

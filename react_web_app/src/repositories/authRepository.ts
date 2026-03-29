@@ -1,98 +1,40 @@
-import { getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getAuth, signInWithEmailAndPassword, signOut, UserCredential } from 'firebase/auth';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { LoginCredentials, User } from '../types/auth';
 
 export class AuthRepository {
-  static async login(credentials: LoginCredentials): Promise<User> {
-    try {
-      const auth = getAuth();
-      const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
-
-      const idToken = await userCredential.user.getIdToken();
-      const idTokenResult = await userCredential.user.getIdTokenResult();
-
-      localStorage.setItem('userToken', idToken);
-      localStorage.setItem('tokenExpiration', idTokenResult.expirationTime);
-      localStorage.setItem('id', JSON.stringify(idTokenResult));
-
-      const user = await this.getUserInfo(credentials.email);
-      this.saveUserToLocalStorage(user);
-
-      return user;
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw new Error('아이디와 비밀번호를 다시 확인해주세요.');
-    }
+  /**
+   * Firebase Auth로 이메일 로그인 요청을 수행합니다.
+   *
+   * @param credentials 로그인 자격 정보
+   * @returns Firebase 로그인 결과
+   */
+  static async signIn(credentials: LoginCredentials): Promise<UserCredential> {
+    const auth = getAuth();
+    return signInWithEmailAndPassword(auth, credentials.email, credentials.password);
   }
 
-  static async logout(): Promise<void> {
-    try {
-      const auth = getAuth();
-      await signOut(auth);
-
-      const keys = ['userToken', 'tokenExpiration', 'id', 'boxName', 'realName', 'nickName', 'userEmail', 'userPhone', 'userRole'];
-      keys.forEach(k => localStorage.removeItem(k));
-    } catch (error) {
-      console.error('Logout failed:', error);
-      throw new Error('로그아웃에 실패했습니다.');
-    }
+  /**
+   * 현재 로그인된 Firebase Auth 세션을 종료합니다.
+   */
+  static async signOut(): Promise<void> {
+    const auth = getAuth();
+    await signOut(auth);
   }
 
-  static async getUserInfo(email: string): Promise<User> {
-    try {
-      const q = query(collection(db, 'user'), where('email', '==', email));
-      const snap = await getDocs(q);
+  /**
+   * 이메일과 일치하는 사용자 문서를 조회합니다.
+   *
+   * @param email 조회할 사용자 이메일
+   * @returns 일치하는 사용자 목록
+   */
+  static async getUsersByEmail(email: string): Promise<User[]> {
+    const q = query(collection(db, 'user'), where('email', '==', email));
+    const snap = await getDocs(q);
 
-      const users: User[] = [];
-      snap.forEach(doc => users.push(doc.data() as User));
-
-      if (users.length === 1) return users[0];
-      throw new Error('사용자 정보를 찾을 수 없습니다.');
-    } catch (error) {
-      console.error('Failed to get user info:', error);
-      throw new Error('사용자 정보 조회에 실패했습니다.');
-    }
-  }
-
-  static saveUserToLocalStorage(user: User): void {
-    localStorage.setItem('boxName', user.boxName);
-    localStorage.setItem('realName', user.realName);
-    localStorage.setItem('nickName', user.nickName);
-    localStorage.setItem('userEmail', user.email);
-    localStorage.setItem('userPhone', user.phone);
-    localStorage.setItem('userRole', user.role);
-  }
-
-  static getUserFromLocalStorage(): User | null {
-    const boxName = localStorage.getItem('boxName');
-    const realName = localStorage.getItem('realName');
-    const nickName = localStorage.getItem('nickName');
-    const email = localStorage.getItem('userEmail');
-    const phone = localStorage.getItem('userPhone');
-    const role = localStorage.getItem('userRole');
-
-    if (boxName && realName && nickName && email && phone && role) {
-      return { boxName, realName, nickName, email, phone, role };
-    }
-    return null;
-  }
-
-  static checkTokenExpiration(): boolean {
-    const tokenExpiration = localStorage.getItem('tokenExpiration');
-    if (!tokenExpiration) return true;
-
-    const expired = new Date(tokenExpiration) < new Date();
-    if (expired) {
-      const keys = ['userToken', 'tokenExpiration', 'id', 'boxName', 'realName', 'nickName', 'userEmail', 'userPhone', 'userRole'];
-      keys.forEach(k => localStorage.removeItem(k));
-      return true;
-    }
-    return false;
-  }
-
-  static isAuthenticated(): boolean {
-    const token = localStorage.getItem('userToken');
-    return !!(token && !this.checkTokenExpiration());
+    const users: User[] = [];
+    snap.forEach((docSnap) => users.push(docSnap.data() as User));
+    return users;
   }
 }
