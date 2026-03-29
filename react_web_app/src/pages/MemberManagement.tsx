@@ -571,44 +571,46 @@ const MemberManagement = () => {
       </div>
 
       {/* Modals */}
-      <MemberManagementModal
-        visible={memberManagementModalVisible}
-        member={selectedMember}
-        onClose={(hasDataChanged) => {
-          setMemberManagementModalVisible(false);
-          // 회원권 데이터가 변경된 경우에만 회원 목록 새로고침
-          if (hasDataChanged) {
-            loadMembers();
-          }
-        }}
-        onSuccess={(message) => {
-          if (createToast) {
-            createToast({
-              type: 'success',
-              message
-            });
-          }
-        }}
-        onError={(message) => {
-          if (createToast) {
-            createToast({
-              type: 'danger',
-              message
-            });
-          }
-        }}
-        onMemoUpdate={async (email, memo) => {
-          try {
-            await updateMemberMemo(email, memo);
-            // selectedMember도 업데이트
-            if (selectedMember && selectedMember.email === email) {
-              setSelectedMember({ ...selectedMember, memo });
+      {selectedMember && (
+        <MemberManagementModal
+          visible={memberManagementModalVisible}
+          member={selectedMember}
+          onClose={(hasDataChanged) => {
+            setMemberManagementModalVisible(false);
+            // 회원권 데이터가 변경된 경우에만 회원 목록 새로고침
+            if (hasDataChanged) {
+              loadMembers();
             }
-          } catch (error) {
-            console.error('Failed to update member memo in parent:', error);
-          }
-        }}
-      />
+          }}
+          onSuccess={(message) => {
+            if (createToast) {
+              createToast({
+                type: 'success',
+                message
+              });
+            }
+          }}
+          onError={(message) => {
+            if (createToast) {
+              createToast({
+                type: 'danger',
+                message
+              });
+            }
+          }}
+          onMemoUpdate={async (email, memo) => {
+            try {
+              await updateMemberMemo(email, memo);
+              // selectedMember도 업데이트
+              if (selectedMember && selectedMember.email === email) {
+                setSelectedMember({ ...selectedMember, memo });
+              }
+            } catch (error) {
+              console.error('Failed to update member memo in parent:', error);
+            }
+          }}
+        />
+      )}
 
       <MemberDeletionModal
         visible={deletionModalVisible}

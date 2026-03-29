@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export interface DailyRevenue {
   date: string; // YYYY-MM-DD 형식
   totalRevenue: number; // 총 매출 (현금 + 카드 - 환불액)
@@ -15,15 +17,21 @@ export interface DailyRevenue {
 
 export interface RevenueData {
   assignee: string;
-  createdAt: any; // Timestamp
+  createdAt: Timestamp;
   id: string;
-  paymentType: 'card' | 'cash';
+  paymentType: 'card' | 'cash' | 'transfer' | 'point';
   plan: string;
   price: string;
   realName: string;
   type: string;
   refundAmount: string;
 }
+
+export type RevenueMonthData = Record<string, RevenueData>;
+
+export type RevenueYearData = Record<string, RevenueMonthData>;
+
+export type DailyTransactions = Record<string, RevenueData[]>;
 
 export interface MonthlyRevenue {
   year: number;
@@ -32,7 +40,7 @@ export interface MonthlyRevenue {
   membershipRevenue: number;
   otherRevenue: number;
   dailyData: DailyRevenue[];
-  dailyTransactions: { [date: string]: RevenueData[] }; // 날짜별 거래 내역
+  dailyTransactions: DailyTransactions; // 날짜별 거래 내역
 }
 
 export interface RevenueStats {

@@ -1,10 +1,10 @@
 import { doc, getDoc, collection, getDocs, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { RevenueData } from '../types/revenue';
+import { RevenueYearData } from '../types/revenue';
 
 export interface RevenueYearDocument {
   year: string;
-  data: Record<string, any>;
+  data: RevenueYearData;
 }
 
 export class RevenueRepository {
@@ -15,9 +15,9 @@ export class RevenueRepository {
    * @param year 조회 연도
    * @returns 연도 매출 데이터
    */
-  static async getRevenueYear(boxName: string, year: number): Promise<Record<string, any>> {
+  static async getRevenueYear(boxName: string, year: number): Promise<RevenueYearData> {
     const revenueDoc = await getDoc(doc(db, `box/${boxName}/revenue/${year}`));
-    return revenueDoc.exists() ? revenueDoc.data() : {};
+    return revenueDoc.exists() ? (revenueDoc.data() as RevenueYearData) : {};
   }
 
   /**
@@ -38,7 +38,7 @@ export class RevenueRepository {
    * @param year 저장 연도
    * @param data 저장할 연도 데이터
    */
-  static async setRevenueYear(boxName: string, year: number | string, data: Record<string, any>): Promise<void> {
+  static async setRevenueYear(boxName: string, year: number | string, data: RevenueYearData): Promise<void> {
     await setDoc(doc(db, `box/${boxName}/revenue/${year}`), data);
   }
 

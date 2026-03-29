@@ -4,7 +4,7 @@ import { MembershipPlan } from '../types/membership';
 
 export interface MemberMembershipDocument {
   email: string;
-  memberships: any[];
+  memberships: unknown[];
 }
 
 export class MembershipRepository {
@@ -37,7 +37,7 @@ export class MembershipRepository {
    * @param email 회원 이메일
    * @returns 원시 회원권 배열
    */
-  static async getRawUserMemberships(boxName: string, email: string): Promise<any[]> {
+  static async getRawUserMemberships(boxName: string, email: string): Promise<unknown[]> {
     const snap = await getDoc(doc(db, `box/${boxName}/member/${email}`));
     if (!snap.exists()) return [];
 
@@ -51,7 +51,7 @@ export class MembershipRepository {
    * @param email 회원 이메일
    * @param memberships 저장할 회원권 배열
    */
-  static async setUserMemberships(boxName: string, email: string, memberships: any[]): Promise<void> {
+  static async setUserMemberships(boxName: string, email: string, memberships: unknown[]): Promise<void> {
     await setDoc(doc(db, `box/${boxName}/member/${email}`), { memberships }, { merge: true });
   }
 

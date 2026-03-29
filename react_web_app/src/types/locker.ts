@@ -122,3 +122,9 @@ export interface Locker{
     price?: string;  // 가격
     paymentType?: 'cash' | 'card';  // 결제수단
 }
+
+export type LockerDocumentValue = Partial<Locker>;
+
+export type LockerDocumentEntry = LockerDocumentValue | LockerDocumentValue[];
+
+export type LockerDocumentData = Record<string, LockerDocumentEntry>;

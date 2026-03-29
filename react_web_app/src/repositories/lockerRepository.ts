@@ -1,8 +1,6 @@
 import { getDoc, doc, runTransaction } from 'firebase/firestore';
 import { db } from '../config/firebase';
-
-export type LockerDocumentEntry = unknown;
-export type LockerDocumentData = Record<string, LockerDocumentEntry>;
+import { LockerDocumentData } from '../types/locker';
 
 type LockerTransactionOperation = 'set' | 'update';
 

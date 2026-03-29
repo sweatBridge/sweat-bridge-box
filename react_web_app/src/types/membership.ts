@@ -90,7 +90,7 @@ export interface MembershipState {
 // 새로운 통합 모달을 위한 타입
 export interface MemberManagementModalProps {
   visible: boolean;
-  member: any; // Member 타입 사용
+  member: Member;
   onClose: (hasDataChanged?: boolean) => void;
   onSuccess?: (message: string) => void;
   onError?: (message: string) => void;
@@ -135,3 +135,4 @@ export class MembershipInfo {
     return new MembershipInfo(type, expiryDate, remainingDays, remainingVisits);
   }
 } 
+import type { Member } from './member';

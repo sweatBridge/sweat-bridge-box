@@ -1,6 +1,6 @@
 import { getLatestLocker, hasActiveAssignedUser, toLocker } from '../models/lockerModel';
-import { LockerDocumentData, LockerDocumentEntry, LockerRepository } from '../repositories/lockerRepository';
-import { Locker, LOCKER_STATE, LockerState } from '../types/locker';
+import { LockerRepository } from '../repositories/lockerRepository';
+import { Locker, LOCKER_STATE, LockerDocumentData, LockerDocumentEntry, LockerState } from '../types/locker';
 import { formatDateToString } from '../utils/dateUtils';
 
 export class LockerService {

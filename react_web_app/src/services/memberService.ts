@@ -5,7 +5,7 @@ import {
   convertMembershipsFromFirebase
 } from '../models/memberModel';
 import { FirebaseMemberData, MemberRepository } from '../repositories/memberRepository';
-import { Member, MemberLockerHistory } from '../types/member';
+import { BoxUser, Member, MemberApplicant, MemberLockerHistory } from '../types/member';
 
 export class MemberService {
   /**
@@ -20,12 +20,13 @@ export class MemberService {
 
       return documents.map(({ data }) => {
         const memberData = { ...data };
+        const rawMemberships = Array.isArray(memberData.memberships) ? memberData.memberships : [];
 
         if (memberData.birth && !memberData.birthDate) {
           memberData.birthDate = memberData.birth;
         }
 
-        const allMemberships = convertMembershipsFromFirebase(memberData.memberships || []);
+        const allMemberships = convertMembershipsFromFirebase(rawMemberships);
         const { pastMemberships, currentMemberships, futureMemberships, refundedMemberships } =
           categorizeMemberships(allMemberships);
 
@@ -63,7 +64,7 @@ export class MemberService {
    * @param email 회원 이메일
    * @param membershipData 수정할 회원권 데이터
    */
-  static async updateMemberMembership(box: string, email: string, membershipData: any): Promise<void> {
+  static async updateMemberMembership(box: string, email: string, membershipData: Record<string, unknown>): Promise<void> {
     return MemberRepository.updateMember(box, email, membershipData);
   }
 
@@ -205,7 +206,7 @@ export class MemberService {
    * @param email 사용자 이메일
    * @returns 사용자 정보 또는 `null`
    */
-  static async getUserByEmail(email: string): Promise<any> {
+  static async getUserByEmail(email: string): Promise<BoxUser | null> {
     const users = await MemberRepository.getUsersByField('email', email);
     return users[0] ?? null;
   }
@@ -216,7 +217,7 @@ export class MemberService {
    * @param phone 사용자 전화번호
    * @returns 사용자 정보 또는 `null`
    */
-  static async getUserByPhone(phone: string): Promise<any> {
+  static async getUserByPhone(phone: string): Promise<BoxUser | null> {
     const users = await MemberRepository.getUsersByField('phone', phone);
     return users[0] ?? null;
   }
@@ -227,7 +228,7 @@ export class MemberService {
    * @param realName 사용자 실명
    * @returns 사용자 목록
    */
-  static async getUserByRealName(realName: string): Promise<any[]> {
+  static async getUserByRealName(realName: string): Promise<BoxUser[]> {
     return MemberRepository.getUsersByField('realName', realName);
   }
 
@@ -237,7 +238,7 @@ export class MemberService {
    * @param nickName 사용자 닉네임
    * @returns 사용자 목록
    */
-  static async getUserByNickName(nickName: string): Promise<any[]> {
+  static async getUserByNickName(nickName: string): Promise<BoxUser[]> {
     return MemberRepository.getUsersByField('nickName', nickName);
   }
 
@@ -247,7 +248,7 @@ export class MemberService {
    * @param box 박스 이름
    * @param memberData 저장할 회원 데이터
    */
-  static async createMember(box: string, memberData: any): Promise<void> {
+  static async createMember(box: string, memberData: BoxUser & Record<string, unknown>): Promise<void> {
     try {
       const existing = await MemberRepository.getMemberDocument(box, memberData.email);
       if (existing) {
@@ -269,7 +270,7 @@ export class MemberService {
    * @param userData 수정 데이터
    * @returns 수정 데이터 또는 `null`
    */
-  static async updateUser(email: string, userData: any): Promise<any> {
+  static async updateUser(email: string, userData: Partial<BoxUser>): Promise<Partial<BoxUser> | null> {
     try {
       const updated = await MemberRepository.updateUsersByEmail(email, userData);
       if (!updated) {
@@ -288,7 +289,7 @@ export class MemberService {
    * @param boxName 박스 이름
    * @returns 신청자 목록
    */
-  static async fetchApplicants(boxName: string): Promise<any[]> {
+  static async fetchApplicants(boxName: string): Promise<MemberApplicant[]> {
     try {
       const applicantMap = await MemberRepository.getApplicantMap(boxName);
       if (!applicantMap) return [];
@@ -321,7 +322,7 @@ export class MemberService {
       const actualBoxName = userDoc.boxName.slice(1);
       await this.removeApplication(email, actualBoxName);
 
-      const memberData = { ...userDoc };
+      const memberData: BoxUser & Record<string, unknown> = { ...userDoc };
       if (Object.prototype.hasOwnProperty.call(memberData, 'memberships')) {
         delete memberData.memberships;
       }
@@ -389,7 +390,8 @@ export class MemberService {
    * @param member 회원 문서 데이터
    * @returns 락커 히스토리 배열
    */
-  private static getLockerHistory(member: any): MemberLockerHistory[] {
-    return member?.lockerHistory ? [...member.lockerHistory] : [];
+  private static getLockerHistory(member: Record<string, unknown> | null): MemberLockerHistory[] {
+    const lockerHistory = member?.lockerHistory;
+    return Array.isArray(lockerHistory) ? [...(lockerHistory as MemberLockerHistory[])] : [];
   }
 }
