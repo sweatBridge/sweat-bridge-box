@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Calendar, Users, CheckCircle, TrendingUp } from 'lucide-react';
+import { Calendar, Users, UserCheck, UserPlus, AlertTriangle, FileText } from 'lucide-react';
 import { AppColors } from '../constants/colors';
 import { ClassService } from '../services/classService';
 import { ClassEvent } from '../types/class';
@@ -8,10 +8,15 @@ import { Gradients } from '../constants/gradients';
 import { useMemberManagement } from '../hooks/useMemberManagement';
 import { MembershipService } from '../services/membershipService';
 import { Member } from '../types/member';
+import { DashboardMemoService } from '../services/dashboardMemoService';
 
 const Dashboard = () => {
+  const boxName = localStorage.getItem('boxName') || 'SWEAT';
+
   const [todayClasses, setTodayClasses] = useState<ClassEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [coachMemo, setCoachMemo] = useState('');
+  const [memoSavedAt, setMemoSavedAt] = useState<string>('');
   const { setPageInfo } = usePageContext();
   
   // 회원 관리 훅
@@ -35,9 +40,8 @@ const Dashboard = () => {
         setLoading(true);
         
         // 병렬로 데이터 로드
-        const box = localStorage.getItem('boxName') || 'SWEAT';
         const [classes] = await Promise.all([
-          ClassService.getTodayClasses(box),
+          ClassService.getTodayClasses(boxName),
           loadMembers() // 회원 데이터도 로드
         ]);
         
@@ -50,10 +54,38 @@ const Dashboard = () => {
     };
 
     loadData();
-  }, [loadMembers]);
+  }, [loadMembers, boxName]);
+
+  useEffect(() => {
+    const loadCoachMemo = async () => {
+      try {
+        const memo = await DashboardMemoService.getCoachMemo(boxName);
+        setCoachMemo(memo);
+      } catch (error) {
+        console.error('Failed to load coach memo:', error);
+      }
+    };
+
+    loadCoachMemo();
+  }, [boxName]);
+
+  const handleSaveCoachMemo = async () => {
+    try {
+      await DashboardMemoService.saveCoachMemo(boxName, coachMemo);
+      setMemoSavedAt(new Date().toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      }));
+    } catch (error) {
+      console.error('Failed to save coach memo:', error);
+    }
+  };
 
   // 회원 통계 및 신규 회원 목록 계산 (getMemberStatusBadge 한 번만 호출)
   const {
+    activeMembersCount,
+    warningMembersCount,
+    newMembersCount,
     totalMembersCount,
     recentMembers
   } = useMemo(() => {
@@ -109,76 +141,84 @@ const Dashboard = () => {
   // 통계 데이터
   const statsData = [
     {
-      title: '오늘 수업',
-      value: todayClasses.length.toString(),
-      subtitle: `진행 중: ${todayClasses.filter(c => {
-        const now = new Date();
-        const classStart = new Date(c.start);
-        const classEnd = new Date(c.end);
-        return now >= classStart && now <= classEnd;
-      }).length}개`,
-      icon: Calendar,
-      color: AppColors.primary,
-    },
-    {
-      title: '유효 회원',
-      value: totalMembersCount.toString(),
+      title: '활성 회원',
+      value: activeMembersCount.toString(),
       subtitle: `총 회원: ${totalMembersCount}명`,
-      icon: Users,
-      color: AppColors.success,
+      icon: UserCheck,
     },
     {
-      title: '오늘 출석',
-      value: todayClasses.reduce((total, c) => total + c.extendedProps.reserved.length, 0).toString(),
-      subtitle: `총 예약: ${todayClasses.reduce((total, c) => total + c.extendedProps.cap, 0)}명`,
-      icon: CheckCircle,
-      color: AppColors.info,
+      title: '주의 회원',
+      value: warningMembersCount.toString(),
+      subtitle: '만료/부족 임박 회원',
+      icon: AlertTriangle,
     },
     {
-      title: '월 매출',
-      value: '₩2.4M',
-      subtitle: '전월 대비 +8%',
-      icon: TrendingUp,
-      color: AppColors.warning,
+      title: '신규 회원',
+      value: newMembersCount.toString(),
+      subtitle: '최근 등록 회원',
+      icon: UserPlus,
     },
   ];
 
-  const StatCard = ({ title, value, subtitle, icon: Icon, color }: {
+  const StatCard = ({ title, value, subtitle, icon: Icon }: {
     title: string;
     value: string;
     subtitle: string;
     icon: React.ElementType;
-    color: string;
   }) => (
-    <div className="stat-card">
-      <div className="stat-card-header">
-        <div 
-          className="stat-card-icon-container"
-          style={{ backgroundColor: `${color}1A` }}
-        >
-          <Icon className="stat-card-icon" style={{ color }} />
+    <div className="summary-card">
+      <div className="summary-card-left">
+        <div className="summary-icon-wrap">
+          <Icon className="summary-icon" />
+        </div>
+        <div className="summary-text-wrap">
+          <div className="summary-title">{title}</div>
+          <div className="summary-subtitle">{subtitle}</div>
         </div>
       </div>
-      <div className="stat-card-value">{value}</div>
-      <div className="stat-card-title">{title}</div>
-      <div className="stat-card-subtitle">{subtitle}</div>
+      <div className="summary-value">{value}</div>
     </div>
   );
 
   return (
     <div className="dashboard dashboard-page">
-      {/* 통계 카드들 */}
-      <div className="stats-grid">
-        {statsData.map((stat, index) => (
-          <StatCard
-            key={index}
-            title={stat.title}
-            value={stat.value}
-            subtitle={stat.subtitle}
-            icon={stat.icon}
-            color={stat.color}
+      <div className="dashboard-top-layout">
+        <div className="summary-cards-column">
+          {statsData.map((stat, index) => (
+            <StatCard
+              key={index}
+              title={stat.title}
+              value={stat.value}
+              subtitle={stat.subtitle}
+              icon={stat.icon}
+            />
+          ))}
+        </div>
+
+        <div className="coach-memo-panel">
+          <div className="coach-memo-panel-header">
+            <div className="coach-memo-title-wrap">
+              <div className="summary-icon-wrap">
+                <FileText className="summary-icon" />
+              </div>
+              <div>
+                <div className="summary-title">코치진 전용 메모장</div>
+              </div>
+            </div>
+          </div>
+          <textarea
+            className="coach-memo-textarea"
+            value={coachMemo}
+            onChange={(e) => setCoachMemo(e.target.value)}
+            placeholder="코치진에게 공유할 메모를 입력하세요."
           />
-        ))}
+          <div className="coach-memo-actions">
+            <button className="coach-memo-save-pill" onClick={handleSaveCoachMemo}>저장</button>
+            {memoSavedAt && (
+              <span className="coach-memo-saved-text">{memoSavedAt} 저장됨</span>
+            )}
+          </div>
+        </div>
       </div>
       
       {/* 최근 활동 섹션 */}
@@ -294,6 +334,110 @@ const Dashboard = () => {
       </div>
 
       <style>{`
+        .dashboard-page .dashboard-top-layout {
+          display: grid;
+          grid-template-columns: minmax(300px, 0.9fr) minmax(420px, 1.4fr);
+          gap: 16px;
+          margin-bottom: 24px;
+        }
+
+        .summary-cards-column {
+          display: grid;
+          grid-template-rows: repeat(3, minmax(84px, 1fr));
+          gap: 12px;
+        }
+
+        .summary-card {
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 14px;
+          padding: 14px 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .summary-card-left {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .summary-icon-wrap {
+          width: 32px;
+          height: 32px;
+          border-radius: 999px;
+          background: rgba(37, 99, 235, 0.12);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .summary-icon {
+          width: 18px;
+          height: 18px;
+          color: ${AppColors.primary};
+          stroke: ${AppColors.primary};
+        }
+
+        .summary-title {
+          font-size: 14px;
+          font-weight: 500;
+          color: #111827;
+          line-height: 1.2;
+        }
+
+        .summary-subtitle {
+          margin-top: 2px;
+          font-size: 12px;
+          font-weight: 400;
+          color: #6b7280;
+        }
+
+        .summary-value {
+          font-size: 42px;
+          line-height: 1;
+          font-weight: 500;
+          color: #111827;
+          padding-left: 12px;
+        }
+
+        .coach-memo-panel {
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 14px;
+          padding: 14px 18px;
+        }
+
+        .coach-memo-panel-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 10px;
+        }
+
+        .coach-memo-title-wrap {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .coach-memo-save-pill {
+          border: none;
+          background: ${AppColors.primary};
+          color: #fff;
+          border-radius: 999px;
+          padding: 6px 18px;
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        .coach-memo-save-pill:hover {
+          background: ${AppColors.primaryHover};
+        }
+
         .card-header {
           display: flex;
           justify-content: space-between;
@@ -497,6 +641,55 @@ const Dashboard = () => {
         .status-badge.full {
           background-color: #fee2e2;
           color: #991b1b;
+        }
+
+        .coach-memo-textarea {
+          margin-top: 2px;
+          width: 100%;
+          min-height: 165px;
+          resize: vertical;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          padding: 10px 12px;
+          font-size: 13px;
+          line-height: 1.4;
+          color: #374151;
+          font-family: inherit;
+          background: #ffffff;
+        }
+
+        .coach-memo-textarea:focus {
+          outline: none;
+          border-color: ${AppColors.primary};
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .coach-memo-actions {
+          margin-top: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 10px;
+        }
+
+        .coach-memo-saved-text {
+          font-size: 12px;
+          color: #64748b;
+        }
+
+        @media (max-width: 1024px) {
+          .dashboard-page .dashboard-top-layout {
+            grid-template-columns: 1fr;
+          }
+
+          .summary-cards-column {
+            grid-template-rows: none;
+          }
+        }
+
+        .dashboard-page .content-grid {
+          grid-template-columns: minmax(0, 2.6fr) minmax(280px, 1fr);
+          gap: 20px;
         }
       `}</style>
     </div>
