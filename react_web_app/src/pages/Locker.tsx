@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { Calendar } from 'lucide-react';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
 import { LockerService } from '../services/lockerService';
@@ -432,7 +431,6 @@ const Locker: React.FC = () => {
       <div className="content-card">
         <div className="card-header">
           <div className="header-left">
-            <Calendar size={20} />
             <span>락커 현황</span>
           </div>
           <div className="header-actions">
