@@ -5,14 +5,12 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 // FullCalendar CSS는 패키지에서 자동으로 로드됩니다
 import { DateSelectArg, EventClickArg, EventApi, DatesSetArg } from '@fullcalendar/core';
-import { Calendar, BarChart3, RefreshCw } from 'lucide-react';
 import { ClassEvent, SaveClassResult, UpdateClassResult, DeleteClassResult, ToastMessageType } from '../types/class';
 import { useClassManagement } from '../hooks/useClassManagement';
 import SaveClassModal from '../components/modals/class/SaveClassModal';
 import ManageClassModal from '../components/modals/class/ManageClassModal';
 import ToastMessage from '../components/ToastMessage';
 import { usePageContext } from '../contexts/PageContext';
-import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
 
 const ClassReservation = () => {
@@ -93,13 +91,18 @@ const ClassReservation = () => {
   const calendarOptions = {
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
     headerToolbar: {
-      left: 'prev,next today',
+      left: 'prev,next',
       center: 'title',
       right: 'timeGridWeek,dayGridMonth',
     },
     views: {
       dayGridMonth: {
-        // titleFormat을 제거하고 datesSet에서 처리
+        eventTimeFormat: {
+          hour: 'numeric' as const,
+          minute: '2-digit' as const,
+          hour12: true,
+          meridiem: 'short' as const,
+        },
       },
       timeGridWeek: {
         // titleFormat을 제거하고 datesSet에서 처리
@@ -397,16 +400,13 @@ const ClassReservation = () => {
       <div className="content-card" style={{ flex: 1 }}>
         <div className="card-header">
           <div className="header-left">
-            <Calendar size={20} />
             <span>전체 수업: {classes.length}개</span>
           </div>
           <div className="header-actions">
             <button className="btn btn-outline" onClick={handleRefresh}>
-              <RefreshCw size={16} />
               새로고침
             </button>
             <button className="btn btn-outline" onClick={handleShowStats}>
-              <BarChart3 size={16} />
               통계
             </button>
           </div>
@@ -490,11 +490,12 @@ const ClassReservation = () => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 16px 20px;
-          background: ${Gradients.primary};
-          color: white;
-          border-radius: 8px 8px 0 0;
-          margin: -20px -20px 20px -20px;
+          padding: 14px 18px;
+          background: #ffffff;
+          color: #0f172a;
+          border-bottom: 1px solid #e2e8f0;
+          border-radius: 12px 12px 0 0;
+          margin: -20px -20px 16px -20px;
         }
 
         .header-left {
@@ -502,6 +503,7 @@ const ClassReservation = () => {
           align-items: center;
           gap: 8px;
           font-weight: 600;
+          color: #0f172a;
         }
 
         .header-actions {
@@ -510,72 +512,66 @@ const ClassReservation = () => {
         }
 
         .btn-outline {
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          color: white;
-          font-size: 14px;
-          padding: 6px 12px;
+          background: #ffffff;
+          border: 1px solid #dbe2ea;
+          color: #334155;
+          font-size: 13px;
+          padding: 6px 11px;
           display: flex;
           align-items: center;
           gap: 6px;
-          border-radius: 6px;
+          border-radius: 8px;
           cursor: pointer;
           font-weight: 500;
-          transition: all 0.2s;
+          transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
         }
 
         .btn-outline:hover {
-          background: rgba(255, 255, 255, 0.2);
-          border-color: rgba(255, 255, 255, 0.5);
-          transform: translateY(-1px);
+          background: #f8fafc;
+          border-color: #cbd5e1;
+          color: #0f172a;
         }
 
         .calendar-info {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 16px;
-          margin-bottom: 20px;
+          grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+          gap: 10px;
+          margin-bottom: 14px;
         }
 
         .info-item {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 12px 16px;
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          padding: 10px 12px;
+          background: #f8fafc;
           border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          transition: all 0.2s ease;
-        }
-
-        .info-item:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          border-radius: 10px;
         }
 
         .info-label {
-          font-size: 14px;
-          color: #6b7280;
+          font-size: 12px;
+          color: #64748b;
           font-weight: 500;
         }
 
         .info-value {
-          font-size: 16px;
+          font-size: 14px;
           font-weight: 600;
-          color: #1f2937;
+          color: #0f172a;
         }
 
         .calendar-container {
-          height: calc(85vh - 240px);
-          min-height: 600px;
-          max-height: 800px;
-          background: white;
-          border-radius: 8px;
+          height: calc(85vh - 230px);
+          min-height: 620px;
+          max-height: 820px;
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
           overflow: auto;
           position: relative;
         }
 
-        /* FullCalendar 스타일 커스터마이징 */
         .fc {
           height: auto !important;
           min-height: 100%;
@@ -583,102 +579,199 @@ const ClassReservation = () => {
 
         .fc .fc-toolbar {
           background: #ffffff;
-          padding: 12px 16px;
+          padding: 10px 12px;
           border-bottom: 1px solid #e5e7eb;
           margin-bottom: 0 !important;
         }
 
         .fc .fc-toolbar-title {
-          font-size: 16px !important;
+          font-size: 15px !important;
           font-weight: 600 !important;
-          color: #111827 !important;
+          color: #0f172a !important;
+          letter-spacing: -0.01em;
         }
 
         .fc .fc-button-primary {
           background: #ffffff !important;
-          color: #111827 !important; /* 기본은 중립 텍스트 */
-          border: 1px solid #e5e7eb !important;
-          border-radius: 6px !important;
-          padding: 6px 12px !important;
+          color: #475569 !important;
+          border: 1px solid #dbe2ea !important;
+          border-radius: 8px !important;
+          padding: 5px 10px !important;
+          font-size: 13px !important;
           font-weight: 500 !important;
-          transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
           box-shadow: none !important;
         }
 
         .fc .fc-button-primary:hover {
-          background-color: #f3f4f6 !important;
-          border-color: #d1d5db !important;
-          color: ${AppColors.primary} !important; /* hover 시에만 primary */
+          background-color: #f8fafc !important;
+          border-color: #cbd5e1 !important;
+          color: #0f172a !important;
+        }
+
+        .fc .fc-button-primary:focus {
+          box-shadow: none !important;
         }
 
         .fc .fc-button-primary:disabled {
-          opacity: 0.4 !important;
-          background-color: #f9fafb !important;
-          color: #9ca3af !important;
-          border-color: #e5e7eb !important;
-          box-shadow: none !important;
+          opacity: 0.45 !important;
+          background-color: #f8fafc !important;
+          color: #94a3b8 !important;
+          border-color: #e2e8f0 !important;
         }
 
-        /* 오늘 버튼은 캘린더 오늘 셀과 톤을 맞춤 */
+        .fc .fc-button-primary.fc-button-active {
+          background-color: #f1f5f9 !important;
+          color: #0f172a !important;
+          border-color: #cbd5e1 !important;
+        }
+
         .fc .fc-today-button {
-          background-color: #eff6ff !important;
-          border-color: #dbeafe !important;
           color: ${AppColors.primary} !important;
         }
 
-        .fc .fc-today-button:disabled {
-          opacity: 1 !important;
-          background-color: #eff6ff !important;
-          border-color: #dbeafe !important;
-          color: ${AppColors.primary} !important;
-        }
-
-        /* 이전/다음, 주/월 등 FullCalendar 버튼 그룹 사이 간 간격 */
         .fc .fc-button-group .fc-button:not(:last-child) {
-          margin-right: 6px !important;
+          margin-right: 4px !important;
         }
 
-        /* 네비게이션(이전/다음)과 오늘 버튼 간 간격을 명확히 분리 */
         .fc .fc-toolbar-chunk:last-child {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
         }
 
-        /* 수업 블록 스타일 – 전체 primary 배경 */
-        .fc .fc-event {
-          background: ${AppColors.primary} !important;
-          color: #ffffff !important;
-          border: none !important;
-          border-radius: 6px !important;
-          padding: 4px 8px !important;
-          font-size: 13px !important;
+        .fc .fc-scrollgrid,
+        .fc .fc-theme-standard td,
+        .fc .fc-theme-standard th {
+          border-color: #e5e7eb !important;
+        }
+
+        .fc .fc-col-header-cell {
+          background: #f8fafc !important;
+        }
+
+        .fc .fc-col-header-cell-cushion {
+          color: #64748b !important;
+          font-size: 12px !important;
           font-weight: 600 !important;
-          box-shadow: none !important;
+          text-decoration: none !important;
+          padding: 7px 2px !important;
+        }
+
+        .fc .fc-timegrid-axis-cushion,
+        .fc .fc-timegrid-slot-label-cushion {
+          color: #94a3b8 !important;
+          font-size: 11px !important;
+        }
+
+        .fc .fc-event {
+          background: #eff6ff !important;
+          color: #1e3a8a !important;
+          border: 1px solid #bfdbfe !important;
+          border-left: 4px solid ${AppColors.primary} !important;
+          border-radius: 10px !important;
+          padding: 6px 8px !important;
+          font-size: 12px !important;
+          font-weight: 600 !important;
+          box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
         }
 
         .fc .fc-event:hover {
-          background: ${AppColors.primaryHover} !important;
-          color: #ffffff !important;
+          background: #dbeafe !important;
+          border-color: #93c5fd !important;
         }
 
-        .fc .fc-daygrid-day:hover {
-          background-color: #f9fafb !important;
+        .fc .fc-event-time {
+          color: ${AppColors.primary} !important;
+          font-size: 11px !important;
+          font-weight: 700 !important;
+        }
+
+        .fc .fc-event-title {
+          color: #1e3a8a !important;
+          font-size: 13px !important;
+          font-weight: 600 !important;
+        }
+
+        /* timeGrid 이벤트가 칸 너비와 정확히 맞도록 좌우 inset 제거 */
+        .fc .fc-timegrid-col-events {
+          margin: 0 !important;
+        }
+
+        .fc .fc-timegrid-event-harness {
+          left: 4px !important;
+          right: 4px !important;
+          margin: 0 !important;
+        }
+
+        .fc .fc-daygrid-day:hover,
+        .fc .fc-timegrid-slot:hover {
+          background-color: #f8fafc !important;
         }
 
         .fc .fc-day-today {
-          background-color: #eff6ff !important;
-        }
-
-        .fc .fc-timegrid-slot:hover {
-          background-color: #f9fafb !important;
+          background-color: #f8fbff !important;
         }
 
         .fc .fc-highlight {
-          background-color: rgba(49, 130, 246, 0.12) !important;
+          background-color: rgba(59, 130, 246, 0.11) !important;
         }
 
-        /* 스크롤바 스타일링 */
+        /* 월 뷰를 revenue 캘린더 톤으로 맞춤 */
+        .fc .fc-daygrid-day {
+          background: #ffffff !important;
+          border-color: #f1f5f9 !important;
+        }
+
+        .fc .fc-daygrid-day-frame {
+          min-height: 96px !important;
+          padding: 6px 6px 2px !important;
+        }
+
+        .fc .fc-daygrid-day-top {
+          justify-content: center !important;
+          padding-top: 2px !important;
+        }
+
+        .fc .fc-daygrid-day-number {
+          color: #111827 !important;
+          font-size: 16px !important;
+          font-weight: 500 !important;
+          text-decoration: none !important;
+          padding: 2px 8px !important;
+          border-radius: 8px !important;
+          line-height: 1.2 !important;
+        }
+
+        .fc .fc-daygrid-day.fc-day-sun .fc-daygrid-day-number {
+          color: #b91c1c !important;
+        }
+
+        .fc .fc-daygrid-day.fc-day-sat .fc-daygrid-day-number {
+          color: #b91c1c !important;
+        }
+
+        .fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-number {
+          color: #cbd5e1 !important;
+        }
+
+        .fc .fc-daygrid-day.fc-day-today {
+          background: #eef2ff !important;
+        }
+
+        .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+          background: transparent !important;
+          color: #1f2937 !important;
+        }
+
+        .fc .fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion,
+        .fc .fc-col-header-cell.fc-day-sat .fc-col-header-cell-cushion {
+          color: #6b7280 !important;
+        }
+
+        .fc .fc-daygrid-event {
+          margin: 2px 4px !important;
+        }
+
         .calendar-container::-webkit-scrollbar {
           width: 8px;
         }
@@ -688,15 +781,14 @@ const ClassReservation = () => {
         }
 
         .calendar-container::-webkit-scrollbar-thumb {
-          background: rgba(148, 163, 184, 0.8);
+          background: #cbd5e1;
           border-radius: 999px;
         }
 
         .calendar-container::-webkit-scrollbar-thumb:hover {
-          background: rgba(100, 116, 139, 0.9);
+          background: #94a3b8;
         }
 
-        /* 달력 내부 스크롤 영역 조정 */
         .fc .fc-scroller {
           overflow: visible !important;
         }
@@ -705,19 +797,11 @@ const ClassReservation = () => {
           min-height: auto !important;
         }
 
-        /* 시간 슬롯 높이 조정 */
-        .fc .fc-timegrid-slot {
-          height: 5px !important;
-          min-height: 5px !important;
-        }
-
-        .fc .fc-timegrid-slot-minor {
-          height: 5px !important;
-          min-height: 5px !important;
-        }
-
+        .fc .fc-timegrid-slot,
+        .fc .fc-timegrid-slot-minor,
         .fc .fc-timegrid-slot-label {
-          height: 5px !important;
+          height: 24px !important;
+          min-height: 24px !important;
           vertical-align: middle !important;
         }
       `}</style>

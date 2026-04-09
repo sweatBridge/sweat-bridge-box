@@ -227,7 +227,6 @@ const Dashboard = () => {
         <div className="content-card">
           <div className="card-header">
             <div className="header-left">
-              <Calendar size={20} />
               <span>오늘의 수업 일정</span>
             </div>
             <div className="header-actions">
