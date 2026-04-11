@@ -58,7 +58,7 @@ const TransactionHistoryModal = ({
           ) : (
             <div className="transaction-cards">
               {transactions.map((transaction, index) => {
-                const transactionDate = transaction.createdAt?.toDate?.() || new Date(transaction.createdAt || 0);
+                const transactionDate = transaction.createdAt.toDate();
                 const transactionDateStr = transactionDate.toLocaleDateString('ko-KR', {
                   year: 'numeric',
                   month: 'long',
@@ -362,4 +362,3 @@ const TransactionHistoryModal = ({
 };
 
 export default TransactionHistoryModal;
-

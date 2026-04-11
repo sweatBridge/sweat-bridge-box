@@ -1,31 +1,38 @@
-import { getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { AuthRepository } from '../repositories/authRepository';
 import { LoginCredentials, User } from '../types/auth';
+
+const AUTH_STORAGE_KEYS = [
+  'userToken',
+  'tokenExpiration',
+  'id',
+  'boxName',
+  'realName',
+  'nickName',
+  'userEmail',
+  'userPhone',
+  'userRole'
+] as const;
 
 export class AuthService {
   /**
-   * 로그인
+   * 로그인 자격 정보를 검증하고, 사용자 정보와 토큰을 로컬 스토리지에 저장합니다.
+   *
+   * @param credentials 로그인 자격 정보
+   * @returns 로그인된 사용자 정보
+   * @throws 인증 실패 또는 사용자 정보 조회 실패 시 에러를 던집니다.
    */
   static async login(credentials: LoginCredentials): Promise<User> {
     try {
-      const auth = getAuth();
-      const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
-      
-      // Firebase 토큰 정보 저장
+      const userCredential = await AuthRepository.signIn(credentials);
       const idToken = await userCredential.user.getIdToken();
       const idTokenResult = await userCredential.user.getIdTokenResult();
-      
+      const user = await this.getUserInfo(credentials.email);
+
       localStorage.setItem('userToken', idToken);
       localStorage.setItem('tokenExpiration', idTokenResult.expirationTime);
       localStorage.setItem('id', JSON.stringify(idTokenResult));
-      
-      // 사용자 정보 조회
-      const user = await this.getUserInfo(credentials.email);
-      
-      // 사용자 정보를 localStorage에 저장
       this.saveUserToLocalStorage(user);
-      
+
       return user;
     } catch (error) {
       console.error('Login failed:', error);
@@ -34,17 +41,14 @@ export class AuthService {
   }
 
   /**
-   * 로그아웃
+   * Firebase 세션과 로컬 인증 정보를 함께 정리합니다.
+   *
+   * @throws 로그아웃 처리 중 오류가 발생하면 에러를 던집니다.
    */
   static async logout(): Promise<void> {
     try {
-      const auth = getAuth();
-      await signOut(auth);
-      
-      // localStorage 정리
-      const localStorageItems = ['userToken', 'tokenExpiration', 'id', 'boxName', 'realName', 'nickName', 'userEmail', 'userPhone', 'userRole'];
-      localStorageItems.forEach(item => localStorage.removeItem(item));
-      
+      await AuthRepository.signOut();
+      this.clearAuthStorage();
     } catch (error) {
       console.error('Logout failed:', error);
       throw new Error('로그아웃에 실패했습니다.');
@@ -52,23 +56,18 @@ export class AuthService {
   }
 
   /**
-   * 사용자 정보 조회
+   * 이메일로 사용자 정보를 조회합니다.
+   *
+   * @param email 조회할 사용자 이메일
+   * @returns 단일 사용자 정보
+   * @throws 사용자 정보가 없거나 중복되면 에러를 던집니다.
    */
   static async getUserInfo(email: string): Promise<User> {
     try {
-      const q = query(collection(db, 'user'), where('email', '==', email));
-      const querySnap = await getDocs(q);
-      
-      const users: User[] = [];
-      querySnap.forEach((doc) => {
-        users.push(doc.data() as User);
-      });
-      
-      if (users.length === 1) {
-        return users[0];
-      } else {
-        throw new Error('사용자 정보를 찾을 수 없습니다.');
-      }
+      const users = await AuthRepository.getUsersByEmail(email);
+      if (users.length === 1) return users[0];
+
+      throw new Error('사용자 정보를 찾을 수 없습니다.');
     } catch (error) {
       console.error('Failed to get user info:', error);
       throw new Error('사용자 정보 조회에 실패했습니다.');
@@ -76,7 +75,9 @@ export class AuthService {
   }
 
   /**
-   * 사용자 정보를 localStorage에 저장
+   * 사용자 기본 정보를 로컬 스토리지에 저장합니다.
+   *
+   * @param user 저장할 사용자 정보
    */
   static saveUserToLocalStorage(user: User): void {
     localStorage.setItem('boxName', user.boxName);
@@ -88,7 +89,9 @@ export class AuthService {
   }
 
   /**
-   * localStorage에서 사용자 정보 조회
+   * 로컬 스토리지에 저장된 사용자 정보를 읽어옵니다.
+   *
+   * @returns 저장된 사용자 정보 또는 `null`
    */
   static getUserFromLocalStorage(): User | null {
     const boxName = localStorage.getItem('boxName');
@@ -99,45 +102,43 @@ export class AuthService {
     const role = localStorage.getItem('userRole');
 
     if (boxName && realName && nickName && email && phone && role) {
-      return {
-        boxName,
-        realName,
-        nickName,
-        email,
-        phone,
-        role
-      };
+      return { boxName, realName, nickName, email, phone, role };
     }
 
     return null;
   }
 
   /**
-   * 토큰 만료 확인
+   * 저장된 토큰의 만료 여부를 확인하고, 만료 시 로컬 인증 정보를 제거합니다.
+   *
+   * @returns 토큰이 만료되었으면 `true`
    */
   static checkTokenExpiration(): boolean {
     const tokenExpiration = localStorage.getItem('tokenExpiration');
     if (!tokenExpiration) return true;
 
-    const tokenExpired = new Date(tokenExpiration) < new Date();
-    
-    if (tokenExpired) {
-      // 만료된 토큰 정리
-      const localStorageItems = ['userToken', 'tokenExpiration', 'id', 'boxName', 'realName', 'nickName', 'userEmail', 'userPhone', 'userRole'];
-      localStorageItems.forEach(item => localStorage.removeItem(item));
-      return true;
+    const expired = new Date(tokenExpiration) < new Date();
+    if (expired) {
+      this.clearAuthStorage();
     }
 
-    return false;
+    return expired;
   }
 
   /**
-   * 인증 상태 확인
+   * 현재 사용자가 인증 상태인지 확인합니다.
+   *
+   * @returns 유효한 토큰이 있으면 `true`
    */
   static isAuthenticated(): boolean {
     const token = localStorage.getItem('userToken');
-    const isExpired = this.checkTokenExpiration();
-    
-    return !!(token && !isExpired);
+    return !!(token && !this.checkTokenExpiration());
   }
-} 
+
+  /**
+   * 인증 관련 로컬 스토리지 키를 일괄 삭제합니다.
+   */
+  private static clearAuthStorage(): void {
+    AUTH_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+  }
+}

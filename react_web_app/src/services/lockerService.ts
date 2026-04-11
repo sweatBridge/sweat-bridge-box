@@ -1,311 +1,254 @@
-import { getDoc, doc, runTransaction } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { Locker, LOCKER_STATE, LockerState, getLockerState } from '../types/locker';
-import { toLocker } from '../utils/lockerUtils';
+import { getLatestLocker, hasActiveAssignedUser, toLocker } from '../models/lockerModel';
+import { LockerRepository } from '../repositories/lockerRepository';
+import { Locker, LOCKER_STATE, LockerDocumentData, LockerDocumentEntry, LockerState } from '../types/locker';
 import { formatDateToString } from '../utils/dateUtils';
-
-type LockerDocumentEntry = Locker | Locker[];
-type LockerDocumentData = Record<string, LockerDocumentEntry>;
 
 export class LockerService {
   /**
-   * 특정 락커 엔트리에 현재 활성 배정 회원이 있는지 확인합니다.
-   *
-   * 최신 엔트리를 기준으로 회원 이름이 존재하고, 날짜 기준 실제 상태가
-   * `used`인 경우에만 배정 중으로 판단합니다.
-   *
-   * @param lockerEntryData 락커 문서에 저장된 단일 엔트리 또는 히스토리 배열
-   * @param lockerNumber 확인할 락커 번호
-   * @returns 현재 배정된 회원이 있으면 `true`
+   * Firebase 원시 락커 데이터를 `Locker` 타입으로 변환합니다.
    */
-  private static hasActiveAssignedUser(lockerEntryData: LockerDocumentEntry, lockerNumber: number): boolean {
-    if (Array.isArray(lockerEntryData)) {
-      if (lockerEntryData.length === 0) {
-        return false;
-      }
+  static toLocker = toLocker;
 
-      const latestLocker = toLocker(lockerEntryData[lockerEntryData.length - 1], lockerNumber);
-      return latestLocker.realName.trim().length > 0 && getLockerState(latestLocker.state, latestLocker) === LOCKER_STATE.USED;
+  /**
+   * 최신 락커 엔트리 기준으로 현재 활성 배정 회원이 있는지 확인합니다.
+   * 만료된 배정은 활성 사용자로 간주하지 않습니다.
+   */
+  static hasActiveAssignedUser = hasActiveAssignedUser;
+
+  /**
+   * 기본 락커 엔트리를 생성합니다.
+   *
+   * 공통 필드를 기본값으로 채운 뒤 필요한 필드만 덮어써서
+   * 상태 변경용 엔트리를 일관되게 만들기 위해 사용합니다.
+   *
+   * @param number 락커 번호
+   * @param overrides 기본값 위에 덮어쓸 필드
+   * @returns 정규화된 락커 엔트리
+   */
+  private static createLockerEntry(number: number, overrides: Partial<Locker> = {}): Locker {
+    return {
+      number,
+      state: LOCKER_STATE.UNUSED,
+      id: '',
+      realName: '',
+      phone: '',
+      assignee: '',
+      note: '',
+      startDate: '',
+      endDate: '',
+      createdAt: new Date().toISOString().split('T')[0],
+      key: '',
+      ...overrides
+    };
+  }
+
+  /**
+   * 문서 데이터에서 특정 락커 번호의 엔트리를 조회합니다.
+   *
+   * @param data 락커 문서 전체 데이터
+   * @param lockerNumber 조회할 락커 번호
+   * @returns 해당 락커의 단일 엔트리 또는 히스토리 배열
+   * @throws 해당 락커 번호가 존재하지 않으면 에러를 던집니다.
+   */
+  private static getLockerEntry(data: LockerDocumentData, lockerNumber: number): LockerDocumentEntry {
+    const key = String(lockerNumber);
+
+    if (!Object.prototype.hasOwnProperty.call(data, key)) {
+      throw new Error('해당 락커 번호를 찾을 수 없습니다.');
     }
 
-    if (lockerEntryData && typeof lockerEntryData === 'object') {
-      const latestLocker = toLocker(lockerEntryData, lockerNumber);
-      return latestLocker.realName.trim().length > 0 && getLockerState(latestLocker.state, latestLocker) === LOCKER_STATE.USED;
-    }
-
-    return false;
+    return data[key];
   }
 
   /**
    * 박스의 전체 락커 목록을 조회합니다.
    *
-   * 각 락커 번호별로 최신 엔트리만 꺼내 `Locker` 형태로 반환합니다.
+   * 각 락커 번호별 최신 엔트리만 추출해 번호순으로 반환합니다.
    *
    * @param box 박스 이름
    * @returns 최신 상태 기준의 락커 목록
    */
   static async getLockers(box: string): Promise<Locker[]> {
-    // lockerdoc 은 "문서"이므로 getDoc + doc 사용
-    const ref = doc(db, `box/${box}/lockers/lockerdoc`);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) return [];
+    const { exists, data } = await LockerRepository.getLockerDocument(box);
+    if (!exists) return [];
 
-    const data = snap.data() as LockerDocumentData;
-    const out: Locker[] = [];
+    const lockers: Locker[] = [];
 
     for (const [key, value] of Object.entries(data)) {
-      // key 가 "101" 같은 라커번호 제목
-      const num = Number(key);
-      if (!Number.isFinite(num)) {
-        // 숫자 변환이 안되면 스킵 (필요시 로그 남기기)
-        continue;
-      }
+      const lockerNumber = Number(key);
+      if (!Number.isFinite(lockerNumber)) continue;
 
-
-      if (Array.isArray(value)) {
-        // 배열인 경우 마지막 항목만 사용 (최신 상태)
-        if (value.length > 0) {
-          const latestItem = value[value.length - 1];
-          out.push(toLocker(latestItem, num));
-        }
-      } else if (value && typeof value === 'object') {
-        out.push(toLocker(value as any, num));
+      const latestLocker = getLatestLocker(value, lockerNumber);
+      if (latestLocker) {
+        lockers.push(latestLocker);
       }
     }
-    out.sort((a, b) => a.number - b.number);
 
-    return out;
+    lockers.sort((a, b) => a.number - b.number);
+    return lockers;
   }
 
   /**
-   * 지정한 번호 범위의 락커를 추가합니다.
+   * 지정한 번호 범위의 락커를 일괄 추가합니다.
    *
-   * 이미 존재하는 락커는 건너뛰고, 삭제 상태였던 락커는 다시 활성화합니다.
+   * 이미 존재하는 락커는 건너뛰고, 삭제 상태인 락커는 다시 활성화합니다.
    *
    * @param box 박스 이름
    * @param start 시작 번호
    * @param end 종료 번호
    * @returns 추가된 번호와 건너뛴 번호 목록
    */
-  static async addLockers(
-    box: string,
-    start: number,
-    end: number
-  ): Promise<{ added: number[]; skipped: number[] }> {
-    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
-    const lo = Math.min(start, end);
-    const hi = Math.max(start, end);
+  static async addLockers(box: string, start: number, end: number): Promise<{ added: number[]; skipped: number[] }> {
+    const from = Math.min(start, end);
+    const to = Math.max(start, end);
 
-    return runTransaction(db, async (tx) => {
-      const snap = await tx.get(ref);
-      const existing: LockerDocumentData = snap.exists() ? (snap.data() as LockerDocumentData) : {};
-
-      const toSet: LockerDocumentData = {};
+    return LockerRepository.runLockerDocumentTransaction(box, ({ data }) => {
+      const payload: LockerDocumentData = {};
       const added: number[] = [];
       const skipped: number[] = [];
 
-      for (let n = lo; n <= hi; n++) {
-        const key = String(n);
-        
-        const defaultEntry: Locker = {
-          number: n,
-          state: LOCKER_STATE.UNUSED,
-          id: '',
-          realName: '',
-          phone: '',
-          assignee: '',
-          note: '',
-          startDate: '',
-          endDate: '',
-          createdAt: new Date().toISOString().split('T')[0],
-          key: ''
-        };
-        
-        // 키가 존재하는지 확인
-        if (Object.prototype.hasOwnProperty.call(existing, key)) {
-          const lockerEntry = existing[key];
-          let isDeleted = false;
-          
-          // 배열인 경우와 객체인 경우 모두 확인
-          if (Array.isArray(lockerEntry)) {
-            // 배열의 마지막 항목이 deleted 상태인지 확인
-            const lastItem = lockerEntry[lockerEntry.length - 1];
-            isDeleted = lastItem?.state === LOCKER_STATE.DELETED;
-            
-            if (isDeleted) {
-              // deleted 상태면 배열에 새 항목 추가
-              toSet[key] = [...lockerEntry, defaultEntry];
-              added.push(n);
-            } else {
-              skipped.push(n);
-            }
-          } else if (lockerEntry && typeof lockerEntry === 'object') {
-            isDeleted = (lockerEntry as any)?.state === LOCKER_STATE.DELETED;
-            
-            if (isDeleted) {
-              // 객체를 배열로 변환하고 새 항목 추가
-              toSet[key] = [lockerEntry, defaultEntry];
-              added.push(n);
-            } else {
-              skipped.push(n);
-            }
-          }
-        } else {
-          // 키가 존재하지 않으면 새 배열로 추가
-          toSet[key] = [defaultEntry];
-          added.push(n);
+      for (let lockerNumber = from; lockerNumber <= to; lockerNumber++) {
+        const key = String(lockerNumber);
+        const defaultEntry = this.createLockerEntry(lockerNumber);
+        const entry = data[key];
+
+        if (!Object.prototype.hasOwnProperty.call(data, key)) {
+          payload[key] = [defaultEntry];
+          added.push(lockerNumber);
+          continue;
         }
+
+        if (Array.isArray(entry)) {
+          const lastEntry = entry[entry.length - 1] as Partial<Locker> | undefined;
+
+          if (lastEntry?.state === LOCKER_STATE.DELETED) {
+            payload[key] = [...entry, defaultEntry];
+            added.push(lockerNumber);
+          } else {
+            skipped.push(lockerNumber);
+          }
+          continue;
+        }
+
+        if (entry && typeof entry === 'object') {
+          if ((entry as Partial<Locker>).state === LOCKER_STATE.DELETED) {
+            payload[key] = [entry, defaultEntry];
+            added.push(lockerNumber);
+          } else {
+            skipped.push(lockerNumber);
+          }
+          continue;
+        }
+
+        payload[key] = [defaultEntry];
+        added.push(lockerNumber);
       }
 
-      if (added.length > 0) {
-        tx.set(ref, toSet, { merge: true });
-      }
-
-      return { added, skipped };
+      return { result: { added, skipped }, payload };
     });
   }
 
   /**
-   * 락커를 삭제 상태로 변경합니다.
+   * 특정 락커를 삭제 상태로 변경합니다.
    *
-   * 회원이 배정된 이력이 있으면 삭제 히스토리를 추가하고,
-   * 그렇지 않으면 최신 엔트리의 상태만 삭제로 바꿉니다.
+   * 배정 이력이 있는 경우 삭제 히스토리를 추가하고,
+   * 비어 있는 락커는 최신 엔트리의 상태만 삭제로 바꿉니다.
    *
    * @param box 박스 이름
    * @param lockerNumber 삭제할 락커 번호
+   * @throws 락커 문서나 대상 번호를 찾지 못하면 에러를 던집니다.
    */
   static async deleteLocker(box: string, lockerNumber: number): Promise<void> {
-    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
-
-    return runTransaction(db, async (tx) => {
-      const snap = await tx.get(ref);
-      if (!snap.exists()) {
+    return LockerRepository.runLockerDocumentTransaction(box, ({ exists, data }) => {
+      if (!exists) {
         throw new Error('락커 문서를 찾을 수 없습니다.');
       }
 
-      const data = snap.data() as LockerDocumentData;
       const key = String(lockerNumber);
+      const lockerEntry = this.getLockerEntry(data, lockerNumber);
+      const deletedEntry = this.createLockerEntry(lockerNumber, { state: LOCKER_STATE.DELETED });
 
-      if (!Object.prototype.hasOwnProperty.call(data, key)) {
-        throw new Error('해당 락커 번호를 찾을 수 없습니다.');
-      }
-
-      const lockerEntry = data[key];
-      const deletedEntry: Locker = {
-        number: lockerNumber,
-        state: LOCKER_STATE.DELETED,
-        id: '',
-        realName: '',
-        phone: '',
-        assignee: '',
-        note: '',
-        startDate: '',
-        endDate: '',
-        createdAt: new Date().toISOString().split('T')[0],
-        key: ''
-      };
-
-      let newValue: any;
+      let nextValue: unknown;
 
       if (Array.isArray(lockerEntry)) {
-        const lastItem = lockerEntry[lockerEntry.length - 1];
-        const hasName = (lastItem?.realName || '').trim().length > 0;
+        const lastEntry = lockerEntry[lockerEntry.length - 1] as Partial<Locker> | undefined;
+        const hasName = (lastEntry?.realName || '').trim().length > 0;
 
         if (hasName) {
-          // 이름이 있으면 배열에 새로운 deleted 항목 추가
-          newValue = [...lockerEntry, deletedEntry];
+          nextValue = [...lockerEntry, deletedEntry];
         } else {
-          // 이름이 없으면 마지막 항목의 상태만 deleted로 변경
           const updated = [...lockerEntry];
-          updated[updated.length - 1] = { ...lastItem, state: LOCKER_STATE.DELETED };
-          newValue = updated;
+          updated[updated.length - 1] = { ...lastEntry, state: LOCKER_STATE.DELETED };
+          nextValue = updated;
         }
       } else if (lockerEntry && typeof lockerEntry === 'object') {
-        const hasName = ((lockerEntry as any)?.realName || '').trim().length > 0;
-
-        if (hasName) {
-          // 이름이 있으면 배열로 변환하고 deleted 항목 추가
-          newValue = [lockerEntry, deletedEntry];
-        } else {
-          // 이름이 없으면 상태만 deleted로 변경
-          newValue = { ...lockerEntry, state: LOCKER_STATE.DELETED };
-        }
+        const hasName = (((lockerEntry as Partial<Locker>).realName) || '').trim().length > 0;
+        nextValue = hasName ? [lockerEntry, deletedEntry] : { ...lockerEntry, state: LOCKER_STATE.DELETED };
       } else {
         throw new Error('잘못된 락커 데이터 형식입니다.');
       }
 
-      tx.set(ref, { [key]: newValue }, { merge: true });
+      return {
+        result: undefined,
+        payload: { [key]: nextValue }
+      };
     });
   }
 
   /**
-   * 사용 중인 락커를 해지하고 사용 가능 상태 엔트리를 추가합니다.
+   * 사용 중이던 락커를 해지하고 사용 가능 상태 엔트리를 추가합니다.
+   *
+   * 해지 메모가 있으면 `[해지]` 접두사를 붙여 저장합니다.
    *
    * @param box 박스 이름
    * @param lockerNumber 해지할 락커 번호
    * @param note 해지 사유 메모
    * @param assignee 처리자 이름
+   * @throws 락커 문서나 대상 번호를 찾지 못하면 에러를 던집니다.
    */
   static async releaseLocker(box: string, lockerNumber: number, note: string = '', assignee: string = ''): Promise<void> {
-    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
-
-    return runTransaction(db, async (tx) => {
-      const snap = await tx.get(ref);
-      if (!snap.exists()) {
+    return LockerRepository.runLockerDocumentTransaction(box, ({ exists, data }) => {
+      if (!exists) {
         throw new Error('락커 문서를 찾을 수 없습니다.');
       }
 
-      const data = snap.data() as LockerDocumentData;
       const key = String(lockerNumber);
-
-      if (!Object.prototype.hasOwnProperty.call(data, key)) {
-        throw new Error('해당 락커 번호를 찾을 수 없습니다.');
-      }
-
-      const lockerEntry = data[key];
-      // 해지 사유 앞에 "[해지] " 접두사 추가
+      const lockerEntry = this.getLockerEntry(data, lockerNumber);
       const releaseNote = note.trim() ? `[해지] ${note}` : note;
-      
-      const unusedEntry: Locker = {
-        number: lockerNumber,
+      const unusedEntry = this.createLockerEntry(lockerNumber, {
         state: LOCKER_STATE.UNUSED,
-        id: '',
-        realName: '',
-        phone: '',
-        assignee: assignee,
         note: releaseNote,
-        startDate: '',
-        endDate: '',
-        createdAt: new Date().toISOString().split('T')[0],
-        key: ''
-      };
+        assignee
+      });
 
-      let newValue: any;
+      let nextValue: unknown;
 
       if (Array.isArray(lockerEntry)) {
-        // 배열에 새로운 unused 항목 추가
-        newValue = [...lockerEntry, unusedEntry];
+        nextValue = [...lockerEntry, unusedEntry];
       } else if (lockerEntry && typeof lockerEntry === 'object') {
-        // 객체를 배열로 변환하고 unused 항목 추가
-        newValue = [lockerEntry, unusedEntry];
+        nextValue = [lockerEntry, unusedEntry];
       } else {
         throw new Error('잘못된 락커 데이터 형식입니다.');
       }
 
-      tx.set(ref, { [key]: newValue }, { merge: true });
+      return {
+        result: undefined,
+        payload: { [key]: nextValue }
+      };
     });
   }
 
   /**
    * 비어 있는 락커의 상태를 변경합니다.
    *
-   * 회원이 배정된 락커는 변경할 수 없으며, `unused` 또는 `na` 상태만 지원합니다.
+   * `unused`와 `na` 상태만 허용하며, 현재 활성 배정 회원이 있는 락커는 변경할 수 없습니다.
    *
    * @param box 박스 이름
    * @param lockerNumber 변경할 락커 번호
    * @param state 변경할 상태
    * @param note 변경 사유 메모
    * @param assignee 처리자 이름
+   * @throws 지원하지 않는 상태이거나, 활성 배정 회원이 있으면 에러를 던집니다.
    */
   static async updateLocker(
     box: string,
@@ -318,116 +261,84 @@ export class LockerService {
       throw new Error('지원하지 않는 락커 상태입니다.');
     }
 
-    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
-
-    return runTransaction(db, async (tx) => {
-      const snap = await tx.get(ref);
-      if (!snap.exists()) {
+    return LockerRepository.runLockerDocumentTransaction(box, ({ exists, data }) => {
+      if (!exists) {
         throw new Error('락커 문서를 찾을 수 없습니다.');
       }
 
-      const data = snap.data() as LockerDocumentData;
       const key = String(lockerNumber);
+      const lockerEntry = this.getLockerEntry(data, lockerNumber);
 
-      if (!Object.prototype.hasOwnProperty.call(data, key)) {
-        throw new Error('해당 락커 번호를 찾을 수 없습니다.');
-      }
-
-      const lockerEntry = data[key];
-      
-      const hasUser = this.hasActiveAssignedUser(lockerEntry, lockerNumber);
-
-      if (hasUser) {
+      if (hasActiveAssignedUser(lockerEntry, lockerNumber)) {
         throw new Error('회원을 먼저 해지하시기 바랍니다.');
       }
 
-      const updatedEntry: Locker = {
-        number: lockerNumber,
+      const updatedEntry = this.createLockerEntry(lockerNumber, {
         state,
-        id: '',
-        realName: '',
-        phone: '',
-        assignee,
         note,
-        startDate: '',
-        endDate: '',
-        createdAt: new Date().toISOString().split('T')[0],
-        key: ''
-      };
+        assignee
+      });
 
-      let newValue: any;
+      let nextValue: unknown;
       const hasNote = note.trim().length > 0;
 
       if (Array.isArray(lockerEntry)) {
         if (hasNote) {
-          // note가 있으면 배열에 새 항목 추가
-          newValue = [...lockerEntry, updatedEntry];
+          nextValue = [...lockerEntry, updatedEntry];
         } else {
-          // note가 없으면 마지막 항목 업데이트
           const updated = [...lockerEntry];
           updated[updated.length - 1] = updatedEntry;
-          newValue = updated;
+          nextValue = updated;
         }
       } else if (lockerEntry && typeof lockerEntry === 'object') {
-        if (hasNote) {
-          // note가 있으면 객체를 배열로 변환하고 새 항목 추가
-          newValue = [lockerEntry, updatedEntry];
-        } else {
-          // note가 없으면 객체를 업데이트
-          newValue = updatedEntry;
-        }
+        nextValue = hasNote ? [lockerEntry, updatedEntry] : updatedEntry;
       } else {
         throw new Error('잘못된 락커 데이터 형식입니다.');
       }
 
-      tx.set(ref, { [key]: newValue }, { merge: true });
+      return {
+        result: undefined,
+        payload: { [key]: nextValue }
+      };
     });
   }
 
   /**
-   * 특정 락커 번호의 전체 히스토리를 조회합니다.
+   * 특정 락커의 전체 히스토리를 조회합니다.
+   *
+   * 단일 엔트리 문서와 배열 히스토리 문서를 모두 `Locker[]`로 정규화해 반환합니다.
    *
    * @param box 박스 이름
    * @param lockerNumber 조회할 락커 번호
-   * @returns 오래된 순서대로 정리된 락커 히스토리 목록
+   * @returns 오래된 순서대로 정리된 락커 히스토리
    */
   static async getLockerHistory(box: string, lockerNumber: number): Promise<Locker[]> {
-    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
-    const snap = await getDoc(ref);
+    const { exists, data } = await LockerRepository.getLockerDocument(box);
+    if (!exists) return [];
 
-    if (!snap.exists()) {
-      return [];
-    }
-
-    const data = snap.data() as LockerDocumentData;
     const key = String(lockerNumber);
-
     if (!Object.prototype.hasOwnProperty.call(data, key)) {
       return [];
     }
 
-    const lockerEntryData = data[key];
-    const history: Locker[] = [];
+    const lockerEntry = data[key];
 
-
-    if (Array.isArray(lockerEntryData)) {
-      // 배열인 경우 모든 항목을 히스토리로 반환
-      for (const item of lockerEntryData) {
-        history.push(toLocker(item, lockerNumber));
-      }
-    } else if (lockerEntryData && typeof lockerEntryData === 'object') {
-      // 객체인 경우 단일 항목
-      history.push(toLocker(lockerEntryData, lockerNumber));
+    if (Array.isArray(lockerEntry)) {
+      return lockerEntry.map((entry) => toLocker(entry, lockerNumber));
     }
 
-    return history;
+    if (lockerEntry && typeof lockerEntry === 'object') {
+      return [toLocker(lockerEntry, lockerNumber)];
+    }
+
+    return [];
   }
 
   /**
    * 회원을 락커에 배정합니다.
    *
-   * 현재 활성 배정 회원이 없는 경우에만 배정 가능하며,
-   * 기존 최신 엔트리 상태에 따라 덮어쓰기 또는 히스토리 추가를 수행합니다.
+   * 현재 활성 배정 회원이 없는 경우에만 배정할 수 있으며,
+   * 최신 엔트리 상태에 따라 덮어쓰기 또는 히스토리 추가를 수행합니다.
    *
    * @param box 박스 이름
    * @param lockerNumber 배정할 락커 번호
@@ -439,6 +350,7 @@ export class LockerService {
    * @param key 락커 배정 고유 키
    * @param price 결제 금액
    * @param paymentType 결제 수단
+   * @throws 이미 활성 배정 회원이 있으면 에러를 던집니다.
    */
   static async assignLocker(
     box: string,
@@ -452,175 +364,136 @@ export class LockerService {
     price: string,
     paymentType: 'cash' | 'card'
   ): Promise<void> {
-    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
-
-    return runTransaction(db, async (tx) => {
-      const snap = await tx.get(ref);
-      if (!snap.exists()) {
+    return LockerRepository.runLockerDocumentTransaction(box, ({ exists, data }) => {
+      if (!exists) {
         throw new Error('락커 문서를 찾을 수 없습니다.');
       }
 
-      const data = snap.data() as LockerDocumentData;
       const lockerKey = String(lockerNumber);
+      const lockerEntry = this.getLockerEntry(data, lockerNumber);
 
-      if (!Object.prototype.hasOwnProperty.call(data, lockerKey)) {
-        throw new Error('해당 락커 번호를 찾을 수 없습니다.');
-      }
-
-      const lockerEntry = data[lockerKey];
-      
-      const hasUser = this.hasActiveAssignedUser(lockerEntry, lockerNumber);
-
-      if (hasUser) {
+      if (hasActiveAssignedUser(lockerEntry, lockerNumber)) {
         throw new Error('이미 회원이 배정되어 있습니다. 먼저 해지해주세요.');
       }
 
-      const assignedEntry: Locker = {
-        number: lockerNumber,
+      const assignedEntry = this.createLockerEntry(lockerNumber, {
         state: LOCKER_STATE.USED,
         id: userId,
         realName: userName,
         phone: phoneNumber || '',
-        assignee: '',
-        note: '',
         startDate: startDate || '',
         endDate: endDate || '',
-        createdAt: new Date().toISOString().split('T')[0],
-        key: key,
-        price: price,
-        paymentType: paymentType
-      };
+        key,
+        price,
+        paymentType
+      });
 
-      let newValue: any;
+      let nextValue: unknown;
 
       if (Array.isArray(lockerEntry)) {
-        const lastItem = lockerEntry[lockerEntry.length - 1];
-        const isUnusedWithNoNote = lastItem?.state === LOCKER_STATE.UNUSED && (!lastItem?.note || lastItem.note.trim() === '');
-        
-        if (isUnusedWithNoNote) {
-          // 사용 가능 상태이고 note가 없으면 마지막 항목 덮어쓰기
+        const lastEntry = lockerEntry[lockerEntry.length - 1] as Partial<Locker> | undefined;
+        const isClean = lastEntry?.state === LOCKER_STATE.UNUSED && (!lastEntry?.note || lastEntry.note.trim() === '');
+
+        if (isClean) {
           const updated = [...lockerEntry];
           updated[updated.length - 1] = assignedEntry;
-          newValue = updated;
+          nextValue = updated;
         } else {
-          // 그렇지 않으면 새 항목 추가
-          newValue = [...lockerEntry, assignedEntry];
+          nextValue = [...lockerEntry, assignedEntry];
         }
       } else if (lockerEntry && typeof lockerEntry === 'object') {
-        const isUnusedWithNoNote = (lockerEntry as any)?.state === LOCKER_STATE.UNUSED && 
-                                     (!(lockerEntry as any)?.note || (lockerEntry as any).note.trim() === '');
-        
-        if (isUnusedWithNoNote) {
-          // 사용 가능 상태이고 note가 없으면 객체 덮어쓰기
-          newValue = assignedEntry;
-        } else {
-          // 그렇지 않으면 배열로 변환하고 새 항목 추가
-          newValue = [lockerEntry, assignedEntry];
-        }
+        const objectEntry = lockerEntry as Partial<Locker>;
+        const isClean = objectEntry.state === LOCKER_STATE.UNUSED && (!objectEntry.note || objectEntry.note.trim() === '');
+        nextValue = isClean ? assignedEntry : [lockerEntry, assignedEntry];
       } else {
         throw new Error('잘못된 락커 데이터 형식입니다.');
       }
 
-      tx.set(ref, { [lockerKey]: newValue }, { merge: true });
+      return {
+        result: undefined,
+        payload: { [lockerKey]: nextValue }
+      };
     });
   }
 
   /**
    * 현재 사용 중인 모든 락커의 만료일을 일괄 연장합니다.
    *
-   * 만료되지 않은 활성 락커만 대상으로 하며, 회원 히스토리 갱신에 필요한
-   * 최소 정보도 함께 반환합니다.
+   * 오늘 기준으로 아직 만료되지 않은 `used` 상태 락커만 연장하며,
+   * 후속 회원 히스토리 갱신에 필요한 최소 정보도 함께 반환합니다.
    *
    * @param box 박스 이름
    * @param days 연장할 일수
-   * @returns 연장된 개수와 후속 처리용 락커 정보
+   * @returns 연장된 개수와 연장된 락커 정보 목록
    */
   static async extendAllLockers(
     box: string,
     days: number
-  ): Promise<{ 
+  ): Promise<{
     extendedCount: number;
     extendedLockers: Array<{ id: string; key: string; endDate: string }>;
   }> {
-    const ref = doc(db, 'box', box, 'lockers', 'lockerdoc');
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
-    return runTransaction(db, async (tx) => {
-      const snap = await tx.get(ref);
-      if (!snap.exists()) {
-        return { extendedCount: 0, extendedLockers: [] };
+    return LockerRepository.runLockerDocumentTransaction(box, ({ exists, data }) => {
+      if (!exists) {
+        return {
+          result: { extendedCount: 0, extendedLockers: [] }
+        };
       }
 
-      const data = snap.data() as LockerDocumentData;
+      const updates: Record<string, unknown> = {};
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
       let extendedCount = 0;
-      const updates: Record<string, any> = {};
       const extendedLockers: Array<{ id: string; key: string; endDate: string }> = [];
 
       for (const [key, value] of Object.entries(data)) {
-        const num = Number(key);
-        if (!Number.isFinite(num)) {
+        const lockerNumber = Number(key);
+        if (!Number.isFinite(lockerNumber)) continue;
+
+        const latestLocker = getLatestLocker(value, lockerNumber);
+        if (!latestLocker || latestLocker.state !== LOCKER_STATE.USED || !latestLocker.endDate) {
           continue;
         }
 
-        let latestLocker: Locker | null = null;
-        let newValue: any;
+        const endDate = new Date(latestLocker.endDate);
+        endDate.setHours(0, 0, 0, 0);
+
+        if (endDate < today) {
+          continue;
+        }
+
+        const newEndDate = new Date(endDate.getTime() + days * 24 * 60 * 60 * 1000);
+        const newEndDateStr = formatDateToString(newEndDate);
+        const updatedLocker: Locker = {
+          ...latestLocker,
+          endDate: newEndDateStr
+        };
 
         if (Array.isArray(value)) {
-          if (value.length === 0) continue;
-          latestLocker = toLocker(value[value.length - 1], num);
-          newValue = [...value];
-        } else if (value && typeof value === 'object') {
-          latestLocker = toLocker(value as any, num);
-          newValue = value;
+          const updated = [...value];
+          updated[updated.length - 1] = updatedLocker;
+          updates[key] = updated;
         } else {
-          continue;
+          updates[key] = updatedLocker;
         }
 
-        // 사용 중인 락커만 연장
-        if (latestLocker.state === LOCKER_STATE.USED && latestLocker.endDate) {
-          const endDate = new Date(latestLocker.endDate);
-          endDate.setHours(0, 0, 0, 0);
-
-          // 현재 유효한 락커인지 확인 (만료일이 오늘 이후)
-          if (endDate >= now) {
-            // 만료일 연장
-            const newEndDate = new Date(endDate.getTime() + days * 24 * 60 * 60 * 1000);
-            const newEndDateStr = formatDateToString(newEndDate);
-
-            // Locker 타입으로 업데이트된 객체 생성
-            const updatedLocker: Locker = {
-              ...latestLocker,
-              endDate: newEndDateStr
-            };
-
-            if (Array.isArray(newValue)) {
-              const updated = [...newValue];
-              updated[updated.length - 1] = updatedLocker;
-              updates[key] = updated;
-            } else {
-              updates[key] = updatedLocker;
-            }
-
-            // 연장된 락커 정보 저장 (id와 key가 있는 경우만)
-            if (latestLocker.id && latestLocker.key) {
-              extendedLockers.push({
-                id: latestLocker.id,
-                key: latestLocker.key,
-                endDate: newEndDateStr
-              });
-            }
-
-            extendedCount++;
-          }
+        if (latestLocker.id && latestLocker.key) {
+          extendedLockers.push({
+            id: latestLocker.id,
+            key: latestLocker.key,
+            endDate: newEndDateStr
+          });
         }
+
+        extendedCount++;
       }
 
-      if (Object.keys(updates).length > 0) {
-        tx.update(ref, updates);
-      }
-
-      return { extendedCount, extendedLockers };
+      return {
+        result: { extendedCount, extendedLockers },
+        payload: updates,
+        operation: 'update'
+      };
     });
   }
 }
