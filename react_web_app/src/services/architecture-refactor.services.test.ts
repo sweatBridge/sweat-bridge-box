@@ -14,8 +14,7 @@ import {
   createLockerDocumentData,
   createLockerEntry,
   createMemberDocumentData,
-  createMembership,
-  createRawMembership
+  createMembership
 } from '../testUtils/architectureFixtures';
 import { LOCKER_STATE } from '../types/locker';
 
