@@ -1,30 +1,30 @@
 import { Timestamp } from 'firebase/firestore';
-import { ClassService } from './classService';
-import { LockerService } from './lockerService';
-import { MemberService } from './memberService';
-import { MembershipService } from './membershipService';
-import { RevenueService } from './revenueService';
-import { ClassRepository } from '../repositories/classRepository';
-import { LockerRepository } from '../repositories/lockerRepository';
-import { MemberRepository } from '../repositories/memberRepository';
-import { MembershipRepository } from '../repositories/membershipRepository';
-import { RevenueRepository } from '../repositories/revenueRepository';
+import { ClassService } from '../../services/classService';
+import { LockerService } from '../../services/lockerService';
+import { MemberService } from '../../services/memberService';
+import { MembershipService } from '../../services/membershipService';
+import { RevenueService } from '../../services/revenueService';
+import { ClassRepository } from '../../repositories/classRepository';
+import { LockerRepository } from '../../repositories/lockerRepository';
+import { MemberRepository } from '../../repositories/memberRepository';
+import { MembershipRepository } from '../../repositories/membershipRepository';
+import { RevenueRepository } from '../../repositories/revenueRepository';
 import {
   createDate,
   createLockerDocumentData,
   createLockerEntry,
   createMemberDocumentData,
   createMembership
-} from '../testUtils/architectureFixtures';
-import { LOCKER_STATE } from '../types/locker';
+} from '../fixtures/architectureFixtures';
+import { LOCKER_STATE } from '../../types/locker';
 
-jest.mock('../repositories/classRepository');
-jest.mock('../repositories/lockerRepository');
-jest.mock('../repositories/memberRepository');
-jest.mock('../repositories/membershipRepository');
-jest.mock('../repositories/revenueRepository');
+jest.mock('../../repositories/classRepository');
+jest.mock('../../repositories/lockerRepository');
+jest.mock('../../repositories/memberRepository');
+jest.mock('../../repositories/membershipRepository');
+jest.mock('../../repositories/revenueRepository');
 
-describe('2. service integration tests', () => {
+describe('2. 서비스 통합 테스트', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
@@ -38,7 +38,7 @@ describe('2. service integration tests', () => {
   });
 
   describe('MemberService', () => {
-    it('returns members with normalized birthDate and membership info', async () => {
+    it('정규화된 birthDate와 회원권 정보를 포함한 회원 목록을 반환한다', async () => {
       const memberDocuments = [
         {
           id: 'member@example.com',
@@ -58,7 +58,7 @@ describe('2. service integration tests', () => {
   });
 
   describe('MembershipService', () => {
-    it('adds a user membership and syncs revenue', async () => {
+    it('회원권을 추가하고 매출 데이터를 동기화한다', async () => {
       const membership = createMembership({
         key: 'membership-new',
         type: 'countPass',
@@ -75,7 +75,7 @@ describe('2. service integration tests', () => {
       addRevenueSpy.mockRestore();
     });
 
-    it('adds a hold and shifts subsequent memberships when periods overlap', async () => {
+    it('홀딩을 추가하고 기간이 겹치면 뒤 회원권 일정을 밀어낸다', async () => {
       const memberships = [
         createMembership({
           key: 'first',
@@ -113,7 +113,7 @@ describe('2. service integration tests', () => {
       expect(savedMemberships[0].adjustments[0].type).toBe('hold');
     });
 
-    it('releases a future hold and restores dates', async () => {
+    it('미래 홀딩을 해제하고 날짜를 복원한다', async () => {
       const memberships = [
         createMembership({
           key: 'first',
@@ -152,10 +152,71 @@ describe('2. service integration tests', () => {
       expect(savedMemberships[1].period.endDate).toEqual(createDate('2026-04-23'));
       expect(savedMemberships[0].adjustments[0].type).toBe('hold_release');
     });
+
+    it('부분 환불 금액으로 회원권을 환불 처리하고 원 결제 매출에 반영한다', async () => {
+      const memberships = [
+        createMembership({
+          key: 'membership-partial-refund',
+          purchase: {
+            price: 150000,
+            paid: 150000,
+            paymentType: 'card',
+            at: createDate('2026-03-25')
+          }
+        })
+      ];
+      const refundRevenueSpy = jest.spyOn(RevenueService, 'refundUserMembership').mockResolvedValue();
+      (MembershipRepository.setUserMemberships as jest.Mock).mockResolvedValue(undefined);
+
+      await MembershipService.refundUserMembership(
+        'member@example.com',
+        0,
+        '30000',
+        '부분 환불',
+        'coach-a',
+        memberships
+      );
+
+      const savedMemberships = (MembershipRepository.setUserMemberships as jest.Mock).mock.calls[0][2];
+      expect(savedMemberships[0].refund).toEqual(
+        expect.objectContaining({
+          isRefunded: true,
+          refundAmount: 30000,
+          reason: '부분 환불',
+          assignee: 'coach-a'
+        })
+      );
+      expect(refundRevenueSpy).toHaveBeenCalledWith('membership-partial-refund', 30000);
+      refundRevenueSpy.mockRestore();
+    });
+
+    it('결제 금액을 초과하는 환불은 거부한다', async () => {
+      const memberships = [
+        createMembership({
+          purchase: {
+            price: 150000,
+            paid: 150000,
+            paymentType: 'card',
+            at: createDate('2026-03-25')
+          }
+        })
+      ];
+
+      await expect(
+        MembershipService.refundUserMembership(
+          'member@example.com',
+          0,
+          '160000',
+          '과환불',
+          'coach-a',
+          memberships
+        )
+      ).rejects.toThrow('환불 금액은 결제 금액을 초과할 수 없습니다.');
+    });
   });
 
   describe('ClassService', () => {
-    it('maps repository documents to class events', async () => {
+    it('저장소 문서를 수업 이벤트 형식으로 변환한다', async () => {
       (ClassRepository.getClassesInRange as jest.Mock).mockResolvedValue([
         {
           docKey: '2026041010001130',
@@ -191,7 +252,7 @@ describe('2. service integration tests', () => {
   });
 
   describe('LockerService', () => {
-    it('assigns a locker by replacing the last clean unused entry', async () => {
+    it('마지막 미사용 항목을 교체해 락커를 배정한다', async () => {
       let capturedPayload: Record<string, unknown> | undefined;
       (LockerRepository.runLockerDocumentTransaction as jest.Mock).mockImplementation(
         async (_box: string, handler: (context: unknown) => Promise<{ result: void; payload?: Record<string, unknown> }>) => {
@@ -236,7 +297,7 @@ describe('2. service integration tests', () => {
       });
     });
 
-    it('extends only active used lockers and returns affected member info', async () => {
+    it('활성 사용 중인 락커만 연장하고 대상 회원 정보를 반환한다', async () => {
       let capturedPayload: Record<string, unknown> | undefined;
       let capturedOperation: string | undefined;
       (LockerRepository.runLockerDocumentTransaction as jest.Mock).mockImplementation(
@@ -269,7 +330,7 @@ describe('2. service integration tests', () => {
   });
 
   describe('RevenueService', () => {
-    it('aggregates monthly revenue and transaction groups', async () => {
+    it('월별 매출과 거래 내역을 집계한다', async () => {
       (RevenueRepository.getRevenueYear as jest.Mock).mockResolvedValue({
         '4': {
           membership1: {
@@ -320,7 +381,7 @@ describe('2. service integration tests', () => {
       expect(monthly.dailyTransactions['2026-04-10']).toHaveLength(2);
     });
 
-    it('calculates revenue stats from yearly documents', async () => {
+    it('연도별 매출 문서에서 매출 통계를 계산한다', async () => {
       (RevenueRepository.getAllRevenueYears as jest.Mock).mockResolvedValue([
         {
           year: '2026',

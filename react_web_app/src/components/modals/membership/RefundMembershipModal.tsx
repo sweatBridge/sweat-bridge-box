@@ -84,7 +84,7 @@ const RefundMembershipModal = ({
         <div className="modal-body">
           <div className="info-message">
             <DollarSign size={16} />
-            <p>환불 처리 후 회원권이 자동으로 삭제됩니다.</p>
+            <p>부분 환불 1회가 가능하며, 환불 처리 후 회원권은 종료됩니다.</p>
           </div>
 
           <div className="membership-info">
@@ -107,7 +107,7 @@ const RefundMembershipModal = ({
               <input
                 type="text"
                 className="form-input"
-                value={membershipPrice}
+                value={refundAmount}
                 onChange={handleRefundAmountChange}
                 disabled={loading}
                 placeholder="환불 금액"
@@ -400,4 +400,3 @@ const RefundMembershipModal = ({
 };
 
 export default RefundMembershipModal;
-

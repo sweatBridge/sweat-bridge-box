@@ -1,6 +1,6 @@
-import { LOCKER_STATE, Locker, LockerDocumentData } from '../types/locker';
-import { Member } from '../types/member';
-import { UserMembership } from '../types/membership';
+import { LOCKER_STATE, Locker, LockerDocumentData } from '../../types/locker';
+import { Member } from '../../types/member';
+import { UserMembership } from '../../types/membership';
 
 export function createDate(value: string): Date {
   return new Date(`${value}T00:00:00+09:00`);
