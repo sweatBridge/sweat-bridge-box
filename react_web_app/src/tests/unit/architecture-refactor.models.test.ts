@@ -12,7 +12,7 @@ import {
   isHold,
   isValidActiveMembership
 } from '../../models/membershipModel';
-import { extractDateTimeFromDocKey, generateDocKey } from '../../models/classModel';
+import { extractDateAndTime, extractDateTimeFromDocKey, formatDateTime, generateDocKey } from '../../models/classModel';
 import { getLatestLocker, hasActiveAssignedUser } from '../../models/lockerModel';
 import {
   createDate,
@@ -47,6 +47,15 @@ describe('1. 모델 단위 테스트', () => {
       expect(converted[0].purchase.at).toBeInstanceOf(Date);
       expect(converted[0].period.startDate).toBeInstanceOf(Date);
       expect(converted[0].quota.remaining).toBe(26);
+    });
+
+    it('레거시 형식 회원권은 변환 대상에서 제외한다', () => {
+      const converted = convertMembershipsFromFirebase([
+        { key: 'legacy-only' },
+        createRawMembership({ key: 'valid-membership' })
+      ] as any[]);
+
+      expect(converted.map((membership) => membership.key)).toEqual(['valid-membership']);
     });
 
     it('회원권을 과거/현재/미래/환불 상태로 분류한다', () => {
@@ -112,6 +121,40 @@ describe('1. 모델 단위 테스트', () => {
       expect(membershipInfo.remainingVisits).toBe(15);
       expect(membershipInfo.remainingDays).toBe(10);
       expect(membershipInfo.expiryDate).toContain('2026');
+    });
+
+    it('현재 회원권이 없고 미래 회원권만 있으면 사용 예정 상태를 반환한다', () => {
+      const future = createMembership({
+        period: {
+          startDate: createDate('2026-05-01'),
+          endDate: createDate('2026-05-31'),
+          originalEndDate: createDate('2026-05-31')
+        }
+      });
+
+      const membershipInfo = buildMembershipInfo([], [], [future], []);
+
+      expect(membershipInfo.type).toBe('사용 예정');
+      expect(membershipInfo.remainingDays).toBe(0);
+      expect(membershipInfo.remainingVisits).toBe(0);
+    });
+
+    it('현재 회원권이 홀딩 중이면 홀딩 상태를 반환한다', () => {
+      const currentHold = createMembership({
+        holds: [
+          {
+            reason: '부상',
+            startDate: createDate('2026-04-09'),
+            endDate: createDate('2026-04-12'),
+            days: 3,
+            assignee: 'coach-a'
+          }
+        ]
+      });
+
+      const membershipInfo = buildMembershipInfo([], [currentHold], [], []);
+
+      expect(membershipInfo.type).toBe('홀딩');
     });
   });
 
@@ -214,6 +257,16 @@ describe('1. 모델 단위 테스트', () => {
         endHour: '11',
         endMin: '30'
       });
+    });
+
+    it('ISO 날짜 문자열에서 날짜와 시간을 분리하고 포맷팅한다', () => {
+      const dateTimeString = '2026-04-10T18:45:00+09:00';
+
+      expect(extractDateAndTime(dateTimeString)).toEqual({
+        dateStr: '2026-04-10',
+        timeStr: '18:45'
+      });
+      expect(formatDateTime(dateTimeString)).toBe('2026.04.10 18:45');
     });
   });
 
