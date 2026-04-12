@@ -1,3 +1,5 @@
+import type { Member } from './member';
+
 export interface MembershipPlan {
   plan: string;
   type: 'periodPass' | 'countPass';
@@ -134,5 +136,4 @@ export class MembershipInfo {
   ): MembershipInfo {
     return new MembershipInfo(type, expiryDate, remainingDays, remainingVisits);
   }
-} 
-import type { Member } from './member';
+}
