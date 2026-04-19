@@ -1,9 +1,9 @@
-import { LOCKER_STATE } from '../types/locker';
+import { LOCKER_STATE } from '../../types/locker';
 import {
   buildMembershipInfo,
   categorizeMemberships,
   convertMembershipsFromFirebase
-} from './memberModel';
+} from '../../models/memberModel';
 import {
   filterWarningMembers,
   getCurrentMemberships,
@@ -11,18 +11,18 @@ import {
   isFutureHold,
   isHold,
   isValidActiveMembership
-} from './membershipModel';
-import { extractDateTimeFromDocKey, generateDocKey } from './classModel';
-import { getLatestLocker, hasActiveAssignedUser } from './lockerModel';
+} from '../../models/membershipModel';
+import { extractDateAndTime, extractDateTimeFromDocKey, formatDateTime, generateDocKey } from '../../models/classModel';
+import { getLatestLocker, hasActiveAssignedUser } from '../../models/lockerModel';
 import {
   createDate,
   createLockerEntry,
   createMemberForBadge,
   createMembership,
   createRawMembership
-} from '../testUtils/architectureFixtures';
+} from '../fixtures/architectureFixtures';
 
-describe('1. model unit tests', () => {
+describe('1. 모델 단위 테스트', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2026-04-10T09:00:00+09:00'));
@@ -33,7 +33,7 @@ describe('1. model unit tests', () => {
   });
 
   describe('memberModel', () => {
-    it('converts Firebase membership payloads into app memberships', () => {
+    it('Firebase 회원권 데이터를 앱 회원권 형식으로 변환한다', () => {
       const converted = convertMembershipsFromFirebase([
         createRawMembership({
           key: 'raw-1',
@@ -49,7 +49,16 @@ describe('1. model unit tests', () => {
       expect(converted[0].quota.remaining).toBe(26);
     });
 
-    it('categorizes memberships into past/current/future/refunded buckets', () => {
+    it('레거시 형식 회원권은 변환 대상에서 제외한다', () => {
+      const converted = convertMembershipsFromFirebase([
+        { key: 'legacy-only' },
+        createRawMembership({ key: 'valid-membership' })
+      ] as any[]);
+
+      expect(converted.map((membership) => membership.key)).toEqual(['valid-membership']);
+    });
+
+    it('회원권을 과거/현재/미래/환불 상태로 분류한다', () => {
       const past = createMembership({
         key: 'past',
         period: {
@@ -95,7 +104,7 @@ describe('1. model unit tests', () => {
       expect(result.refundedMemberships.map((membership) => membership.key)).toEqual(['refunded']);
     });
 
-    it('builds membership info for an active count pass', () => {
+    it('활성 횟수권에 대한 회원권 정보를 생성한다', () => {
       const current = createMembership({
         type: 'countPass',
         quota: { total: 20, used: 5, remaining: 15 },
@@ -113,10 +122,44 @@ describe('1. model unit tests', () => {
       expect(membershipInfo.remainingDays).toBe(10);
       expect(membershipInfo.expiryDate).toContain('2026');
     });
+
+    it('현재 회원권이 없고 미래 회원권만 있으면 사용 예정 상태를 반환한다', () => {
+      const future = createMembership({
+        period: {
+          startDate: createDate('2026-05-01'),
+          endDate: createDate('2026-05-31'),
+          originalEndDate: createDate('2026-05-31')
+        }
+      });
+
+      const membershipInfo = buildMembershipInfo([], [], [future], []);
+
+      expect(membershipInfo.type).toBe('사용 예정');
+      expect(membershipInfo.remainingDays).toBe(0);
+      expect(membershipInfo.remainingVisits).toBe(0);
+    });
+
+    it('현재 회원권이 홀딩 중이면 홀딩 상태를 반환한다', () => {
+      const currentHold = createMembership({
+        holds: [
+          {
+            reason: '부상',
+            startDate: createDate('2026-04-09'),
+            endDate: createDate('2026-04-12'),
+            days: 3,
+            assignee: 'coach-a'
+          }
+        ]
+      });
+
+      const membershipInfo = buildMembershipInfo([], [currentHold], [], []);
+
+      expect(membershipInfo.type).toBe('홀딩');
+    });
   });
 
   describe('membershipModel', () => {
-    it('detects current and future holds correctly', () => {
+    it('현재 홀딩과 미래 홀딩을 올바르게 판별한다', () => {
       const currentHoldMembership = createMembership({
         holds: [
           {
@@ -146,7 +189,7 @@ describe('1. model unit tests', () => {
       expect(isFutureHold(futureHoldMembership)).toBe(true);
     });
 
-    it('returns only active memberships for the given date', () => {
+    it('주어진 날짜 기준으로 활성 회원권만 반환한다', () => {
       const memberships = [
         createMembership({
           key: 'active',
@@ -174,7 +217,7 @@ describe('1. model unit tests', () => {
       expect(getCurrentMemberships(memberships).map((membership) => membership.key)).toEqual(['active']);
     });
 
-    it('calculates warning badge and filters warning members', () => {
+    it('주의 상태 뱃지를 계산하고 주의 회원만 필터링한다', () => {
       const warningMember = createMemberForBadge({
         membershipInfo: {
           type: '횟수권',
@@ -201,7 +244,7 @@ describe('1. model unit tests', () => {
   });
 
   describe('classModel', () => {
-    it('generates and parses doc keys consistently', () => {
+    it('문서 키를 일관되게 생성하고 파싱한다', () => {
       const docKey = generateDocKey(new Date('2026-04-10T09:00:00+09:00'), '10:00', '11:30');
 
       expect(docKey).toBe('2026041010001130');
@@ -215,10 +258,20 @@ describe('1. model unit tests', () => {
         endMin: '30'
       });
     });
+
+    it('ISO 날짜 문자열에서 날짜와 시간을 분리하고 포맷팅한다', () => {
+      const dateTimeString = '2026-04-10T18:45:00+09:00';
+
+      expect(extractDateAndTime(dateTimeString)).toEqual({
+        dateStr: '2026-04-10',
+        timeStr: '18:45'
+      });
+      expect(formatDateTime(dateTimeString)).toBe('2026.04.10 18:45');
+    });
   });
 
   describe('lockerModel', () => {
-    it('extracts the latest locker entry from an array history', () => {
+    it('배열 히스토리에서 가장 최신 락커 항목을 추출한다', () => {
       const latest = getLatestLocker(
         [
           createLockerEntry({ number: 101, state: LOCKER_STATE.UNUSED }),
@@ -238,7 +291,7 @@ describe('1. model unit tests', () => {
       expect(latest?.realName).toBe('홍길동');
     });
 
-    it('checks whether a locker has an active assigned user', () => {
+    it('락커에 현재 활성 배정 사용자가 있는지 확인한다', () => {
       const activeEntry = [
         createLockerEntry({
           number: 102,

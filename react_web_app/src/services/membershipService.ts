@@ -448,11 +448,27 @@ export class MembershipService {
 
       const membership = memberships[membershipIndex] as any;
       if (membership.refund?.isRefunded) throw new Error('이미 환불된 회원권입니다.');
+      if (!membership.purchase) throw new Error('회원권 결제 정보가 없습니다.');
+
+      const parsedRefundAmount = parseInt(refundAmount, 10);
+      const maxRefundAmount = Number(membership.purchase.paid ?? membership.purchase.price ?? 0);
+
+      if (!Number.isFinite(parsedRefundAmount) || parsedRefundAmount <= 0) {
+        throw new Error('환불 금액은 0보다 커야 합니다.');
+      }
+
+      if (!Number.isFinite(maxRefundAmount) || maxRefundAmount <= 0) {
+        throw new Error('회원권 결제 금액이 올바르지 않습니다.');
+      }
+
+      if (parsedRefundAmount > maxRefundAmount) {
+        throw new Error('환불 금액은 결제 금액을 초과할 수 없습니다.');
+      }
 
       membership.refund = {
         isRefunded: true,
         at: new Date(),
-        refundAmount: parseInt(refundAmount, 10),
+        refundAmount: parsedRefundAmount,
         reason,
         assignee
       };
@@ -462,7 +478,7 @@ export class MembershipService {
 
       if (membership.key) {
         try {
-          await RevenueService.refundUserMembership(membership.key, parseInt(refundAmount, 10));
+          await RevenueService.refundUserMembership(membership.key, parsedRefundAmount);
         } catch (revenueError) {
           console.error('Failed to process revenue refund, but membership refund was successful:', revenueError);
         }

@@ -1,17 +1,17 @@
 import { Timestamp } from 'firebase/firestore';
-import { ClassService } from './classService';
-import { MemberService } from './memberService';
-import { RevenueService } from './revenueService';
-import { ClassRepository } from '../repositories/classRepository';
-import { MemberRepository } from '../repositories/memberRepository';
-import { RevenueRepository } from '../repositories/revenueRepository';
-import { createMemberDocumentData } from '../testUtils/architectureFixtures';
+import { ClassService } from '../../services/classService';
+import { MemberService } from '../../services/memberService';
+import { RevenueService } from '../../services/revenueService';
+import { ClassRepository } from '../../repositories/classRepository';
+import { MemberRepository } from '../../repositories/memberRepository';
+import { RevenueRepository } from '../../repositories/revenueRepository';
+import { createMemberDocumentData } from '../fixtures/architectureFixtures';
 
-jest.mock('../repositories/classRepository');
-jest.mock('../repositories/memberRepository');
-jest.mock('../repositories/revenueRepository');
+jest.mock('../../repositories/classRepository');
+jest.mock('../../repositories/memberRepository');
+jest.mock('../../repositories/revenueRepository');
 
-describe('3. golden regression tests', () => {
+describe('3. 골든 회귀 테스트', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
@@ -24,7 +24,7 @@ describe('3. golden regression tests', () => {
     jest.useRealTimers();
   });
 
-  it('keeps MemberService.getMembers output shape aligned with the develop/v1.1 contract', async () => {
+  it('MemberService.getMembers의 출력 형태가 develop/v1.1 계약과 일치하는지 유지한다', async () => {
     (MemberRepository.getMemberDocuments as jest.Mock).mockResolvedValue([
       {
         id: 'member@example.com',
@@ -73,7 +73,7 @@ describe('3. golden regression tests', () => {
     ]);
   });
 
-  it('keeps ClassService.getMonthlyClasses event mapping aligned with the legacy contract', async () => {
+  it('ClassService.getMonthlyClasses의 이벤트 매핑이 기존 계약과 일치하는지 유지한다', async () => {
     (ClassRepository.getClassesInRange as jest.Mock).mockResolvedValue([
       {
         docKey: '2026041010001130',
@@ -107,7 +107,7 @@ describe('3. golden regression tests', () => {
     ]);
   });
 
-  it('keeps RevenueService.getMonthlyRevenue aggregation aligned with the previous contract', async () => {
+  it('RevenueService.getMonthlyRevenue 집계가 이전 계약과 일치하는지 유지한다', async () => {
     (RevenueRepository.getRevenueYear as jest.Mock).mockResolvedValue({
       '4': {
         membership1: {

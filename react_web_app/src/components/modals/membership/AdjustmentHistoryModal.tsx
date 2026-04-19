@@ -18,6 +18,8 @@ const AdjustmentHistoryModal = ({
 }: AdjustmentHistoryModalProps) => {
   if (!visible) return null;
 
+  const displayedAdjustments = [...adjustments].reverse();
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('ko-KR', {
       year: 'numeric',
@@ -72,11 +74,11 @@ const AdjustmentHistoryModal = ({
           </div>
 
           <div className="adjustments-list">
-            {adjustments.map((adjustment, index) => (
+            {displayedAdjustments.map((adjustment, index) => (
               <div key={index} className="adjustment-item">
                 <div className="adjustment-header">
                   <div className="adjustment-number-wrap">
-                    <div className="adjustment-number">#{index + 1}</div>
+                    <div className="adjustment-number">#{adjustments.length - index}</div>
                     <div
                       className="adjustment-type-badge"
                       style={{ backgroundColor: getTypeColor(adjustment.type) }}
@@ -561,4 +563,3 @@ const AdjustmentHistoryModal = ({
 };
 
 export default AdjustmentHistoryModal;
-
