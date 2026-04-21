@@ -6,6 +6,7 @@ import { usePageContext } from '../contexts/PageContext';
 import { formatPhoneNumber, normalizePhoneNumber } from '../utils/phoneUtils';
 import ToastMessage from '../components/ToastMessage';
 import { ToastMessageType } from '../types/member';
+import CoachActionConfirmModal from '../components/modals/common/CoachActionConfirmModal';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
 
@@ -57,9 +58,15 @@ const BoxSettings = () => {
     phone: '',
     email: ''
   });
+  const [pendingCoachAction, setPendingCoachAction] = useState<{
+    mode: 'add' | 'delete';
+    coach: Coach;
+    index?: number;
+  } | null>(null);
 
   // UI 상태
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isCoachActionLoading, setIsCoachActionLoading] = useState(false);
   const [createToast, setCreateToast] = useState<((toast: ToastMessageType) => void) | null>(null);
 
   // 페이지 정보 설정
@@ -176,39 +183,77 @@ const BoxSettings = () => {
       return;
     }
 
-    setFormData(prev => ({
-      ...prev,
-      coaches: [...prev.coaches, { ...newCoach }]
-    }));
-
-    setNewCoach({
-      name: '',
-      phone: '',
-      email: ''
+    setPendingCoachAction({
+      mode: 'add',
+      coach: { ...newCoach }
     });
-
-    if (createToast) {
-      createToast({
-        type: 'success',
-        message: '코치가 추가되었습니다.'
-      });
-    }
   }, [newCoach, createToast]);
 
   // 코치 삭제
   const handleRemoveCoach = useCallback((index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      coaches: prev.coaches.filter((_, i) => i !== index)
-    }));
+    setPendingCoachAction({
+      mode: 'delete',
+      coach: formData.coaches[index],
+      index
+    });
+  }, [formData.coaches]);
 
-    if (createToast) {
-      createToast({
-        type: 'success',
-        message: '코치가 삭제되었습니다.'
-      });
+  const handleCloseCoachActionModal = useCallback(() => {
+    if (isCoachActionLoading) return;
+    setPendingCoachAction(null);
+  }, [isCoachActionLoading]);
+
+  const handleConfirmCoachAction = useCallback(async () => {
+    if (!pendingCoachAction) return;
+
+    setIsCoachActionLoading(true);
+
+    try {
+      let updatedBoxInfo: BoxInfo;
+
+      if (pendingCoachAction.mode === 'add') {
+        updatedBoxInfo = {
+          ...formData,
+          coaches: [...formData.coaches, pendingCoachAction.coach]
+        };
+      } else {
+        updatedBoxInfo = {
+          ...formData,
+          coaches: formData.coaches.filter((_, i) => i !== pendingCoachAction.index)
+        };
+      }
+
+      await updateBoxInfo(updatedBoxInfo);
+      setFormData(updatedBoxInfo);
+
+      if (pendingCoachAction.mode === 'add') {
+        setNewCoach({
+          name: '',
+          phone: '',
+          email: ''
+        });
+      }
+
+      if (createToast) {
+        createToast({
+          type: 'success',
+          message: pendingCoachAction.mode === 'add' ? '코치가 추가되었습니다.' : '코치가 삭제되었습니다.'
+        });
+      }
+
+      setPendingCoachAction(null);
+    } catch (error) {
+      console.error('Failed to update coach list', error);
+      if (createToast) {
+        createToast({
+          type: 'danger',
+          message: pendingCoachAction.mode === 'add' ? '코치 추가에 실패했습니다.' : '코치 삭제에 실패했습니다.'
+        });
+      }
+    } finally {
+      setIsCoachActionLoading(false);
     }
-  }, [createToast]);
+  }, [pendingCoachAction, formData, updateBoxInfo, createToast]);
 
   // 박스 정보 수정
   const handleUpdate = useCallback(async () => {
@@ -516,6 +561,16 @@ const BoxSettings = () => {
       {/* Toast Messages */}
       <ToastMessage
         onCreateToast={(createToastFn: (toast: ToastMessageType) => void) => setCreateToast(() => createToastFn)}
+      />
+      <CoachActionConfirmModal
+        visible={!!pendingCoachAction}
+        mode={pendingCoachAction?.mode || 'add'}
+        coachName={pendingCoachAction?.coach.name || ''}
+        coachPhone={pendingCoachAction?.coach.phone || ''}
+        coachEmail={pendingCoachAction?.coach.email || ''}
+        loading={isCoachActionLoading}
+        onClose={handleCloseCoachActionModal}
+        onConfirm={handleConfirmCoachAction}
       />
 
       <style>{`
