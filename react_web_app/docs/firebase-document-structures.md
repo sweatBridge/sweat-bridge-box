@@ -1,7 +1,7 @@
 # Firebase Document Structures
 
 `src/repositories`에서 접근하는 Firebase 문서 구조 정리다.
-기준은 현재 React 앱 코드이며, 타입 정의와 실제 저장 payload를 함께 반영했다.
+기준은 현재 React 앱 코드이며, 실제 저장 payload와 JSON 예시를 기준으로 정리했다.
 
 ## 개요
 
@@ -31,28 +31,6 @@ box/{boxName}
 ### 문서 ID 규칙
 
 - `boxName`
-
-### 문서 구조
-
-```ts
-interface BoxDocument {
-  boxName: string;
-  email: string;
-  representative: string;
-  phone: string;
-  address: {
-    zoneCode: string;
-    roadAddress: string;
-    detailAddress: string;
-  };
-  description: string;
-  coaches: Array<{
-    name: string;
-    phone: string;
-    email: string;
-  }>;
-}
-```
 
 ### 예시
 
@@ -98,102 +76,12 @@ box/{boxName}/member/{memberDocId}
 - 기본 패턴: `email`
 - 예외 패턴: `addMember()`는 `addDoc()`를 사용하므로 auto ID 생성
 
-#### 문서 구조
+#### 예시 기준 포함 필드
 
-```ts
-interface MemberDocument {
-  email: string;
-  realName: string;
-  nickName: string;
-  gender?: 'M' | 'F';
-  birth?: string;
-  birthDate?: string;
-  phone: string;
-  boxName?: string;
-  role?: string;
-  joinedAt?: Timestamp | null;
-  memo?: string;
-  lockerPass?: string;
-  lockerHistory?: Array<{
-    lockerNum: number;
-    startDate: string;
-    endDate: string;
-    createdAt: Timestamp | string;
-    key?: string;
-    price?: string;
-    paymentType?: 'cash' | 'card';
-  }>;
-  memberships?: UserMembership[];
-  futureMemberships?: UserMembership[];
-}
-```
-
-`futureMemberships`는 화면 모델에 존재하지만, 저장은 주로 `memberships` 배열 기준으로 처리된다.
-
-#### `memberships[]` 구조
-
-```ts
-interface UserMembership {
-  key: string;
-  plan: string;
-  type: 'periodPass' | 'countPass';
-  purchase: {
-    price: number;
-    paid: number;
-    paymentType: 'card' | 'cash' | 'transfer' | 'point';
-    at: Date;
-  };
-  quota: {
-    total: number;
-    used: number;
-    remaining: number;
-  };
-  period: {
-    startDate: Date;
-    endDate: Date;
-    originalEndDate: Date;
-  };
-  holds: Array<{
-    reason: string;
-    startDate: Date;
-    endDate: Date;
-    days: number;
-    assignee: string;
-  }>;
-  refund: {
-    isRefunded: boolean;
-    at: Date | null;
-    refundAmount: number;
-    reason: string | null;
-    assignee: string | null;
-  };
-  adjustments: Array<{
-    type: 'edit' | 'hold' | 'hold_release';
-    before?: {
-      period?: { startDate: Date; endDate: Date };
-      quota?: { used: number; remaining: number };
-    };
-    after?: {
-      period?: { startDate: Date; endDate: Date };
-      quota?: { used: number; remaining: number };
-    };
-    hold?: {
-      startDate: Date;
-      endDate: Date;
-      reason: string;
-    };
-    reason: string;
-    assignee: string;
-    at: Date;
-  }>;
-  createdAt: Date;
-  updatedAt: Date;
-  assignee: string;
-  deleted: boolean;
-  deletedAt: Date | null;
-  boxName: string;
-}
-```
+- 회원 기본 정보: `email`, `realName`, `nickName`, `gender`, `birthDate`, `phone`
+- 부가 정보: `joinedAt`, `memo`, `lockerHistory`
+- 회원권 정보: `memberships[]`
+- `futureMemberships`는 화면 모델에 존재하지만, 저장은 주로 `memberships` 배열 기준으로 처리된다.
 
 #### 예시
 
@@ -273,23 +161,10 @@ user/{userDocId}
 - `getUsersByField()`와 `updateUsersByEmail()`는 `where('email' == ...)` 쿼리 사용
 - 즉, 현재 코드는 문서 ID가 항상 이메일이라고 완전히 가정하지는 않지만, 일부 메서드는 이메일 문서 ID를 전제로 한다
 
-#### 문서 구조
+#### 예시 기준 포함 필드
 
-```ts
-interface UserDocument {
-  boxName: string;
-  email: string;
-  realName: string;
-  nickName: string;
-  phone: string;
-  role?: string;
-  gender?: 'M' | 'F';
-  birth?: string;
-  birthDate?: string;
-  joinedAt?: Timestamp | null;
-  memberships?: UserMembership[];
-}
-```
+- `boxName`, `email`, `realName`, `nickName`, `phone`, `role`
+- 경우에 따라 `gender`, `birth`, `birthDate`, `joinedAt`, `memberships` 포함 가능
 
 ### 2-3. 가입 신청 문서
 
@@ -303,18 +178,7 @@ box/{boxName}/applied/applieddoc
 
 - 고정 문서 ID: `applieddoc`
 
-#### 문서 구조
-
 - 문서 전체가 `email -> 신청자 정보` 맵 형태다.
-
-```ts
-type AppliedDocument = Record<string, {
-  email?: string;
-  realName?: string;
-  phone?: string;
-  birth?: string;
-}>;
-```
 
 #### 예시
 
@@ -348,17 +212,6 @@ box/{boxName}/class/{docKey}
 
 - `docKey`
 - 시간 기반 문자열 키를 사용하는 구조로 보이며, repository 레벨에서는 문자열만 취급한다
-
-### 문서 구조
-
-```ts
-interface ClassDocument {
-  cap: number;
-  coach: string;
-  date: Timestamp;
-  reserved: string[];
-}
-```
 
 ### 예시
 
@@ -403,20 +256,6 @@ box/{boxName}/membership/plansDoc
 
 - 고정 문서 ID: `plansDoc`
 
-#### 문서 구조
-
-```ts
-interface MembershipPlansDocument {
-  plans: Array<{
-    plan: string;
-    type: 'periodPass' | 'countPass';
-    count: string;
-    duration: number;
-    price: string;
-  }>;
-}
-```
-
 #### 예시
 
 ```json
@@ -450,9 +289,9 @@ box/{boxName}/member/{email}
 
 #### 저장 필드
 
-```ts
+```json
 {
-  memberships: UserMembership[]
+  "memberships": []
 }
 ```
 
@@ -472,23 +311,7 @@ box/{boxName}/revenue/{year}
 
 - 연도 문자열 또는 숫자: `2026`, `2025`
 
-### 문서 구조
-
 - 연도 문서 안에 `month -> transactionKey -> RevenueData` 구조로 중첩된다.
-
-```ts
-type RevenueYearDocument = Record<string, Record<string, {
-  assignee: string;
-  createdAt: Timestamp;
-  id: string;
-  paymentType: 'card' | 'cash' | 'transfer' | 'point';
-  plan: string;
-  price: string;
-  realName: string;
-  type: string;
-  refundAmount: string;
-}>>;
-```
 
 ### 계층 예시
 
@@ -554,67 +377,8 @@ box/{boxName}/lockers/lockerdoc
 
 - 고정 문서 ID: `lockerdoc`
 
-### 문서 구조
-
 - 문서 전체가 `락커번호 문자열 -> 락커 엔트리 또는 이력 배열` 맵이다.
 - 서비스 로직상 현재는 배열 히스토리 형태가 중심이며, 단일 객체도 호환한다.
-
-```ts
-type LockerDocument = Record<string, LockerDocumentEntry>;
-
-type LockerDocumentEntry =
-  | Partial<{
-      number: number;
-      state: 'used' | 'unused' | 'na' | 'deleted';
-      id: string;
-      realName: string;
-      phone: string;
-      assignee: string;
-      note: string;
-      startDate: string;
-      endDate: string;
-      createdAt: string;
-      key?: string;
-      price?: string;
-      paymentType?: 'cash' | 'card';
-    }>
-  | Array<Partial<{
-      number: number;
-      state: 'used' | 'unused' | 'na' | 'deleted';
-      id: string;
-      realName: string;
-      phone: string;
-      assignee: string;
-      note: string;
-      startDate: string;
-      endDate: string;
-      createdAt: string;
-      key?: string;
-      price?: string;
-      paymentType?: 'cash' | 'card';
-    }>>;
-```
-
-### 실제 권장 해석 구조
-
-```ts
-type LockerHistoryEntry = {
-  state: 'used' | 'unused' | 'na' | 'deleted';
-  id: string;
-  realName: string;
-  phone: string;
-  assignee: string;
-  note: string;
-  startDate: string;
-  endDate: string;
-  createdAt: string;
-  key?: string;
-  price?: string;
-  paymentType?: 'cash' | 'card';
-};
-
-type LockerDocumentRecommended = Record<string, LockerHistoryEntry[]>;
-```
 
 ### 예시
 
@@ -694,18 +458,7 @@ user/{userDocId}
 ### 조회 방식
 
 - `where('email', '==', email)` 쿼리로 조회
-- 반환 필드 구조는 아래와 같다
-
-```ts
-interface AuthUserDocument {
-  boxName: string;
-  email: string;
-  realName: string;
-  nickName: string;
-  phone: string;
-  role: string;
-}
-```
+- 조회 결과에는 보통 `boxName`, `email`, `realName`, `nickName`, `phone`, `role`가 포함된다
 
 ## 8. Repository별 요약
 
