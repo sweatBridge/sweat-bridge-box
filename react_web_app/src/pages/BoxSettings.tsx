@@ -3,7 +3,7 @@ import { Building, MapPin, User, Phone, Mail, Users, Plus, Trash2, Search, Penci
 import { BoxInfo, Coach } from '../types/box';
 import { useBoxManagement } from '../hooks/useBoxManagement';
 import { usePageContext } from '../contexts/PageContext';
-import { getPhoneMask } from '../utils/phoneUtils';
+import { formatPhoneNumber, normalizePhoneNumber } from '../utils/phoneUtils';
 import ToastMessage from '../components/ToastMessage';
 import { ToastMessageType } from '../types/member';
 import { Gradients } from '../constants/gradients';
@@ -78,7 +78,14 @@ const BoxSettings = () => {
   // 박스 정보가 로드되면 폼 데이터 설정
   useEffect(() => {
     if (boxInfo) {
-      setFormData(boxInfo);
+      setFormData({
+        ...boxInfo,
+        phone: normalizePhoneNumber(boxInfo.phone),
+        coaches: (boxInfo.coaches || []).map((coach) => ({
+          ...coach,
+          phone: normalizePhoneNumber(coach.phone)
+        }))
+      });
     }
   }, [boxInfo]);
 
@@ -114,8 +121,7 @@ const BoxSettings = () => {
 
   // 전화번호 변경 핸들러
   const handlePhoneChange = useCallback((field: string, value: string) => {
-    const maskedPhone = getPhoneMask(value);
-    handleInputChange(field, maskedPhone);
+    handleInputChange(field, normalizePhoneNumber(value));
   }, [handleInputChange]);
 
   // 우편번호 검색
@@ -146,10 +152,9 @@ const BoxSettings = () => {
   // 새 코치 입력 변경
   const handleNewCoachChange = useCallback((field: keyof Coach, value: string) => {
     if (field === 'phone') {
-      const maskedPhone = getPhoneMask(value);
       setNewCoach(prev => ({
         ...prev,
-        [field]: maskedPhone
+        [field]: normalizePhoneNumber(value)
       }));
     } else {
       setNewCoach(prev => ({
@@ -342,7 +347,7 @@ const BoxSettings = () => {
                   <input
                     type="text"
                     placeholder="'-'를 제외하고 숫자만 입력"
-                    value={formData.phone}
+                    value={formatPhoneNumber(formData.phone)}
                     onChange={(e) => handlePhoneChange('phone', e.target.value)}
                     className="form-input"
                   />
@@ -420,8 +425,8 @@ const BoxSettings = () => {
                   <label>연락처</label>
                   <input
                     type="text"
-                    placeholder="연락처"
-                    value={newCoach.phone}
+                    placeholder="01012345678"
+                    value={formatPhoneNumber(newCoach.phone)}
                     onChange={(e) => handleNewCoachChange('phone', e.target.value)}
                     className="form-input"
                   />
@@ -465,7 +470,7 @@ const BoxSettings = () => {
                         <span>{coach.name}</span>
                       </div>
                     </div>
-                    <div className="table-cell">{coach.phone}</div>
+                    <div className="table-cell">{formatPhoneNumber(coach.phone)}</div>
                     <div className="table-cell">{coach.email}</div>
                     <div className="table-cell">
                       <button 

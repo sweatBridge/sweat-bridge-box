@@ -6,6 +6,7 @@ import { X, UserPlus, Search } from 'lucide-react';
 import { MemberService } from '../../../services/memberService';
 import DateInput from '../../DateInput';
 import { format } from 'date-fns';
+import { formatPhoneNumber, normalizePhoneNumber } from '../../../utils/phoneUtils';
 
 interface AddMemberModalProps {
   visible: boolean;
@@ -60,7 +61,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
           if (userByEmail) results = [userByEmail];
           break;
         case 'phone':
-          const userByPhone = await MemberService.getUserByPhone(searchValue);
+          const userByPhone = await MemberService.getUserByPhone(normalizePhoneNumber(searchValue));
           if (userByPhone) results = [userByPhone];
           break;
         case 'realName':
@@ -327,7 +328,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
                             <div className="table-cell">{user.realName}</div>
                             <div className="table-cell">{user.nickName}</div>
                             <div className="table-cell">{user.email}</div>
-                            <div className="table-cell">{user.phone}</div>
+                            <div className="table-cell">{formatPhoneNumber(user.phone)}</div>
                             <div className="table-cell">
                               <button
                                 className="btn btn-sm btn-primary"
@@ -361,7 +362,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
                       </div>
                       <div className="info-row">
                         <span className="info-label">전화번호:</span>
-                        <span className="info-value">{selectedUser?.phone}</span>
+                        <span className="info-value">{formatPhoneNumber(selectedUser?.phone || '')}</span>
                       </div>
                     </div>
                   </div>
@@ -431,9 +432,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
                     placeholder="01012345678"
                     value={formData.phone}
                     onChange={(e) => {
-                      // 숫자만 허용
-                      const numericValue = e.target.value.replace(/[^0-9]/g, '');
-                      handleInputChange('phone', numericValue);
+                      handleInputChange('phone', normalizePhoneNumber(e.target.value));
                     }}
                     className="form-input"
                   />

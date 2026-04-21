@@ -71,7 +71,7 @@ interface BoxDocument {
   "coaches": [
     {
       "name": "김코치",
-      "phone": "010-1111-2222",
+      "phone": "01011112222",
       "email": "coach1@example.com"
     }
   ]

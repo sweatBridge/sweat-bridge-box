@@ -3,6 +3,7 @@ import { Calendar } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import type { Locker as LockerItem } from '../../../types/locker';
 import { getLockerStateLabel } from '../../../types/locker';
+import { formatPhoneNumber } from '../../../utils/phoneUtils';
 
 interface LockerHistoryModalProps {
   visible: boolean;
@@ -62,7 +63,7 @@ const LockerHistoryModal = ({
                       {item.phone && (
                         <div className="history-row">
                           <span className="history-label">전화번호:</span>
-                          <span className="history-value">{item.phone}</span>
+                          <span className="history-value">{formatPhoneNumber(item.phone)}</span>
                         </div>
                       )}
                       {item.startDate && (
@@ -308,4 +309,3 @@ const LockerHistoryModal = ({
 };
 
 export default LockerHistoryModal;
-

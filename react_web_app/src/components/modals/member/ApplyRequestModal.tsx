@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Gradients } from '../../../constants/gradients';
 import { X, Users, Check, XCircle } from 'lucide-react';
 import { MemberService } from '../../../services/memberService';
+import { formatPhoneNumber } from '../../../utils/phoneUtils';
 
 interface ApplyRequestModalProps {
   visible: boolean;
@@ -130,7 +131,7 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
                 <div key={index} className="table-row">
                   <div className="table-cell">{applicant.name}</div>
                   <div className="table-cell">{applicant.email}</div>
-                  <div className="table-cell">{applicant.phone}</div>
+                  <div className="table-cell">{formatPhoneNumber(applicant.phone)}</div>
                   <div className="table-cell actions-cell">
                     <button
                       className="btn btn-sm btn-success"
