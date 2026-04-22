@@ -1,0 +1,14 @@
+{
+  "name": "firestore-tree",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dump the Firestore tree (collections, subcollections, fields, sample docs) via firebase-admin.",
+  "main": "dump-tree.js",
+  "scripts": {
+    "dump": "node dump-tree.js",
+    "dump:values": "node dump-tree.js --values"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}

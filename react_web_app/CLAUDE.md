@@ -17,6 +17,7 @@ npm test -- --watchAll=false  # 테스트 1회 실행 (CI 모드)
 도메인별 상세 문서는 `rules/` 디렉토리에 한국어로 작성되어 있다.
 
 - `rules/README.md` — 전체 아키텍처 개요, Firestore 구조, 상태 관리 패턴, 문서 인덱스
+- `rules/firebase-structure.md` — Firestore 전체 트리 (웹/모바일 앱 공용 경로, 필드 상세, 레포지토리 매핑)
 - `rules/pages/` — 각 페이지 + 모달 컴포넌트 상세 (UI 구성, 비즈니스 로직, 연관 서비스)
   - `dashboard.md`, `member-management.md`, `class-reservation.md`
   - `locker.md`, `revenue-management.md`, `box-settings.md`
