@@ -93,10 +93,21 @@ src/hooks/useBoxManagement.ts
 - 코치 목록은 `BoxInfo.coaches[]` 배열에 포함되어 저장
 - 별도 컬렉션 없이 박스 문서 내 필드로 관리
 - 코치 추가/삭제는 로컬 상태에서 먼저 처리 → 저장 시 일괄 반영
+- 화면에서는 코치 목록을 `localStorage`에도 함께 캐시한다
+- 캐시 키는 박스별 `box:{boxName}:coaches`, 조회 완료 플래그는 `box:{boxName}:coachesFetched`
+- 코치 캐시가 있으면 화면의 담당자/코치 선택 UI는 Firebase 대신 캐시를 우선 사용한다
+- 캐시가 비어 있고 조회 완료 플래그도 없을 때만 Firebase `box/{boxName}` 문서의 `coaches`를 조회한다
+- Firebase 조회 결과가 코치 0명이어도 조회 완료 플래그를 저장해 반복 조회를 막는다
+- 코치 추가/삭제 및 박스 정보 저장 시 Firebase와 localStorage 캐시를 함께 갱신한다
 
 ### 수업 생성과의 연관성
 - `BoxInfo.coaches[]`에 등록된 코치만 수업 생성 시 선택 가능
 - 코치 삭제 시 기존 수업의 코치 정보는 유지됨 (참조 삭제 없음)
+
+### 담당자 선택과의 연관성
+- 회원권 등록/수정/홀딩/환불, 락커 해지/상태 변경의 `담당자`는 자유 입력이 아니라 코치 목록 드롭다운으로 선택한다
+- 드롭다운 후보는 현재 박스의 코치 이름 목록이다
+- 코치가 0명이면 빈 드롭다운 상태로 유지되고, 사용자는 먼저 박스 설정에서 코치를 등록해야 한다
 
 ---
 
@@ -105,4 +116,7 @@ src/hooks/useBoxManagement.ts
 - `src/hooks/useBoxManagement.ts` → 박스 정보 상태 관리
 - `src/services/boxService.ts` → Firebase 박스 데이터 조작
   - `getBoxInfo(boxName)`
+  - `getCoaches(boxName)`
   - `updateBoxInfo(boxInfo)`
+- `src/utils/coachStorage.ts` → 코치 localStorage 캐시 및 조회 완료 플래그 관리
+- `src/hooks/useCoachOptions.ts` → 담당자/코치 드롭다운용 코치 이름 목록 로드

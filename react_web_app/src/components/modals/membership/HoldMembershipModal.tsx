@@ -4,6 +4,7 @@ import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
 import { formatDateToString } from '../../../utils/dateUtils';
 import DateInput from '../../DateInput';
+import { useCoachOptions } from '../../../hooks/useCoachOptions';
 
 interface HoldMembershipModalProps {
   visible: boolean;
@@ -26,6 +27,7 @@ const HoldMembershipModal = ({
   const [holdEndDate, setHoldEndDate] = useState<Date | null>(null);
   const [reason, setReason] = useState('');
   const [assignee, setAssignee] = useState('');
+  const coachOptions = useCoachOptions(visible);
 
   if (!visible) return null;
 
@@ -163,14 +165,21 @@ const HoldMembershipModal = ({
                 <User size={16} />
                 담당자
               </label>
-              <input
-                type="text"
+              <select
                 className="form-input"
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value)}
-                placeholder="담당자 이름"
                 disabled={loading}
-              />
+              >
+                <option value="" disabled>
+                  {coachOptions.length > 0 ? '담당자 선택' : '등록된 코치 없음'}
+                </option>
+                {coachOptions.map((coachName) => (
+                  <option key={coachName} value={coachName}>
+                    {coachName}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -391,4 +400,3 @@ const HoldMembershipModal = ({
 };
 
 export default HoldMembershipModal;
-

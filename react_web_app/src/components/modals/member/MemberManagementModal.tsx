@@ -17,6 +17,7 @@ import RefundMembershipModal from '../membership/RefundMembershipModal';
 import RefundInfoModal from '../membership/RefundInfoModal';
 import EditMembershipModal from '../membership/EditMembershipModal';
 import AdjustmentHistoryModal from '../membership/AdjustmentHistoryModal';
+import { useCoachOptions } from '../../../hooks/useCoachOptions';
 
 const MemberManagementModal = ({ 
   visible, 
@@ -49,6 +50,7 @@ const MemberManagementModal = ({
   const [adjustmentHistory, setAdjustmentHistory] = useState<{ plan: string; adjustments: any[] } | null>(null);
   const [activeTab, setActiveTab] = useState<'membership' | 'locker'>('membership');
   const [hasDataChanged, setHasDataChanged] = useState(false);
+  const coachOptions = useCoachOptions(visible);
 
   // 회원권 추가 폼 상태
   const [formData, setFormData] = useState<AddMembershipData>({
@@ -959,13 +961,20 @@ const MemberManagementModal = ({
 
                   <div className="form-group">
                     <label>담당자</label>
-                    <input
-                      type="text"
+                    <select
                       value={formData.assignee}
                       onChange={(e) => setFormData(prev => ({ ...prev, assignee: e.target.value }))}
                       className="form-input"
-                      placeholder="담당자 이름"
-                    />
+                    >
+                      <option value="" disabled>
+                        {coachOptions.length > 0 ? '담당자 선택' : '등록된 코치 없음'}
+                      </option>
+                      {coachOptions.map((coachName) => (
+                        <option key={coachName} value={coachName}>
+                          {coachName}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="form-group">

@@ -56,6 +56,14 @@ box/{boxName}
 }
 ```
 
+### 앱 캐시 규칙
+
+- Firebase의 `box/{boxName}.coaches`는 화면에서 `localStorage`에도 캐시된다
+- 캐시 키: `box:{boxName}:coaches`
+- 조회 완료 플래그 키: `box:{boxName}:coachesFetched`
+- 캐시가 없고 조회 완료 플래그도 없을 때만 Firebase 조회를 수행한다
+- Firebase 조회 결과가 빈 배열이어도 플래그를 기록해 반복 조회를 방지한다
+
 ## 2. MemberRepository
 
 파일: `src/repositories/memberRepository.ts`
@@ -82,6 +90,7 @@ box/{boxName}/member/{memberDocId}
 - 부가 정보: `joinedAt`, `memo`, `lockerHistory`
 - 회원권 정보: `memberships[]`
 - `futureMemberships`는 화면 모델에 존재하지만, 저장은 주로 `memberships` 배열 기준으로 처리된다.
+- `memberships[].assignee`는 운영자가 임의 입력하는 값이 아니라 현재 박스 코치 목록에서 선택한 이름을 저장한다
 
 #### 예시
 
@@ -362,6 +371,7 @@ box/SWEAT/revenue/2026
 
 - 월 키는 숫자가 아니라 문자열로 저장된다. 예: `"4"`, `"12"`
 - 거래 키는 회원권의 `membership.key` 또는 락커 결제 키를 사용한다
+- `assignee`는 회원권/락커의 담당자 드롭다운에서 선택된 코치 이름이 저장된다
 
 ## 6. LockerRepository
 
@@ -437,6 +447,7 @@ box/{boxName}/lockers/lockerdoc
 - repository는 단일 문서를 트랜잭션으로 읽고 수정한다
 - 각 락커의 최신 상태는 배열 마지막 항목으로 해석한다
 - `number` 필드는 타입상 존재하지만, 실제 문서 키가 이미 락커 번호이므로 중복 데이터다
+- `assignee`는 락커 해지/상태 변경 시 현재 박스 코치 목록 드롭다운에서 고른 값을 저장한다
 
 ## 7. AuthRepository
 
