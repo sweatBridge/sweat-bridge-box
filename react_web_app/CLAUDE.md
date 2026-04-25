@@ -12,17 +12,9 @@ npm test         # Jest 테스트 실행 (인터랙티브 watch 모드)
 npm test -- --watchAll=false  # 테스트 1회 실행 (CI 모드)
 ```
 
-## 문서
+## 문서 / 디렉토리
 
-도메인별 상세 문서는 `rules/` 디렉토리에 한국어로 작성되어 있다.
-
-- `rules/README.md` — 전체 아키텍처 개요, Firestore 구조, 상태 관리 패턴, 문서 인덱스
-- `rules/pages/` — 각 페이지 + 모달 컴포넌트 상세 (UI 구성, 비즈니스 로직, 연관 서비스)
-  - `dashboard.md`, `member-management.md`, `class-reservation.md`
-  - `locker.md`, `revenue-management.md`, `box-settings.md`
-- `rules/services/` — 각 서비스 레이어 상세 (Firebase 컬렉션 구조, 함수 설명, 서비스 간 연동)
-  - `auth-service.md`, `member-service.md`, `membership-service.md`
-  - `class-service.md`, `locker-service.md`, `revenue-service.md`
+`src/` 하위 디렉토리와 파일 전체 목록 및 역할은 `.claude/toc.md` 참고.
 
 ## 아키텍처
 
@@ -30,17 +22,20 @@ Sweat Bridge Box는 React 19, TypeScript, Firebase 기반의 헬스장/CrossFit 
 
 ### 기술 스택
 - **React 19** with TypeScript
-- **Firebase**: Firestore (데이터베이스) + Auth (인증)
+- **Firebase 12**: Firestore (데이터베이스) + Auth (인증)
 - **React Router DOM 7**: 라우팅 및 보호된 라우트
-- **FullCalendar**: 수업 스케줄 달력
-- **react-datepicker + date-fns**: 날짜 입력 처리
+- **FullCalendar 6**: 수업 스케줄 달력
+- **react-datepicker 9**: 날짜 입력 처리
 - **Lucide React**: 아이콘 라이브러리
 
 ### 데이터 흐름 패턴
+
+계층 구조: Page/Modal → Hook → Service → Model → Repository → Firebase
+
 ```
-사용자 액션 → Modal/Page → Custom Hook → Service → Firebase Firestore
-                               ↓
-                     Context 업데이트 → UI 리렌더링
+사용자 액션 → Modal/Page → Custom Hook → Service → Model → Repository → Firebase Firestore
+                                ↓
+                      Context 업데이트 → UI 리렌더링
 ```
 
 ### 상태 관리
@@ -54,40 +49,32 @@ Redux 없이 React Context + useReducer 패턴 사용:
 
 박스 이름은 localStorage에 `boxName` 키로 저장된다.
 
-### 주요 디렉토리
-- `src/services/`: Firebase 연산 (memberService, membershipService, classService 등)
-- `src/hooks/`: 비즈니스 로직 훅 (useClassManagement, useMemberManagement 등)
-- `src/contexts/`: React Context 프로바이더
-- `src/components/modals/`: 기능별 모달 컴포넌트 (class/, member/, membership/, locker/, revenue/)
-- `src/pages/`: 라우트 페이지 컴포넌트
-- `src/types/`: 모든 엔티티의 TypeScript 인터페이스
+주요 컬렉션:
+- `members/{email}` — 회원 정보, 회원권, 락커 이력
+- `memberships/membershipdoc` — 회원권 플랜 정의
+- `lockers/lockerdoc` — 락커 전체 상태 (번호를 키로 사용, 이력 배열로 관리)
+- `classes/{YYYYMM}` — 월별 수업 문서
+- `revenue/{YYYY}` — 연도별 매출 데이터
+- `box/boxdoc` — 박스 기본 정보, 코치 목록
 
 ### UI 패턴
 - CRUD 작업은 모달 다이얼로그 방식으로 처리
 - `ProtectedRoute` 컴포넌트가 인증된 라우트를 보호
 - `MainLayout`이 모든 인증 페이지를 사이드바 + 헤더로 감쌈
-- `DateInput` 컴포넌트를 모든 날짜 입력에 사용 (한국어 로케일, 연도 범위 2000-2999)
+- `DateInput` 컴포넌트를 모든 날짜 입력에 사용 (한국어 로케일)
 
 ### 색상 테마
-- Primary: `#2563EB` (파란색)
-- Success: `#16A34A` (초록색)
-- Warning: `#F59E0B` (주황색)
-- Error: `#DC2626` (빨간색)
-- Background: `#F8FAFC` (연한 회색)
+`src/constants/colors.ts`의 `AppColors`, `src/constants/gradients.ts`의 `Gradients`를 사용.
+
+- Primary: `#3182f6`
+- Success: `#03B26C`
+- Warning: `#FE9800`
+- Error: `#F04452`
+- Background: `#F9FAFB`
+- Sidebar: `#191F28`
 
 ### 날짜 유틸리티
-- `src/utils/dateUtils.ts`: 날짜 포맷 및 계산 유틸리티
-- `getDaysBetween(start, end)`: 시작일과 종료일을 포함한 일수 반환 (양 끝 포함)
-  - 예시: 01.04 ~ 01.05 = 2일
-
-## Firebase 설정
-
-`.env` 파일에 아래 항목이 필요하다:
-```
-REACT_APP_FIREBASE_API_KEY=
-REACT_APP_FIREBASE_AUTH_DOMAIN=
-REACT_APP_FIREBASE_PROJECT_ID=
-REACT_APP_FIREBASE_STORAGE_BUCKET=
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=
-REACT_APP_FIREBASE_APP_ID=
-```
+`src/utils/dateUtils.ts`:
+- `formatDateToString(date)`: Date → `YYYY-MM-DD`
+- `parseStringToDate(str)`: `YYYY-MM-DD` → Date
+- `getDaysBetween(start, end)`: 시작일과 종료일을 포함한 일수 (예: 01.04~01.05 = 2일)
