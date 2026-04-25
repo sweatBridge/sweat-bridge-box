@@ -6,6 +6,7 @@ export interface MemberLockerHistory {
   startDate: string;
   endDate: string;
   createdAt: Timestamp | string;
+  releasedDate?: string;  // 실제 반납일 (반납되지 않으면 undefined)
   key?: string;  // 락커 할당 고유 키
   price?: string;  // 가격
   paymentType?: 'cash' | 'card';  // 결제수단

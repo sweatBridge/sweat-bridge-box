@@ -1,5 +1,6 @@
 import { MembershipService } from '../services/membershipService';
 import { formatPhoneNumber as formatPhoneNumberValue } from './phoneUtils';
+import type { MemberLockerHistory } from '../types/member';
 
 /**
  * 성별 텍스트 변환
@@ -135,4 +136,63 @@ export const getWarningMembers = (members: any[]): any[] => {
  */
 export const getWarningMembersCount = (members: any[]): number => {
   return getWarningMembers(members).length;
+};
+
+/**
+ * 락커 히스토리 상태 판단
+ */
+export type LockerHistoryStatus = 'active' | 'released' | 'expired';
+
+/**
+ * 락커 히스토리의 상태를 판단합니다
+ * - released: releasedDate가 있으면 반납됨
+ * - expired: releasedDate가 없고 endDate < 오늘이면 만료됨
+ * - active: 반납도 안 됐고 만료도 안 됐으면 진행 중
+ */
+export const getLockerHistoryStatus = (history: MemberLockerHistory, today: Date = new Date()): LockerHistoryStatus => {
+  if (history.releasedDate) {
+    return 'released';
+  }
+
+  const endDate = new Date(history.endDate);
+  endDate.setHours(23, 59, 59, 999);
+
+  const normalizedToday = new Date(today);
+  normalizedToday.setHours(0, 0, 0, 0);
+
+  if (normalizedToday > endDate) {
+    return 'expired';
+  }
+
+  return 'active';
+};
+
+/**
+ * 락커 히스토리 상태를 한국어로 변환합니다
+ */
+export const getLockerHistoryStatusLabel = (status: LockerHistoryStatus): string => {
+  switch (status) {
+    case 'active':
+      return '진행 중';
+    case 'released':
+      return '반납됨';
+    case 'expired':
+      return '만료됨';
+    default:
+      return '-';
+  }
+};
+
+/**
+ * 락커 히스토리가 반납되었는지 확인합니다
+ */
+export const isLockerReleased = (history: MemberLockerHistory): boolean => {
+  return !!history.releasedDate;
+};
+
+/**
+ * 락커 히스토리가 진행 중인지 확인합니다 (반납도 안 됐고 만료도 안 됨)
+ */
+export const isLockerActive = (history: MemberLockerHistory, today: Date = new Date()): boolean => {
+  return getLockerHistoryStatus(history, today) === 'active';
 }; 
