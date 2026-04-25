@@ -4,6 +4,7 @@ import { AppColors } from '../../../constants/colors';
 import { Calendar, Clock, User, Users, Plus } from 'lucide-react';
 import { SaveClassModalProps, SaveClassResult } from '../../../types/class';
 import { ClassService } from '../../../services/classService';
+import { useCoachOptions } from '../../../hooks/useCoachOptions';
 
 const SaveClassModal = ({ 
   visible, 
@@ -17,6 +18,7 @@ const SaveClassModal = ({
   const [coach, setCoach] = useState('');
   const [cap, setCap] = useState(10);
   const [applyToFourWeeks, setApplyToFourWeeks] = useState(false);
+  const coachOptions = useCoachOptions(visible);
 
   useEffect(() => {
     if (selectInfo && visible) {
@@ -158,13 +160,20 @@ const SaveClassModal = ({
                 <User size={16} className="form-label-icon" />
                 코치
               </label>
-              <input
-                type="text"
+              <select
                 value={coach}
                 onChange={(e) => setCoach(e.target.value)}
-                placeholder="코치명을 입력하세요"
                 className="form-input"
-              />
+              >
+                <option value="" disabled>
+                  {coachOptions.length > 0 ? '코치 선택' : '등록된 코치 없음'}
+                </option>
+                {coachOptions.map((coachName) => (
+                  <option key={coachName} value={coachName}>
+                    {coachName}
+                  </option>
+                ))}
+              </select>
             </div>
             
             <div className="form-group">

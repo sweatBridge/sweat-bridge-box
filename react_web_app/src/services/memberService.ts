@@ -385,6 +385,28 @@ export class MemberService {
   }
 
   /**
+   * 이메일 형식을 검증합니다.
+   *
+   * @param email 검증할 이메일
+   * @returns 유효한 형식이면 true, 그렇지 않으면 false
+   */
+  static validateEmailFormat(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  /**
+   * 전화번호 형식을 검증합니다. (한국 휴대폰 형식: 01X + 7~8자리)
+   *
+   * @param phone 검증할 전화번호
+   * @returns 유효한 형식이면 true, 그렇지 않으면 false
+   */
+  static validatePhoneFormat(phone: string): boolean {
+    const phoneRegex = /^01[0-9]\d{7,8}$/;
+    return phoneRegex.test(phone);
+  }
+
+  /**
    * 회원 문서에서 락커 히스토리 배열을 안전하게 추출합니다.
    *
    * @param member 회원 문서 데이터

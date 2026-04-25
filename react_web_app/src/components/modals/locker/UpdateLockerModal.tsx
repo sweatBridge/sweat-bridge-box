@@ -3,6 +3,7 @@ import { Info } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
 import { LOCKER_STATE, LockerUpdatableState } from '../../../types/locker';
+import { useCoachOptions } from '../../../hooks/useCoachOptions';
 
 const { UNUSED, NA } = LOCKER_STATE;
 
@@ -30,6 +31,7 @@ const UpdateLockerModal = ({
   );
   const [updateNote, setUpdateNote] = useState('');
   const [updateAssignee, setUpdateAssignee] = useState('');
+  const coachOptions = useCoachOptions(visible);
 
   if (!visible) return null;
 
@@ -97,14 +99,21 @@ const UpdateLockerModal = ({
 
             <div className="form-group">
               <label>담당자</label>
-              <input
-                type="text"
+              <select
                 className="form-input"
                 value={updateAssignee}
                 onChange={(e) => setUpdateAssignee(e.target.value)}
-                placeholder="담당자를 입력하세요"
                 disabled={updating}
-              />
+              >
+                <option value="" disabled>
+                  {coachOptions.length > 0 ? '담당자 선택' : '등록된 코치 없음'}
+                </option>
+                {coachOptions.map((coachName) => (
+                  <option key={coachName} value={coachName}>
+                    {coachName}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -342,4 +351,3 @@ const UpdateLockerModal = ({
 };
 
 export default UpdateLockerModal;
-

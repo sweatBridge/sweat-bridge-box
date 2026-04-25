@@ -5,6 +5,7 @@ import { AppColors } from '../../../constants/colors';
 import type { Member } from '../../../types/member';
 import DateInput from '../../DateInput';
 import { format } from 'date-fns';
+import { formatPhoneNumber } from '../../../utils/phoneUtils';
 
 interface AssignLockerModalProps {
   visible: boolean;
@@ -134,7 +135,7 @@ const AssignLockerModal = ({
                 <div className="selected-member">
                   <div className="member-info">
                     <strong>{assignSelectedMember.realName}</strong>
-                    <span className="member-detail">{assignSelectedMember.phone}</span>
+                    <span className="member-detail">{formatPhoneNumber(assignSelectedMember.phone)}</span>
                   </div>
                   <button 
                     className="clear-btn" 
@@ -156,7 +157,7 @@ const AssignLockerModal = ({
                       onClick={() => handleSelectMember(member)}
                     >
                       <div className="member-name">{member.realName}</div>
-                      <div className="member-phone">{member.phone}</div>
+                      <div className="member-phone">{formatPhoneNumber(member.phone)}</div>
                     </div>
                   ))}
                 </div>
@@ -500,4 +501,3 @@ const AssignLockerModal = ({
 };
 
 export default AssignLockerModal;
-

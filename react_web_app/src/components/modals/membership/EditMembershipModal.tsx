@@ -3,6 +3,7 @@ import { Edit, Calendar, User, FileText, CreditCard } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
 import DateInput from '../../DateInput';
+import { useCoachOptions } from '../../../hooks/useCoachOptions';
 
 interface EditMembershipModalProps {
   visible: boolean;
@@ -44,6 +45,7 @@ const EditMembershipModal = ({
   const [newQuotaUsed, setNewQuotaUsed] = useState<number>(currentQuotaUsed);
   const [reason, setReason] = useState('');
   const [assignee, setAssignee] = useState('');
+  const coachOptions = useCoachOptions(visible);
 
   // visible이 변경될 때마다 날짜 초기화
   useEffect(() => {
@@ -184,15 +186,21 @@ const EditMembershipModal = ({
                 <User size={16} />
                 담당자
               </label>
-              <input
-                type="text"
+              <select
                 className="form-input"
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value)}
-                placeholder="담당자 이름 (최대 10자)"
-                maxLength={10}
                 disabled={loading}
-              />
+              >
+                <option value="" disabled>
+                  {coachOptions.length > 0 ? '담당자 선택' : '등록된 코치 없음'}
+                </option>
+                {coachOptions.map((coachName) => (
+                  <option key={coachName} value={coachName}>
+                    {coachName}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="form-group">
@@ -512,4 +520,3 @@ const EditMembershipModal = ({
 };
 
 export default EditMembershipModal;
-

@@ -1,4 +1,5 @@
 import { MembershipService } from '../services/membershipService';
+import { formatPhoneNumber as formatPhoneNumberValue } from './phoneUtils';
 
 /**
  * 성별 텍스트 변환
@@ -19,7 +20,7 @@ export const getGenderText = (gender: string): string => {
  */
 export const formatPhoneNumber = (phone: string): string => {
   if (!phone) return '-';
-  return phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+  return formatPhoneNumberValue(phone) || '-';
 };
 
 /**

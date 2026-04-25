@@ -1,21 +1,31 @@
 /**
- * 전화번호 마스킹 처리
- * 숫자만 남기고 하이픈 추가
+ * 전화번호를 숫자만 남긴 11자리 형태로 정규화합니다.
  */
-export const getPhoneMask = (phone: string): string => {
+export const normalizePhoneNumber = (phone: string): string => {
   if (!phone) return '';
-  
-  // 숫자만 추출
-  const numbers = phone.replace(/[^0-9]/g, '');
-  
+  return phone.replace(/[^0-9]/g, '').slice(0, 11);
+};
+
+/**
+ * 전화번호 표시 포맷을 반환합니다.
+ * 저장값은 숫자만 유지하고, 화면에서는 하이픈을 붙여 표시합니다.
+ */
+export const formatPhoneNumber = (phone: string): string => {
+  const numbers = normalizePhoneNumber(phone);
+  if (!numbers) return '';
+
   if (numbers.length <= 3) {
     return numbers;
-  } else if (numbers.length <= 7) {
-    return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
-  } else if (numbers.length <= 11) {
-    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
   }
-  
-  // 11자리 초과시 11자리까지만 사용
-  return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
-}; 
+
+  if (numbers.length <= 7) {
+    return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+  }
+
+  return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+};
+
+/**
+ * 기존 호출부 호환용 alias.
+ */
+export const getPhoneMask = (phone: string): string => formatPhoneNumber(phone);
