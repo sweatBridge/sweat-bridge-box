@@ -166,19 +166,17 @@ export class MemberService {
   }
 
   /**
-   * 특정 락커 할당 기록을 종료 처리합니다.
+   * 특정 락커 할당 기록을 반납 처리합니다.
    *
    * @param box 박스 이름
    * @param email 회원 이메일
    * @param lockerNumber 락커 번호
-   * @param endDate 종료일
    * @param key 락커 배정 키
    */
   static async unassignLockerFromMember(
     box: string,
     email: string,
     lockerNumber: number,
-    endDate: string,
     key: string
   ): Promise<void> {
     try {
@@ -192,7 +190,8 @@ export class MemberService {
         throw new Error('해당 락커 할당 기록을 찾을 수 없습니다.');
       }
 
-      lockerHistory[index] = { ...lockerHistory[index], endDate };
+      const releasedDate = new Date().toISOString().split('T')[0];
+      lockerHistory[index] = { ...lockerHistory[index], releasedDate };
       await MemberRepository.updateMember(box, email, { lockerHistory });
     } catch (error) {
       console.error('Error unassigning locker from member:', error);
