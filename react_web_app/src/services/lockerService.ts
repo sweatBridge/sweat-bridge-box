@@ -1,6 +1,6 @@
 import { getLatestLocker, hasActiveAssignedUser, toLocker } from '../models/lockerModel';
 import { LockerRepository } from '../repositories/lockerRepository';
-import { Locker, LOCKER_STATE, LockerDocumentData, LockerDocumentEntry, LockerState } from '../types/locker';
+import { Locker, LOCKER_ACTION, LOCKER_STATE, LockerDocumentData, LockerDocumentEntry, LockerState } from '../types/locker';
 import { formatDateToString } from '../utils/dateUtils';
 
 export class LockerService {
@@ -166,7 +166,7 @@ export class LockerService {
 
       const key = String(lockerNumber);
       const lockerEntry = this.getLockerEntry(data, lockerNumber);
-      const deletedEntry = this.createLockerEntry(lockerNumber, { state: LOCKER_STATE.DELETED });
+      const deletedEntry = this.createLockerEntry(lockerNumber, { state: LOCKER_STATE.DELETED, action: LOCKER_ACTION.DELETE });
 
       let nextValue: unknown;
 
@@ -217,6 +217,7 @@ export class LockerService {
       const releaseNote = note.trim() ? `[해지] ${note}` : note;
       const unusedEntry = this.createLockerEntry(lockerNumber, {
         state: LOCKER_STATE.UNUSED,
+        action: LOCKER_ACTION.RELEASE,
         note: releaseNote,
         assignee
       });
@@ -275,6 +276,7 @@ export class LockerService {
 
       const updatedEntry = this.createLockerEntry(lockerNumber, {
         state,
+        action: state === LOCKER_STATE.NA ? LOCKER_ACTION.MARK_BROKEN : LOCKER_ACTION.RESTORE,
         note,
         assignee
       });
@@ -378,6 +380,7 @@ export class LockerService {
 
       const assignedEntry = this.createLockerEntry(lockerNumber, {
         state: LOCKER_STATE.USED,
+        action: LOCKER_ACTION.ASSIGN,
         id: userId,
         realName: userName,
         phone: phoneNumber || '',
