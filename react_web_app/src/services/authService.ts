@@ -1,5 +1,5 @@
 import { AuthRepository } from '../repositories/authRepository';
-import { LoginCredentials, User } from '../types/auth';
+import { LoginCredentials, User, UserRole } from '../types/auth';
 
 const AUTH_STORAGE_KEYS = [
   'userToken',
@@ -102,7 +102,7 @@ export class AuthService {
     const role = localStorage.getItem('userRole');
 
     if (boxName && realName && nickName && email && phone && role) {
-      return { boxName, realName, nickName, email, phone, role };
+      return { boxName, realName, nickName, email, phone, role: role as UserRole };
     }
 
     return null;
