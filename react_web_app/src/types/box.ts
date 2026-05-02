@@ -23,6 +23,7 @@ export interface BoxInfo {
   status?: BoxStatus;
   createdAt?: string;
   onboardedAt?: string;
+  memberCount?: number;
 }
 
 export interface BoxState {
