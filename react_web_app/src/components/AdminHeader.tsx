@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { LogOut, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { AppColors } from '../constants/colors';
+import { AdminColors } from '../constants/adminColors';
 
 interface AdminHeaderProps {
   title: string;
@@ -51,12 +51,12 @@ const AdminHeader = ({ title, subtitle }: AdminHeaderProps) => {
             alignItems: 'center',
             gap: '8px',
             padding: '6px 14px',
-            background: '#f0f9ff',
-            border: '1px solid #bae6fd',
+            background: AdminColors.primaryLight,
+            border: `1px solid ${AdminColors.border}`,
             borderRadius: '20px',
           }}>
-            <Shield size={14} color="#0284c7" />
-            <span style={{ fontSize: '13px', fontWeight: '600', color: '#0284c7' }}>운영사</span>
+            <Shield size={14} color={AdminColors.primary} />
+            <span style={{ fontSize: '13px', fontWeight: '600', color: AdminColors.primary }}>운영사</span>
             <span style={{ fontSize: '13px', color: '#374151' }}>{user?.realName || '관리자'}</span>
           </div>
 
@@ -116,7 +116,7 @@ const AdminHeader = ({ title, subtitle }: AdminHeaderProps) => {
                 disabled={isLoggingOut}
                 style={{
                   padding: '8px 18px', border: 'none', borderRadius: '6px',
-                  background: AppColors.primary, color: 'white', cursor: 'pointer', fontSize: '14px',
+                  background: AdminColors.primary, color: 'white', cursor: 'pointer', fontSize: '14px',
                 }}
               >
                 {isLoggingOut ? '로그아웃 중...' : '로그아웃'}

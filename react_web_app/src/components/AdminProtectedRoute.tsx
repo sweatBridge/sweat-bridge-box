@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Gradients } from '../constants/gradients';
+import { AdminColors } from '../constants/adminColors';
 
 const AdminProtectedRoute = () => {
   const { isAuthenticated, isOperator, loading } = useAuth();
@@ -14,7 +14,7 @@ const AdminProtectedRoute = () => {
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '100vh',
-        background: Gradients.primary,
+        background: AdminColors.headerGradient,
         color: 'white',
       }}>
         <div style={{

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Building2, Mail, Phone, MapPin, User, Check, X, AlertTriangle, AlertCircle } from 'lucide-react';
-import { AppColors } from '../../constants/colors';
+import { AdminColors } from '../../constants/adminColors';
 import { BoxInfo, BoxStatus } from '../../types/box';
 import { AdminBoxRepository } from '../../repositories/adminBoxRepository';
 
@@ -23,10 +23,10 @@ const StatusBadge = ({ status }: { status?: BoxStatus }) => {
 const InfoRow = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) => (
   <div style={{ display: 'flex', gap: '14px', padding: '14px 0', borderBottom: '1px solid #f3f4f6' }}>
     <div style={{
-      width: '36px', height: '36px', borderRadius: '8px', background: '#eff6ff',
+      width: '36px', height: '36px', borderRadius: '8px', background: AdminColors.primaryLight,
       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     }}>
-      <Icon size={16} color={AppColors.primary} />
+      <Icon size={16} color={AdminColors.primary} />
     </div>
     <div>
       <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '3px' }}>{label}</div>
@@ -88,7 +88,7 @@ const AdminBoxDetail = () => {
       <div style={{ textAlign: 'center', padding: '80px 20px', color: '#9ca3af' }}>
         <div style={{
           width: '32px', height: '32px', margin: '0 auto 12px',
-          border: '3px solid #f3f4f6', borderTop: `3px solid ${AppColors.primary}`,
+          border: '3px solid #f3f4f6', borderTop: `3px solid ${AdminColors.primary}`,
           borderRadius: '50%', animation: 'spin 1s linear infinite',
         }} />
         <style>{`@keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }`}</style>
@@ -103,7 +103,7 @@ const AdminBoxDetail = () => {
         <p style={{ margin: '0 0 16px', fontSize: '15px', color: '#374151' }}>{error ?? '박스를 찾을 수 없습니다.'}</p>
         <button onClick={() => navigate('/admin/boxes')} style={{
           padding: '9px 20px', border: 'none', borderRadius: '8px',
-          background: AppColors.primary, color: 'white', cursor: 'pointer', fontSize: '14px',
+          background: AdminColors.primary, color: 'white', cursor: 'pointer', fontSize: '14px',
         }}>
           목록으로 돌아가기
         </button>
@@ -134,10 +134,10 @@ const AdminBoxDetail = () => {
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <div style={{
-                  width: '52px', height: '52px', borderRadius: '12px', background: '#eff6ff',
+                  width: '52px', height: '52px', borderRadius: '12px', background: AdminColors.primaryLight,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Building2 size={24} color={AppColors.primary} />
+                  <Building2 size={24} color={AdminColors.primary} />
                 </div>
                 <div>
                   <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#111827' }}>{box.boxName}</h2>
@@ -159,7 +159,7 @@ const AdminBoxDetail = () => {
               marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #f3f4f6',
             }}>
               {[
-                { label: '등록 회원', value: box.memberCount !== undefined ? `${box.memberCount}명` : '-', color: AppColors.primary },
+                { label: '등록 회원', value: box.memberCount !== undefined ? `${box.memberCount}명` : '-', color: AdminColors.primary },
                 { label: '코치', value: `${box.coaches?.length ?? 0}명`, color: '#10b981' },
                 { label: '등록일', value: box.createdAt ?? '-', color: '#6b7280' },
                 { label: '상태', value: currentStatus === 'active' ? '활성' : '정지', color: currentStatus === 'active' ? '#10b981' : '#ef4444' },

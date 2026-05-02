@@ -5,7 +5,7 @@ import AdminHeader from './AdminHeader';
 const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   '/admin/dashboard': { title: '운영 대시보드', subtitle: '전체 고객사 현황을 한눈에 확인하세요' },
   '/admin/boxes': { title: '고객사 관리', subtitle: '등록된 모든 박스를 관리합니다' },
-  '/admin/boxes/new': { title: '신규 온보딩', subtitle: '새로운 고객사(박스)를 등록합니다' },
+  '/admin/boxes/new': { title: '신규 고객사 등록', subtitle: '새로운 고객사(박스)를 등록합니다' },
 };
 
 const AdminLayout = () => {

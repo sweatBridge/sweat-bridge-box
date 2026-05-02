@@ -5,7 +5,7 @@ import { LayoutDashboard, Building2, ChevronLeft, ChevronRight, PlusCircle } fro
 const menuItems = [
   { icon: LayoutDashboard, title: '대시보드', path: '/admin/dashboard' },
   { icon: Building2, title: '고객사 관리', path: '/admin/boxes' },
-  { icon: PlusCircle, title: '신규 온보딩', path: '/admin/boxes/new' },
+  { icon: PlusCircle, title: '고객사 등록', path: '/admin/boxes/new' },
 ];
 
 const ADMIN_SIDEBAR_BG = '#0f172a';

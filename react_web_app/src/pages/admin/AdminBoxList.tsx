@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, PlusCircle, Building2, Users, ChevronRight, AlertCircle } from 'lucide-react';
-import { AppColors } from '../../constants/colors';
+import { AdminColors } from '../../constants/adminColors';
 import { BoxInfo, BoxStatus } from '../../types/box';
 import { useAdminBoxes } from '../../hooks/useAdminBoxes';
 
@@ -83,7 +83,7 @@ const AdminBoxList = () => {
           onClick={loadBoxes}
           style={{
             padding: '9px 20px', border: 'none', borderRadius: '8px',
-            background: AppColors.primary, color: 'white', cursor: 'pointer', fontSize: '14px',
+            background: AdminColors.primary, color: 'white', cursor: 'pointer', fontSize: '14px',
           }}
         >
           다시 시도
@@ -103,7 +103,7 @@ const AdminBoxList = () => {
 
       {/* 전체 회원 수 배너 */}
       <div style={{
-        background: `linear-gradient(135deg, ${AppColors.primary} 0%, #1d4ed8 100%)`,
+        background: AdminColors.headerGradient,
         borderRadius: '12px', padding: '20px 24px', marginBottom: '24px',
         display: 'flex', alignItems: 'center', gap: '14px', color: 'white',
       }}>
@@ -163,8 +163,8 @@ const AdminBoxList = () => {
                 style={{
                   padding: '0 18px', height: '42px', borderRadius: '8px',
                   border: '1px solid',
-                  borderColor: filterStatus === val ? AppColors.primary : '#d1d5db',
-                  background: filterStatus === val ? AppColors.primary : 'white',
+                  borderColor: filterStatus === val ? AdminColors.primary : '#d1d5db',
+                  background: filterStatus === val ? AdminColors.primary : 'white',
                   color: filterStatus === val ? 'white' : '#6b7280',
                   fontSize: '14px', fontWeight: filterStatus === val ? '600' : '400',
                   cursor: 'pointer',
@@ -180,7 +180,7 @@ const AdminBoxList = () => {
             style={{
               display: 'flex', alignItems: 'center', gap: '7px',
               padding: '0 18px', height: '42px', borderRadius: '8px',
-              border: 'none', background: AppColors.primary, color: 'white',
+              border: 'none', background: AdminColors.primary, color: 'white',
               fontSize: '14px', fontWeight: '600', cursor: 'pointer',
             }}
           >
@@ -210,7 +210,7 @@ const AdminBoxList = () => {
           <div style={{ textAlign: 'center', padding: '60px 20px', color: '#9ca3af' }}>
             <div style={{
               width: '32px', height: '32px', margin: '0 auto 12px',
-              border: '3px solid #f3f4f6', borderTop: `3px solid ${AppColors.primary}`,
+              border: '3px solid #e2e8f0', borderTop: `3px solid ${AdminColors.primary}`,
               borderRadius: '50%', animation: 'spin 1s linear infinite',
             }} />
             <p style={{ margin: 0, fontSize: '14px' }}>고객사 목록을 불러오는 중...</p>
@@ -246,10 +246,10 @@ const AdminBoxList = () => {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{
-                width: '34px', height: '34px', borderRadius: '8px', background: '#eff6ff',
+                width: '34px', height: '34px', borderRadius: '8px', background: AdminColors.primaryLight,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}>
-                <Building2 size={16} color={AppColors.primary} />
+                <Building2 size={16} color={AdminColors.primary} />
               </div>
               <div>
                 <div style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>{box.boxName}</div>
