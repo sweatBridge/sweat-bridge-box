@@ -5,6 +5,7 @@ import {
   convertMembershipsFromFirebase
 } from '../models/memberModel';
 import { FirebaseMemberData, MemberRepository } from '../repositories/memberRepository';
+import { BoxRepository } from '../repositories/boxRepository';
 import { BoxUser, Member, MemberApplicant, MemberLockerHistory } from '../types/member';
 
 export class MemberService {
@@ -54,7 +55,8 @@ export class MemberService {
    * @param email 회원 이메일
    */
   static async deleteMember(box: string, email: string): Promise<void> {
-    return MemberRepository.deleteMember(box, email);
+    await MemberRepository.deleteMember(box, email);
+    await BoxRepository.adjustMemberCount(box, -1);
   }
 
   /**
@@ -75,7 +77,8 @@ export class MemberService {
    * @param memberData 저장할 회원 데이터
    */
   static async addMember(box: string, memberData: FirebaseMemberData): Promise<void> {
-    return MemberRepository.addMember(box, memberData);
+    await MemberRepository.addMember(box, memberData);
+    await BoxRepository.adjustMemberCount(box, 1);
   }
 
   /**
@@ -256,6 +259,7 @@ export class MemberService {
       }
 
       await MemberRepository.setMember(box, memberData.email, memberData);
+      await BoxRepository.adjustMemberCount(box, 1);
     } catch (error) {
       console.error('멤버 추가 중 오류 발생:', error);
       throw error;
