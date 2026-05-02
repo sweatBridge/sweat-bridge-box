@@ -120,14 +120,6 @@ const AdminBoxList = () => {
             {totalMembers > 0 ? `${totalMembers.toLocaleString()}명` : '-'}
           </div>
         </div>
-        {totalMembers === 0 && (
-          <div style={{
-            marginLeft: 'auto', fontSize: '12px', opacity: 0.7,
-            background: 'rgba(255,255,255,0.15)', padding: '6px 12px', borderRadius: '8px',
-          }}>
-            memberCount 필드 세팅 후 표시됩니다
-          </div>
-        )}
       </div>
 
       {/* 검색 & 필터 & 테이블 */}

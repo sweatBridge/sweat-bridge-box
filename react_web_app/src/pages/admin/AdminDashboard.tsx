@@ -234,9 +234,6 @@ const AdminDashboard = () => {
             <div style={{ fontSize: '20px', fontWeight: '700', color: '#111827' }}>
               {loading ? '-' : stats.avgMembers !== null ? `${stats.avgMembers}명` : '-'}
             </div>
-            {!loading && stats.avgMembers === null && (
-              <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>memberCount 필드 세팅 후 표시</div>
-            )}
           </div>
         </div>
       </div>
