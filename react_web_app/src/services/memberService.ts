@@ -345,7 +345,7 @@ export class MemberService {
   }
 
   /**
-   * 가입 신청을 거절합니다.
+   * 가입 신청을 거절합니다. boxName의 ? 접두사는 유지하고 status만 REJECTED로 변경합니다.
    *
    * @param email 신청자 이메일
    * @param boxName 박스 이름
@@ -353,7 +353,7 @@ export class MemberService {
   static async rejectApplicant(email: string, boxName: string): Promise<void> {
     try {
       await MemberRepository.deleteApplication(email, boxName);
-      await MemberRepository.updateUserBoxName(email, '');
+      await MemberRepository.updateUserStatus(email, 'REJECTED');
     } catch (error) {
       console.error('Failed to reject applicant:', error);
       throw error;
@@ -361,7 +361,7 @@ export class MemberService {
   }
 
   /**
-   * 가입 신청 문서를 제거하고 사용자 박스 이름을 반영합니다.
+   * 가입 신청 문서를 제거하고 사용자 박스 이름과 상태를 APPROVED로 반영합니다.
    *
    * @param email 신청자 이메일
    * @param boxName 반영할 박스 이름
@@ -369,7 +369,7 @@ export class MemberService {
   static async removeApplication(email: string, boxName: string): Promise<void> {
     try {
       await MemberRepository.deleteApplication(email, boxName);
-      await MemberRepository.updateUserBoxName(email, boxName);
+      await MemberRepository.updateUserBoxInfo(email, boxName, 'APPROVED');
     } catch (error) {
       console.error('Failed to remove application:', error);
       throw error;

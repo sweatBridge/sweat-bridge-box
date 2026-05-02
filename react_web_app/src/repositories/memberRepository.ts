@@ -12,6 +12,7 @@ import {
   where
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { BoxStatus } from '../types/auth';
 import { UserMembership } from '../types/membership';
 import { BoxUser, MemberApplicantRecord } from '../types/member';
 
@@ -158,5 +159,26 @@ export class MemberRepository {
    */
   static async updateUserBoxName(email: string, boxName: string): Promise<void> {
     await updateDoc(doc(db, `user/${email}`), { boxName });
+  }
+
+  /**
+   * 사용자 문서의 박스 이름과 박스 소속 상태를 함께 수정합니다.
+   *
+   * @param email 사용자 이메일
+   * @param boxName 반영할 박스 이름
+   * @param status 반영할 박스 소속 상태
+   */
+  static async updateUserBoxInfo(email: string, boxName: string, status: BoxStatus): Promise<void> {
+    await updateDoc(doc(db, `user/${email}`), { boxName, status });
+  }
+
+  /**
+   * 사용자 문서의 박스 소속 상태만 수정합니다.
+   *
+   * @param email 사용자 이메일
+   * @param status 반영할 박스 소속 상태
+   */
+  static async updateUserStatus(email: string, status: BoxStatus): Promise<void> {
+    await updateDoc(doc(db, `user/${email}`), { status });
   }
 }
