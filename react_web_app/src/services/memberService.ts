@@ -32,6 +32,8 @@ export class MemberService {
 
         return {
           ...memberData,
+          // 변환된 회원권을 노출해서 호출자가 raw Firestore 포맷을 다시 변환할 필요가 없도록 한다.
+          memberships: allMemberships,
           futureMemberships,
           membershipInfo: buildMembershipInfo(
             pastMemberships,
@@ -202,12 +204,13 @@ export class MemberService {
   /**
    * 이메일 기준으로 사용자 정보를 조회합니다.
    *
+   * `user` 컬렉션의 문서 ID가 이메일이므로 `getDoc`으로 1회 read.
+   *
    * @param email 사용자 이메일
    * @returns 사용자 정보 또는 `null`
    */
   static async getUserByEmail(email: string): Promise<BoxUser | null> {
-    const users = await MemberRepository.getUsersByField('email', email);
-    return users[0] ?? null;
+    return MemberRepository.getUserByEmail(email);
   }
 
   /**
@@ -229,6 +232,22 @@ export class MemberService {
    */
   static async getUserByRealName(realName: string): Promise<BoxUser[]> {
     return MemberRepository.getUsersByField('realName', realName);
+  }
+
+  /**
+   * 실명 + 박스 이름 기준으로 사용자를 조회합니다.
+   *
+   * 동명이인이 여러 박스에 흩어져 있을 때 결과를 현재 박스 소속으로 좁히기 위해 사용합니다.
+   * Firestore 합성 인덱스를 강제하지 않기 위해 realName으로만 쿼리한 뒤 클라이언트에서
+   * `boxName`으로 한 번 더 필터링합니다.
+   *
+   * @param realName 사용자 실명
+   * @param boxName 박스 이름
+   * @returns 해당 박스에 속한 동명 사용자 목록
+   */
+  static async getBoxUsersByRealName(realName: string, boxName: string): Promise<BoxUser[]> {
+    const users = await MemberRepository.getUsersByField('realName', realName);
+    return users.filter((user) => user.boxName === boxName);
   }
 
   /**
@@ -309,17 +328,17 @@ export class MemberService {
   /**
    * 가입 신청을 승인해 일반 회원으로 전환합니다.
    *
+   * 박스 이름은 신청자의 `userDoc.boxName`(`?{box}` 포맷)에서 추출하므로 인자로 받지 않는다.
+   *
    * @param email 신청자 이메일
-   * @param boxName 박스 이름
    */
-  static async approveApplicant(email: string, boxName: string): Promise<void> {
+  static async approveApplicant(email: string, _boxName: string): Promise<void> {
     try {
       const userDoc = await this.getUserByEmail(email);
       if (!userDoc) throw new Error('사용자 정보를 찾을 수 없습니다.');
       if (!userDoc.boxName?.startsWith('?')) throw new Error('유효하지 않은 신청 상태입니다.');
 
       const actualBoxName = userDoc.boxName.slice(1);
-      await this.removeApplication(email, actualBoxName);
 
       const memberData: BoxUser & Record<string, unknown> = { ...userDoc };
       if (Object.prototype.hasOwnProperty.call(memberData, 'memberships')) {
@@ -333,7 +352,8 @@ export class MemberService {
       memberData.boxName = actualBoxName;
       memberData.joinedAt = Timestamp.now();
 
-      await this.createMember(actualBoxName, memberData);
+      // applied 제거 + user.boxName 갱신 + member 생성을 단일 writeBatch로 원자 커밋.
+      await MemberRepository.commitApproveApplicantBatch(email, actualBoxName, memberData);
     } catch (error) {
       console.error('Failed to approve applicant:', error);
       throw error;
@@ -348,8 +368,8 @@ export class MemberService {
    */
   static async rejectApplicant(email: string, boxName: string): Promise<void> {
     try {
-      await MemberRepository.deleteApplication(email, boxName);
-      await MemberRepository.updateUserBoxName(email, '');
+      // applied 제거 + user.boxName 비우기를 단일 writeBatch로 원자 커밋.
+      await MemberRepository.commitRejectApplicantBatch(email, boxName);
     } catch (error) {
       console.error('Failed to reject applicant:', error);
       throw error;

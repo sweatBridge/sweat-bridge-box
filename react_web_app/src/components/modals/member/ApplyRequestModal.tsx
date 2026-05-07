@@ -51,17 +51,19 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
       setLoading(true);
       await MemberService.approveApplicant(applicant.email, applicant.boxName);
 
+      // 성공 시 로컬에서만 제거 — 서버 재조회 불필요.
+      setApplicants((prev) => prev.filter((a) => a.email !== applicant.email));
+
       if (onSuccess) {
         onSuccess('회원이 승인되었습니다.');
       }
-
-      // 목록 새로고침
-      await loadApplicants();
     } catch (error) {
       console.error('Failed to approve applicant:', error);
       if (onError) {
         onError('회원 승인에 실패했습니다: ' + (error instanceof Error ? error.message : error));
       }
+      // 실패 시에만 서버 상태로 재동기화
+      await loadApplicants();
     } finally {
       setLoading(false);
     }
@@ -76,17 +78,17 @@ const ApplyRequestModal = ({ visible, onClose, onSuccess, onError }: ApplyReques
       setLoading(true);
       await MemberService.rejectApplicant(applicant.email, applicant.boxName);
 
+      setApplicants((prev) => prev.filter((a) => a.email !== applicant.email));
+
       if (onSuccess) {
         onSuccess('신청이 거절되었습니다.');
       }
-
-      // 목록 새로고침
-      await loadApplicants();
     } catch (error) {
       console.error('Failed to reject applicant:', error);
       if (onError) {
         onError('신청 거절에 실패했습니다: ' + (error instanceof Error ? error.message : error));
       }
+      await loadApplicants();
     } finally {
       setLoading(false);
     }

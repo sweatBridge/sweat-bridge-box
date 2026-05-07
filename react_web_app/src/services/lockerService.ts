@@ -1,6 +1,9 @@
+import { doc, runTransaction, Timestamp } from 'firebase/firestore';
+import { db } from '../config/firebase';
 import { getLatestLocker, hasActiveAssignedUser, toLocker } from '../models/lockerModel';
 import { LockerRepository } from '../repositories/lockerRepository';
 import { Locker, LOCKER_STATE, LockerDocumentData, LockerDocumentEntry, LockerState } from '../types/locker';
+import { MemberLockerHistory } from '../types/member';
 import { formatDateToString } from '../utils/dateUtils';
 
 export class LockerService {
@@ -371,49 +374,181 @@ export class LockerService {
 
       const lockerKey = String(lockerNumber);
       const lockerEntry = this.getLockerEntry(data, lockerNumber);
-
-      if (hasActiveAssignedUser(lockerEntry, lockerNumber)) {
-        throw new Error('이미 회원이 배정되어 있습니다. 먼저 해지해주세요.');
-      }
-
-      const assignedEntry = this.createLockerEntry(lockerNumber, {
-        state: LOCKER_STATE.USED,
-        id: userId,
-        realName: userName,
-        phone: phoneNumber || '',
-        startDate: startDate || '',
-        endDate: endDate || '',
+      const nextValue = this.computeAssignedLockerValue(lockerEntry, lockerNumber, {
+        userId,
+        userName,
+        phoneNumber,
+        startDate,
+        endDate,
         key,
         price,
         paymentType
       });
-
-      let nextValue: unknown;
-
-      if (Array.isArray(lockerEntry)) {
-        const lastEntry = lockerEntry[lockerEntry.length - 1] as Partial<Locker> | undefined;
-        const isClean = lastEntry?.state === LOCKER_STATE.UNUSED && (!lastEntry?.note || lastEntry.note.trim() === '');
-
-        if (isClean) {
-          const updated = [...lockerEntry];
-          updated[updated.length - 1] = assignedEntry;
-          nextValue = updated;
-        } else {
-          nextValue = [...lockerEntry, assignedEntry];
-        }
-      } else if (lockerEntry && typeof lockerEntry === 'object') {
-        const objectEntry = lockerEntry as Partial<Locker>;
-        const isClean = objectEntry.state === LOCKER_STATE.UNUSED && (!objectEntry.note || objectEntry.note.trim() === '');
-        nextValue = isClean ? assignedEntry : [lockerEntry, assignedEntry];
-      } else {
-        throw new Error('잘못된 락커 데이터 형식입니다.');
-      }
 
       return {
         result: undefined,
         payload: { [lockerKey]: nextValue }
       };
     });
+  }
+
+  /**
+   * 락커 배정 + 회원 락커 히스토리 + 매출 엔트리를 한 트랜잭션으로 처리합니다.
+   *
+   * 세 문서(`lockerdoc`, `member/{email}`, `revenue/{year}`)에 대한 쓰기가
+   * 모두 성공하거나 모두 실패하도록 묶어 부분 실패 상태를 방지합니다.
+   *
+   * @param box 박스 이름
+   * @param lockerNumber 배정할 락커 번호
+   * @param email 회원 이메일(문서 ID)
+   * @param userName 회원 이름
+   * @param phoneNumber 회원 연락처
+   * @param startDate 사용 시작일(YYYY-MM-DD)
+   * @param endDate 사용 종료일(YYYY-MM-DD)
+   * @param key 락커 배정/매출 공통 키
+   * @param price 결제 금액
+   * @param paymentType 결제 수단
+   * @throws 락커 문서가 없거나 활성 배정 회원이 있으면 에러
+   */
+  static async assignLockerWithMemberAndRevenue(
+    box: string,
+    lockerNumber: number,
+    email: string,
+    userName: string,
+    phoneNumber: string,
+    startDate: string,
+    endDate: string,
+    key: string,
+    price: string,
+    paymentType: 'cash' | 'card'
+  ): Promise<void> {
+    const lockerRef = doc(db, 'box', box, 'lockers', 'lockerdoc');
+    const memberRef = doc(db, `box/${box}/member`, email);
+    const now = new Date();
+    const revenueRef = doc(db, `box/${box}/revenue/${now.getFullYear()}`);
+    const month = now.getMonth() + 1;
+
+    await runTransaction(db, async (tx) => {
+      const lockerSnap = await tx.get(lockerRef);
+      if (!lockerSnap.exists()) {
+        throw new Error('락커 문서를 찾을 수 없습니다.');
+      }
+
+      const memberSnap = await tx.get(memberRef);
+
+      const lockerData = lockerSnap.data() as LockerDocumentData;
+      const lockerEntry = this.getLockerEntry(lockerData, lockerNumber);
+      const nextLockerValue = this.computeAssignedLockerValue(lockerEntry, lockerNumber, {
+        userId: email,
+        userName,
+        phoneNumber,
+        startDate,
+        endDate,
+        key,
+        price,
+        paymentType
+      });
+
+      const existingHistory = (memberSnap.exists() && Array.isArray((memberSnap.data() as any).lockerHistory))
+        ? ((memberSnap.data() as any).lockerHistory as MemberLockerHistory[])
+        : [];
+      const nextHistory: MemberLockerHistory[] = [
+        ...existingHistory,
+        {
+          lockerNum: lockerNumber,
+          startDate,
+          endDate,
+          createdAt: Timestamp.now(),
+          key,
+          price,
+          paymentType
+        }
+      ];
+
+      tx.set(lockerRef, { [String(lockerNumber)]: nextLockerValue }, { merge: true });
+      if (memberSnap.exists()) {
+        tx.update(memberRef, { lockerHistory: nextHistory });
+      } else {
+        tx.set(memberRef, { lockerHistory: nextHistory }, { merge: true });
+      }
+      tx.set(
+        revenueRef,
+        {
+          [month.toString()]: {
+            [key]: {
+              assignee: '',
+              createdAt: Timestamp.fromDate(now),
+              id: email,
+              paymentType,
+              plan: '사물함 이용권',
+              price,
+              realName: userName,
+              type: 'locker',
+              refundAmount: '0'
+            }
+          }
+        },
+        { merge: true }
+      );
+    });
+  }
+
+  /**
+   * 배정 시 락커 엔트리 next value 계산을 단일화한 헬퍼.
+   *
+   * 단일/배열 형태와 마지막 엔트리의 clean(unused & no note) 여부를 고려해
+   * 덮어쓰기 또는 히스토리 추가를 결정합니다.
+   */
+  private static computeAssignedLockerValue(
+    lockerEntry: LockerDocumentEntry,
+    lockerNumber: number,
+    payload: {
+      userId: string;
+      userName: string;
+      phoneNumber: string;
+      startDate: string;
+      endDate: string;
+      key: string;
+      price: string;
+      paymentType: 'cash' | 'card';
+    }
+  ): unknown {
+    if (hasActiveAssignedUser(lockerEntry, lockerNumber)) {
+      throw new Error('이미 회원이 배정되어 있습니다. 먼저 해지해주세요.');
+    }
+
+    const assignedEntry = this.createLockerEntry(lockerNumber, {
+      state: LOCKER_STATE.USED,
+      id: payload.userId,
+      realName: payload.userName,
+      phone: payload.phoneNumber || '',
+      startDate: payload.startDate || '',
+      endDate: payload.endDate || '',
+      key: payload.key,
+      price: payload.price,
+      paymentType: payload.paymentType
+    });
+
+    if (Array.isArray(lockerEntry)) {
+      const lastEntry = lockerEntry[lockerEntry.length - 1] as Partial<Locker> | undefined;
+      const isClean =
+        lastEntry?.state === LOCKER_STATE.UNUSED && (!lastEntry?.note || lastEntry.note.trim() === '');
+      if (isClean) {
+        const updated = [...lockerEntry];
+        updated[updated.length - 1] = assignedEntry;
+        return updated;
+      }
+      return [...lockerEntry, assignedEntry];
+    }
+
+    if (lockerEntry && typeof lockerEntry === 'object') {
+      const objectEntry = lockerEntry as Partial<Locker>;
+      const isClean =
+        objectEntry.state === LOCKER_STATE.UNUSED && (!objectEntry.note || objectEntry.note.trim() === '');
+      return isClean ? assignedEntry : [lockerEntry, assignedEntry];
+    }
+
+    throw new Error('잘못된 락커 데이터 형식입니다.');
   }
 
   /**

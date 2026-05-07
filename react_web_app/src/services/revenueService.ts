@@ -123,36 +123,33 @@ export class RevenueService {
    */
   static async getRevenueStats(): Promise<RevenueStats> {
     try {
-      const documents = await RevenueRepository.getAllRevenueYears(this.getBoxName());
       const now = new Date();
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth() + 1;
       const today = formatDateToString(now);
 
+      // 통계 3개(올해 누적/이번 달/오늘) 모두 올해 매출만 사용하므로 현재 연도 문서만 읽는다.
+      const yearData = await RevenueRepository.getRevenueYear(this.getBoxName(), currentYear);
+
       let totalRevenue = 0;
       let thisMonthRevenue = 0;
       let todayRevenue = 0;
 
-      for (const document of documents) {
-        const year = parseInt(document.year, 10);
+      for (const monthKey in yearData) {
+        const monthData = yearData[monthKey];
+        const month = parseInt(monthKey, 10);
+        if (!monthData || typeof monthData !== 'object') continue;
 
-        for (const monthKey in document.data) {
-          const monthData = document.data[monthKey];
-          const month = parseInt(monthKey, 10);
+        for (const [, rawData] of Object.entries(monthData)) {
+          const revenueData = rawData as RevenueData;
+          const price = parseInt(revenueData.price, 10) || 0;
+          const refundAmount = parseInt(revenueData.refundAmount, 10) || 0;
+          const actualRevenue = price - refundAmount;
+          const dateStr = formatDateToString(revenueData.createdAt.toDate());
 
-          if (monthData && typeof monthData === 'object') {
-            for (const [, rawData] of Object.entries(monthData)) {
-              const revenueData = rawData as RevenueData;
-              const price = parseInt(revenueData.price, 10) || 0;
-              const refundAmount = parseInt(revenueData.refundAmount, 10) || 0;
-              const actualRevenue = price - refundAmount;
-              const dateStr = formatDateToString(revenueData.createdAt.toDate());
-
-              if (year === currentYear) totalRevenue += actualRevenue;
-              if (year === currentYear && month === currentMonth) thisMonthRevenue += actualRevenue;
-              if (dateStr === today) todayRevenue += actualRevenue;
-            }
-          }
+          totalRevenue += actualRevenue;
+          if (month === currentMonth) thisMonthRevenue += actualRevenue;
+          if (dateStr === today) todayRevenue += actualRevenue;
         }
       }
 
@@ -193,13 +190,8 @@ export class RevenueService {
       const purchaseDate = membership.purchase.at;
       const year = purchaseDate.getFullYear();
       const month = purchaseDate.getMonth() + 1;
-      const revenueData = await RevenueRepository.getRevenueYear(boxName, year);
 
-      if (!revenueData[month.toString()]) {
-        revenueData[month.toString()] = {};
-      }
-
-      revenueData[month.toString()][membership.key] = {
+      await RevenueRepository.setRevenueEntry(boxName, year, month, membership.key, {
         assignee: membership.assignee,
         createdAt: Timestamp.fromDate(purchaseDate),
         id: memberEmail,
@@ -209,9 +201,7 @@ export class RevenueService {
         realName: memberRealName,
         type: membership.type,
         refundAmount: '0'
-      };
-
-      await RevenueRepository.setRevenueYear(boxName, year, revenueData);
+      });
     } catch (error) {
       console.error('Error adding membership revenue:', error);
       throw new Error('매출 데이터 저장에 실패했습니다.');
@@ -239,13 +229,8 @@ export class RevenueService {
       const now = new Date();
       const year = now.getFullYear();
       const month = now.getMonth() + 1;
-      const revenueData = await RevenueRepository.getRevenueYear(boxName, year);
 
-      if (!revenueData[month.toString()]) {
-        revenueData[month.toString()] = {};
-      }
-
-      revenueData[month.toString()][lockerKey] = {
+      await RevenueRepository.setRevenueEntry(boxName, year, month, lockerKey, {
         assignee: '',
         createdAt: Timestamp.now(),
         id: userEmail,
@@ -255,9 +240,7 @@ export class RevenueService {
         realName: userName,
         type: 'locker',
         refundAmount: '0'
-      };
-
-      await RevenueRepository.setRevenueYear(boxName, year, revenueData);
+      });
     } catch (error) {
       console.error('Error adding locker revenue:', error);
       throw new Error('락커 매출 데이터 저장에 실패했습니다.');
@@ -267,28 +250,48 @@ export class RevenueService {
   /**
    * 회원권 매출 환불액을 반영합니다.
    *
+   * 가능한 경우 `purchaseAt`을 넘겨 정확한 연/월 문서 1개만 갱신합니다.
+   * 누락 시에만 전체 연도 스캔으로 폴백합니다.
+   *
    * @param membershipKey 회원권 키
    * @param refundAmount 환불 금액
+   * @param purchaseAt 회원권 구매 시각(연/월 결정용)
    */
-  static async refundUserMembership(membershipKey: string, refundAmount: number): Promise<void> {
+  static async refundUserMembership(
+    membershipKey: string,
+    refundAmount: number,
+    purchaseAt?: Date
+  ): Promise<void> {
     try {
       const boxName = this.getBoxName();
+
+      if (purchaseAt) {
+        await RevenueRepository.updateRevenueEntryField(
+          boxName,
+          purchaseAt.getFullYear(),
+          purchaseAt.getMonth() + 1,
+          membershipKey,
+          'refundAmount',
+          refundAmount.toString()
+        );
+        return;
+      }
+
+      // 폴백: purchaseAt이 없으면 전체 연도 스캔
       const documents = await RevenueRepository.getAllRevenueYears(boxName);
-
       for (const document of documents) {
-        const yearData = { ...document.data };
-        let modified = false;
-
-        for (const monthKey in yearData) {
-          const monthData = yearData[monthKey];
+        for (const monthKey in document.data) {
+          const monthData = document.data[monthKey];
           if (monthData && typeof monthData === 'object' && membershipKey in monthData) {
-            monthData[membershipKey].refundAmount = refundAmount.toString();
-            modified = true;
+            await RevenueRepository.updateRevenueEntryField(
+              boxName,
+              parseInt(document.year, 10),
+              parseInt(monthKey, 10),
+              membershipKey,
+              'refundAmount',
+              refundAmount.toString()
+            );
           }
-        }
-
-        if (modified) {
-          await RevenueRepository.setRevenueYear(boxName, document.year, yearData);
         }
       }
     } catch (error) {
@@ -300,34 +303,39 @@ export class RevenueService {
   /**
    * 회원권 매출 데이터를 삭제합니다.
    *
+   * 가능한 경우 `purchaseAt`을 넘겨 정확한 연/월 문서 1개만 갱신합니다.
+   * 누락 시에만 전체 연도 스캔으로 폴백합니다.
+   *
    * @param membershipKey 회원권 키
+   * @param purchaseAt 회원권 구매 시각(연/월 결정용)
    */
-  static async removeUserMembership(membershipKey: string): Promise<void> {
+  static async removeUserMembership(membershipKey: string, purchaseAt?: Date): Promise<void> {
     try {
       const boxName = this.getBoxName();
+
+      if (purchaseAt) {
+        await RevenueRepository.deleteRevenueEntry(
+          boxName,
+          purchaseAt.getFullYear(),
+          purchaseAt.getMonth() + 1,
+          membershipKey
+        );
+        return;
+      }
+
+      // 폴백: purchaseAt이 없으면 전체 연도 스캔
       const documents = await RevenueRepository.getAllRevenueYears(boxName);
-
       for (const document of documents) {
-        const yearData = { ...document.data };
-        let modified = false;
-
-        for (const monthKey in yearData) {
-          const monthData = yearData[monthKey];
+        for (const monthKey in document.data) {
+          const monthData = document.data[monthKey];
           if (monthData && typeof monthData === 'object' && membershipKey in monthData) {
-            delete monthData[membershipKey];
-            if (Object.keys(monthData).length === 0) {
-              delete yearData[monthKey];
-            }
-            modified = true;
+            await RevenueRepository.deleteRevenueEntry(
+              boxName,
+              parseInt(document.year, 10),
+              parseInt(monthKey, 10),
+              membershipKey
+            );
           }
-        }
-
-        if (modified) {
-          await RevenueRepository.setRevenueYear(
-            boxName,
-            document.year,
-            Object.keys(yearData).length === 0 ? {} : yearData
-          );
         }
       }
     } catch (error) {

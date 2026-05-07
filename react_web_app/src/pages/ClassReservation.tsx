@@ -289,14 +289,9 @@ const ClassReservation = () => {
       return;
     }
     
-    if (modalResult.applyToFourWeeks) {
-      // 4주간 적용 로직
-      for (let i = 0; i < 4; i++) {
-        await saveClass(modalResult);
-      }
-    } else {
-      await saveClass(modalResult);
-    }
+    // saveClass 내부에서 applyToFourWeeks 분기를 처리한다.
+    // (createRecurringClasses가 이미 4주치 docKey를 만들어 호출한다.)
+    await saveClass(modalResult);
     setSaveModalVisible(false);
   }, [saveClass, createToast]);
 

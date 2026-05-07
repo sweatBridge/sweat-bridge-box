@@ -3,7 +3,6 @@ import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
 import { LockerService } from '../services/lockerService';
 import { MemberService } from '../services/memberService';
-import { RevenueService } from '../services/revenueService';
 import {
   Locker as LockerItem,
   LockerState,
@@ -229,25 +228,23 @@ const Locker: React.FC = () => {
       const currentLocker = candidates.find(c => (c.realName || '').trim().length > 0);
 
       await LockerService.releaseLocker(BOX_NAME, selectedNo, note, assignee);
-      
-      // 회원 문서의 lockerHistory에 releasedDate 기록
+
+      // 락커 엔트리에 회원 email(=id)이 저장돼 있으므로 회원 전체 조회 없이 바로 갱신.
       if (currentLocker && selectedNo !== null) {
-        try {
-          const allMembers = await MemberService.getMembers(BOX_NAME);
-          const member = allMembers.find(m => m.realName === currentLocker.realName);
-          if (member && currentLocker.key) {
+        if (currentLocker.id && currentLocker.key) {
+          try {
             await MemberService.unassignLockerFromMember(
               BOX_NAME,
-              member.email,
+              currentLocker.id,
               selectedNo,
               currentLocker.key
             );
-          } else if (!currentLocker.key) {
-            console.warn('락커에 key가 없어 히스토리를 업데이트할 수 없습니다.');
+          } catch (err) {
+            console.error('회원 락커 해제 실패:', err);
+            // 락커는 이미 해지되었으므로 계속 진행
           }
-        } catch (err) {
-          console.error('회원 락커 해제 실패:', err);
-          // 락커는 해지되었으므로 계속 진행
+        } else {
+          console.warn('락커에 회원 id 또는 key가 없어 히스토리를 업데이트할 수 없습니다.');
         }
       }
       
@@ -358,12 +355,11 @@ const Locker: React.FC = () => {
     setAssigning(true);
     try {
       const phone = member.phone || '';
-      
-      // 동일한 키를 Locker와 Member에 저장하기 위해 미리 생성
+      // 락커/회원/매출 3문서에 같은 키를 공유한다.
       const lockerKey = generateMembershipKey();
-      
-      // 락커에 회원 배정
-      await LockerService.assignLocker(
+
+      // 락커 배정 + 회원 락커 히스토리 + 매출을 한 트랜잭션으로 처리.
+      await LockerService.assignLockerWithMemberAndRevenue(
         BOX_NAME,
         selectedNo,
         member.email,
@@ -375,28 +371,7 @@ const Locker: React.FC = () => {
         price,
         paymentType
       );
-      
-      // 회원에게 락커 번호 추가 (동일한 키 사용)
-      await MemberService.assignLockerToMember(
-        BOX_NAME,
-        member.email,
-        selectedNo,
-        startDate,
-        endDate,
-        lockerKey,
-        price,
-        paymentType
-      );
-      
-      // 매출에 락커 매출 추가
-      await RevenueService.addLockerRevenue(
-        lockerKey,
-        member.email,
-        member.realName,
-        price,
-        paymentType
-      );
-      
+
       if (createToast) {
         createToast({
           type: 'success',
