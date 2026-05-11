@@ -1,4 +1,130 @@
 import { BoxInfo } from '../../types/box';
+import { UserRole, BoxStatus } from '../../types/auth';
+
+export interface AdminUserSummary {
+  uid: string;
+  email: string;
+  realName: string;
+  nickName: string;
+  phone: string;
+  role: UserRole;
+  boxName: string;
+  status?: BoxStatus;
+  createdAt: string;
+}
+
+export const MOCK_USERS: AdminUserSummary[] = [
+  {
+    uid: 'uid-001',
+    email: 'minjun@sweat.kr',
+    realName: '김민준',
+    nickName: 'MJ',
+    phone: '010-1234-5678',
+    role: 'operator',
+    boxName: 'SWEAT_GANGNAM',
+    status: 'APPROVED',
+    createdAt: '2024-03-01',
+  },
+  {
+    uid: 'uid-002',
+    email: 'jihyeon@iron.co',
+    realName: '박지현',
+    nickName: 'Jihyeon',
+    phone: '010-9876-5432',
+    role: 'coach',
+    boxName: 'IRON_SEOUL',
+    status: 'APPROVED',
+    createdAt: '2024-05-15',
+  },
+  {
+    uid: 'uid-003',
+    email: 'coach2@iron.co',
+    realName: '이서윤',
+    nickName: 'Seoyun',
+    phone: '010-5555-4444',
+    role: 'coach',
+    boxName: 'IRON_SEOUL',
+    status: 'APPROVED',
+    createdAt: '2024-05-20',
+  },
+  {
+    uid: 'uid-004',
+    email: 'doyun@flowfit.kr',
+    realName: '최도윤',
+    nickName: 'Doyun',
+    phone: '010-2233-4455',
+    role: 'operator',
+    boxName: 'FLOW_SINCHON',
+    status: 'APPROVED',
+    createdAt: '2024-07-10',
+  },
+  {
+    uid: 'uid-005',
+    email: 'yerin@peakbox.kr',
+    realName: '정예린',
+    nickName: 'Yerin',
+    phone: '010-7766-8899',
+    role: 'operator',
+    boxName: 'PEAK_SEOCHO',
+    status: 'APPROVED',
+    createdAt: '2024-09-20',
+  },
+  {
+    uid: 'uid-006',
+    email: 'coach2@peakbox.kr',
+    realName: '김태양',
+    nickName: 'Taeyang',
+    phone: '010-3344-5566',
+    role: 'coach',
+    boxName: 'PEAK_SEOCHO',
+    status: 'APPROVED',
+    createdAt: '2024-10-01',
+  },
+  {
+    uid: 'uid-007',
+    email: 'coach3@peakbox.kr',
+    realName: '오지훈',
+    nickName: 'Jihun',
+    phone: '010-6677-8899',
+    role: 'coach',
+    boxName: 'PEAK_SEOCHO',
+    status: 'PENDING',
+    createdAt: '2025-01-10',
+  },
+  {
+    uid: 'uid-008',
+    email: 'seungwoo@edgefit.kr',
+    realName: '한승우',
+    nickName: 'SW',
+    phone: '010-1122-3344',
+    role: 'operator',
+    boxName: 'EDGE_YONGSAN',
+    status: 'APPROVED',
+    createdAt: '2025-01-05',
+  },
+  {
+    uid: 'uid-009',
+    email: 'superadmin@sweatbridge.io',
+    realName: '관리자',
+    nickName: 'admin',
+    phone: '010-0000-0001',
+    role: 'admin',
+    boxName: '',
+    status: 'APPROVED',
+    createdAt: '2024-01-01',
+  },
+  {
+    uid: 'uid-010',
+    email: 'newcoach@iron.co',
+    realName: '유재현',
+    nickName: 'Jaehyun',
+    phone: '010-8899-1122',
+    role: 'coach',
+    boxName: 'IRON_SEOUL',
+    status: 'PENDING',
+    createdAt: '2025-04-20',
+  },
+];
 
 export interface AdminBoxSummary extends BoxInfo {
   memberCount: number;

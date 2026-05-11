@@ -18,6 +18,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminBoxList from './pages/admin/AdminBoxList';
 import AdminBoxDetail from './pages/admin/AdminBoxDetail';
 import AdminBoxOnboarding from './pages/admin/AdminBoxOnboarding';
+import AdminUserList from './pages/admin/AdminUserList';
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
                   <Route path="boxes" element={<AdminBoxList />} />
                   <Route path="boxes/new" element={<AdminBoxOnboarding />} />
                   <Route path="boxes/:boxName" element={<AdminBoxDetail />} />
+                  <Route path="users" element={<AdminUserList />} />
                 </Route>
               </Route>
 
