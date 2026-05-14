@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import AppSidebar from './AppSidebar';
 import AppHeader from './AppHeader';
+import Footer from './Footer';
 import { PageProvider } from '../contexts/PageContext';
 
 const MainLayout = () => {
@@ -38,11 +39,14 @@ const MainLayout = () => {
         <div className="main-content">
           {/* 헤더 */}
           <AppHeader />
-          
+
           {/* 메인 컨텐츠 */}
           <div className="content-area">
             <Outlet />
           </div>
+
+          {/* 푸터 */}
+          <Footer />
         </div>
       </div>
     </PageProvider>

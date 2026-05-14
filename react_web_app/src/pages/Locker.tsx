@@ -230,28 +230,20 @@ const Locker: React.FC = () => {
 
       await LockerService.releaseLocker(BOX_NAME, selectedNo, note, assignee);
       
-      // 회원의 locker 필드 제거 (이메일로 찾아야 함)
-      // 현재는 realName만 있으므로 회원 전체를 검색해서 해당 락커를 가진 회원 찾기
+      // 회원 문서의 lockerHistory에 releasedDate 기록
       if (currentLocker && selectedNo !== null) {
         try {
           const allMembers = await MemberService.getMembers(BOX_NAME);
           const member = allMembers.find(m => m.realName === currentLocker.realName);
-          if (member) {
-            // endDate는 오늘 날짜로 설정
-            const endDate = new Date().toISOString().split('T')[0];
-            
-            // key가 있는 경우에만 히스토리 업데이트
-            if (currentLocker.key) {
-              await MemberService.unassignLockerFromMember(
-                BOX_NAME, 
-                member.email,
-                selectedNo,
-                endDate,
-                currentLocker.key
-              );
-            } else {
-              console.warn('락커에 key가 없어 히스토리를 업데이트할 수 없습니다.');
-            }
+          if (member && currentLocker.key) {
+            await MemberService.unassignLockerFromMember(
+              BOX_NAME,
+              member.email,
+              selectedNo,
+              currentLocker.key
+            );
+          } else if (!currentLocker.key) {
+            console.warn('락커에 key가 없어 히스토리를 업데이트할 수 없습니다.');
           }
         } catch (err) {
           console.error('회원 락커 해제 실패:', err);

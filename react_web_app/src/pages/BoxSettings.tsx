@@ -3,9 +3,10 @@ import { Building, MapPin, User, Phone, Mail, Users, Plus, Trash2, Search, Penci
 import { BoxInfo, Coach } from '../types/box';
 import { useBoxManagement } from '../hooks/useBoxManagement';
 import { usePageContext } from '../contexts/PageContext';
-import { getPhoneMask } from '../utils/phoneUtils';
+import { formatPhoneNumber, normalizePhoneNumber } from '../utils/phoneUtils';
 import ToastMessage from '../components/ToastMessage';
 import { ToastMessageType } from '../types/member';
+import CoachActionConfirmModal from '../components/modals/common/CoachActionConfirmModal';
 import { Gradients } from '../constants/gradients';
 import { AppColors } from '../constants/colors';
 
@@ -57,9 +58,15 @@ const BoxSettings = () => {
     phone: '',
     email: ''
   });
+  const [pendingCoachAction, setPendingCoachAction] = useState<{
+    mode: 'add' | 'delete';
+    coach: Coach;
+    index?: number;
+  } | null>(null);
 
   // UI 상태
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isCoachActionLoading, setIsCoachActionLoading] = useState(false);
   const [createToast, setCreateToast] = useState<((toast: ToastMessageType) => void) | null>(null);
 
   // 페이지 정보 설정
@@ -78,7 +85,14 @@ const BoxSettings = () => {
   // 박스 정보가 로드되면 폼 데이터 설정
   useEffect(() => {
     if (boxInfo) {
-      setFormData(boxInfo);
+      setFormData({
+        ...boxInfo,
+        phone: normalizePhoneNumber(boxInfo.phone),
+        coaches: (boxInfo.coaches || []).map((coach) => ({
+          ...coach,
+          phone: normalizePhoneNumber(coach.phone)
+        }))
+      });
     }
   }, [boxInfo]);
 
@@ -114,8 +128,7 @@ const BoxSettings = () => {
 
   // 전화번호 변경 핸들러
   const handlePhoneChange = useCallback((field: string, value: string) => {
-    const maskedPhone = getPhoneMask(value);
-    handleInputChange(field, maskedPhone);
+    handleInputChange(field, normalizePhoneNumber(value));
   }, [handleInputChange]);
 
   // 우편번호 검색
@@ -146,10 +159,9 @@ const BoxSettings = () => {
   // 새 코치 입력 변경
   const handleNewCoachChange = useCallback((field: keyof Coach, value: string) => {
     if (field === 'phone') {
-      const maskedPhone = getPhoneMask(value);
       setNewCoach(prev => ({
         ...prev,
-        [field]: maskedPhone
+        [field]: normalizePhoneNumber(value)
       }));
     } else {
       setNewCoach(prev => ({
@@ -171,39 +183,77 @@ const BoxSettings = () => {
       return;
     }
 
-    setFormData(prev => ({
-      ...prev,
-      coaches: [...prev.coaches, { ...newCoach }]
-    }));
-
-    setNewCoach({
-      name: '',
-      phone: '',
-      email: ''
+    setPendingCoachAction({
+      mode: 'add',
+      coach: { ...newCoach }
     });
-
-    if (createToast) {
-      createToast({
-        type: 'success',
-        message: '코치가 추가되었습니다.'
-      });
-    }
   }, [newCoach, createToast]);
 
   // 코치 삭제
   const handleRemoveCoach = useCallback((index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      coaches: prev.coaches.filter((_, i) => i !== index)
-    }));
+    setPendingCoachAction({
+      mode: 'delete',
+      coach: formData.coaches[index],
+      index
+    });
+  }, [formData.coaches]);
 
-    if (createToast) {
-      createToast({
-        type: 'success',
-        message: '코치가 삭제되었습니다.'
-      });
+  const handleCloseCoachActionModal = useCallback(() => {
+    if (isCoachActionLoading) return;
+    setPendingCoachAction(null);
+  }, [isCoachActionLoading]);
+
+  const handleConfirmCoachAction = useCallback(async () => {
+    if (!pendingCoachAction) return;
+
+    setIsCoachActionLoading(true);
+
+    try {
+      let updatedBoxInfo: BoxInfo;
+
+      if (pendingCoachAction.mode === 'add') {
+        updatedBoxInfo = {
+          ...formData,
+          coaches: [...formData.coaches, pendingCoachAction.coach]
+        };
+      } else {
+        updatedBoxInfo = {
+          ...formData,
+          coaches: formData.coaches.filter((_, i) => i !== pendingCoachAction.index)
+        };
+      }
+
+      await updateBoxInfo(updatedBoxInfo);
+      setFormData(updatedBoxInfo);
+
+      if (pendingCoachAction.mode === 'add') {
+        setNewCoach({
+          name: '',
+          phone: '',
+          email: ''
+        });
+      }
+
+      if (createToast) {
+        createToast({
+          type: 'success',
+          message: pendingCoachAction.mode === 'add' ? '코치가 추가되었습니다.' : '코치가 삭제되었습니다.'
+        });
+      }
+
+      setPendingCoachAction(null);
+    } catch (error) {
+      console.error('Failed to update coach list', error);
+      if (createToast) {
+        createToast({
+          type: 'danger',
+          message: pendingCoachAction.mode === 'add' ? '코치 추가에 실패했습니다.' : '코치 삭제에 실패했습니다.'
+        });
+      }
+    } finally {
+      setIsCoachActionLoading(false);
     }
-  }, [createToast]);
+  }, [pendingCoachAction, formData, updateBoxInfo, createToast]);
 
   // 박스 정보 수정
   const handleUpdate = useCallback(async () => {
@@ -342,7 +392,7 @@ const BoxSettings = () => {
                   <input
                     type="text"
                     placeholder="'-'를 제외하고 숫자만 입력"
-                    value={formData.phone}
+                    value={formatPhoneNumber(formData.phone)}
                     onChange={(e) => handlePhoneChange('phone', e.target.value)}
                     className="form-input"
                   />
@@ -420,8 +470,8 @@ const BoxSettings = () => {
                   <label>연락처</label>
                   <input
                     type="text"
-                    placeholder="연락처"
-                    value={newCoach.phone}
+                    placeholder="01012345678"
+                    value={formatPhoneNumber(newCoach.phone)}
                     onChange={(e) => handleNewCoachChange('phone', e.target.value)}
                     className="form-input"
                   />
@@ -465,7 +515,7 @@ const BoxSettings = () => {
                         <span>{coach.name}</span>
                       </div>
                     </div>
-                    <div className="table-cell">{coach.phone}</div>
+                    <div className="table-cell">{formatPhoneNumber(coach.phone)}</div>
                     <div className="table-cell">{coach.email}</div>
                     <div className="table-cell">
                       <button 
@@ -511,6 +561,16 @@ const BoxSettings = () => {
       {/* Toast Messages */}
       <ToastMessage
         onCreateToast={(createToastFn: (toast: ToastMessageType) => void) => setCreateToast(() => createToastFn)}
+      />
+      <CoachActionConfirmModal
+        visible={!!pendingCoachAction}
+        mode={pendingCoachAction?.mode || 'add'}
+        coachName={pendingCoachAction?.coach.name || ''}
+        coachPhone={pendingCoachAction?.coach.phone || ''}
+        coachEmail={pendingCoachAction?.coach.email || ''}
+        loading={isCoachActionLoading}
+        onClose={handleCloseCoachActionModal}
+        onConfirm={handleConfirmCoachAction}
       />
 
       <style>{`

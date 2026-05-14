@@ -7,6 +7,7 @@ import { ClassService } from '../../../services/classService';
 import { useAuth } from '../../../contexts/AuthContext';
 import AddReserveMemberModal from './AddReserveMemberModal';
 import ReservedMembersModal from './ReservedMembersModal';
+import { useCoachOptions } from '../../../hooks/useCoachOptions';
 
 const ManageClassModal = ({
   visible,
@@ -22,6 +23,7 @@ const ManageClassModal = ({
   const [reservedMembersModalVisible, setReservedMembersModalVisible] = useState(false);
   const [addMemberModalVisible, setAddMemberModalVisible] = useState(false);
   const [reservedList, setReservedList] = useState<string[]>([]);
+  const coachOptions = useCoachOptions(visible);
 
   useEffect(() => {
     if (event && visible) {
@@ -135,12 +137,20 @@ const ManageClassModal = ({
               <User size={16} className="form-label-icon" />
               코치
             </label>
-            <input
-              type="text"
+            <select
               value={coach}
               onChange={(e) => setCoach(e.target.value)}
-              placeholder="코치명을 입력하세요"
-            />
+              className="form-input"
+            >
+              <option value="" disabled>
+                {coachOptions.length > 0 ? '코치 선택' : '등록된 코치 없음'}
+              </option>
+              {coachOptions.map((coachName) => (
+                <option key={coachName} value={coachName}>
+                  {coachName}
+                </option>
+              ))}
+            </select>
           </div>
           
           <div className="form-group">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { DollarSign, Calendar, User } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
+import { useCoachOptions } from '../../../hooks/useCoachOptions';
 
 interface RefundMembershipModalProps {
   visible: boolean;
@@ -23,6 +24,7 @@ const RefundMembershipModal = ({
   const [refundAmount, setRefundAmount] = useState(membershipPrice);
   const [reason, setReason] = useState('');
   const [assignee, setAssignee] = useState('');
+  const coachOptions = useCoachOptions(visible);
 
   if (!visible) return null;
 
@@ -134,15 +136,21 @@ const RefundMembershipModal = ({
                 <User size={16} />
                 담당자
               </label>
-              <input
-                type="text"
+              <select
                 className="form-input"
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value)}
                 disabled={loading}
-                placeholder="담당자 이름"
-                maxLength={10}
-              />
+              >
+                <option value="" disabled>
+                  {coachOptions.length > 0 ? '담당자 선택' : '등록된 코치 없음'}
+                </option>
+                {coachOptions.map((coachName) => (
+                  <option key={coachName} value={coachName}>
+                    {coachName}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

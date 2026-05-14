@@ -3,6 +3,7 @@ import { Search, User, Mail, Phone, UserPlus, X } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
 import { MemberService } from '../../../services/memberService';
+import { formatPhoneNumber, normalizePhoneNumber } from '../../../utils/phoneUtils';
 
 interface AddReserveMemberModalProps {
   visible: boolean;
@@ -107,7 +108,7 @@ const AddReserveMemberModal = ({
 
     setIsSearching(true);
     try {
-      const userData = await MemberService.getUserByPhone(searchPhone.trim());
+      const userData = await MemberService.getUserByPhone(normalizePhoneNumber(searchPhone.trim()));
       if (userData) {
         setUser(userData);
         setUsers([]);
@@ -168,7 +169,7 @@ const AddReserveMemberModal = ({
           </div>
           <div className="user-info-row">
             <strong>연락처:</strong>
-            <span>{targetUser.phone}</span>
+            <span>{formatPhoneNumber(targetUser.phone)}</span>
           </div>
           <div className="user-info-row">
             <strong>이메일:</strong>
@@ -283,7 +284,7 @@ const AddReserveMemberModal = ({
                 <input
                   type="text"
                   value={searchPhone}
-                  onChange={(e) => setSearchPhone(e.target.value)}
+                  onChange={(e) => setSearchPhone(normalizePhoneNumber(e.target.value))}
                   onKeyPress={(e) => handleKeyPress(e, searchUserByPhone)}
                   placeholder="핸드폰 번호를 입력하세요.(- 제외)"
                   disabled={isSearching}

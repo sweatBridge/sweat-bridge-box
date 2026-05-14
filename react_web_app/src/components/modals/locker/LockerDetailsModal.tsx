@@ -4,6 +4,7 @@ import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
 import type { LockerState } from '../../../types/locker';
 import { LOCKER_STATE } from '../../../types/locker';
+import { formatPhoneNumber } from '../../../utils/phoneUtils';
 
 interface LockerDetailsModalProps {
   visible: boolean;
@@ -100,7 +101,7 @@ const LockerDetailsModal = ({
               <input
                 type="tel"
                 inputMode="tel"
-                value={phone}
+                value={formatPhoneNumber(phone)}
                 readOnly
                 placeholder="—"
                 className="form-input"
@@ -341,4 +342,3 @@ const LockerDetailsModal = ({
 };
 
 export default LockerDetailsModal;
-

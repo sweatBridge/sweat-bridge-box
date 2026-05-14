@@ -6,6 +6,7 @@ import { X, UserPlus, Search } from 'lucide-react';
 import { MemberService } from '../../../services/memberService';
 import DateInput from '../../DateInput';
 import { format } from 'date-fns';
+import { formatPhoneNumber, normalizePhoneNumber } from '../../../utils/phoneUtils';
 
 interface AddMemberModalProps {
   visible: boolean;
@@ -60,7 +61,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
           if (userByEmail) results = [userByEmail];
           break;
         case 'phone':
-          const userByPhone = await MemberService.getUserByPhone(searchValue);
+          const userByPhone = await MemberService.getUserByPhone(normalizePhoneNumber(searchValue));
           if (userByPhone) results = [userByPhone];
           break;
         case 'realName':
@@ -142,20 +143,62 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
       if (onError) onError('이메일을 입력하세요.');
       return;
     }
+
+    if (!MemberService.validateEmailFormat(formData.email)) {
+      if (onError) onError('유효한 이메일 형식을 입력하세요. (예: example@email.com)');
+      return;
+    }
+
+    // 이메일 중복 체크
+    try {
+      setLoading(true);
+      const existingUser = await MemberService.getUserByEmail(formData.email);
+      if (existingUser) {
+        if (onError) onError('이미 존재하는 이메일입니다.');
+        setLoading(false);
+        return;
+      }
+    } catch (error) {
+      console.error('Email duplication check error:', error);
+    }
+
     if (!formData.realName.trim()) {
       if (onError) onError('이름을 입력하세요.');
+      setLoading(false);
       return;
     }
     if (!formData.nickName.trim()) {
       if (onError) onError('닉네임을 입력하세요.');
+      setLoading(false);
       return;
     }
     if (!formData.phone.trim()) {
       if (onError) onError('전화번호를 입력하세요.');
+      setLoading(false);
       return;
     }
+
+    if (!MemberService.validatePhoneFormat(formData.phone)) {
+      if (onError) onError('유효한 전화번호 형식을 입력하세요. (예: 01012345678)');
+      setLoading(false);
+      return;
+    }
+
+    // 전화번호 중복 체크
+    try {
+      const existingUser = await MemberService.getUserByPhone(formData.phone);
+      if (existingUser) {
+        if (onError) onError('이미 존재하는 전화번호입니다.');
+        setLoading(false);
+        return;
+      }
+    } catch (error) {
+      console.error('Phone duplication check error:', error);
+    }
+
     if (!birthDate) {
       if (onError) onError('생년월일을 입력하세요.');
+      setLoading(false);
       return;
     }
 
@@ -164,7 +207,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
     today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(birthDate);
     selectedDate.setHours(0, 0, 0, 0);
-    
+
     if (selectedDate > today) {
       if (createToast) {
         createToast({
@@ -172,11 +215,11 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
           message: '생년월일은 오늘 날짜보다 이전이어야 합니다.'
         });
       }
+      setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
       const boxName = localStorage.getItem('boxName') || '';
 
       const memberData = {
@@ -327,7 +370,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
                             <div className="table-cell">{user.realName}</div>
                             <div className="table-cell">{user.nickName}</div>
                             <div className="table-cell">{user.email}</div>
-                            <div className="table-cell">{user.phone}</div>
+                            <div className="table-cell">{formatPhoneNumber(user.phone)}</div>
                             <div className="table-cell">
                               <button
                                 className="btn btn-sm btn-primary"
@@ -361,7 +404,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
                       </div>
                       <div className="info-row">
                         <span className="info-label">전화번호:</span>
-                        <span className="info-value">{selectedUser?.phone}</span>
+                        <span className="info-value">{formatPhoneNumber(selectedUser?.phone || '')}</span>
                       </div>
                     </div>
                   </div>
@@ -431,9 +474,7 @@ const AddMemberModal = ({ visible, onClose, onSuccess, onError, createToast }: A
                     placeholder="01012345678"
                     value={formData.phone}
                     onChange={(e) => {
-                      // 숫자만 허용
-                      const numericValue = e.target.value.replace(/[^0-9]/g, '');
-                      handleInputChange('phone', numericValue);
+                      handleInputChange('phone', normalizePhoneNumber(e.target.value));
                     }}
                     className="form-input"
                   />

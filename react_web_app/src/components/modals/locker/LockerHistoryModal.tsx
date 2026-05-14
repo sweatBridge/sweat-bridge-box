@@ -2,7 +2,8 @@ import React from 'react';
 import { Calendar } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import type { Locker as LockerItem } from '../../../types/locker';
-import { getLockerStateLabel } from '../../../types/locker';
+import { getLockerEventLabel } from '../../../types/locker';
+import { formatPhoneNumber } from '../../../utils/phoneUtils';
 
 interface LockerHistoryModalProps {
   visible: boolean;
@@ -47,8 +48,8 @@ const LockerHistoryModal = ({
                           <span style={{ fontWeight: 'normal' }}>[{item.createdAt.split(' ')[0]}]</span>
                         ) : ''}
                       </span>
-                      <span className={`history-state-badge ${item.state}`}>
-                        {getLockerStateLabel(item.state, item)}
+                      <span className={`history-event-badge ${item.action ? `action-${item.action}` : 'unknown'}`}>
+                        {getLockerEventLabel(item.action)}
                       </span>
                     </div>
                     
@@ -62,7 +63,7 @@ const LockerHistoryModal = ({
                       {item.phone && (
                         <div className="history-row">
                           <span className="history-label">전화번호:</span>
-                          <span className="history-value">{item.phone}</span>
+                          <span className="history-value">{formatPhoneNumber(item.phone)}</span>
                         </div>
                       )}
                       {item.startDate && (
@@ -223,31 +224,41 @@ const LockerHistoryModal = ({
           color: #6b7280;
         }
 
-        .history-state-badge {
+        .history-event-badge {
           padding: 4px 12px;
           border-radius: 12px;
           font-size: 12px;
           font-weight: 600;
         }
 
-        .history-state-badge.used {
+        .history-event-badge.action-assign {
           background-color: #dcfce7;
           color: #065f46;
         }
 
-        .history-state-badge.unused {
-          background-color: #e0f2fe;
-          color: #075985;
+        .history-event-badge.action-release {
+          background-color: #f3f4f6;
+          color: #374151;
         }
 
-        .history-state-badge.na {
+        .history-event-badge.action-mark_broken {
           background-color: #fee2e2;
           color: #991b1b;
         }
 
-        .history-state-badge.deleted {
+        .history-event-badge.action-restore {
+          background-color: #e0f2fe;
+          color: #075985;
+        }
+
+        .history-event-badge.action-delete {
+          background-color: #1f2937;
+          color: #f9fafb;
+        }
+
+        .history-event-badge.unknown {
           background-color: #f3f4f6;
-          color: #6b7280;
+          color: #9ca3af;
         }
 
         .history-details {
@@ -308,4 +319,3 @@ const LockerHistoryModal = ({
 };
 
 export default LockerHistoryModal;
-

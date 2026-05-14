@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 import { Gradients } from '../../../constants/gradients';
 import { AppColors } from '../../../constants/colors';
+import { useCoachOptions } from '../../../hooks/useCoachOptions';
 
 interface ReleaseLockerConfirmModalProps {
   visible: boolean;
@@ -22,6 +23,7 @@ const ReleaseLockerConfirmModal = ({
 }: ReleaseLockerConfirmModalProps) => {
   const [note, setNote] = useState('');
   const [assignee, setAssignee] = useState('');
+  const coachOptions = useCoachOptions(visible);
 
   const handleConfirm = () => {
     // 검증: 두 필드 모두 필수
@@ -84,14 +86,21 @@ const ReleaseLockerConfirmModal = ({
             </div>
             <div className="form-group">
               <label>담당자</label>
-              <input
-                type="text"
+              <select
                 value={assignee}
                 onChange={(e) => setAssignee(e.target.value)}
-                placeholder="담당자 이름을 입력하세요"
                 className="form-input"
                 disabled={releasing}
-              />
+              >
+                <option value="" disabled>
+                  {coachOptions.length > 0 ? '담당자 선택' : '등록된 코치 없음'}
+                </option>
+                {coachOptions.map((coachName) => (
+                  <option key={coachName} value={coachName}>
+                    {coachName}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -284,4 +293,3 @@ const ReleaseLockerConfirmModal = ({
 };
 
 export default ReleaseLockerConfirmModal;
-

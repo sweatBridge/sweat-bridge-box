@@ -166,19 +166,17 @@ export class MemberService {
   }
 
   /**
-   * 특정 락커 할당 기록을 종료 처리합니다.
+   * 특정 락커 할당 기록을 반납 처리합니다.
    *
    * @param box 박스 이름
    * @param email 회원 이메일
    * @param lockerNumber 락커 번호
-   * @param endDate 종료일
    * @param key 락커 배정 키
    */
   static async unassignLockerFromMember(
     box: string,
     email: string,
     lockerNumber: number,
-    endDate: string,
     key: string
   ): Promise<void> {
     try {
@@ -192,7 +190,8 @@ export class MemberService {
         throw new Error('해당 락커 할당 기록을 찾을 수 없습니다.');
       }
 
-      lockerHistory[index] = { ...lockerHistory[index], endDate };
+      const releasedDate = new Date().toISOString().split('T')[0];
+      lockerHistory[index] = { ...lockerHistory[index], releasedDate };
       await MemberRepository.updateMember(box, email, { lockerHistory });
     } catch (error) {
       console.error('Error unassigning locker from member:', error);
@@ -382,6 +381,28 @@ export class MemberService {
    */
   static async updateMemberMemo(box: string, email: string, memo: string): Promise<void> {
     return MemberRepository.updateMember(box, email, { memo });
+  }
+
+  /**
+   * 이메일 형식을 검증합니다.
+   *
+   * @param email 검증할 이메일
+   * @returns 유효한 형식이면 true, 그렇지 않으면 false
+   */
+  static validateEmailFormat(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  /**
+   * 전화번호 형식을 검증합니다. (한국 휴대폰 형식: 01X + 7~8자리)
+   *
+   * @param phone 검증할 전화번호
+   * @returns 유효한 형식이면 true, 그렇지 않으면 false
+   */
+  static validatePhoneFormat(phone: string): boolean {
+    const phoneRegex = /^01[0-9]\d{7,8}$/;
+    return phoneRegex.test(phone);
   }
 
   /**
