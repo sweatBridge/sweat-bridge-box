@@ -64,12 +64,12 @@ const MemberManagementModal = ({
     startDate: new Date()
   });
 
+  // 모달 내 mutation 후 호출. 회원권 + 플랜 모두 최신 상태로 다시 가져온다.
   const loadData = useCallback(async () => {
     if (!member?.email) return;
 
     setLoading(true);
     try {
-      // 회원권 플랜과 사용자 회원권 병렬 로드
       const [plans, memberships] = await Promise.all([
         MembershipService.getMembershipPlans(),
         MembershipService.getUserMemberships(member.email)
@@ -78,7 +78,6 @@ const MemberManagementModal = ({
       setMembershipPlans(plans);
       setUserMemberships(memberships);
       setCurrentMemberships(MembershipService.getCurrentMemberships(memberships));
-      // 메모는 useEffect에서 처리하므로 여기서는 설정하지 않음
     } catch (error) {
       console.error('Failed to load data:', error);
       if (onError) {
@@ -89,23 +88,33 @@ const MemberManagementModal = ({
     }
   }, [member?.email, onError]);
 
-  // 모달이 열릴 때 데이터 로드 및 메모 초기화
+  // 모달이 열릴 때 초기화. 회원권은 부모가 이미 로드해 둔 member.memberships를 그대로 사용하고,
+  // 플랜 doc만 추가로 1회 fetch한다(회원 문서 재조회 1건 제거).
   useEffect(() => {
     if (visible && member) {
-      // 모달이 열릴 때만 메모를 member.memo로 초기화
       const memberMemo = member.memo || '';
       setMemo(memberMemo);
-      // 메모가 비어있으면 편집 모드, 있으면 읽기 전용 모드
       setIsMemoEditing(!memberMemo);
-      setHasDataChanged(false); // 변경 추적 초기화
-      loadData();
+      setHasDataChanged(false);
+
+      const memberships = member.memberships || [];
+      setUserMemberships(memberships);
+      setCurrentMemberships(MembershipService.getCurrentMemberships(memberships));
+
+      setLoading(true);
+      MembershipService.getMembershipPlans()
+        .then((plans) => setMembershipPlans(plans))
+        .catch((error) => {
+          console.error('Failed to load membership plans:', error);
+          if (onError) onError('데이터를 불러오는데 실패했습니다.');
+        })
+        .finally(() => setLoading(false));
     } else if (!visible) {
-      // 모달이 닫힐 때 메모 초기화
       setMemo('');
       setIsMemoEditing(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, member?.email]); // loadData는 member.email이 변경될 때마다 실행되어야 하므로 의존성에서 제외
+  }, [visible, member?.email]);
 
   const handlePlanChange = useCallback((planName: string) => {
     setFormData(prev => ({ ...prev, selectedPlanName: planName }));

@@ -58,7 +58,8 @@ const AddReserveMemberModal = ({
 
     setIsSearching(true);
     try {
-      const userData = await MemberService.getUserByRealName(searchName.trim());
+      // 동명이인이 다른 박스에 있을 수 있어 현재 박스로 결과를 한정한다.
+      const userData = await MemberService.getBoxUsersByRealName(searchName.trim(), boxName);
       if (userData && userData.length > 0) {
         setUsers(userData);
         setUser(null);

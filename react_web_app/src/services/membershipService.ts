@@ -111,21 +111,41 @@ export class MembershipService {
   /**
    * 새 회원권 플랜을 추가합니다.
    *
+   * 호출자가 이미 로드한 `existingPlans`를 전달하면 read 없이 write만 수행합니다.
+   * 새 플랜이 적용된 전체 목록을 반환해 호출자가 재조회 없이 상태를 갱신할 수 있게 합니다.
+   *
    * @param plan 추가할 플랜
+   * @param existingPlans 호출자가 이미 들고 있는 플랜 목록 (선택)
+   * @returns 변경 후 플랜 목록
    */
-  static async addMembershipPlan(plan: MembershipPlan): Promise<void> {
-    const existing = await this.getMembershipPlans();
-    await this.setMembershipPlans([...existing, plan]);
+  static async addMembershipPlan(
+    plan: MembershipPlan,
+    existingPlans?: MembershipPlan[]
+  ): Promise<MembershipPlan[]> {
+    const existing = existingPlans ?? (await this.getMembershipPlans());
+    const updated = [...existing, plan];
+    await this.setMembershipPlans(updated);
+    return updated;
   }
 
   /**
    * 회원권 플랜을 삭제합니다.
    *
+   * 호출자가 이미 로드한 `existingPlans`를 전달하면 read 없이 write만 수행합니다.
+   * 변경 후 전체 목록을 반환합니다.
+   *
    * @param planName 삭제할 플랜 이름
+   * @param existingPlans 호출자가 이미 들고 있는 플랜 목록 (선택)
+   * @returns 변경 후 플랜 목록
    */
-  static async deleteMembershipPlan(planName: string): Promise<void> {
-    const existing = await this.getMembershipPlans();
-    await this.setMembershipPlans(existing.filter((plan) => plan.plan !== planName));
+  static async deleteMembershipPlan(
+    planName: string,
+    existingPlans?: MembershipPlan[]
+  ): Promise<MembershipPlan[]> {
+    const existing = existingPlans ?? (await this.getMembershipPlans());
+    const updated = existing.filter((plan) => plan.plan !== planName);
+    await this.setMembershipPlans(updated);
+    return updated;
   }
 
   /**
@@ -176,13 +196,27 @@ export class MembershipService {
         }
       }
 
-      await MembershipRepository.setUserMemberships(this.getBoxName(), email, [...existingMemberships, membership]);
+      const boxName = this.getBoxName();
+      const updatedMemberships = [...existingMemberships, membership];
+      const purchaseDate = membership.purchase.at;
 
-      try {
-        await RevenueService.addUserMembership(membership, email, memberRealName);
-      } catch (revenueError) {
-        console.error('Failed to add revenue data, but membership was added successfully:', revenueError);
-      }
+      // 회원권 갱신과 매출 엔트리 등록을 단일 writeBatch로 원자 커밋.
+      await MembershipRepository.commitAddMembershipBatch(boxName, email, updatedMemberships, {
+        year: purchaseDate.getFullYear(),
+        month: purchaseDate.getMonth() + 1,
+        key: membership.key,
+        entry: {
+          assignee: membership.assignee,
+          createdAt: Timestamp.fromDate(purchaseDate),
+          id: email,
+          paymentType: membership.purchase.paymentType,
+          plan: membership.plan,
+          price: membership.purchase.price.toString(),
+          realName: memberRealName,
+          type: membership.type,
+          refundAmount: '0'
+        }
+      });
     } catch (error) {
       console.error('Error adding user membership:', error);
       throw error;
@@ -478,7 +512,11 @@ export class MembershipService {
 
       if (membership.key) {
         try {
-          await RevenueService.refundUserMembership(membership.key, parsedRefundAmount);
+          // purchase.at이 있으면 정확한 연/월 문서만 갱신(스캔 회피)
+          const purchaseAt = membership.purchase?.at
+            ? this.toDate(membership.purchase.at) ?? undefined
+            : undefined;
+          await RevenueService.refundUserMembership(membership.key, parsedRefundAmount, purchaseAt);
         } catch (revenueError) {
           console.error('Failed to process revenue refund, but membership refund was successful:', revenueError);
         }
@@ -506,12 +544,15 @@ export class MembershipService {
       if (index < 0 || index >= memberships.length) throw new Error('유효하지 않은 회원권 인덱스입니다.');
 
       const membershipKey = memberships[index].key;
+      const purchaseAt = (memberships[index] as any).purchase?.at
+        ? this.toDate((memberships[index] as any).purchase.at) ?? undefined
+        : undefined;
       const updatedMemberships = memberships.filter((_, membershipIndex) => membershipIndex !== index);
       await MembershipRepository.setUserMemberships(this.getBoxName(), email, updatedMemberships);
 
       if (membershipKey) {
         try {
-          await RevenueService.removeUserMembership(membershipKey);
+          await RevenueService.removeUserMembership(membershipKey, purchaseAt);
         } catch (revenueError) {
           console.error('Failed to remove revenue data, but membership was removed successfully:', revenueError);
         }
@@ -535,6 +576,7 @@ export class MembershipService {
       const documents = await MembershipRepository.getAllMemberMemberships(boxName);
       let extendedCount = 0;
       const now = new Date();
+      const pendingWrites: Array<{ email: string; memberships: unknown[] }> = [];
 
       for (const document of documents) {
         const memberships = document.memberships || [];
@@ -647,9 +689,16 @@ export class MembershipService {
         }
 
         if (hasChanges) {
-          await MembershipRepository.setUserMemberships(boxName, document.email, updatedMemberships);
+          pendingWrites.push({ email: document.email, memberships: updatedMemberships });
         }
       }
+
+      // 회원당 write를 병렬 처리. 개별 실패는 throw해서 전체 작업이 실패로 보고되도록 한다.
+      await Promise.all(
+        pendingWrites.map(({ email, memberships }) =>
+          MembershipRepository.setUserMemberships(boxName, email, memberships)
+        )
+      );
 
       return { extendedCount };
     } catch (error) {

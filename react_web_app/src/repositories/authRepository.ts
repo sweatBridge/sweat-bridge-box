@@ -1,5 +1,5 @@
 import { getAuth, signInWithEmailAndPassword, signOut, UserCredential } from 'firebase/auth';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { LoginCredentials, User } from '../types/auth';
 
@@ -24,17 +24,16 @@ export class AuthRepository {
   }
 
   /**
-   * 이메일과 일치하는 사용자 문서를 조회합니다.
+   * 이메일을 문서 ID로 사용해 사용자 문서를 직접 조회합니다.
+   *
+   * `user` 컬렉션은 이메일을 문서 ID로 사용하므로 `where` 쿼리 대신 `getDoc`을 사용합니다.
+   * 호출자 호환을 위해 배열 형태로 반환합니다(0건 또는 1건).
    *
    * @param email 조회할 사용자 이메일
-   * @returns 일치하는 사용자 목록
+   * @returns 일치하는 사용자 목록(0~1개)
    */
   static async getUsersByEmail(email: string): Promise<User[]> {
-    const q = query(collection(db, 'user'), where('email', '==', email));
-    const snap = await getDocs(q);
-
-    const users: User[] = [];
-    snap.forEach((docSnap) => users.push(docSnap.data() as User));
-    return users;
+    const snap = await getDoc(doc(db, 'user', email));
+    return snap.exists() ? [snap.data() as User] : [];
   }
 }

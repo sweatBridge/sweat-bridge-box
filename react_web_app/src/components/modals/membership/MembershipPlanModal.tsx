@@ -100,8 +100,10 @@ const MembershipPlanModal = ({ visible, onClose, onSuccess, onError }: Membershi
         price: formData.price.toString()
       };
 
-      await MembershipService.addMembershipPlan(newPlan);
-      
+      // 이미 로드된 plans를 넘겨 read를 생략하고, 반환된 목록으로 로컬 상태만 갱신.
+      const updated = await MembershipService.addMembershipPlan(newPlan, plans);
+      setPlans(updated);
+
       // 폼 초기화
       setFormData({
         plan: '',
@@ -111,9 +113,6 @@ const MembershipPlanModal = ({ visible, onClose, onSuccess, onError }: Membershi
         price: 0
       });
 
-      // 목록 새로고침
-      await loadMembershipPlans();
-      
       if (onSuccess) {
         onSuccess('회원권 플랜이 추가되었습니다.');
       }
@@ -134,9 +133,9 @@ const MembershipPlanModal = ({ visible, onClose, onSuccess, onError }: Membershi
 
     try {
       setLoading(true);
-      await MembershipService.deleteMembershipPlan(planName);
-      await loadMembershipPlans();
-      
+      const updated = await MembershipService.deleteMembershipPlan(planName, plans);
+      setPlans(updated);
+
       if (onSuccess) {
         onSuccess('회원권 플랜이 삭제되었습니다.');
       }
