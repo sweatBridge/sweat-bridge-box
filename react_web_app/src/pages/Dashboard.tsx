@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Calendar, Users, UserCheck, UserPlus, AlertTriangle, FileText } from 'lucide-react';
+import { Calendar, Users, UserCheck, UserPlus, AlertTriangle, FileText, Plus } from 'lucide-react';
 import { AppColors } from '../constants/colors';
 import { ClassService } from '../services/classService';
 import { ClassEvent } from '../types/class';
@@ -9,13 +9,21 @@ import { useMemberManagement } from '../hooks/useMemberManagement';
 import { MembershipService } from '../services/membershipService';
 import { Member } from '../types/member';
 import { DashboardMemoService } from '../services/dashboardMemoService';
+import { NoticePost, NoticeService } from '../services/noticeService';
 
 const Dashboard = () => {
   const boxName = localStorage.getItem('boxName') || 'SWEAT';
 
   const [todayClasses, setTodayClasses] = useState<ClassEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [noticeLoading, setNoticeLoading] = useState(true);
   const [coachMemo, setCoachMemo] = useState('');
+  const [noticePosts, setNoticePosts] = useState<NoticePost[]>([]);
+  const [isNoticeEditorOpen, setIsNoticeEditorOpen] = useState(false);
+  const [noticeTitle, setNoticeTitle] = useState('');
+  const [noticeContent, setNoticeContent] = useState('');
+  const [noticeSubmitting, setNoticeSubmitting] = useState(false);
+  const [noticeError, setNoticeError] = useState('');
   const [memoSavedAt, setMemoSavedAt] = useState<string>('');
   const { setPageInfo } = usePageContext();
   
@@ -40,16 +48,19 @@ const Dashboard = () => {
         setLoading(true);
         
         // 병렬로 데이터 로드
-        const [classes] = await Promise.all([
+        const [classes, notices] = await Promise.all([
           ClassService.getTodayClasses(boxName),
+          NoticeService.getRecentNoticePosts(boxName),
           loadMembers() // 회원 데이터도 로드
         ]);
         
         setTodayClasses(classes);
+        setNoticePosts(notices);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
       } finally {
         setLoading(false);
+        setNoticeLoading(false);
       }
     };
 
@@ -78,6 +89,45 @@ const Dashboard = () => {
       }));
     } catch (error) {
       console.error('Failed to save coach memo:', error);
+    }
+  };
+
+  const handleOpenNoticeEditor = () => {
+    setIsNoticeEditorOpen(true);
+    setNoticeError('');
+  };
+
+  const handleCancelNoticeEditor = () => {
+    setIsNoticeEditorOpen(false);
+    setNoticeTitle('');
+    setNoticeContent('');
+    setNoticeError('');
+  };
+
+  const handleSaveNotice = async () => {
+    const trimmedTitle = noticeTitle.trim();
+    if (!trimmedTitle) {
+      setNoticeError('공지 제목을 입력해주세요.');
+      return;
+    }
+
+    try {
+      setNoticeSubmitting(true);
+      setNoticeError('');
+
+      await NoticeService.createNoticePost(boxName, {
+        title: trimmedTitle,
+        content: noticeContent
+      });
+
+      const refreshedNotices = await NoticeService.getRecentNoticePosts(boxName);
+      setNoticePosts(refreshedNotices);
+      handleCancelNoticeEditor();
+    } catch (error) {
+      console.error('Failed to save notice post:', error);
+      setNoticeError('공지 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setNoticeSubmitting(false);
     }
   };
 
@@ -218,6 +268,73 @@ const Dashboard = () => {
               <span className="coach-memo-saved-text">{memoSavedAt} 저장됨</span>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="notice-board-card">
+        <div className="notice-board-header">
+          <div>
+            <div className="notice-board-title">공지</div>
+            <div className="notice-board-subtitle">일정, 회원관리 등을 공지하고 확인할 수 있어요</div>
+          </div>
+          <button type="button" className="notice-add-btn" onClick={handleOpenNoticeEditor}>
+            <Plus className="notice-add-icon" />
+            공지 추가
+          </button>
+        </div>
+
+        {isNoticeEditorOpen && (
+          <div className="notice-editor">
+            <input
+              type="text"
+              className="notice-input"
+              placeholder="공지 제목"
+              value={noticeTitle}
+              onChange={(e) => setNoticeTitle(e.target.value)}
+              maxLength={80}
+            />
+            <textarea
+              className="notice-textarea"
+              placeholder="공지 내용을 입력하세요."
+              value={noticeContent}
+              onChange={(e) => setNoticeContent(e.target.value)}
+              maxLength={1000}
+            />
+            <div className="notice-editor-actions">
+              <button
+                type="button"
+                className="notice-cancel-btn"
+                onClick={handleCancelNoticeEditor}
+                disabled={noticeSubmitting}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className="notice-submit-btn"
+                onClick={handleSaveNotice}
+                disabled={noticeSubmitting}
+              >
+                {noticeSubmitting ? '저장 중...' : '저장'}
+              </button>
+            </div>
+            {noticeError && <div className="notice-error-text">{noticeError}</div>}
+          </div>
+        )}
+
+        <div className="notice-board-list">
+          {noticeLoading ? (
+            <div className="notice-empty">공지 게시글을 불러오는 중입니다.</div>
+          ) : noticePosts.length === 0 ? (
+            <div className="notice-empty">아직 등록된 공지 게시글이 없습니다.</div>
+          ) : (
+            noticePosts.map((notice) => (
+              <div key={notice.id} className="notice-row">
+                <span className="notice-title">{notice.title}</span>
+                <span className="notice-meta">{notice.createdAtText}</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
       
@@ -676,6 +793,176 @@ const Dashboard = () => {
           color: #64748b;
         }
 
+        .notice-board-card {
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 14px;
+          padding: 0;
+          overflow: hidden;
+          margin-bottom: 20px;
+        }
+
+        .notice-board-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 16px 20px;
+          background: ${Gradients.primary};
+          color: #ffffff;
+        }
+
+        .notice-board-title {
+          font-size: 18px;
+          font-weight: 700;
+          color: #ffffff;
+          line-height: 1.2;
+        }
+
+        .notice-board-subtitle {
+          margin-top: 4px;
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.86);
+        }
+
+        .notice-add-btn {
+          border: none;
+          background: rgba(255, 255, 255, 0.2);
+          color: #ffffff;
+          border-radius: 999px;
+          padding: 8px 18px;
+          font-size: 13px;
+          font-weight: 700;
+          line-height: 1;
+          cursor: pointer;
+          white-space: nowrap;
+          min-height: 34px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .notice-add-btn:hover {
+          background: rgba(255, 255, 255, 0.28);
+        }
+
+        .notice-add-icon {
+          width: 14px;
+          height: 14px;
+        }
+
+        .notice-board-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          padding: 16px 20px 20px;
+        }
+
+        .notice-editor {
+          border: 1px solid #e5e7eb;
+          border-radius: 10px;
+          padding: 12px;
+          background: #f9fafb;
+          margin: 16px 20px 14px;
+        }
+
+        .notice-input,
+        .notice-textarea {
+          width: 100%;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          font-family: inherit;
+          font-size: 14px;
+          color: #1f2937;
+          background: #ffffff;
+        }
+
+        .notice-input {
+          height: 38px;
+          padding: 0 12px;
+          margin-bottom: 8px;
+        }
+
+        .notice-textarea {
+          min-height: 90px;
+          resize: vertical;
+          padding: 10px 12px;
+          line-height: 1.4;
+        }
+
+        .notice-input:focus,
+        .notice-textarea:focus {
+          outline: none;
+          border-color: ${AppColors.primary};
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .notice-editor-actions {
+          margin-top: 10px;
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+        }
+
+        .notice-cancel-btn,
+        .notice-submit-btn {
+          border: none;
+          border-radius: 999px;
+          font-size: 12px;
+          font-weight: 700;
+          padding: 7px 14px;
+          cursor: pointer;
+        }
+
+        .notice-cancel-btn {
+          color: #374151;
+          background: #e5e7eb;
+        }
+
+        .notice-submit-btn {
+          color: #ffffff;
+          background: ${AppColors.primary};
+        }
+
+        .notice-submit-btn:disabled,
+        .notice-cancel-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .notice-error-text {
+          margin-top: 8px;
+          font-size: 12px;
+          color: #dc2626;
+        }
+
+        .notice-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 20px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid #f3f4f6;
+        }
+
+        .notice-title {
+          font-size: 16px;
+          color: #1f2937;
+          font-weight: 500;
+        }
+
+        .notice-meta {
+          color: #6b7280;
+          font-size: 15px;
+          white-space: nowrap;
+        }
+
+        .notice-empty {
+          padding: 20px 0;
+          color: #9ca3af;
+          font-size: 15px;
+        }
+
         @media (max-width: 1024px) {
           .dashboard-page .dashboard-top-layout {
             grid-template-columns: 1fr;
@@ -689,6 +976,32 @@ const Dashboard = () => {
         .dashboard-page .content-grid {
           grid-template-columns: minmax(0, 2.6fr) minmax(280px, 1fr);
           gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+          .notice-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+          }
+
+          .notice-add-btn {
+            font-size: 12px;
+            padding: 7px 14px;
+            min-height: 30px;
+          }
+
+          .notice-board-title {
+            font-size: 22px;
+          }
+
+          .notice-title {
+            font-size: 15px;
+          }
+
+          .notice-meta {
+            font-size: 13px;
+          }
         }
       `}</style>
     </div>
