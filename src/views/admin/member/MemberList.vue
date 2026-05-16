@@ -4,6 +4,11 @@
       <strong>회원 관리</strong>
       <div class="float-end">
         <CButton
+          @click="appliedMembers"
+          class="position-relative header-button" size="sm">
+          <strong>회원승인</strong>
+        </CButton>
+        <CButton
           @click="approveMembers"
           class="position-relative header-button" size="sm">
           <strong>회원추가</strong>
@@ -82,6 +87,7 @@
       </EasyDataTable>
     </CCardBody>
   </CCard>
+  <apply-request-modal ref="applyRequestModal"/>
   <approval-request-modal ref="approvalRequestModal"/>
   <member-details-modal ref="memberDetailsModal" />
   <member-deletion-modal ref="deleteModal" />
@@ -101,6 +107,7 @@ import {
   findMemberById,
   getMembershipInfo
 } from "@/views/admin/util/member"
+import ApplyRequestModal from "./modal/ApplyRequestModal.vue";
 import ApprovalRequestModal from "@/views/admin/member/modal/ApprovalRequestModal.vue";
 import MemberDetailsModal from "@/views/admin/member/modal/MemberDetailsModal.vue";
 import MemberDeletionModal from "@/views/admin/member/modal/MemberDeletionModal.vue";
@@ -111,6 +118,7 @@ export default defineComponent({
   components: {
     MemberDeletionModal,
     MemberDetailsModal,
+    ApplyRequestModal,
     ApprovalRequestModal,
     MembershipPlanModal,
     MembershipModal,
@@ -179,6 +187,9 @@ export default defineComponent({
     }
   },
   methods: {
+    appliedMembers() {
+      this.$refs.applyRequestModal.showModal()
+    },
     approveMembers() {
       this.$refs.approvalRequestModal.showModal()
     },

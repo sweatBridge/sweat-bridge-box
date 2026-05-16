@@ -1,0 +1,1523 @@
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Search, Users, User, UserPlus, CircleUser, CreditCard, Trash2, Settings, ChevronLeft, ChevronRight, Calendar, Phone } from 'lucide-react';
+import { Member, ToastMessageType } from '../types/member';
+import { useMemberManagement } from '../hooks/useMemberManagement';
+import MemberDeletionModal from '../components/modals/member/MemberDeletionModal';
+import MembershipPlanModal from '../components/modals/membership/MembershipPlanModal';
+import ExtendAllModal from '../components/modals/membership/ExtendAllModal';
+import MemberManagementModal from '../components/modals/member/MemberManagementModal';
+import WarningMembersModal from '../components/modals/member/WarningMembersModal';
+import NewMembersModal from '../components/modals/member/NewMembersModal';
+import ActiveMembersModal from '../components/modals/member/ActiveMembersModal';
+import AddMemberModal from '../components/modals/member/AddMemberModal';
+import ApplyRequestModal from '../components/modals/member/ApplyRequestModal';
+import ToastMessage from '../components/ToastMessage';
+import { filterMembers, formatPhoneNumber } from '../utils/memberUtils';
+import { MemberService } from '../services/memberService';
+import { MembershipService } from '../services/membershipService';
+import { usePageContext } from '../contexts/PageContext';
+import { Gradients } from '../constants/gradients';
+import { AppColors } from '../constants/colors';
+
+const MemberManagement = () => {
+  const { setPageInfo } = usePageContext();
+  
+  // Firebase 연동 훅
+  const {
+    members,
+    loading,
+    error,
+    loadMembers,
+    deleteMember,
+    updateMemberMemo,
+    clearError
+  } = useMemberManagement();
+
+  // 상태 관리
+  const [searchValue, setSearchValue] = useState('');
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [activeTab, setActiveTab] = useState<'current' | 'expired'>('current');
+  const [memberManagementModalVisible, setMemberManagementModalVisible] = useState(false);
+  const [deletionModalVisible, setDeletionModalVisible] = useState(false);
+  const [membershipPlanModalVisible, setMembershipPlanModalVisible] = useState(false);
+  const [warningMembersModalVisible, setWarningMembersModalVisible] = useState(false);
+  const [newMembersModalVisible, setNewMembersModalVisible] = useState(false);
+  const [activeMembersModalVisible, setActiveMembersModalVisible] = useState(false);
+  const [memberListModalVisible, setMemberListModalVisible] = useState(false);
+  const [addMemberModalVisible, setAddMemberModalVisible] = useState(false);
+  const [applyRequestModalVisible, setApplyRequestModalVisible] = useState(false);
+  const [extendAllModalVisible, setExtendAllModalVisible] = useState(false);
+  const [pendingApplicantsCount, setPendingApplicantsCount] = useState(0);
+
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // Toast message
+  const [createToast, setCreateToast] = useState<((toast: ToastMessageType) => void) | null>(null);
+
+  // 페이지 정보 설정
+  useEffect(() => {
+    setPageInfo({
+      title: '회원 관리',
+      subtitle: '회원 정보를 조회하고 관리하세요'
+    });
+  }, [setPageInfo]);
+
+  // 컴포넌트 마운트 시 데이터 로드
+  useEffect(() => {
+    loadMembers();
+  }, [loadMembers]);
+
+  // 승인 대기 회원 수 로드
+  const loadPendingApplicantsCount = useCallback(async () => {
+    const boxName = localStorage.getItem('boxName') || '';
+    if (!boxName) return;
+    try {
+      const applicants = await MemberService.fetchApplicants(boxName);
+      setPendingApplicantsCount(applicants.length);
+    } catch (error) {
+      console.error('Failed to load pending applicants count:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadPendingApplicantsCount();
+  }, [loadPendingApplicantsCount]);
+
+  // 에러 처리
+  useEffect(() => {
+    if (error && createToast) {
+      createToast({
+        type: 'danger',
+        message: error
+      });
+      clearError();
+    }
+  }, [error, createToast, clearError]);
+
+  // 통계 계산 및 뱃지 정보 미리 계산 (페이지 로드 시 한 번만 계산)
+  const { 
+    activeMembersCount, 
+    warningMembersCount, 
+    newMembersCount,
+    totalMembersCount, 
+    activeMembers,
+    warningMembers,
+    newMembers,
+    memberBadgesMap 
+  } = useMemo(() => {
+    let active = 0;
+    let warning = 0;
+    let newMembers = 0;
+    const activeList: Member[] = [];
+    const warningList: Member[] = [];
+    const newMembersList: Member[] = [];
+    const badgesMap = new Map<string, {
+      membershipTypeBadges: Array<{ label: string; colorClass: string }>;
+      memberStatusBadge: { status: string; colorClass: string };
+    }>();
+    
+    members.forEach(member => {
+      // 회원권 상태 뱃지 정보 가져오기 (기간권 > 횟수권 > 없음 > 홀딩)
+      const membershipTypeBadges = MembershipService.getMembershipStatusBadges(member);
+      // 회원 상태 뱃지 정보 가져오기 (신규 > 주의 > 활성 > 비활성)
+      const memberStatusBadge = MembershipService.getMemberStatusBadge(member);
+      
+      // 뱃지 정보를 Map에 저장
+      badgesMap.set(member.email, {
+        membershipTypeBadges,
+        memberStatusBadge
+      });
+      
+      // 통계 계산
+      if (memberStatusBadge.status === '신규') {
+        newMembers++;
+        newMembersList.push(member);
+      } else if (memberStatusBadge.status === '활성') {
+        active++;
+        activeList.push(member);
+      } else if (memberStatusBadge.status === '주의') {
+        warning++;
+        warningList.push(member);
+      }
+    });
+    
+    return {
+      activeMembersCount: active,
+      warningMembersCount: warning,
+      newMembersCount: newMembers,
+      totalMembersCount: active + warning + newMembers,
+      activeMembers: activeList,
+      warningMembers: warningList,
+      newMembers: newMembersList,
+      memberBadgesMap: badgesMap
+    };
+  }, [members]);
+
+  // 검색된 회원 필터링 (탭에 따라 추가 필터링)
+  const filteredMembers = useMemo(() => {
+    const filtered = filterMembers(members, searchValue);
+    
+    // 탭에 따라 추가 필터링
+    if (activeTab === 'expired') {
+      return filtered.filter(member => member.membershipInfo.type === '만료');
+    } else {
+      return filtered.filter(member => member.membershipInfo.type !== '만료');
+    }
+  }, [members, searchValue, activeTab]);
+  
+  // 2단계 정렬: 1순위 - 상태 뱃지, 2순위 - 회원권 타입 뱃지 (미리 계산된 뱃지 정보 사용)
+  const sortedMembers = useMemo(() => {
+    return [...filteredMembers].sort((a, b) => {
+    // 미리 계산된 뱃지 정보 사용
+    const badgesA = memberBadgesMap.get(a.email);
+    const badgesB = memberBadgesMap.get(b.email);
+    
+    if (!badgesA || !badgesB) return 0;
+    
+    // 1순위: 상태 뱃지 (new > warning > active > inactive)
+    const statusBadgeA = badgesA.memberStatusBadge;
+    const statusBadgeB = badgesB.memberStatusBadge;
+    
+    const statusPriorityMap: { [key: string]: number } = {
+      'warning': 1,
+      'new': 2,
+      'active': 3,
+      'inactive': 4
+    };
+    
+    const statusPriorityA = statusPriorityMap[statusBadgeA.colorClass] || 999;
+    const statusPriorityB = statusPriorityMap[statusBadgeB.colorClass] || 999;
+    
+    // 1순위가 다르면 1순위로 정렬
+    if (statusPriorityA !== statusPriorityB) {
+      return statusPriorityA - statusPriorityB;
+    }
+    
+    // 1순위가 같으면 2순위로 정렬: 회원권 타입 뱃지 (primary > hold > none)
+    const membershipBadgeA = badgesA.membershipTypeBadges[0] || { colorClass: '' };
+    const membershipBadgeB = badgesB.membershipTypeBadges[0] || { colorClass: '' };
+    
+    const membershipPriorityMap: { [key: string]: number } = {
+      'primary': 1,
+      'hold': 2,
+      'none': 3
+    };
+    
+    const membershipPriorityA = membershipPriorityMap[membershipBadgeA.colorClass] || 999;
+    const membershipPriorityB = membershipPriorityMap[membershipBadgeB.colorClass] || 999;
+    
+    return membershipPriorityA - membershipPriorityB;
+    });
+  }, [filteredMembers, memberBadgesMap]);
+  
+  // 페이지네이션 계산
+  const totalPages = Math.ceil(sortedMembers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  
+  // 검색어나 탭이 변경되면 첫 페이지로 이동
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchValue, activeTab]);
+
+  // 회원 삭제
+  const handleDeleteMember = useCallback((member: Member) => {
+    setSelectedMember(member);
+    setDeletionModalVisible(true);
+  }, []);
+
+  // 회원 삭제 실행
+  const handleConfirmDelete = useCallback(async (email: string) => {
+    try {
+      await deleteMember(email);
+      if (createToast) {
+        createToast({
+          type: 'success',
+          message: '회원이 성공적으로 삭제되었습니다.'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete member', error);
+      if (createToast) {
+        createToast({
+          type: 'danger',
+          message: '회원 삭제에 실패했습니다.'
+        });
+      }
+    }
+  }, [deleteMember, createToast]);
+
+  // 회원권 관리
+  const handleManageMembership = useCallback((member: Member) => {
+    setSelectedMember(member);
+    setMemberManagementModalVisible(true);
+  }, []);
+
+  // 회원 추가
+  const handleAddMember = useCallback(() => {
+    setAddMemberModalVisible(true);
+  }, []);
+
+  // 회원권 플랜 관리
+  const handleManageMembershipPlans = useCallback(() => {
+    setMembershipPlanModalVisible(true);
+  }, []);
+
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // 이전 페이지
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  // 다음 페이지
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  // 회원 리스트 모달 열기
+  const handleOpenMemberList = (type: 'active' | 'warning' | 'new') => {
+    if (type === 'active') {
+      setActiveMembersModalVisible(true);
+    } else if (type === 'warning') {
+      setWarningMembersModalVisible(true);
+    } else if (type === 'new') {
+      setNewMembersModalVisible(true);
+    }
+  };
+
+  // 주의 회원 모달에서 회원 클릭 시
+  const handleWarningMemberClick = (member: Member) => {
+    setWarningMembersModalVisible(false);
+    setSelectedMember(member);
+    setMemberManagementModalVisible(true);
+  };
+
+  // 활성 회원 모달에서 회원 클릭 시
+  const handleActiveMemberClick = (member: Member) => {
+    setActiveMembersModalVisible(false);
+    setSelectedMember(member);
+    setMemberManagementModalVisible(true);
+  };
+
+  // 신규 회원 모달에서 회원 클릭 시
+  const handleNewMemberClick = (member: Member) => {
+    setNewMembersModalVisible(false);
+    setSelectedMember(member);
+    setMemberManagementModalVisible(true);
+  };
+
+  return (
+    <div className="dashboard member-management-page">
+      {/* 액션 버튼들 */}
+      <div className="actions-bar">
+        <button className="btn btn-info btn-with-badge" onClick={() => setApplyRequestModalVisible(true)}>
+          <Users size={16} />
+          승인 대기 목록
+          {pendingApplicantsCount > 0 && (
+            <span className="notification-badge">{pendingApplicantsCount}</span>
+          )}
+        </button>
+        <button className="btn btn-primary" onClick={handleAddMember}>
+          <UserPlus size={16} />
+          회원 추가
+        </button>
+        <button className="btn btn-primary" onClick={handleManageMembershipPlans}>
+          <CreditCard size={16} />
+          회원권 관리
+        </button>
+        <button className="btn btn-primary" onClick={() => setExtendAllModalVisible(true)}>
+          <Calendar size={16} />
+          전체 연장
+        </button>
+      </div>
+
+      {/* 통계 카드들 */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-card-icon">
+            <Users size={20} />
+          </div>
+          <div className="stat-card-content">
+            <div className="stat-card-label">총 회원</div>
+            <div className="stat-card-value">{totalMembersCount}명</div>
+          </div>
+        </div>
+
+        <div className="stat-card clickable" onClick={() => handleOpenMemberList('active')}>
+          <div className="stat-card-icon active">
+            <User size={20} />
+          </div>
+          <div className="stat-card-content">
+            <div className="stat-card-label">활성 회원</div>
+            <div className="stat-card-value">{activeMembersCount}명</div>
+          </div>
+        </div>
+
+        <div className="stat-card clickable" onClick={() => handleOpenMemberList('warning')}>
+          <div className="stat-card-icon warning">
+            <User size={20} />
+          </div>
+          <div className="stat-card-content">
+            <div className="stat-card-label">주의 회원</div>
+            <div className="stat-card-value">{warningMembersCount}명</div>
+          </div>
+        </div>
+
+        <div className="stat-card clickable" onClick={() => handleOpenMemberList('new')}>
+          <div className="stat-card-icon new">
+            <User size={20} />
+          </div>
+          <div className="stat-card-content">
+            <div className="stat-card-label">신규 회원</div>
+            <div className="stat-card-value">{newMembersCount}명</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 검색 + 회원 목록 카드 (단일 컨테이너) */}
+      <div className="content-card" style={{ flex: 1 }}>
+        <div className="search-section">
+          <div className="search-container">
+            <Search size={18} className="search-icon" />
+            <input
+              type="text"
+              placeholder="이름, 닉네임, 이메일로 검색..."
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          {/* 탭 메뉴 */}
+          <div className="table-tabs">
+            <button
+              className={`tab-button ${activeTab === 'current' ? 'active' : ''}`}
+              onClick={() => setActiveTab('current')}
+            >
+              현재
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'expired' ? 'active' : ''}`}
+              onClick={() => setActiveTab('expired')}
+            >
+              만료
+            </button>
+          </div>
+        </div>
+        {loading ? (
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>회원 정보를 불러오는 중...</p>
+          </div>
+        ) : (
+          <div className="members-table-container">
+            
+            <div className="members-table">
+              <div className="table-header">
+                <div className="table-cell">이름</div>
+                <div className="table-cell">닉네임</div>
+                <div className="table-cell">등록 타입</div>
+                <div className="table-cell">연락처</div>
+                <div className="table-cell">만료일</div>
+                <div className="table-cell">횟수</div>
+                <div className="table-cell">관리</div>
+              </div>
+
+              {sortedMembers.length === 0 ? (
+                <div className="empty-state">
+                  <Users size={48} className="empty-icon" />
+                  <h3>회원이 없습니다</h3>
+                  <p>{searchValue ? '검색 조건에 맞는 회원이 없습니다.' : '등록된 회원이 없습니다.'}</p>
+                </div>
+              ) : (
+                sortedMembers.slice(startIndex, endIndex).map((member, index) => {
+                  // 미리 계산된 뱃지 정보 사용
+                  const badges = memberBadgesMap.get(member.email) || {
+                    membershipTypeBadges: [],
+                    memberStatusBadge: { status: '', colorClass: '' }
+                  };
+                  const membershipTypeBadges = badges.membershipTypeBadges;
+                  const memberStatusBadge = badges.memberStatusBadge;
+                  
+                  return (
+                    <div key={member.email} className="table-row">
+                      <div className="table-cell">
+                        <div className="member-name-cell">
+                          <div className="member-avatar">
+                            <CircleUser size={16} />
+                          </div>
+                          <span>{member.realName}</span>
+                        </div>
+                      </div>
+                      <div className="table-cell">
+                        <div className="nickname-with-badge">
+                          <span className={`member-status-badge ${memberStatusBadge.colorClass}`}>
+                            {memberStatusBadge.status}
+                          </span>
+                          <span>{member.nickName}</span>
+                        </div>
+                      </div>
+                      <div className="table-cell">
+                        <div className="membership-badges">
+                          {membershipTypeBadges.map((badge, idx) => (
+                            <span key={idx} className={`membership-badge ${badge.colorClass}`}>
+                              {badge.label}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="table-cell">
+                        <div className="contact-cell">
+                          <Phone size={16} className="phone-icon" />
+                          <span>{formatPhoneNumber(member.phone)}</span>
+                        </div>
+                      </div>
+                    <div className="table-cell">
+                      <div className="expiry-date-cell">
+                        <div className="expiry-status">
+                          {(() => {
+                            const remainingDays = member.membershipInfo.remainingDays;
+                            if (remainingDays === '-' || remainingDays === null || remainingDays === undefined) {
+                              return '-';
+                            }
+                            const days = typeof remainingDays === 'string' ? parseInt(remainingDays) : remainingDays;
+                            if (isNaN(days) || days <= 0) {
+                              return '-';
+                            }
+                            return `${days}일 남음`;
+                          })()}
+                        </div>
+                        <div className="expiry-date-label">
+                          만료: {member.membershipInfo.expiryDate === '-' || member.membershipInfo.expiryDate === '만료됨' ? '-' : member.membershipInfo.expiryDate}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="table-cell">{member.membershipInfo.remainingVisits}회</div>
+                    <div className="table-cell actions-cell">
+                      <div className="action-buttons">
+                        <button 
+                          className="btn btn-sm btn-info"
+                          onClick={() => handleManageMembership(member)}
+                          title="회원권 관리"
+                        >
+                          <Settings size={14} />
+                        </button>
+                        <button 
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleDeleteMember(member)}
+                          title="회원 삭제"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            
+            {/* 페이지네이션 */}
+            {sortedMembers.length > 0 && totalPages > 1 && (
+              <div className="pagination-container">
+                <div className="pagination-info">
+                  <span>
+                    {startIndex + 1}-{Math.min(endIndex, sortedMembers.length)} / {sortedMembers.length}명
+                  </span>
+                </div>
+                
+                <div className="pagination-controls">
+                  <button 
+                    className="pagination-btn" 
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  
+                  <div className="page-numbers">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        className={`page-number ${page === currentPage ? 'active' : ''}`}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <button 
+                    className="pagination-btn" 
+                    onClick={handleNextPage}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Modals */}
+      {selectedMember && (
+        <MemberManagementModal
+          visible={memberManagementModalVisible}
+          member={selectedMember}
+          onClose={(hasDataChanged) => {
+            setMemberManagementModalVisible(false);
+            // 회원권 데이터가 변경된 경우에만 회원 목록 새로고침
+            if (hasDataChanged) {
+              loadMembers();
+            }
+          }}
+          onSuccess={(message) => {
+            if (createToast) {
+              createToast({
+                type: 'success',
+                message
+              });
+            }
+          }}
+          onError={(message) => {
+            if (createToast) {
+              createToast({
+                type: 'danger',
+                message
+              });
+            }
+          }}
+          onMemoUpdate={async (email, memo) => {
+            try {
+              await updateMemberMemo(email, memo);
+              // selectedMember도 업데이트
+              if (selectedMember && selectedMember.email === email) {
+                setSelectedMember({ ...selectedMember, memo });
+              }
+            } catch (error) {
+              console.error('Failed to update member memo in parent:', error);
+            }
+          }}
+        />
+      )}
+
+      <MemberDeletionModal
+        visible={deletionModalVisible}
+        member={selectedMember}
+        onClose={() => setDeletionModalVisible(false)}
+        onDelete={handleConfirmDelete}
+      />
+
+      <MembershipPlanModal
+        visible={membershipPlanModalVisible}
+        onClose={() => setMembershipPlanModalVisible(false)}
+        onSuccess={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'success',
+              message
+            });
+          }
+        }}
+        onError={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'danger',
+              message
+            });
+          }
+        }}
+      />
+
+      {/* 활성 회원 모달 */}
+      <ActiveMembersModal
+        visible={activeMembersModalVisible}
+        members={activeMembers}
+        onClose={() => setActiveMembersModalVisible(false)}
+        onMemberClick={handleActiveMemberClick}
+      />
+
+      {/* 주의 회원 모달 */}
+      <WarningMembersModal
+        visible={warningMembersModalVisible}
+        members={warningMembers}
+        onClose={() => setWarningMembersModalVisible(false)}
+        onMemberClick={handleWarningMemberClick}
+      />
+
+      {/* 신규 회원 모달 */}
+      <NewMembersModal
+        visible={newMembersModalVisible}
+        members={newMembers}
+        onClose={() => setNewMembersModalVisible(false)}
+        onMemberClick={handleNewMemberClick}
+      />
+
+      {/* 회원 추가 모달 */}
+      <AddMemberModal
+        visible={addMemberModalVisible}
+        onClose={() => {
+          setAddMemberModalVisible(false);
+          loadMembers(); // 회원 목록 새로고침
+        }}
+        onSuccess={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'success',
+              message
+            });
+          }
+          loadMembers(); // 회원 목록 새로고침
+        }}
+        onError={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'danger',
+              message
+            });
+          }
+        }}
+        createToast={createToast ? (toast) => createToast(toast) : undefined}
+      />
+
+      {/* 승인 대기 목록 모달 */}
+      <ApplyRequestModal
+        visible={applyRequestModalVisible}
+        onClose={() => {
+          setApplyRequestModalVisible(false);
+          loadMembers(); // 회원 목록 새로고침
+          loadPendingApplicantsCount(); // 승인 대기 수 갱신
+        }}
+        onSuccess={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'success',
+              message
+            });
+          }
+          loadMembers(); // 회원 목록 새로고침
+          loadPendingApplicantsCount(); // 승인 대기 수 갱신
+        }}
+        onError={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'danger',
+              message
+            });
+          }
+        }}
+      />
+
+      {/* 전체 연장 모달 */}
+      <ExtendAllModal
+        visible={extendAllModalVisible}
+        onClose={() => {
+          setExtendAllModalVisible(false);
+          loadMembers(); // 회원 목록 새로고침
+        }}
+        onSuccess={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'success',
+              message
+            });
+          }
+          loadMembers(); // 회원 목록 새로고침
+        }}
+        onError={(message) => {
+          if (createToast) {
+            createToast({
+              type: 'danger',
+              message
+            });
+          }
+        }}
+      />
+
+      {/* 신규 회원 리스트 모달 (임시) */}
+      {memberListModalVisible && (
+        <div className="modal-overlay" onClick={() => setMemberListModalVisible(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>신규 회원 목록</h3>
+              <button className="modal-close" onClick={() => setMemberListModalVisible(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p className="text-muted">
+                최근 등록된 신규 회원 목록입니다.
+              </p>
+              <div className="member-list-placeholder">
+                <Users size={48} className="placeholder-icon" />
+                <p>기능 준비 중입니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Messages */}
+      <ToastMessage
+        onCreateToast={(createToastFn: (toast: ToastMessageType) => void) => setCreateToast(() => createToastFn)}
+      />
+
+      <style>{`
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+
+        .stat-card {
+          background: white;
+          border-radius: 12px;
+          padding: 16px 20px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+          transform: translateY(-2px);
+        }
+
+        .stat-card.clickable {
+          cursor: pointer;
+        }
+
+        .stat-card.clickable:active {
+          transform: translateY(0);
+        }
+
+        .stat-card-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 10px;
+          background-color: ${AppColors.primary};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #ffffff;
+          flex-shrink: 0;
+        }
+
+        .stat-card-icon.active {
+          background-color: ${AppColors.success};
+          color: #ffffff;
+        }
+
+        .stat-card-icon.warning {
+          background-color: ${AppColors.warning};
+          color: #ffffff;
+        }
+
+        .stat-card-icon.new {
+          background-color: ${AppColors.info};
+          color: #ffffff;
+        }
+
+        .stat-card-content {
+          flex: 1;
+        }
+
+        .stat-card-label {
+          font-size: 13px;
+          color: ${AppColors.textSecondary};
+          margin-bottom: 6px;
+          font-weight: 500;
+        }
+
+        .stat-card-value {
+          font-size: 20px;
+          font-weight: 700;
+          color: ${AppColors.textPrimary};
+        }
+
+        .actions-bar {
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+
+        .btn-primary {
+          background: ${Gradients.primary};
+          border: none;
+          color: white;
+          font-size: 14px;
+          font-weight: 500;
+          padding: 10px 20px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+          background: ${Gradients.primaryHover};
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+          transform: translateY(-1px);
+        }
+
+          .btn-secondary {
+            background: white;
+            border: 2px solid ${AppColors.primary};
+            color: ${AppColors.primary};
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+
+          .btn-secondary:hover {
+            background: ${AppColors.primary};
+            color: white;
+            transform: translateY(-1px);
+          }
+
+          /* 상단 액션 영역 - 승인 대기 버튼 전용 스타일 */
+          .actions-bar .btn-info {
+            background: ${Gradients.primary};
+            border: none;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+          }
+
+          .actions-bar .btn-info:hover {
+            background: ${Gradients.primaryHover};
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+            transform: translateY(-1px);
+          }
+
+          .actions-bar .btn-info svg {
+            color: white;
+          }
+
+          .btn-with-badge {
+            position: relative;
+          }
+
+          .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: white;
+            color: ${AppColors.primary};
+            font-size: 12px;
+            font-weight: 700;
+            min-width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border: 2px solid ${AppColors.primary};
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          }
+
+        .search-section {
+          margin-bottom: 0;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 16px;
+        }
+
+        .search-container {
+          position: relative;
+          max-width: 400px;
+          flex: 1;
+        }
+
+        .search-icon {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: ${AppColors.secondary};
+        }
+
+        .search-input {
+          width: 100%;
+          padding: 10px 12px 10px 40px;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          font-size: 14px;
+          transition: all 0.2s;
+        }
+
+        .search-input:focus {
+          outline: none;
+          border-color: ${AppColors.primary};
+          box-shadow: 0 0 0 3px rgba(49, 130, 246, 0.1);
+        }
+
+        .members-table-container {
+          overflow-x: auto;
+        }
+
+        .table-tabs {
+          display: flex;
+          gap: 0;
+          background-color: #f3f4f6;
+          border-radius: 8px;
+          padding: 4px;
+        }
+
+        .tab-button {
+          padding: 8px 16px;
+          border: none;
+          background: transparent;
+          color: ${AppColors.secondary};
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          border-radius: 6px;
+          transition: all 0.2s;
+        }
+
+        .tab-button:hover {
+          color: ${AppColors.textSecondary};
+        }
+
+        .tab-button.active {
+          background-color: ${AppColors.surface};
+          color: ${AppColors.textPrimary};
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .member-management-page .members-table {
+          width: 100%;
+          min-width: 700px;
+        }
+
+        .member-management-page .table-header {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr 1.2fr 1.5fr 1fr 120px;
+          gap: 16px;
+          padding: 16px;
+          background-color: ${AppColors.background};
+          border-bottom: 2px solid #e2e8f0;
+          font-weight: 600;
+          color: ${AppColors.textPrimary};
+          font-size: 14px;
+        }
+
+        .member-management-page .table-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr 1.2fr 1.5fr 1fr 120px;
+          gap: 16px;
+          padding: 16px;
+          border-bottom: 1px solid #e5e7eb;
+          transition: all 0.2s;
+        }
+
+        .member-management-page .table-row:hover {
+          background-color: #f9fafb;
+        }
+
+        .member-management-page .table-cell {
+          display: flex;
+          align-items: center;
+          font-size: 14px;
+          color: ${AppColors.textPrimary};
+        }
+
+        /* 헤더/바디 모두에서 관리 컬럼을 중앙 정렬 */
+        .member-management-page .table-header .table-cell:last-child {
+          justify-content: center;
+        }
+
+        .member-name-cell {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .member-avatar {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 28px;
+          height: 28px;
+          background: ${Gradients.primary};
+          color: white;
+          border-radius: 50%;
+          flex-shrink: 0;
+        }
+
+        .membership-badges {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
+        .membership-badge {
+          padding: 2px 10px;
+          border-radius: 9999px;
+          font-size: 11px;
+          font-weight: 500;
+          border-width: 1px;
+        }
+
+        /* 등록 타입 뱃지 – outline 스타일 */
+        .membership-badge.primary {
+          background-color: transparent;
+          border-style: solid;
+          border-color: rgba(49, 130, 246, 0.35);
+          color: ${AppColors.primary};
+        }
+
+        .membership-badge.none {
+          background-color: transparent;
+          border-style: solid;
+          border-color: rgba(234, 179, 8, 0.5);
+          color: #a16207;
+        }
+
+        .membership-badge.hold {
+          background-color: transparent;
+          border-style: solid;
+          border-color: rgba(249, 115, 22, 0.5);
+          color: #c05621;
+        }
+
+        .membership-badge.expired {
+          background-color: transparent;
+          border-style: solid;
+          border-color: rgba(156, 163, 175, 0.6);
+          color: #4b5563;
+        }
+
+        .nickname-with-badge {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .member-status-badge {
+          display: inline-block;
+          padding: 2px 10px;
+          border-radius: 12px;
+          font-size: 11px;
+          font-weight: 500;
+          border-width: 0;
+        }
+
+        /* 상태 뱃지 – 소프트 필 스타일 */
+        .member-status-badge.new {
+          background-color: rgba(49, 130, 246, 0.1);
+          color: ${AppColors.primary};
+        }
+
+        .member-status-badge.warning {
+          background-color: rgba(234, 179, 8, 0.12);
+          color: #b45309;
+        }
+
+        .member-status-badge.active {
+          background-color: rgba(34, 197, 94, 0.12);
+          color: #15803d;
+        }
+
+        .member-status-badge.inactive {
+          background-color: rgba(148, 163, 184, 0.14);
+          color: #4b5563;
+        }
+
+        .expiry-date-cell {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .expiry-status {
+          font-size: 14px;
+          font-weight: 600;
+          color: ${AppColors.textPrimary};
+        }
+
+        .expiry-date-label {
+          font-size: 12px;
+          color: ${AppColors.secondary};
+        }
+
+        .contact-cell {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: ${AppColors.textPrimary};
+        }
+
+        .phone-icon {
+          color: ${AppColors.textPrimary};
+          flex-shrink: 0;
+        }
+
+        .action-buttons {
+          display: flex;
+          gap: 6px;
+          justify-content: center;
+          align-items: center;
+        }
+
+        .actions-cell {
+          display: flex;
+          justify-content: center;
+        }
+
+        .btn {
+          padding: 8px 16px;
+          border-radius: 6px;
+          border: 1px solid;
+          cursor: pointer;
+          font-weight: 500;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .btn-sm {
+          padding: 6px 8px;
+          font-size: 12px;
+        }
+
+        /* 테이블 관리 컬럼 - 아이콘 전용 버튼 스타일 */
+        .members-table .btn-sm.btn-info {
+          background-color: transparent;
+          border-color: transparent;
+          color: ${AppColors.textSecondary}; /* 설정 아이콘: 회색 */
+        }
+
+        .members-table .btn-sm.btn-info:hover {
+          background-color: rgba(15, 23, 42, 0.04);
+          border-color: transparent;
+        }
+
+        .members-table .btn-sm.btn-danger {
+          background-color: transparent;
+          border-color: transparent;
+          color: ${AppColors.error}; /* 휴지통 아이콘: 빨간색 */
+        }
+
+        .members-table .btn-sm.btn-danger:hover {
+          background-color: rgba(239, 68, 68, 0.08);
+          border-color: transparent;
+        }
+
+        .btn-light {
+          background-color: #f8fafc;
+          border-color: #e2e8f0;
+          color: #64748b;
+        }
+
+        .btn-light:hover {
+          background-color: #f1f5f9;
+          border-color: #cbd5e1;
+        }
+
+        .empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 60px 20px;
+          text-align: center;
+        }
+
+        .empty-icon {
+          color: #9ca3af;
+          margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+          margin: 0 0 8px 0;
+          color: ${AppColors.textPrimary};
+          font-size: 18px;
+        }
+
+        .empty-state p {
+          margin: 0;
+          color: ${AppColors.textSecondary};
+          font-size: 14px;
+        }
+
+        .loading-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 60px 20px;
+        }
+
+        .loading-spinner {
+          width: 32px;
+          height: 32px;
+          border: 3px solid #f3f4f6;
+          border-top: 3px solid ${AppColors.primary};
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .loading-container p {
+          margin: 0;
+          color: ${AppColors.textSecondary};
+          font-size: 14px;
+        }
+
+        .pagination-container {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 16px 20px;
+          border-top: 1px solid #e5e7eb;
+          background-color: #f9fafb;
+        }
+
+        .pagination-info {
+          font-size: 14px;
+          color: ${AppColors.textSecondary};
+        }
+
+        .pagination-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .pagination-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border: 1px solid #d1d5db;
+          background-color: white;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s;
+          color: ${AppColors.textSecondary};
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+          background-color: #f3f4f6;
+          border-color: #9ca3af;
+        }
+
+        .pagination-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          background-color: #f9fafb;
+        }
+
+        .page-numbers {
+          display: flex;
+          gap: 4px;
+        }
+
+        .page-number {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border: 1px solid #d1d5db;
+          background-color: white;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s;
+          color: ${AppColors.textPrimary};
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .page-number:hover {
+          background-color: #f3f4f6;
+          border-color: #9ca3af;
+        }
+
+        .page-number.active {
+          background: ${Gradients.primary};
+          border-color: ${AppColors.primary};
+          color: white;
+        }
+
+        .page-number.active:hover {
+          background: ${Gradients.primaryHover};
+        }
+
+        /* 모달 스타일 */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          padding: 20px;
+        }
+
+        .modal-container {
+          background: white;
+          border-radius: 12px;
+          width: 100%;
+          max-width: 600px;
+          max-height: 80vh;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px 24px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-header h3 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .modal-close {
+          background: none;
+          border: none;
+          font-size: 28px;
+          color: #9ca3af;
+          cursor: pointer;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 6px;
+          transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+          background: #f3f4f6;
+          color: #374151;
+        }
+
+        .modal-body {
+          padding: 24px;
+          overflow-y: auto;
+        }
+
+        .text-muted {
+          color: #6b7280;
+          font-size: 14px;
+          margin-bottom: 20px;
+        }
+
+        .member-list-placeholder {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 60px 20px;
+          color: #9ca3af;
+        }
+
+        .placeholder-icon {
+          margin-bottom: 16px;
+        }
+
+        .member-list-placeholder p {
+          margin: 0;
+          font-size: 14px;
+        }
+
+        @media (max-width: 1024px) {
+          .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 640px) {
+          .stats-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .stat-card {
+            padding: 14px 18px;
+          }
+
+          .stat-card-icon {
+            width: 40px;
+            height: 40px;
+          }
+
+          .stat-card-label {
+            font-size: 12px;
+          }
+
+          .stat-card-value {
+            font-size: 18px;
+          }
+
+          .actions-bar {
+            flex-direction: column;
+          }
+
+          .btn-primary,
+          .btn-secondary {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default MemberManagement; 

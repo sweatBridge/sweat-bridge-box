@@ -1,0 +1,31 @@
+/**
+ * Design system theme – CSS custom properties
+ * Key color: Blue tokens
+ */
+:root {
+  /* Blue – Light */
+  --blue-light: #eaf3fe;
+  --blue-light-hover: #e0ecfe;
+  --blue-light-active: #bfd8fc;
+
+  /* Blue – Normal (primary) */
+  --blue-normal: #3182f6;
+  --blue-normal-hover: #2c75dd;
+  --blue-normal-active: #2768c5;
+
+  /* Blue – Dark */
+  --blue-dark: #2562b9;
+  --blue-dark-hover: #1d4e94;
+  --blue-dark-active: #163a6f;
+
+  /* Blue – Darker */
+  --blue-darker: #112e56;
+
+  /* Semantic aliases (use these in components when meaning is primary/background) */
+  --color-primary: var(--blue-normal);
+  --color-primary-hover: var(--blue-normal-hover);
+  --color-primary-active: var(--blue-normal-active);
+  --color-primary-bg: var(--blue-light);
+  --color-primary-bg-hover: var(--blue-light-hover);
+  --color-primary-bg-active: var(--blue-light-active);
+}
