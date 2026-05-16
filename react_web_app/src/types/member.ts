@@ -1,4 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
+import { BoxStatus } from './auth';
 import { MembershipInfo, UserMembership } from './membership';
 
 export interface MemberLockerHistory {
@@ -33,6 +34,7 @@ export interface BoxUser {
   nickName: string;
   phone: string;
   boxName: string;
+  status?: BoxStatus;
   gender?: 'M' | 'F';
   birth?: string;
   birthDate?: string;

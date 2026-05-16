@@ -1,3 +1,6 @@
+export type UserRole = 'coach' | 'operator' | 'admin';
+export type BoxStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
+
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -9,7 +12,8 @@ export interface User {
   realName: string;
   nickName: string;
   phone: string;
-  role: string;
+  role: UserRole;
+  status?: BoxStatus;
 }
 
 export interface AuthState {

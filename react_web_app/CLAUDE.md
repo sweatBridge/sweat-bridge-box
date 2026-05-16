@@ -82,6 +82,14 @@ Redux 없이 React Context + useReducer 패턴 사용:
 - Background: `#F9FAFB`
 - Sidebar: `#191F28`
 
+어드민 전용 색상은 `src/constants/adminColors.ts`의 `AdminColors`를 사용.
+
+- Primary: `#1e293b` (다크 슬레이트, 사이드바와 일관된 어두운 계열)
+- Hover: `#334155`
+- Light BG: `#f1f5f9`
+- Accent: `#475569`
+- Header Gradient: `linear-gradient(135deg, #1e293b 0%, #334155 100%)`
+
 ### 날짜 유틸리티
 `src/utils/dateUtils.ts`:
 - `formatDateToString(date)`: Date → `YYYY-MM-DD`

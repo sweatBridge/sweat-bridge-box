@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { BoxInfo } from '../types/box';
 
@@ -21,5 +21,16 @@ export class BoxRepository {
    */
   static async saveBoxInfo(boxInfo: BoxInfo): Promise<void> {
     await setDoc(doc(db, 'box', boxInfo.boxName), boxInfo);
+  }
+
+  /**
+   * 박스의 memberCount 필드를 delta만큼 증감합니다.
+   * 필드가 없으면 delta 값으로 초기화됩니다.
+   *
+   * @param boxName 박스 이름
+   * @param delta 변화량 (+1 또는 -1)
+   */
+  static async adjustMemberCount(boxName: string, delta: number): Promise<void> {
+    await updateDoc(doc(db, 'box', boxName), { memberCount: increment(delta) });
   }
 }

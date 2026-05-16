@@ -5,6 +5,7 @@ import {
   convertMembershipsFromFirebase
 } from '../models/memberModel';
 import { FirebaseMemberData, MemberRepository } from '../repositories/memberRepository';
+import { BoxRepository } from '../repositories/boxRepository';
 import { BoxUser, Member, MemberApplicant, MemberLockerHistory } from '../types/member';
 
 export class MemberService {
@@ -56,7 +57,8 @@ export class MemberService {
    * @param email 회원 이메일
    */
   static async deleteMember(box: string, email: string): Promise<void> {
-    return MemberRepository.deleteMember(box, email);
+    await MemberRepository.deleteMember(box, email);
+    await BoxRepository.adjustMemberCount(box, -1);
   }
 
   /**
@@ -77,7 +79,8 @@ export class MemberService {
    * @param memberData 저장할 회원 데이터
    */
   static async addMember(box: string, memberData: FirebaseMemberData): Promise<void> {
-    return MemberRepository.addMember(box, memberData);
+    await MemberRepository.addMember(box, memberData);
+    await BoxRepository.adjustMemberCount(box, 1);
   }
 
   /**
@@ -275,6 +278,7 @@ export class MemberService {
       }
 
       await MemberRepository.setMember(box, memberData.email, memberData);
+      await BoxRepository.adjustMemberCount(box, 1);
     } catch (error) {
       console.error('멤버 추가 중 오류 발생:', error);
       throw error;
@@ -361,7 +365,7 @@ export class MemberService {
   }
 
   /**
-   * 가입 신청을 거절합니다.
+   * 가입 신청을 거절합니다. boxName의 ? 접두사는 유지하고 status만 REJECTED로 변경합니다.
    *
    * @param email 신청자 이메일
    * @param boxName 박스 이름
@@ -370,6 +374,7 @@ export class MemberService {
     try {
       // applied 제거 + user.boxName 비우기를 단일 writeBatch로 원자 커밋.
       await MemberRepository.commitRejectApplicantBatch(email, boxName);
+
     } catch (error) {
       console.error('Failed to reject applicant:', error);
       throw error;
@@ -377,7 +382,7 @@ export class MemberService {
   }
 
   /**
-   * 가입 신청 문서를 제거하고 사용자 박스 이름을 반영합니다.
+   * 가입 신청 문서를 제거하고 사용자 박스 이름과 상태를 APPROVED로 반영합니다.
    *
    * @param email 신청자 이메일
    * @param boxName 반영할 박스 이름
@@ -385,7 +390,7 @@ export class MemberService {
   static async removeApplication(email: string, boxName: string): Promise<void> {
     try {
       await MemberRepository.deleteApplication(email, boxName);
-      await MemberRepository.updateUserBoxName(email, boxName);
+      await MemberRepository.updateUserBoxInfo(email, boxName, 'APPROVED');
     } catch (error) {
       console.error('Failed to remove application:', error);
       throw error;
