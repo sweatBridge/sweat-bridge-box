@@ -202,7 +202,7 @@ export class MemberRepository {
       { [email]: deleteField() },
       { merge: true }
     );
-    batch.update(doc(db, `user/${email}`), { boxName });
+    batch.update(doc(db, `user/${email}`), { boxName, status: 'APPROVED' });
     batch.set(doc(db, `box/${boxName}/member`, email), memberData, { merge: true });
     await batch.commit();
   }
@@ -210,7 +210,7 @@ export class MemberRepository {
   /**
    * 가입 신청 거절 처리를 단일 writeBatch로 커밋합니다.
    *
-   * `applied/applieddoc`에서 신청자 제거 + `user/{email}.boxName`을 빈 문자열로 갱신.
+   * `applied/applieddoc`에서 신청자 제거 + `user/{email}.boxName`을 빈 문자열로 갱신하고 status를 REJECTED로 설정.
    *
    * @param email 신청자 이메일
    * @param boxName 신청이 등록되어 있던 박스 이름
@@ -222,7 +222,7 @@ export class MemberRepository {
       { [email]: deleteField() },
       { merge: true }
     );
-    batch.update(doc(db, `user/${email}`), { boxName: '' });
+    batch.update(doc(db, `user/${email}`), { boxName: '', status: 'REJECTED' });
     await batch.commit();
   }
 
