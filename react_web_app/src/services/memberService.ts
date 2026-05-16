@@ -354,6 +354,7 @@ export class MemberService {
       }
 
       memberData.boxName = actualBoxName;
+      memberData.status = 'APPROVED';
       memberData.joinedAt = Timestamp.now();
 
       // applied 제거 + user.boxName 갱신 + member 생성을 단일 writeBatch로 원자 커밋.
@@ -365,16 +366,17 @@ export class MemberService {
   }
 
   /**
-   * 가입 신청을 거절합니다. boxName의 ? 접두사는 유지하고 status만 REJECTED로 변경합니다.
+   * 가입 신청을 거절합니다.
+   *
+   * applied 컬렉션에서 신청 제거, user 문서의 boxName을 빈 문자열로, status를 REJECTED로 설정합니다.
    *
    * @param email 신청자 이메일
    * @param boxName 박스 이름
    */
   static async rejectApplicant(email: string, boxName: string): Promise<void> {
     try {
-      // applied 제거 + user.boxName 비우기를 단일 writeBatch로 원자 커밋.
+      // applied 제거 + user.boxName 비우기 + status REJECTED 설정을 단일 writeBatch로 원자 커밋.
       await MemberRepository.commitRejectApplicantBatch(email, boxName);
-
     } catch (error) {
       console.error('Failed to reject applicant:', error);
       throw error;
