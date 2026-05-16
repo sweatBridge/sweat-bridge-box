@@ -22,7 +22,7 @@ const RevenueManagement = () => {
     loading,
     error,
     loadMonthlyRevenue,
-    loadInitialData,
+    loadRevenueStats,
     clearError
   } = useRevenueManagement();
 
@@ -39,13 +39,12 @@ const RevenueManagement = () => {
     });
   }, [setPageInfo]);
 
-  // 컴포넌트 마운트 시 초기 데이터 로드
+  // 통계는 마운트 시 1회만 로드
   useEffect(() => {
-    const now = new Date();
-    loadInitialData(now.getFullYear(), now.getMonth() + 1);
-  }, [loadInitialData]);
+    loadRevenueStats();
+  }, [loadRevenueStats]);
 
-  // 월 변경 시 데이터 로드
+  // 월 변경 시(마운트 포함) 월별 매출 로드
   useEffect(() => {
     loadMonthlyRevenue(currentMonth.getFullYear(), currentMonth.getMonth() + 1);
   }, [currentMonth, loadMonthlyRevenue]);

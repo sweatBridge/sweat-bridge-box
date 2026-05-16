@@ -71,17 +71,23 @@ Context 업데이트 → UI 리렌더링
 `boxName`은 로그인 시 localStorage에 저장되며 모든 쿼리에 사용된다.
 
 ```
-/user/{email}                           ← 앱 사용자 (관리자/코치)
+/user/{email}                           ← 앱 사용자 (관리자/코치/회원)
 
 /box/{boxName}/
   member/{email}                        ← 회원 정보 + 회원권 배열 + 락커 이력
   membership/plansDoc                   ← 회원권 플랜 목록
-  membership/{membershipKey}            ← 개별 회원권 상세
   class/{docKey}                        ← 수업 (YYYYMMDDHHMMHHMM 키)
   lockers/lockerdoc                     ← 전체 락커 (번호 → 이력 배열)
   revenue/{year}                        ← 연도별 매출 문서
   applied/applieddoc                    ← 외부 가입 신청자
+  dashboardCoachMemos/coachMemoDoc      ← 대시보드 코치 메모
+  wod/{YYYYMMDD}                        ← WOD (모바일 앱 전용)
+
+/feedback/{email}/feedbacks/{id}        ← 피드백 (모바일 앱 전용)
+/records/{autoId}                       ← 🪦 레거시 WOD 기록 인덱스
 ```
+
+전체 Firestore 트리(모바일 앱 경로, 필드 상세, 문서 ID 컨벤션 포함)는 [firebase-structure.md](./firebase-structure.md) 참고.
 
 ---
 

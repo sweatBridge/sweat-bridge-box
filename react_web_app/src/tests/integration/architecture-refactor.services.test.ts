@@ -58,21 +58,45 @@ describe('2. 서비스 통합 테스트', () => {
   });
 
   describe('MembershipService', () => {
-    it('회원권을 추가하고 매출 데이터를 동기화한다', async () => {
+    it('회원권 추가와 매출 엔트리를 단일 batch로 원자 커밋한다', async () => {
+      const purchaseAt = new Date('2026-04-05T14:30:00+09:00');
       const membership = createMembership({
         key: 'membership-new',
         type: 'countPass',
-        quota: { total: 20, used: 0, remaining: 20 }
+        quota: { total: 20, used: 0, remaining: 20 },
+        purchase: {
+          price: 200000,
+          paid: 200000,
+          paymentType: 'card',
+          at: purchaseAt
+        },
+        assignee: 'coach-a'
       });
-      const addRevenueSpy = jest.spyOn(RevenueService, 'addUserMembership').mockResolvedValue();
       (MembershipRepository.getRawUserMemberships as jest.Mock).mockResolvedValue([]);
-      (MembershipRepository.setUserMemberships as jest.Mock).mockResolvedValue(undefined);
+      (MembershipRepository.commitAddMembershipBatch as jest.Mock).mockResolvedValue(undefined);
 
       await MembershipService.addUserMembership('member@example.com', membership, '홍길동');
 
-      expect(MembershipRepository.setUserMemberships).toHaveBeenCalledWith('SWEAT', 'member@example.com', [membership]);
-      expect(addRevenueSpy).toHaveBeenCalledWith(membership, 'member@example.com', '홍길동');
-      addRevenueSpy.mockRestore();
+      expect(MembershipRepository.commitAddMembershipBatch).toHaveBeenCalledWith(
+        'SWEAT',
+        'member@example.com',
+        [membership],
+        expect.objectContaining({
+          year: 2026,
+          month: 4,
+          key: 'membership-new',
+          entry: expect.objectContaining({
+            id: 'member@example.com',
+            realName: '홍길동',
+            paymentType: 'card',
+            price: '200000',
+            type: 'countPass',
+            refundAmount: '0'
+          })
+        })
+      );
+      // 분리된 setUserMemberships / RevenueService.addUserMembership 경로는 더 이상 사용하지 않는다.
+      expect(MembershipRepository.setUserMemberships).not.toHaveBeenCalled();
     });
 
     it('홀딩을 추가하고 기간이 겹치면 뒤 회원권 일정을 밀어낸다', async () => {
@@ -186,7 +210,11 @@ describe('2. 서비스 통합 테스트', () => {
           assignee: 'coach-a'
         })
       );
-      expect(refundRevenueSpy).toHaveBeenCalledWith('membership-partial-refund', 30000);
+      expect(refundRevenueSpy).toHaveBeenCalledWith(
+        'membership-partial-refund',
+        30000,
+        expect.any(Date)
+      );
       refundRevenueSpy.mockRestore();
     });
 
@@ -281,7 +309,10 @@ describe('2. 서비스 통합 테스트', () => {
       expect(MembershipRepository.setUserMemberships).toHaveBeenCalledWith('SWEAT', 'member@example.com', [
         expect.objectContaining({ key: 'membership-delete-2' })
       ]);
-      expect(removeRevenueSpy).toHaveBeenCalledWith('membership-delete-1');
+      expect(removeRevenueSpy).toHaveBeenCalledWith(
+        'membership-delete-1',
+        expect.any(Date)
+      );
       removeRevenueSpy.mockRestore();
     });
   });
@@ -452,30 +483,27 @@ describe('2. 서비스 통합 테스트', () => {
       expect(monthly.dailyTransactions['2026-04-10']).toHaveLength(2);
     });
 
-    it('연도별 매출 문서에서 매출 통계를 계산한다', async () => {
-      (RevenueRepository.getAllRevenueYears as jest.Mock).mockResolvedValue([
-        {
-          year: '2026',
-          data: {
-            '4': {
-              membership1: {
-                assignee: 'coach-a',
-                createdAt: Timestamp.fromDate(new Date('2026-04-10T10:00:00+09:00')),
-                id: 'member@example.com',
-                paymentType: 'card',
-                plan: '무제한 1개월',
-                price: '150000',
-                realName: '홍길동',
-                type: 'periodPass',
-                refundAmount: '10000'
-              }
-            }
+    it('현재 연도 매출 문서에서 매출 통계를 계산한다', async () => {
+      (RevenueRepository.getRevenueYear as jest.Mock).mockResolvedValue({
+        '4': {
+          membership1: {
+            assignee: 'coach-a',
+            createdAt: Timestamp.fromDate(new Date('2026-04-10T10:00:00+09:00')),
+            id: 'member@example.com',
+            paymentType: 'card',
+            plan: '무제한 1개월',
+            price: '150000',
+            realName: '홍길동',
+            type: 'periodPass',
+            refundAmount: '10000'
           }
         }
-      ]);
+      });
 
       const stats = await RevenueService.getRevenueStats();
 
+      expect(RevenueRepository.getRevenueYear).toHaveBeenCalledWith('SWEAT', 2026);
+      expect(RevenueRepository.getAllRevenueYears).not.toHaveBeenCalled();
       expect(stats).toEqual({
         totalRevenue: 140000,
         thisMonthRevenue: 140000,
@@ -495,52 +523,66 @@ describe('2. 서비스 통합 테스트', () => {
         },
         assignee: 'coach-a'
       });
-      (RevenueRepository.getRevenueYear as jest.Mock).mockResolvedValue({});
-      (RevenueRepository.setRevenueYear as jest.Mock).mockResolvedValue(undefined);
+      (RevenueRepository.setRevenueEntry as jest.Mock).mockResolvedValue(undefined);
 
       await RevenueService.addUserMembership(membership, 'member@example.com', '홍길동');
 
-      expect(RevenueRepository.setRevenueYear).toHaveBeenCalledWith(
+      expect(RevenueRepository.setRevenueEntry).toHaveBeenCalledWith(
         'SWEAT',
         2026,
+        4,
+        'revenue-membership-1',
         expect.objectContaining({
-          '4': expect.objectContaining({
-            'revenue-membership-1': expect.objectContaining({
-              id: 'member@example.com',
-              realName: '홍길동',
-              paymentType: 'card',
-              price: '180000',
-              refundAmount: '0'
-            })
-          })
+          id: 'member@example.com',
+          realName: '홍길동',
+          paymentType: 'card',
+          price: '180000',
+          refundAmount: '0'
         })
       );
     });
 
     it('락커 결제 데이터를 현재 월 매출 문서에 저장한다', async () => {
-      (RevenueRepository.getRevenueYear as jest.Mock).mockResolvedValue({});
-      (RevenueRepository.setRevenueYear as jest.Mock).mockResolvedValue(undefined);
+      (RevenueRepository.setRevenueEntry as jest.Mock).mockResolvedValue(undefined);
 
       await RevenueService.addLockerRevenue('locker-revenue-1', 'member@example.com', '홍길동', '50000', 'cash');
 
-      expect(RevenueRepository.setRevenueYear).toHaveBeenCalledWith(
+      expect(RevenueRepository.setRevenueEntry).toHaveBeenCalledWith(
         'SWEAT',
         2026,
+        4,
+        'locker-revenue-1',
         expect.objectContaining({
-          '4': expect.objectContaining({
-            'locker-revenue-1': expect.objectContaining({
-              id: 'member@example.com',
-              realName: '홍길동',
-              paymentType: 'cash',
-              type: 'locker',
-              price: '50000'
-            })
-          })
+          id: 'member@example.com',
+          realName: '홍길동',
+          paymentType: 'cash',
+          type: 'locker',
+          price: '50000'
         })
       );
     });
 
-    it('기존 매출 문서에서 회원권 환불액을 찾아 반영한다', async () => {
+    it('purchaseAt이 주어지면 해당 연/월 문서만 환불액을 갱신한다', async () => {
+      (RevenueRepository.updateRevenueEntryField as jest.Mock).mockResolvedValue(undefined);
+
+      await RevenueService.refundUserMembership(
+        'targetMembership',
+        30000,
+        new Date('2026-03-25T10:00:00+09:00')
+      );
+
+      expect(RevenueRepository.updateRevenueEntryField).toHaveBeenCalledWith(
+        'SWEAT',
+        2026,
+        3,
+        'targetMembership',
+        'refundAmount',
+        '30000'
+      );
+      expect(RevenueRepository.getAllRevenueYears).not.toHaveBeenCalled();
+    });
+
+    it('purchaseAt이 없으면 전체 연도 스캔 폴백으로 해당 엔트리만 갱신한다', async () => {
       (RevenueRepository.getAllRevenueYears as jest.Mock).mockResolvedValue([
         {
           year: '2026',
@@ -561,49 +603,35 @@ describe('2. 서비스 통합 테스트', () => {
           }
         }
       ]);
-      (RevenueRepository.setRevenueYear as jest.Mock).mockResolvedValue(undefined);
+      (RevenueRepository.updateRevenueEntryField as jest.Mock).mockResolvedValue(undefined);
 
       await RevenueService.refundUserMembership('targetMembership', 30000);
 
-      expect(RevenueRepository.setRevenueYear).toHaveBeenCalledWith(
+      expect(RevenueRepository.updateRevenueEntryField).toHaveBeenCalledWith(
         'SWEAT',
-        '2026',
-        expect.objectContaining({
-          '3': expect.objectContaining({
-            targetMembership: expect.objectContaining({
-              refundAmount: '30000'
-            })
-          })
-        })
+        2026,
+        3,
+        'targetMembership',
+        'refundAmount',
+        '30000'
       );
     });
 
-    it('회원권 매출 삭제 후 해당 월이 비면 연도 문서에서도 월 데이터를 제거한다', async () => {
-      (RevenueRepository.getAllRevenueYears as jest.Mock).mockResolvedValue([
-        {
-          year: '2026',
-          data: {
-            '3': {
-              removableMembership: {
-                assignee: 'coach-a',
-                createdAt: Timestamp.fromDate(new Date('2026-03-25T10:00:00+09:00')),
-                id: 'member@example.com',
-                paymentType: 'card',
-                plan: '무제한 1개월',
-                price: '150000',
-                realName: '홍길동',
-                type: 'periodPass',
-                refundAmount: '0'
-              }
-            }
-          }
-        }
-      ]);
-      (RevenueRepository.setRevenueYear as jest.Mock).mockResolvedValue(undefined);
+    it('purchaseAt이 주어지면 해당 매출 엔트리만 삭제한다', async () => {
+      (RevenueRepository.deleteRevenueEntry as jest.Mock).mockResolvedValue(undefined);
 
-      await RevenueService.removeUserMembership('removableMembership');
+      await RevenueService.removeUserMembership(
+        'removableMembership',
+        new Date('2026-03-25T10:00:00+09:00')
+      );
 
-      expect(RevenueRepository.setRevenueYear).toHaveBeenCalledWith('SWEAT', '2026', {});
+      expect(RevenueRepository.deleteRevenueEntry).toHaveBeenCalledWith(
+        'SWEAT',
+        2026,
+        3,
+        'removableMembership'
+      );
+      expect(RevenueRepository.getAllRevenueYears).not.toHaveBeenCalled();
     });
   });
 });

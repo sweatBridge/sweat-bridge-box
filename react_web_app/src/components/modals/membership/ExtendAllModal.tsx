@@ -113,22 +113,21 @@ const ExtendAllModal = ({ visible, onClose, onSuccess, onError }: ExtendAllModal
         const result = await LockerService.extendAllLockers(boxName, daysNum);
         lockerCount = result.extendedCount;
         
-        // 연장된 락커의 회원 히스토리 업데이트
+        // 연장된 락커의 회원 히스토리 업데이트 — 병렬 처리.
+        // 개별 실패는 로그만 남기고 다른 항목 진행에 영향을 주지 않게 catch.
         if (result.extendedLockers && result.extendedLockers.length > 0) {
-          // 각 락커에 대해 회원 히스토리 업데이트
-          for (const locker of result.extendedLockers) {
-            try {
-              await MemberService.updateLockerHistoryEndDate(
+          await Promise.all(
+            result.extendedLockers.map((locker) =>
+              MemberService.updateLockerHistoryEndDate(
                 boxName,
                 locker.id,
                 locker.key,
                 locker.endDate
-              );
-            } catch (error) {
-              console.error(`Failed to update locker history for ${locker.id}:`, error);
-              // 개별 실패는 로그만 남기고 계속 진행
-            }
-          }
+              ).catch((error) => {
+                console.error(`Failed to update locker history for ${locker.id}:`, error);
+              })
+            )
+          );
         }
       }
 
