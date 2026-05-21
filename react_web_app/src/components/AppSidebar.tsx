@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Calendar, ChevronLeft, ChevronRight, LockIcon, DollarSign } from 'lucide-react';
 import { AppColors } from '../constants/colors';
+import NoticeIcon from './icons/NoticeIcon';
 
 interface AppSidebarProps {
   selectedIndex: number;
@@ -9,6 +10,7 @@ interface AppSidebarProps {
 
 const menuItems = [
   { icon: LayoutDashboard, title: '대시보드', index: 0, path: '/dashboard' },
+  { icon: NoticeIcon, title: '공지', index: 1, path: '/notices' },
   // { icon: Dumbbell, title: '와드 관리', index: 1, path: '/wod' },
   { icon: Users, title: '회원 관리', index: 2, path: '/members' },
   { icon: Calendar, title: '수업 관리', index: 3, path: '/classes' },

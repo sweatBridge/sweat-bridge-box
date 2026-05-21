@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Calendar, Users, UserCheck, UserPlus, AlertTriangle, FileText, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, Users, UserCheck, UserPlus, AlertTriangle, FileText, Pencil, ExternalLink } from 'lucide-react';
 import { AppColors } from '../constants/colors';
 import { ClassService } from '../services/classService';
 import { ClassEvent } from '../types/class';
@@ -13,17 +14,13 @@ import { NoticePost, NoticeService } from '../services/noticeService';
 
 const Dashboard = () => {
   const boxName = localStorage.getItem('boxName') || 'SWEAT';
+  const navigate = useNavigate();
 
   const [todayClasses, setTodayClasses] = useState<ClassEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [noticeLoading, setNoticeLoading] = useState(true);
   const [coachMemo, setCoachMemo] = useState('');
   const [noticePosts, setNoticePosts] = useState<NoticePost[]>([]);
-  const [isNoticeEditorOpen, setIsNoticeEditorOpen] = useState(false);
-  const [noticeTitle, setNoticeTitle] = useState('');
-  const [noticeContent, setNoticeContent] = useState('');
-  const [noticeSubmitting, setNoticeSubmitting] = useState(false);
-  const [noticeError, setNoticeError] = useState('');
   const [memoSavedAt, setMemoSavedAt] = useState<string>('');
   const { setPageInfo } = usePageContext();
   
@@ -50,7 +47,7 @@ const Dashboard = () => {
         // 병렬로 데이터 로드
         const [classes, notices] = await Promise.all([
           ClassService.getTodayClasses(boxName),
-          NoticeService.getRecentNoticePosts(boxName),
+          NoticeService.getRecentNoticePosts(boxName, 3),
           loadMembers() // 회원 데이터도 로드
         ]);
         
@@ -92,43 +89,8 @@ const Dashboard = () => {
     }
   };
 
-  const handleOpenNoticeEditor = () => {
-    setIsNoticeEditorOpen(true);
-    setNoticeError('');
-  };
-
-  const handleCancelNoticeEditor = () => {
-    setIsNoticeEditorOpen(false);
-    setNoticeTitle('');
-    setNoticeContent('');
-    setNoticeError('');
-  };
-
-  const handleSaveNotice = async () => {
-    const trimmedTitle = noticeTitle.trim();
-    if (!trimmedTitle) {
-      setNoticeError('공지 제목을 입력해주세요.');
-      return;
-    }
-
-    try {
-      setNoticeSubmitting(true);
-      setNoticeError('');
-
-      await NoticeService.createNoticePost(boxName, {
-        title: trimmedTitle,
-        content: noticeContent
-      });
-
-      const refreshedNotices = await NoticeService.getRecentNoticePosts(boxName);
-      setNoticePosts(refreshedNotices);
-      handleCancelNoticeEditor();
-    } catch (error) {
-      console.error('Failed to save notice post:', error);
-      setNoticeError('공지 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
-    } finally {
-      setNoticeSubmitting(false);
-    }
+  const handleEditNotice = (noticeId: string) => {
+    navigate(`/notices?edit=${noticeId}`);
   };
 
   // 회원 통계 및 신규 회원 목록 계산 (getMemberStatusBadge 한 번만 호출)
@@ -277,50 +239,11 @@ const Dashboard = () => {
             <div className="notice-board-title">공지</div>
             <div className="notice-board-subtitle">일정, 회원관리 등을 공지하고 확인할 수 있어요</div>
           </div>
-          <button type="button" className="notice-add-btn" onClick={handleOpenNoticeEditor}>
-            <Plus className="notice-add-icon" />
-            공지 추가
+          <button type="button" className="notice-manage-btn" onClick={() => navigate('/notices')}>
+            <ExternalLink className="notice-manage-icon" />
+            공지 관리
           </button>
         </div>
-
-        {isNoticeEditorOpen && (
-          <div className="notice-editor">
-            <input
-              type="text"
-              className="notice-input"
-              placeholder="공지 제목"
-              value={noticeTitle}
-              onChange={(e) => setNoticeTitle(e.target.value)}
-              maxLength={80}
-            />
-            <textarea
-              className="notice-textarea"
-              placeholder="공지 내용을 입력하세요."
-              value={noticeContent}
-              onChange={(e) => setNoticeContent(e.target.value)}
-              maxLength={1000}
-            />
-            <div className="notice-editor-actions">
-              <button
-                type="button"
-                className="notice-cancel-btn"
-                onClick={handleCancelNoticeEditor}
-                disabled={noticeSubmitting}
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                className="notice-submit-btn"
-                onClick={handleSaveNotice}
-                disabled={noticeSubmitting}
-              >
-                {noticeSubmitting ? '저장 중...' : '저장'}
-              </button>
-            </div>
-            {noticeError && <div className="notice-error-text">{noticeError}</div>}
-          </div>
-        )}
 
         <div className="notice-board-list">
           {noticeLoading ? (
@@ -329,10 +252,24 @@ const Dashboard = () => {
             <div className="notice-empty">아직 등록된 공지 게시글이 없습니다.</div>
           ) : (
             noticePosts.map((notice) => (
-              <div key={notice.id} className="notice-row">
-                <span className="notice-title">{notice.title}</span>
-                <span className="notice-meta">{notice.createdAtText}</span>
-              </div>
+              <article key={notice.id} className="notice-dashboard-item">
+                <div className="notice-dashboard-item-top">
+                  <h4 className="notice-dashboard-title">{notice.title}</h4>
+                  <button
+                    type="button"
+                    className="notice-edit-link-btn"
+                    onClick={() => handleEditNotice(notice.id)}
+                  >
+                    <Pencil size={14} />
+                    수정
+                  </button>
+                </div>
+                <p className="notice-dashboard-content">{notice.content || '(내용 없음)'}</p>
+                <div className="notice-dashboard-meta">
+                  <span>작성자: {notice.authorName}</span>
+                  <span>{notice.createdAtText}</span>
+                </div>
+              </article>
             ))
           )}
         </div>
@@ -825,7 +762,7 @@ const Dashboard = () => {
           color: rgba(255, 255, 255, 0.86);
         }
 
-        .notice-add-btn {
+        .notice-manage-btn {
           border: none;
           background: rgba(255, 255, 255, 0.2);
           color: #ffffff;
@@ -842,11 +779,11 @@ const Dashboard = () => {
           gap: 6px;
         }
 
-        .notice-add-btn:hover {
+        .notice-manage-btn:hover {
           background: rgba(255, 255, 255, 0.28);
         }
 
-        .notice-add-icon {
+        .notice-manage-icon {
           width: 14px;
           height: 14px;
         }
@@ -858,103 +795,68 @@ const Dashboard = () => {
           padding: 16px 20px 20px;
         }
 
-        .notice-editor {
-          border: 1px solid #e5e7eb;
-          border-radius: 10px;
-          padding: 12px;
-          background: #f9fafb;
-          margin: 16px 20px 14px;
-        }
-
-        .notice-input,
-        .notice-textarea {
-          width: 100%;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          font-family: inherit;
-          font-size: 14px;
-          color: #1f2937;
-          background: #ffffff;
-        }
-
-        .notice-input {
-          height: 38px;
-          padding: 0 12px;
-          margin-bottom: 8px;
-        }
-
-        .notice-textarea {
-          min-height: 90px;
-          resize: vertical;
-          padding: 10px 12px;
-          line-height: 1.4;
-        }
-
-        .notice-input:focus,
-        .notice-textarea:focus {
-          outline: none;
-          border-color: ${AppColors.primary};
-          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-        }
-
-        .notice-editor-actions {
-          margin-top: 10px;
-          display: flex;
-          justify-content: flex-end;
-          gap: 8px;
-        }
-
-        .notice-cancel-btn,
-        .notice-submit-btn {
-          border: none;
-          border-radius: 999px;
-          font-size: 12px;
-          font-weight: 700;
-          padding: 7px 14px;
-          cursor: pointer;
-        }
-
-        .notice-cancel-btn {
-          color: #374151;
-          background: #e5e7eb;
-        }
-
-        .notice-submit-btn {
-          color: #ffffff;
-          background: ${AppColors.primary};
-        }
-
-        .notice-submit-btn:disabled,
-        .notice-cancel-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .notice-error-text {
-          margin-top: 8px;
-          font-size: 12px;
-          color: #dc2626;
-        }
-
-        .notice-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 20px;
-          padding-bottom: 8px;
+        .notice-dashboard-item {
+          padding-bottom: 14px;
+          margin-bottom: 14px;
           border-bottom: 1px solid #f3f4f6;
         }
 
-        .notice-title {
-          font-size: 16px;
-          color: #1f2937;
-          font-weight: 500;
+        .notice-dashboard-item:last-child {
+          padding-bottom: 0;
+          margin-bottom: 0;
+          border-bottom: none;
         }
 
-        .notice-meta {
+        .notice-dashboard-item-top {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 6px;
+        }
+
+        .notice-dashboard-title {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: #1f2937;
+          flex: 1;
+        }
+
+        .notice-edit-link-btn {
+          border: 1px solid #e5e7eb;
+          background: #fff;
+          border-radius: 8px;
+          padding: 5px 10px;
+          font-size: 12px;
+          font-weight: 500;
+          color: ${AppColors.primary};
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          flex-shrink: 0;
+        }
+
+        .notice-edit-link-btn:hover {
+          border-color: ${AppColors.primary};
+          background: rgba(37, 99, 235, 0.06);
+        }
+
+        .notice-dashboard-content {
+          margin: 0 0 8px;
+          font-size: 14px;
+          line-height: 1.55;
+          color: #374151;
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+
+        .notice-dashboard-meta {
+          display: flex;
+          gap: 14px;
+          font-size: 13px;
           color: #6b7280;
-          font-size: 15px;
-          white-space: nowrap;
         }
 
         .notice-empty {
@@ -979,13 +881,11 @@ const Dashboard = () => {
         }
 
         @media (max-width: 900px) {
-          .notice-row {
+          .notice-dashboard-item-top {
             flex-direction: column;
-            align-items: flex-start;
-            gap: 6px;
           }
 
-          .notice-add-btn {
+          .notice-manage-btn {
             font-size: 12px;
             padding: 7px 14px;
             min-height: 30px;
@@ -993,14 +893,6 @@ const Dashboard = () => {
 
           .notice-board-title {
             font-size: 22px;
-          }
-
-          .notice-title {
-            font-size: 15px;
-          }
-
-          .notice-meta {
-            font-size: 13px;
           }
         }
       `}</style>

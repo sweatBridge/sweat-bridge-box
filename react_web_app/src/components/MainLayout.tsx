@@ -12,6 +12,8 @@ const MainLayout = () => {
     switch (location.pathname) {
       case '/dashboard':
         return 0;
+      case '/notices':
+        return 1;
       case '/wod':
         return 1;
       case '/members':
