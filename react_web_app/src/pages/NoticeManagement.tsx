@@ -331,7 +331,7 @@ const NoticeManagement = () => {
 
       <style>{`
         .notice-page {
-          max-width: 960px;
+          width: 100%;
         }
 
         .notice-page-header {
