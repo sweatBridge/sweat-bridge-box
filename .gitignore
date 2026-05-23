@@ -32,3 +32,6 @@ scripts/firestore-tree/*.json
 scripts/firestore-tree/*.md
 !scripts/firestore-tree/README.md
 scripts/firestore-tree/node_modules/
+
+# Local Netlify folder
+.netlify
