@@ -1,6 +1,6 @@
 # Models / Services 로직 가이드
 
-이 문서는 `react_web_app/src/models` 와 `react_web_app/src/services`의 실제 코드를 읽고,
+이 문서는 `src/models` 와 `src/services`의 실제 코드를 읽고,
 "이 파일이 무슨 책임을 가지며, 어떤 입력을 받아 어떤 판단을 하고, 어떤 값을 돌려주는지"를
 자연어로 정리한 문서다.
 

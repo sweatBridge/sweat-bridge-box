@@ -1,4 +1,4 @@
-name: NPM Installation
+name: React Build
 
 on:
   push:
