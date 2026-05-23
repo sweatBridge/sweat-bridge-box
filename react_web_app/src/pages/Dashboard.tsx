@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Calendar, Users, UserCheck, UserPlus, AlertTriangle, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, Users, UserCheck, UserPlus, AlertTriangle, FileText, Pencil, ExternalLink } from 'lucide-react';
 import { AppColors } from '../constants/colors';
 import { ClassService } from '../services/classService';
 import { ClassEvent } from '../types/class';
@@ -9,13 +10,17 @@ import { useMemberManagement } from '../hooks/useMemberManagement';
 import { MembershipService } from '../services/membershipService';
 import { Member } from '../types/member';
 import { DashboardMemoService } from '../services/dashboardMemoService';
+import { NoticePost, NoticeService } from '../services/noticeService';
 
 const Dashboard = () => {
   const boxName = localStorage.getItem('boxName') || 'SWEAT';
+  const navigate = useNavigate();
 
   const [todayClasses, setTodayClasses] = useState<ClassEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [noticeLoading, setNoticeLoading] = useState(true);
   const [coachMemo, setCoachMemo] = useState('');
+  const [noticePosts, setNoticePosts] = useState<NoticePost[]>([]);
   const [memoSavedAt, setMemoSavedAt] = useState<string>('');
   const { setPageInfo } = usePageContext();
   
@@ -39,21 +44,26 @@ const Dashboard = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [classes, memo] = await Promise.all([
+        const [classes, memo, notices] = await Promise.all([
           ClassService.getTodayClasses(boxName),
           DashboardMemoService.getCoachMemo(boxName).catch((error) => {
             console.error('Failed to load coach memo:', error);
             return '';
           }),
+          NoticeService.getRecentNoticePosts(boxName, 3),
           loadMembers()
         ]);
         if (cancelled) return;
         setTodayClasses(classes);
         setCoachMemo(memo);
+        setNoticePosts(notices);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setNoticeLoading(false);
+        }
       }
     };
 
@@ -73,6 +83,10 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Failed to save coach memo:', error);
     }
+  };
+
+  const handleEditNotice = (noticeId: string) => {
+    navigate(`/notices?edit=${noticeId}`);
   };
 
   // 회원 통계 및 신규 회원 목록 계산 (getMemberStatusBadge 한 번만 호출)
@@ -212,6 +226,48 @@ const Dashboard = () => {
               <span className="coach-memo-saved-text">{memoSavedAt} 저장됨</span>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="notice-board-card">
+        <div className="notice-board-header">
+          <div>
+            <div className="notice-board-title">공지</div>
+            <div className="notice-board-subtitle">일정, 회원관리 등을 공지하고 확인할 수 있어요</div>
+          </div>
+          <button type="button" className="notice-manage-btn" onClick={() => navigate('/notices')}>
+            <ExternalLink className="notice-manage-icon" />
+            공지 관리
+          </button>
+        </div>
+
+        <div className="notice-board-list">
+          {noticeLoading ? (
+            <div className="notice-empty">공지 게시글을 불러오는 중입니다.</div>
+          ) : noticePosts.length === 0 ? (
+            <div className="notice-empty">아직 등록된 공지 게시글이 없습니다.</div>
+          ) : (
+            noticePosts.map((notice) => (
+              <article key={notice.id} className="notice-dashboard-item">
+                <div className="notice-dashboard-item-top">
+                  <h4 className="notice-dashboard-title">{notice.title}</h4>
+                  <button
+                    type="button"
+                    className="notice-edit-link-btn"
+                    onClick={() => handleEditNotice(notice.id)}
+                  >
+                    <Pencil size={14} />
+                    수정
+                  </button>
+                </div>
+                <p className="notice-dashboard-content">{notice.content || '(내용 없음)'}</p>
+                <div className="notice-dashboard-meta">
+                  <span>작성자: {notice.authorName}</span>
+                  <span>{notice.createdAtText}</span>
+                </div>
+              </article>
+            ))
+          )}
         </div>
       </div>
       
@@ -670,6 +726,141 @@ const Dashboard = () => {
           color: #64748b;
         }
 
+        .notice-board-card {
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 14px;
+          padding: 0;
+          overflow: hidden;
+          margin-bottom: 20px;
+        }
+
+        .notice-board-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 16px 20px;
+          background: ${Gradients.primary};
+          color: #ffffff;
+        }
+
+        .notice-board-title {
+          font-size: 18px;
+          font-weight: 700;
+          color: #ffffff;
+          line-height: 1.2;
+        }
+
+        .notice-board-subtitle {
+          margin-top: 4px;
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.86);
+        }
+
+        .notice-manage-btn {
+          border: none;
+          background: rgba(255, 255, 255, 0.2);
+          color: #ffffff;
+          border-radius: 999px;
+          padding: 8px 18px;
+          font-size: 13px;
+          font-weight: 700;
+          line-height: 1;
+          cursor: pointer;
+          white-space: nowrap;
+          min-height: 34px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .notice-manage-btn:hover {
+          background: rgba(255, 255, 255, 0.28);
+        }
+
+        .notice-manage-icon {
+          width: 14px;
+          height: 14px;
+        }
+
+        .notice-board-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          padding: 16px 20px 20px;
+        }
+
+        .notice-dashboard-item {
+          padding-bottom: 14px;
+          margin-bottom: 14px;
+          border-bottom: 1px solid #f3f4f6;
+        }
+
+        .notice-dashboard-item:last-child {
+          padding-bottom: 0;
+          margin-bottom: 0;
+          border-bottom: none;
+        }
+
+        .notice-dashboard-item-top {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 6px;
+        }
+
+        .notice-dashboard-title {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: #1f2937;
+          flex: 1;
+        }
+
+        .notice-edit-link-btn {
+          border: 1px solid #e5e7eb;
+          background: #fff;
+          border-radius: 8px;
+          padding: 5px 10px;
+          font-size: 12px;
+          font-weight: 500;
+          color: ${AppColors.primary};
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          flex-shrink: 0;
+        }
+
+        .notice-edit-link-btn:hover {
+          border-color: ${AppColors.primary};
+          background: rgba(37, 99, 235, 0.06);
+        }
+
+        .notice-dashboard-content {
+          margin: 0 0 8px;
+          font-size: 14px;
+          line-height: 1.55;
+          color: #374151;
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+
+        .notice-dashboard-meta {
+          display: flex;
+          gap: 14px;
+          font-size: 13px;
+          color: #6b7280;
+        }
+
+        .notice-empty {
+          padding: 20px 0;
+          color: #9ca3af;
+          font-size: 15px;
+        }
+
         @media (max-width: 1024px) {
           .dashboard-page .dashboard-top-layout {
             grid-template-columns: 1fr;
@@ -683,6 +874,22 @@ const Dashboard = () => {
         .dashboard-page .content-grid {
           grid-template-columns: minmax(0, 2.6fr) minmax(280px, 1fr);
           gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+          .notice-dashboard-item-top {
+            flex-direction: column;
+          }
+
+          .notice-manage-btn {
+            font-size: 12px;
+            padding: 7px 14px;
+            min-height: 30px;
+          }
+
+          .notice-board-title {
+            font-size: 22px;
+          }
         }
       `}</style>
     </div>

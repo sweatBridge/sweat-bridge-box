@@ -14,6 +14,7 @@ import ClassReservation from './pages/ClassReservation';
 import MemberManagement from './pages/MemberManagement';
 import BoxSettings from './pages/BoxSettings';
 import RevenueManagement from './pages/RevenueManagement';
+import NoticeManagement from './pages/NoticeManagement';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminBoxList from './pages/admin/AdminBoxList';
 import AdminBoxDetail from './pages/admin/AdminBoxDetail';
@@ -35,6 +36,7 @@ function App() {
                 <Route path="/" element={<MainLayout />}>
                   <Route index element={<Navigate to="/dashboard" replace />} />
                   <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="notices" element={<NoticeManagement />} />
                   <Route path="lockers" element={<Locker />} />
                   <Route path="wod" element={<div style={{padding: '20px'}}>와드 관리 페이지</div>} />
                   <Route path="members" element={<MemberManagement />} />
