@@ -33,6 +33,7 @@ Firebase (Firestore DB + Auth)
 | 락커 관리 | Locker | - | lockerService | lockerModel | lockerRepository |
 | 매출 관리 | RevenueManagement | useRevenueManagement | revenueService | - | revenueRepository |
 | 박스 설정 | BoxSettings | useBoxManagement | boxService | - | boxRepository |
+| 어드민 관리 | AdminDashboard, AdminBoxList, AdminBoxDetail, AdminBoxOnboarding | useAdminBoxes | - | - | adminBoxRepository |
 
 ---
 
@@ -51,13 +52,13 @@ Firebase (Firestore DB + Auth)
 ---
 
 ### src/types/
-- `auth.ts` — 인증 타입 (LoginCredentials, User, AuthState)
+- `auth.ts` — 인증 타입 (LoginCredentials, User, AuthState, UserRole)
 - `member.ts` — 회원 타입 (Member, BoxUser, MemberLockerHistory + releasedDate)
 - `membership.ts` — 회원권 타입 (UserMembership, MembershipPlan, Adjustment)
 - `class.ts` — 수업 타입 (ClassEvent, SaveClassResult, UpdateClassResult)
 - `locker.ts` — 락커 타입 및 상태 상수 (Locker, LockerState, getLockerState)
 - `revenue.ts` — 매출 타입 (DailyRevenue, MonthlyRevenue, RevenueData)
-- `box.ts` — 박스/짐 타입 (BoxInfo, Coach, Address)
+- `box.ts` — 박스/짐 타입 (BoxInfo, Coach, Address, BoxStatus)
 
 ---
 
@@ -76,7 +77,8 @@ Firebase (Firestore DB + Auth)
 - `classRepository.ts` — 수업 문서 범위 조회, 생성/수정/삭제
 - `lockerRepository.ts` — 락커 문서 트랜잭션 처리
 - `revenueRepository.ts` — 매출 데이터 연도별 조회/저장
-- `boxRepository.ts` — 박스 정보 및 코치 목록 조회/저장
+- `boxRepository.ts` — 박스 정보 및 코치 목록 조회/저장, memberCount increment
+- `adminBoxRepository.ts` — 어드민 전용: 전체 박스 목록 조회, 상태 변경, 신규 박스 생성 (하위 문서 포함)
 
 ---
 
@@ -109,6 +111,7 @@ Firebase (Firestore DB + Auth)
 - `useBoxManagement.ts` — 박스 설정 로드/저장, 코치 정보 관리
 - `useRevenueManagement.ts` — 월별 매출 로드, 거래 내역 조회
 - `useCoachOptions.ts` — 코치 목록 옵션 로드 (모달에서 공통 사용)
+- `useAdminBoxes.ts` — 어드민 전용: 전체 박스 목록 로드, 박스 상태 업데이트
 
 ---
 
@@ -121,6 +124,14 @@ Firebase (Firestore DB + Auth)
 - `RevenueManagement.tsx` — 월별 매출 현황, 거래 내역
 - `BoxSettings.tsx` — 박스 정보 수정, 코치 추가/삭제
 
+#### src/pages/admin/
+> 어드민(operator/admin 역할) 전용 페이지. `AdminProtectedRoute`로 보호됨.
+- `AdminDashboard.tsx` — 전체 박스 현황 요약, TOP5 바 차트, 도넛 차트
+- `AdminBoxList.tsx` — 전체 박스 목록, 검색/필터, 신규 등록 진입
+- `AdminBoxDetail.tsx` — 박스 상세 정보, 운영 상태 변경 (활성/정지)
+- `AdminBoxOnboarding.tsx` — 신규 고객사 등록 폼, Firebase 박스 생성 (하위 문서 포함)
+- `_mockData.ts` — 개발 초기 목업 데이터 (현재는 Firebase 연동으로 대체)
+
 ---
 
 ### src/components/
@@ -130,6 +141,10 @@ Firebase (Firestore DB + Auth)
 - `AppHeader.tsx` — 상단 헤더 (페이지 제목, 사용자 정보, 로그아웃)
 - `AppSidebar.tsx` — 좌측 네비게이션, 메뉴 토글
 - `ProtectedRoute.tsx` — 인증 필수 라우트 보호
+- `AdminProtectedRoute.tsx` — 어드민 전용 라우트 보호 (isOperator 체크)
+- `AdminLayout.tsx` — 어드민 전용 레이아웃 (AdminSidebar + AdminHeader)
+- `AdminSidebar.tsx` — 어드민 좌측 네비게이션 (다크 슬레이트 테마)
+- `AdminHeader.tsx` — 어드민 상단 헤더 (operator 배지, 로그아웃)
 
 #### 공통 UI
 - `DateInput.tsx` — 날짜 선택 입력 (react-datepicker 래퍼, 한국어 로케일)
@@ -190,6 +205,7 @@ Firebase (Firestore DB + Auth)
 ### src/constants/
 - `colors.ts` — 앱 전체 색상 팔레트 (primary, success, warning, error 등)
 - `gradients.ts` — 그라데이션 상수 (primary, primaryHover, primaryLight)
+- `adminColors.ts` — 어드민 전용 색상 팔레트 (다크 슬레이트 계열, #1e293b 기반)
 
 ---
 

@@ -1,17 +1,25 @@
 import { AuthRepository } from '../repositories/authRepository';
-import { LoginCredentials, User } from '../types/auth';
+import { BoxStatus, LoginCredentials, User, UserRole } from '../types/auth';
 
 const AUTH_STORAGE_KEYS = [
   'userToken',
   'tokenExpiration',
   'id',
   'boxName',
+  'userBoxStatus',
   'realName',
   'nickName',
   'userEmail',
   'userPhone',
   'userRole'
 ] as const;
+
+// status 필드가 없는 기존 사용자의 상태를 boxName으로 추론합니다.
+function deriveBoxStatus(boxName: string): BoxStatus {
+  if (!boxName) return 'NONE';
+  if (boxName.startsWith('?')) return 'PENDING';
+  return 'APPROVED';
+}
 
 export class AuthService {
   /**
@@ -81,6 +89,7 @@ export class AuthService {
    */
   static saveUserToLocalStorage(user: User): void {
     localStorage.setItem('boxName', user.boxName);
+    localStorage.setItem('userBoxStatus', user.status ?? deriveBoxStatus(user.boxName));
     localStorage.setItem('realName', user.realName);
     localStorage.setItem('nickName', user.nickName);
     localStorage.setItem('userEmail', user.email);
@@ -95,6 +104,7 @@ export class AuthService {
    */
   static getUserFromLocalStorage(): User | null {
     const boxName = localStorage.getItem('boxName');
+    const savedStatus = localStorage.getItem('userBoxStatus');
     const realName = localStorage.getItem('realName');
     const nickName = localStorage.getItem('nickName');
     const email = localStorage.getItem('userEmail');
@@ -102,7 +112,8 @@ export class AuthService {
     const role = localStorage.getItem('userRole');
 
     if (boxName && realName && nickName && email && phone && role) {
-      return { boxName, realName, nickName, email, phone, role };
+      const status = (savedStatus as BoxStatus | null) ?? deriveBoxStatus(boxName);
+      return { boxName, status, realName, nickName, email, phone, role: role as UserRole };
     }
 
     return null;

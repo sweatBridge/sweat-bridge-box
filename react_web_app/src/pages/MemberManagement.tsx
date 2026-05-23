@@ -64,11 +64,6 @@ const MemberManagement = () => {
     });
   }, [setPageInfo]);
 
-  // 컴포넌트 마운트 시 데이터 로드
-  useEffect(() => {
-    loadMembers();
-  }, [loadMembers]);
-
   // 승인 대기 회원 수 로드
   const loadPendingApplicantsCount = useCallback(async () => {
     const boxName = localStorage.getItem('boxName') || '';
@@ -81,9 +76,12 @@ const MemberManagement = () => {
     }
   }, []);
 
+  // 마운트 시 회원 목록과 승인 대기 수를 한 effect에서 병렬 로드.
   useEffect(() => {
-    loadPendingApplicantsCount();
-  }, [loadPendingApplicantsCount]);
+    Promise.all([loadMembers(), loadPendingApplicantsCount()]).catch((err) => {
+      console.error('Failed to load member management data:', err);
+    });
+  }, [loadMembers, loadPendingApplicantsCount]);
 
   // 에러 처리
   useEffect(() => {

@@ -38,44 +38,40 @@ const Dashboard = () => {
     });
   }, [setPageInfo]);
 
-  // 데이터 로드
+  // 대시보드의 모든 초기 데이터(오늘 수업, 회원 목록, 코치 메모)를 단일 effect의 Promise.all로 묶어 병렬 로드.
   useEffect(() => {
+    let cancelled = false;
     const loadData = async () => {
       try {
         setLoading(true);
-        
-        // 병렬로 데이터 로드
-        const [classes, notices] = await Promise.all([
+        const [classes, memo, notices] = await Promise.all([
           ClassService.getTodayClasses(boxName),
+          DashboardMemoService.getCoachMemo(boxName).catch((error) => {
+            console.error('Failed to load coach memo:', error);
+            return '';
+          }),
           NoticeService.getRecentNoticePosts(boxName, 3),
-          loadMembers() // 회원 데이터도 로드
+          loadMembers()
         ]);
-        
+        if (cancelled) return;
         setTodayClasses(classes);
+        setCoachMemo(memo);
         setNoticePosts(notices);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
       } finally {
-        setLoading(false);
-        setNoticeLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setNoticeLoading(false);
+        }
       }
     };
 
     loadData();
-  }, [loadMembers, boxName]);
-
-  useEffect(() => {
-    const loadCoachMemo = async () => {
-      try {
-        const memo = await DashboardMemoService.getCoachMemo(boxName);
-        setCoachMemo(memo);
-      } catch (error) {
-        console.error('Failed to load coach memo:', error);
-      }
+    return () => {
+      cancelled = true;
     };
-
-    loadCoachMemo();
-  }, [boxName]);
+  }, [loadMembers, boxName]);
 
   const handleSaveCoachMemo = async () => {
     try {

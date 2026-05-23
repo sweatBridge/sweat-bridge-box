@@ -14,7 +14,16 @@ npm test -- --watchAll=false  # 테스트 1회 실행 (CI 모드)
 
 ## 문서 / 디렉토리
 
-`src/` 하위 디렉토리와 파일 전체 목록 및 역할은 `.claude/toc.md` 참고.
+도메인별 상세 문서는 `rules/` 디렉토리에 한국어로 작성되어 있다.
+
+- `rules/README.md` — 전체 아키텍처 개요, Firestore 구조, 상태 관리 패턴, 문서 인덱스
+- `rules/firebase-structure.md` — Firestore 전체 트리 (웹/모바일 앱 공용 경로, 필드 상세, 레포지토리 매핑)
+- `rules/pages/` — 각 페이지 + 모달 컴포넌트 상세 (UI 구성, 비즈니스 로직, 연관 서비스)
+  - `dashboard.md`, `member-management.md`, `class-reservation.md`
+  - `locker.md`, `revenue-management.md`, `box-settings.md`
+- `rules/services/` — 각 서비스 레이어 상세 (Firebase 컬렉션 구조, 함수 설명, 서비스 간 연동)
+  - `auth-service.md`, `member-service.md`, `membership-service.md`
+  - `class-service.md`, `locker-service.md`, `revenue-service.md`
 
 ## 아키텍처
 
@@ -72,6 +81,14 @@ Redux 없이 React Context + useReducer 패턴 사용:
 - Error: `#F04452`
 - Background: `#F9FAFB`
 - Sidebar: `#191F28`
+
+어드민 전용 색상은 `src/constants/adminColors.ts`의 `AdminColors`를 사용.
+
+- Primary: `#1e293b` (다크 슬레이트, 사이드바와 일관된 어두운 계열)
+- Hover: `#334155`
+- Light BG: `#f1f5f9`
+- Accent: `#475569`
+- Header Gradient: `linear-gradient(135deg, #1e293b 0%, #334155 100%)`
 
 ### 날짜 유틸리티
 `src/utils/dateUtils.ts`:
