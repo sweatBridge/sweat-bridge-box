@@ -1,4 +1,4 @@
-import { SERVER_URL, SERVER_TIMEOUT_MS } from './apiConfig';
+import { SERVER_URL, SERVER_TIMEOUT_MS, SERVER_API_KEY } from './apiConfig';
 
 async function fetchWithTimeout(url: string, options?: RequestInit): Promise<Response> {
   const controller = new AbortController();
@@ -13,8 +13,14 @@ async function fetchWithTimeout(url: string, options?: RequestInit): Promise<Res
   }
 }
 
+const baseHeaders = (): Record<string, string> => ({
+  'X-API-Key': SERVER_API_KEY,
+});
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetchWithTimeout(`${SERVER_URL}${path}`);
+  const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
+    headers: baseHeaders(),
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}: GET ${path}`);
   return res.json() as Promise<T>;
 }
@@ -22,7 +28,7 @@ async function get<T>(path: string): Promise<T> {
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...baseHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}: POST ${path}`);
@@ -32,7 +38,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 async function patch<T>(path: string, body: unknown): Promise<T> {
   const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...baseHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}: PATCH ${path}`);
@@ -40,7 +46,10 @@ async function patch<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function del(path: string): Promise<void> {
-  const res = await fetchWithTimeout(`${SERVER_URL}${path}`, { method: 'DELETE' });
+  const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
+    method: 'DELETE',
+    headers: baseHeaders(),
+  });
   if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}: DELETE ${path}`);
 }
 

@@ -1,4 +1,4 @@
-import { serverWrite } from '../../data/apiClient';
+import { serverRead, serverWrite } from '../../data/apiClient';
 import { LOCKER_ACTION, LOCKER_STATE, Locker, LockerDocumentData } from '../../types/locker';
 import { LockerRepository } from '../lockerRepository';
 import { ServerLockerRepository } from '../server/serverLockerRepository';
@@ -15,7 +15,14 @@ interface LockerTransactionResult<T> {
 }
 
 export class HybridLockerRepository {
-  static getLockerDocument(box: string): Promise<LockerTransactionContext> {
+  static async getLockerDocument(box: string): Promise<LockerTransactionContext> {
+    const serverMap = await serverRead(
+      () => ServerLockerRepository.getLockerMap(box),
+      `Locker.getLockerDocument(${box})`
+    );
+    if (serverMap && Object.keys(serverMap).length > 0) {
+      return { exists: true, data: serverMap as LockerDocumentData };
+    }
     return LockerRepository.getLockerDocument(box);
   }
 

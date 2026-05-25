@@ -1,4 +1,5 @@
 import { api } from '../../data/apiClient';
+import { Locker } from '../../types/locker';
 
 export interface ServerLockerResponse {
   id: number;
@@ -39,6 +40,15 @@ export class ServerLockerRepository {
     );
   }
 
+  static async getLockerMap(boxName: string): Promise<Record<string, Partial<Locker>>> {
+    const map = await api.get<Record<string, ServerLockerResponse>>(
+      `/api/v1/lockers?box_name=${encodeURIComponent(boxName)}&format=map`
+    );
+    return Object.fromEntries(
+      Object.entries(map).map(([key, l]) => [key, serverLockerToPartial(l)])
+    );
+  }
+
   static async findLockerIdByNumber(boxName: string, number: number): Promise<number | null> {
     const lockers = await this.listLockers(boxName);
     return lockers.find((l) => l.number === number)?.id ?? null;
@@ -59,4 +69,21 @@ export class ServerLockerRepository {
   static async updateLockerState(lockerId: number, state: 'unused' | 'na' | 'deleted'): Promise<void> {
     await api.patch(`/api/v1/lockers/${lockerId}`, { state });
   }
+}
+
+function serverLockerToPartial(l: ServerLockerResponse): Partial<Locker> {
+  return {
+    number: l.number,
+    state: l.state as Locker['state'],
+    id: l.user_email ?? '',
+    realName: l.real_name ?? '',
+    phone: l.phone ?? '',
+    assignee: l.assignee ?? '',
+    note: l.note ?? '',
+    startDate: l.start_date ?? '',
+    endDate: l.end_date ?? '',
+    key: l.locker_key ?? undefined,
+    price: l.price ?? undefined,
+    paymentType: (l.payment_type as Locker['paymentType']) ?? undefined,
+  };
 }

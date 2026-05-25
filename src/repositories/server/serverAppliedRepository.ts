@@ -13,6 +13,10 @@ export interface ServerAppliedResponse {
 }
 
 export class ServerAppliedRepository {
+  static async listPending(boxName: string): Promise<ServerAppliedResponse[]> {
+    return api.get<ServerAppliedResponse[]>(`/api/v1/applied/${encodeURIComponent(boxName)}`);
+  }
+
   static async findByEmail(boxName: string, email: string): Promise<ServerAppliedResponse | null> {
     return api.get<ServerAppliedResponse | null>(
       `/api/v1/applied/${encodeURIComponent(boxName)}/by-email?email=${encodeURIComponent(email)}`

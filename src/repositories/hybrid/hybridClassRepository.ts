@@ -1,15 +1,24 @@
-import { serverWrite } from '../../data/apiClient';
+import { serverRead, serverWrite } from '../../data/apiClient';
 import { ClassPayload, ClassRepository, FirebaseClassData, FirebaseClassDocument } from '../classRepository';
 import { ServerClassRepository } from '../server/serverClassRepository';
 
 export type { FirebaseClassData, ClassPayload, FirebaseClassDocument };
 
 export class HybridClassRepository {
-  // ---- Firebase-only reads (server lacks `reserved` array) ----
+  // ---- Server-first reads ----
 
-  static getClassesInRange(box: string, startDate: Date, endDate: Date): Promise<FirebaseClassDocument[]> {
+  static async getClassesInRange(box: string, startDate: Date, endDate: Date): Promise<FirebaseClassDocument[]> {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const serverDocs = await serverRead(
+      () => ServerClassRepository.getClassesByRange(box, fmt(startDate), fmt(endDate)),
+      `Class.getClassesInRange(${box})`
+    );
+    if (serverDocs && serverDocs.length > 0) return serverDocs;
     return ClassRepository.getClassesInRange(box, startDate, endDate);
   }
+
+  // ---- Firebase-only reads ----
 
   static getClass(box: string, date: string, time: string): Promise<FirebaseClassData | null> {
     return ClassRepository.getClass(box, date, time);

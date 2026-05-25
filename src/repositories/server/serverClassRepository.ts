@@ -69,8 +69,8 @@ export class ServerClassRepository {
     start: string,
     end: string
   ): Promise<FirebaseClassDocument[]> {
-    const classes = await api.get<ServerClassResponse[]>(
-      `/api/v1/classes/by-range?box_name=${encodeURIComponent(boxName)}&start=${start}&end=${end}`
+    const classes = await api.get<Array<ServerClassResponse & { reserved?: Array<{ email: string }> }>>(
+      `/api/v1/classes/by-range?box_name=${encodeURIComponent(boxName)}&start=${start}&end=${end}&include_reservations=true`
     );
     return classes.map((c) => ({
       docKey: c.doc_key,
@@ -78,7 +78,7 @@ export class ServerClassRepository {
         cap: c.cap,
         coach: c.coach,
         date: Timestamp.fromDate(new Date(c.class_date)),
-        reserved: []
+        reserved: (c.reserved ?? []).map((r) => r.email)
       } as FirebaseClassData
     }));
   }

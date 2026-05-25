@@ -1,4 +1,4 @@
-import { serverWrite } from '../../data/apiClient';
+import { serverRead, serverWrite } from '../../data/apiClient';
 import { BoxStatus } from '../../types/auth';
 import { BoxUser, MemberApplicantRecord } from '../../types/member';
 import { FirebaseMemberData, FirebaseMemberDocument, MemberRepository } from '../memberRepository';
@@ -9,13 +9,23 @@ import { ServerAppliedRepository } from '../server/serverAppliedRepository';
 export type { FirebaseMemberData, FirebaseMemberDocument };
 
 export class HybridMemberRepository {
-  // ---- Firebase-only reads (server lacks embedded memberships/lockerHistory) ----
+  // ---- Server-first reads ----
 
-  static getMemberDocuments(box: string): Promise<FirebaseMemberDocument[]> {
+  static async getMemberDocuments(box: string): Promise<FirebaseMemberDocument[]> {
+    const serverDocs = await serverRead(
+      () => ServerMemberRepository.listMembersWithDetail(box),
+      `Member.getMemberDocuments(${box})`
+    );
+    if (serverDocs && serverDocs.length > 0) return serverDocs;
     return MemberRepository.getMemberDocuments(box);
   }
 
-  static getMemberDocument(box: string, email: string): Promise<Record<string, unknown> | null> {
+  static async getMemberDocument(box: string, email: string): Promise<Record<string, unknown> | null> {
+    const serverDoc = await serverRead(
+      () => ServerMemberRepository.getMemberWithDetail(box, email),
+      `Member.getMemberDocument(${box}/${email})`
+    );
+    if (serverDoc) return serverDoc;
     return MemberRepository.getMemberDocument(box, email);
   }
 
@@ -27,7 +37,21 @@ export class HybridMemberRepository {
     return MemberRepository.getUserByEmail(email);
   }
 
-  static getApplicantMap(boxName: string): Promise<Record<string, MemberApplicantRecord> | null> {
+  static async getApplicantMap(boxName: string): Promise<Record<string, MemberApplicantRecord> | null> {
+    const serverList = await serverRead(
+      () => ServerAppliedRepository.listPending(boxName),
+      `Member.getApplicantMap(${boxName})`
+    );
+    if (serverList && serverList.length > 0) {
+      return Object.fromEntries(
+        serverList.map((a) => [a.email, {
+          email: a.email,
+          realName: a.real_name,
+          phone: a.phone ?? undefined,
+          birth: a.birth ?? undefined
+        }])
+      );
+    }
     return MemberRepository.getApplicantMap(boxName);
   }
 

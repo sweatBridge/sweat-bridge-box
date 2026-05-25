@@ -28,6 +28,12 @@ export class ServerUserRepository {
     return api.get<ServerUserResponse>(`/api/v1/users/${encodeURIComponent(email)}`);
   }
 
+  static async searchUsers(query: string, boxName?: string): Promise<ServerUserResponse[]> {
+    const params = new URLSearchParams({ search: query });
+    if (boxName) params.set('box_name', boxName);
+    return api.get<ServerUserResponse[]>(`/api/v1/users?${params.toString()}`);
+  }
+
   static async updateUser(email: string, payload: ServerUserUpdate): Promise<ServerUserResponse> {
     return api.patch<ServerUserResponse>(`/api/v1/users/${encodeURIComponent(email)}`, payload);
   }

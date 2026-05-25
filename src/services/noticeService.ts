@@ -12,6 +12,8 @@ import {
   updateDoc
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { serverRead, serverWrite } from '../data/apiClient';
+import { ServerNoticeRepository } from '../repositories/server/serverNoticeRepository';
 
 export interface NoticePost {
   id: string;
@@ -43,7 +45,9 @@ const formatDate = (value: unknown): string => {
 
   let parsedDate: Date | null = null;
 
-  if (value instanceof Timestamp) {
+  if (value instanceof Date) {
+    parsedDate = value;
+  } else if (value instanceof Timestamp) {
     parsedDate = value.toDate();
   } else if (
     typeof value === 'object' &&
@@ -65,6 +69,15 @@ const formatDate = (value: unknown): string => {
     .replace(/\s/g, '')
     .replace(/\.$/, '');
 };
+
+const mapServerToNoticePost = (s: import('../repositories/server/serverNoticeRepository').ServerNoticeResponse): NoticePost => ({
+  id: s.id,
+  title: s.title || '(제목 없음)',
+  content: s.content || '',
+  authorName: s.author_name || '-',
+  createdAtText: formatDate(s.created_at ? new Date(s.created_at) : null),
+  commentCount: s.comment_count
+});
 
 const mapDocToNoticePost = (docSnap: { id: string; data: () => FirestoreNoticeDoc }): NoticePost => {
   const data = docSnap.data();
@@ -107,7 +120,8 @@ export class NoticeService {
       throw new Error('작성자를 입력해주세요.');
     }
 
-    await addDoc(collection(db, `box/${boxName}/notices`), {
+    const now = new Date().toISOString();
+    const docRef = await addDoc(collection(db, `box/${boxName}/notices`), {
       title,
       content,
       authorName,
@@ -117,17 +131,39 @@ export class NoticeService {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+
+    serverWrite(
+      () => ServerNoticeRepository.createNotice({
+        id: docRef.id,
+        box_name: boxName,
+        title,
+        content,
+        author_name: authorName,
+        author_email: author?.authorEmail || null,
+        created_at: now,
+        updated_at: now
+      }),
+      `Notice.create(${docRef.id})`
+    );
   }
 
   static async getNoticePosts(boxName: string): Promise<NoticePost[]> {
-    try {
-      if (!boxName) return [];
+    if (!boxName) return [];
 
+    const serverPosts = await serverRead(
+      async () => {
+        const list = await ServerNoticeRepository.listByBox(boxName, 200);
+        return list.map(mapServerToNoticePost);
+      },
+      `Notice.getNoticePosts(${boxName})`
+    );
+    if (serverPosts && serverPosts.length > 0) return serverPosts;
+
+    try {
       const noticesQuery = query(
         collection(db, `box/${boxName}/notices`),
         orderBy('createdAt', 'desc')
       );
-
       const snapshot = await getDocs(noticesQuery);
       return snapshot.docs.map((docSnap) => mapDocToNoticePost(docSnap));
     } catch (error) {
@@ -137,15 +173,23 @@ export class NoticeService {
   }
 
   static async getRecentNoticePosts(boxName: string, count = 3): Promise<NoticePost[]> {
-    try {
-      if (!boxName) return [];
+    if (!boxName) return [];
 
+    const serverPosts = await serverRead(
+      async () => {
+        const list = await ServerNoticeRepository.listByBox(boxName, count);
+        return list.map(mapServerToNoticePost);
+      },
+      `Notice.getRecentNoticePosts(${boxName})`
+    );
+    if (serverPosts && serverPosts.length > 0) return serverPosts;
+
+    try {
       const noticesQuery = query(
         collection(db, `box/${boxName}/notices`),
         orderBy('createdAt', 'desc'),
         limit(count)
       );
-
       const snapshot = await getDocs(noticesQuery);
       return snapshot.docs.map((docSnap) => mapDocToNoticePost(docSnap));
     } catch (error) {
@@ -175,12 +219,23 @@ export class NoticeService {
       throw new Error('작성자를 입력해주세요.');
     }
 
+    const now = new Date().toISOString();
     await updateDoc(doc(db, `box/${boxName}/notices`, noticeId), {
       title,
       content,
       authorName,
       updatedAt: serverTimestamp()
     });
+
+    serverWrite(
+      () => ServerNoticeRepository.updateNotice(noticeId, {
+        title,
+        content,
+        author_name: authorName,
+        updated_at: now
+      }),
+      `Notice.update(${noticeId})`
+    );
   }
 
   static async deleteNoticePost(boxName: string, noticeId: string): Promise<void> {
@@ -189,5 +244,9 @@ export class NoticeService {
     }
 
     await deleteDoc(doc(db, `box/${boxName}/notices`, noticeId));
+    serverWrite(
+      () => ServerNoticeRepository.deleteNotice(noticeId),
+      `Notice.delete(${noticeId})`
+    );
   }
 }
