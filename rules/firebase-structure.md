@@ -3,7 +3,7 @@
 이 문서는 Sweat Bridge 서비스의 Firebase Firestore 전체 트리 구조를 정리한 레퍼런스다.
 백엔드 관련 작업을 할 때 어느 경로에 어떤 데이터가 있는지 빠르게 찾을 수 있도록 구성했다.
 
-- **웹 앱** (`sweat-bridge-box/react_web_app`): 박스 관리자용 — 회원/수업/락커/매출/박스 설정
+- **웹 앱** (`sweat-bridge-box`): 박스 관리자용 — 회원/수업/락커/매출/박스 설정
 - **모바일 앱** (`sweatBridge-app`, Flutter): 회원/코치용 — WOD, 수업 예약, 출석, 개인 기록, 피드백, 리더보드
 
 사용처 표기:
@@ -97,7 +97,7 @@ firestore/
 └── coaches: [{ name, phone, email }] ← 코치 목록
 ```
 
-레포지토리: `react_web_app/src/repositories/boxRepository.ts`
+레포지토리: `src/repositories/boxRepository.ts`
 
 ### 3.2. 회원 컬렉션
 
@@ -320,7 +320,7 @@ firestore/
 
 ## 8. 경로 → 레포지토리 매핑
 
-### 웹 앱 (`react_web_app/src/repositories/`)
+### 웹 앱 (`src/repositories/`)
 
 | Firestore 경로 | 레포지토리 |
 |---|---|
