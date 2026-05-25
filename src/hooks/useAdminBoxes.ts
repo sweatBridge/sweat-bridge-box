@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { BoxInfo, BoxStatus } from '../types/box';
-import { AdminBoxRepository } from '../repositories/adminBoxRepository';
+import { AdminBoxRepository } from '../repositories';
 
 interface AdminBoxesState {
   boxes: BoxInfo[];

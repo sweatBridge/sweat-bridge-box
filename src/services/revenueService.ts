@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { RevenueRepository } from '../repositories/revenueRepository';
+import { RevenueRepository } from '../repositories';
 import { DailyRevenue, MonthlyRevenue, RevenueData, RevenueStats } from '../types/revenue';
 import { UserMembership } from '../types/membership';
 import { formatDateToString } from '../utils/dateUtils';

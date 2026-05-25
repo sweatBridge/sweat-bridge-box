@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { extractDateTimeFromDocKey, formatDateTime, generateDocKey } from '../models/classModel';
-import { ClassPayload, ClassRepository, FirebaseClassData, FirebaseClassDocument } from '../repositories/classRepository';
+import { ClassPayload, ClassRepository, FirebaseClassData, FirebaseClassDocument } from '../repositories';
 import { ClassEvent } from '../types/class';
 
 export class ClassService {

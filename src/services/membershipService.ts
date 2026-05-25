@@ -12,7 +12,7 @@ import {
   isValidActiveMembership,
   isWarningMember
 } from '../models/membershipModel';
-import { MembershipRepository } from '../repositories/membershipRepository';
+import { MembershipRepository } from '../repositories';
 import { MembershipPlan, UserMembership } from '../types/membership';
 import { getDaysBetween, formatDateToString } from '../utils/dateUtils';
 import { RevenueService } from './revenueService';
