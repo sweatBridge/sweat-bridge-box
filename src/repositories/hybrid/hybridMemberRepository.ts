@@ -29,11 +29,23 @@ export class HybridMemberRepository {
     return MemberRepository.getMemberDocument(box, email);
   }
 
-  static getUsersByField(field: string, value: string): Promise<BoxUser[]> {
+  static async getUsersByField(field: string, value: string): Promise<BoxUser[]> {
+    const serverUsers = await serverRead(async () => {
+      const raw = field === 'phone'
+        ? await ServerUserRepository.getUsersByPhone(value)
+        : await ServerUserRepository.searchUsers(value);
+      return raw.map(toBoxUser);
+    }, `Member.getUsersByField(${field}=${value})`);
+    if (serverUsers && serverUsers.length > 0) return serverUsers;
     return MemberRepository.getUsersByField(field, value);
   }
 
-  static getUserByEmail(email: string): Promise<BoxUser | null> {
+  static async getUserByEmail(email: string): Promise<BoxUser | null> {
+    const serverUser = await serverRead(
+      async () => toBoxUser(await ServerUserRepository.getUserByEmail(email)),
+      `Member.getUserByEmail(${email})`
+    );
+    if (serverUser) return serverUser;
     return MemberRepository.getUserByEmail(email);
   }
 
@@ -204,4 +216,19 @@ export class HybridMemberRepository {
       `User.updateUserStatus(${email})`
     );
   }
+}
+
+import { ServerUserResponse } from '../server/serverUserRepository';
+
+function toBoxUser(u: ServerUserResponse): BoxUser {
+  return {
+    email: u.email,
+    realName: u.real_name,
+    nickName: u.nick_name ?? '',
+    phone: u.phone ?? '',
+    boxName: u.box_name ?? '',
+    status: u.status as BoxStatus,
+    gender: (u.gender as 'M' | 'F') ?? undefined,
+    role: u.role,
+  };
 }

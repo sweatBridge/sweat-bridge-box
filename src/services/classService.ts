@@ -55,18 +55,6 @@ export class ClassService {
   }
 
   /**
-   * 레거시 경로 기준으로 특정 클래스 문서를 조회합니다.
-   *
-   * @param box 박스 이름
-   * @param date 날짜 경로
-   * @param time 시간 경로
-   * @returns 클래스 문서 또는 `null`
-   */
-  static async getClass(box: string, date: string, time: string): Promise<FirebaseClassData | null> {
-    return ClassRepository.getClass(box, date, time);
-  }
-
-  /**
    * 새 클래스 문서를 생성합니다.
    *
    * @param payload 생성할 클래스 정보

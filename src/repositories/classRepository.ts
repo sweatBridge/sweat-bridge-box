@@ -56,19 +56,6 @@ export class ClassRepository {
   }
 
   /**
-   * 특정 클래스 문서를 조회합니다.
-   *
-   * @param box 박스 이름
-   * @param date 레거시 날짜 경로
-   * @param time 레거시 시간 경로
-   * @returns 클래스 문서 또는 `null`
-   */
-  static async getClass(box: string, date: string, time: string): Promise<FirebaseClassData | null> {
-    const snap = await getDoc(doc(db, `/box/${box}/class/${date}/time`, time));
-    return snap.exists() ? (snap.data() as FirebaseClassData) : null;
-  }
-
-  /**
    * 클래스 문서를 생성합니다.
    *
    * @param box 박스 이름

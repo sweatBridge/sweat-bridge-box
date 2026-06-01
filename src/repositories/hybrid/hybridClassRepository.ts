@@ -18,12 +18,6 @@ export class HybridClassRepository {
     return ClassRepository.getClassesInRange(box, startDate, endDate);
   }
 
-  // ---- Firebase-only reads ----
-
-  static getClass(box: string, date: string, time: string): Promise<FirebaseClassData | null> {
-    return ClassRepository.getClass(box, date, time);
-  }
-
   // ---- Firebase primary + server fire-and-forget ----
 
   static async setClassDocument(box: string, docKey: string, data: FirebaseClassData): Promise<void> {
