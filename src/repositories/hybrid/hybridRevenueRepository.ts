@@ -86,7 +86,4 @@ export class HybridRevenueRepository {
     }, `Revenue.updateRevenueEntryField(${key}.${field})`);
   }
 
-  static updateDailyRevenue(boxName: string, dailyRevenue: any): Promise<void> {
-    return RevenueRepository.updateDailyRevenue(boxName, dailyRevenue);
-  }
 }

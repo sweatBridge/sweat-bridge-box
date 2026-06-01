@@ -122,13 +122,4 @@ export class RevenueRepository {
     });
   }
 
-  /**
-   * 일별 매출 저장 구현을 위한 예약 메서드입니다.
-   *
-   * @param _boxName 박스 이름
-   * @param _dailyRevenue 저장할 일별 매출
-   */
-  static async updateDailyRevenue(_boxName: string, _dailyRevenue: any): Promise<void> {
-    return Promise.resolve();
-  }
 }

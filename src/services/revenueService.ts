@@ -162,22 +162,6 @@ export class RevenueService {
   }
 
   /**
-   * 일별 매출 저장 API의 자리만 유지합니다.
-   *
-   * @param dailyRevenue 저장할 일별 매출
-   */
-  static async updateDailyRevenue(dailyRevenue: DailyRevenue): Promise<void> {
-    try {
-      const boxName = this.getBoxName();
-      console.log('TODO: Save daily revenue to Firebase', { boxName, dailyRevenue });
-      await RevenueRepository.updateDailyRevenue(boxName, dailyRevenue);
-    } catch (error) {
-      console.error('Error updating daily revenue:', error);
-      throw new Error('매출 데이터 저장에 실패했습니다.');
-    }
-  }
-
-  /**
    * 회원권 매출 데이터를 저장합니다.
    *
    * @param membership 구매된 회원권
