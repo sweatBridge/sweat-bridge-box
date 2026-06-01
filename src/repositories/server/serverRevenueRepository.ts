@@ -56,6 +56,10 @@ function toRevenueYearData(revenues: ServerRevenueResponse[]): RevenueYearData {
 }
 
 export class ServerRevenueRepository {
+  static async getRevenueYears(boxName: string): Promise<number[]> {
+    return api.get<number[]>(`/api/v1/revenues/years?box_name=${encodeURIComponent(boxName)}`);
+  }
+
   static async getRevenueYear(boxName: string, year: number): Promise<RevenueYearData> {
     const revenues = await api.get<ServerRevenueResponse[]>(
       `/api/v1/revenues/year?box_name=${encodeURIComponent(boxName)}&year=${year}`

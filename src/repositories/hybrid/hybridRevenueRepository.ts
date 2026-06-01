@@ -17,9 +17,19 @@ export class HybridRevenueRepository {
     return RevenueRepository.getRevenueYear(boxName, year);
   }
 
-  // ---- Firebase-only reads ----
-
-  static getAllRevenueYears(boxName: string): Promise<RevenueYearDocument[]> {
+  static async getAllRevenueYears(boxName: string): Promise<RevenueYearDocument[]> {
+    const serverYears = await serverRead(
+      () => ServerRevenueRepository.getRevenueYears(boxName),
+      `Revenue.getAllRevenueYears(${boxName})`
+    );
+    if (serverYears && serverYears.length > 0) {
+      return Promise.all(
+        serverYears.map(async (year) => ({
+          year: String(year),
+          data: await RevenueRepository.getRevenueYear(boxName, year),
+        }))
+      );
+    }
     return RevenueRepository.getAllRevenueYears(boxName);
   }
 
@@ -63,12 +73,6 @@ export class HybridRevenueRepository {
       const id = await ServerRevenueRepository.findRevenueIdByKey(boxName, year, month, key);
       if (id !== null) await ServerRevenueRepository.deleteRevenueById(id);
     }, `Revenue.deleteRevenueEntry(${key})`);
-  }
-
-  // ---- Firebase-only writes ----
-
-  static setRevenueYear(boxName: string, year: number | string, data: RevenueYearData): Promise<void> {
-    return RevenueRepository.setRevenueYear(boxName, year, data);
   }
 
   static async updateRevenueEntryField(

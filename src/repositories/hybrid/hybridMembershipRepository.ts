@@ -2,7 +2,7 @@ import { serverRead, serverWrite } from '../../data/apiClient';
 import { MembershipPlan } from '../../types/membership';
 import { RevenueData } from '../../types/revenue';
 import { MemberMembershipDocument, MembershipRepository } from '../membershipRepository';
-import { ServerMembershipRepository } from '../server/serverMembershipRepository';
+import { ServerMembershipRepository, ServerMembershipResponse } from '../server/serverMembershipRepository';
 import { ServerRevenueRepository } from '../server/serverRevenueRepository';
 
 export type { MemberMembershipDocument };
@@ -88,9 +88,59 @@ export class HybridMembershipRepository {
     return MembershipRepository.setUserMemberships(boxName, email, memberships);
   }
 
-  static getAllMemberMemberships(boxName: string): Promise<MemberMembershipDocument[]> {
+  static async getAllMemberMemberships(boxName: string): Promise<MemberMembershipDocument[]> {
+    const serverList = await serverRead(
+      () => ServerMembershipRepository.getMembershipsByBox(boxName),
+      `Membership.getAllMemberMemberships(${boxName})`
+    );
+    if (serverList && serverList.length > 0) {
+      const byEmail = new Map<string, unknown[]>();
+      for (const m of serverList) {
+        const list = byEmail.get(m.member_email) ?? [];
+        list.push(toRawMembership(m));
+        byEmail.set(m.member_email, list);
+      }
+      return Array.from(byEmail.entries()).map(([email, memberships]) => ({ email, memberships }));
+    }
     return MembershipRepository.getAllMemberMemberships(boxName);
   }
+}
+
+function toRawMembership(m: ServerMembershipResponse): unknown {
+  return {
+    key: String(m.id),
+    plan: m.plan,
+    type: m.type,
+    assignee: m.assignee ?? '',
+    purchase: {
+      price: m.price,
+      paid: m.paid,
+      paymentType: m.payment_type ?? '',
+      at: m.paid_at,
+    },
+    period: {
+      startDate: m.start_date,
+      endDate: m.end_date,
+      originalEndDate: m.original_end_date,
+    },
+    quota: {
+      total: m.quota_total,
+      used: m.quota_used,
+      remaining: m.quota_remaining,
+    },
+    holds: [],
+    adjustments: [],
+    refund: {
+      isRefunded: m.is_refunded,
+      amount: m.refund_amount,
+      at: m.refunded_at,
+      reason: m.refund_reason,
+    },
+    deleted: m.deleted,
+    deletedAt: m.deleted_at,
+    createdAt: m.created_at,
+    updatedAt: m.updated_at,
+  };
 }
 
 async function syncPlansToServer(boxName: string, newPlans: MembershipPlan[]): Promise<void> {
