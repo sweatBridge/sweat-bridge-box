@@ -45,6 +45,16 @@ async function patch<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function put<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
+    method: 'PUT',
+    headers: { ...baseHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}: PUT ${path}`);
+  return res.json() as Promise<T>;
+}
+
 async function del(path: string): Promise<void> {
   const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
     method: 'DELETE',
@@ -53,7 +63,7 @@ async function del(path: string): Promise<void> {
   if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}: DELETE ${path}`);
 }
 
-export const api = { get, post, patch, delete: del };
+export const api = { get, post, put, patch, delete: del };
 
 export async function serverRead<T>(fetcher: () => Promise<T>, label: string): Promise<T | null> {
   try {

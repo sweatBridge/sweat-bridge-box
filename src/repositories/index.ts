@@ -19,4 +19,6 @@ export { HybridAdminBoxRepository as AdminBoxRepository } from './hybrid/hybridA
 export { HybridNoticeRepository as NoticeRepository } from './hybrid/hybridNoticeRepository';
 export type { NoticePost, NoticeAuthor } from './noticeRepository';
 
+export { HybridCoachMemoRepository as CoachMemoRepository } from './hybrid/hybridCoachMemoRepository';
+
 export { AuthRepository } from './authRepository';
