@@ -3,7 +3,7 @@ import { BoxStatus } from '../../types/auth';
 import { BoxUser, MemberApplicantRecord } from '../../types/member';
 import { FirebaseMemberData, FirebaseMemberDocument, MemberRepository } from '../memberRepository';
 import { ServerMemberRepository } from '../server/serverMemberRepository';
-import { ServerUserRepository } from '../server/serverUserRepository';
+import { ServerUserRepository, ServerUserResponse } from '../server/serverUserRepository';
 import { ServerAppliedRepository } from '../server/serverAppliedRepository';
 
 export type { FirebaseMemberData, FirebaseMemberDocument };
@@ -217,8 +217,6 @@ export class HybridMemberRepository {
     );
   }
 }
-
-import { ServerUserResponse } from '../server/serverUserRepository';
 
 function toBoxUser(u: ServerUserResponse): BoxUser {
   return {
