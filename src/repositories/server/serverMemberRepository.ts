@@ -1,3 +1,4 @@
+import { Timestamp } from 'firebase/firestore';
 import { api } from '../../data/apiClient';
 import { FirebaseMemberDocument } from '../memberRepository';
 
@@ -139,7 +140,7 @@ function serverMemberDetailToFirebaseDocument(m: ServerMemberDetailResponse): Fi
       phone: m.phone ?? '',
       memo: m.memo ?? '',
       lockerPass: m.locker_pass ?? '',
-      joinedAt: m.joined_at ?? null,
+      joinedAt: m.joined_at ? Timestamp.fromDate(new Date(m.joined_at)) : null,
       memberships: m.memberships.map(serverMembershipToFirebaseFormat),
       lockerHistory: m.locker_history.map(serverLockerHistoryToFirebaseFormat),
     },
