@@ -181,7 +181,6 @@ interface Member {
   email: string;
   realName: string;
   lockerHistory?: MemberLockerHistory[];  // 배정받은 락커 이력
-  lockerPass?: string;                     // 락커 비밀번호
   ...
 }
 

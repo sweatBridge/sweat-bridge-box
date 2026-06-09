@@ -54,7 +54,6 @@ export interface Member {
   memberships: UserMembership[];
   futureMemberships: UserMembership[];
   lockerHistory?: MemberLockerHistory[];
-  lockerPass?: string;
   memo?: string;
   joinedAt?: Timestamp | null;
 }

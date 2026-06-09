@@ -5,7 +5,7 @@ import {
   getDoc,
   getDocs,
   query,
-  setDoc,
+  runTransaction,
   Timestamp,
   updateDoc,
   where
@@ -17,6 +17,23 @@ export interface FirebaseClassData {
   coach: string;
   date: Timestamp;
   reserved: string[];
+}
+
+/**
+ * 같은 docKey에 이미 클래스가 있어 생성에 실패했을 때 던지는 예외.
+ *
+ * 호출자는 `instanceof ClassAlreadyExistsError`로 "이미 존재" 케이스를
+ * 다른 실패와 구분해서 적절한 UX를 제공할 수 있다(예: 4주 반복 시 해당 주만 건너뛰기).
+ */
+export class ClassAlreadyExistsError extends Error {
+  readonly docKey: string;
+  readonly box: string;
+  constructor(box: string, docKey: string) {
+    super(`Class already exists: box=${box}, docKey=${docKey}`);
+    this.name = 'ClassAlreadyExistsError';
+    this.box = box;
+    this.docKey = docKey;
+  }
 }
 
 export interface ClassPayload {
@@ -71,12 +88,26 @@ export class ClassRepository {
   /**
    * 클래스 문서를 생성합니다.
    *
+   * 같은 `docKey`에 이미 클래스가 있으면 `ClassAlreadyExistsError`를 던진다 —
+   * 다른 코치가 만들어 놓은 클래스(또는 동일 코치의 재생성 시도)의 `reserved` 배열을
+   * 통째로 덮어쓰지 않도록 트랜잭션 안에서 존재 여부를 먼저 검증한다.
+   *
+   * 수정이 의도라면 `updateClassDocument`를 사용해야 한다.
+   *
    * @param box 박스 이름
    * @param docKey 클래스 문서 키
    * @param data 저장할 클래스 데이터
+   * @throws ClassAlreadyExistsError 같은 docKey의 문서가 이미 존재할 때
    */
   static async setClassDocument(box: string, docKey: string, data: FirebaseClassData): Promise<void> {
-    await setDoc(doc(db, `/box/${box}/class`, docKey), data);
+    const ref = doc(db, `/box/${box}/class`, docKey);
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (snap.exists()) {
+        throw new ClassAlreadyExistsError(box, docKey);
+      }
+      tx.set(ref, data);
+    });
   }
 
   /**

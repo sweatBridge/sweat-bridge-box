@@ -1,0 +1,287 @@
+rules_version = '2';
+
+// =============================================================================
+// Sweat Bridge Firestore 보안 규칙
+// =============================================================================
+// 목적: 기존 `allow read, write: if true` (전면 무방비)를 대체한다.
+//
+// 이 규칙은 security-review.md 부록 B를 출발점으로, 웹(react_web_app)과
+// 모바일(sweatBridge-app)의 "실제 read/write 경로 감사"를 거쳐 조정한 버전이다.
+// 부록 B를 그대로 배포하면 깨지는 실제 플로우가 있어(아래 주석 참고) 그 부분을
+// 현재 데이터 모델에 맞게 완화했다.
+//
+// Cloud Functions(push.js / email.js)는 Admin SDK를 쓰므로 이 규칙의 적용을
+// 받지 않는다(전체 접근). 따라서 함수 경로는 별도 고려 불필요.
+//
+// ── 닫히는 위험 (status quo 대비) ─────────────────────────────────────────────
+//   • 타 박스 회원/매출/PII 교차 읽기 차단 (테넌트 격리)
+//   • /user, /feedback list(enumeration) 차단 — get만 허용
+//   • 비-코치의 매출(revenue) 쓰기 차단
+//   • 타 박스 회원 대량 삭제 차단
+//   • 타 박스 WOD 생성(푸시 스팸) 차단
+//   • 타인 피드백 열람 차단
+//
+// ── 규칙만으로는 못 닫는 잔존 위험 (server-side 후속 필요) ─────────────────────
+//   회원은 예약 시 본인 member 문서의 memberships(quota)를 직접 write 해야 한다
+//   (reservation_service.dart → updateMemberships). 그래서 member 문서 self-write를
+//   허용할 수밖에 없고, 그 결과 "회원이 콘솔에서 본인 회원권을 조작"하는 경로는
+//   이 규칙만으로 완전히 막지 못한다. 완전 차단하려면 quota 증감을 Cloud Function
+//   (Admin SDK) 또는 callable로 옮긴 뒤 member 문서를 coach-only로 잠가야 한다.
+//   → security-review T1 후속 과제로 분리.
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===== Helper 함수 =====
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function authEmail() {
+      return request.auth.token.email;
+    }
+
+    function isSelf(email) {
+      return isSignedIn() && authEmail() == email;
+    }
+
+    // 현재 로그인 사용자의 user 문서 (권한 평가마다 1 read; 같은 평가 내 캐시됨)
+    function userDoc() {
+      return get(/databases/$(database)/documents/user/$(authEmail())).data;
+    }
+
+    function userExists() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/user/$(authEmail()));
+    }
+
+    // role 값 정규화. 웹은 'coach'/'operator'/'admin'(소문자), 모바일은 'COACH'/'MEMBER'
+    // (대문자)로 저장하므로 항상 소문자로 비교한다. role 필드가 없으면 ''.
+    function roleLower() {
+      return userExists() ? userDoc().get('role', '').lower() : '';
+    }
+
+    // 플랫폼 관리자 — 멀티테넌트 콘솔(/admin/*): 박스 온보딩/상태/유저 관리.
+    // 과거 'operator'는 admin과 동일한 권한이라 중복이었음 → admin으로 통합 (2026-05-28).
+    function isPlatformAdmin() {
+      return roleLower() == 'admin';
+    }
+
+    // boxName의 '?' 접두사(가입 신청 중 placeholder)를 제거해 정규화한다.
+    function normalizeBox(raw) {
+      return raw == null ? '' :
+             (raw.size() > 0 && raw[0] == '?' ? raw[1:] : raw);
+    }
+
+    // 로그인 사용자의 소속 박스(정규화)
+    function userBox() {
+      return userExists() ? normalizeBox(userDoc().get('boxName', '')) : '';
+    }
+
+    function isCoachOf(boxName) {
+      return userExists() && roleLower() == 'coach' && userBox() == boxName;
+    }
+
+    function isMemberOf(boxName) {
+      return userExists() && userBox() == boxName;
+    }
+
+    // 코치도 member로 간주(읽기 권한 공유)
+    function isCoachOrMember(boxName) {
+      return isMemberOf(boxName);
+    }
+
+    function affected() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ===== /user/{email} =====
+    match /user/{email} {
+      // 본인은 자기 문서 get OK. 타인은 같은 박스 코치만 get.
+      allow get: if isSelf(email)
+              || isCoachOf(normalizeBox(resource.data.boxName));
+
+      // list(enumeration) 차단 — 이메일이 문서 ID라 더더욱.
+      // 단, 플랫폼 운영자/관리자의 유저 관리 콘솔(AdminUserList)은 허용.
+      allow list: if isPlatformAdmin();
+
+      // 생성: 본인(회원가입)만.
+      allow create: if isSelf(email);
+
+      // 수정:
+      //   (a) 본인 — 프로필/푸시토큰/회원권(예약 quota) 등 self-service
+      //   (b) 코치가 신규 회원을 본인 박스로 편입/승인/거절:
+      //       - 대상 user의 "현재" 박스가 비어있거나 / 본인 박스이거나 / 본인 박스로의 신청('?box')일 때만
+      //         (= 타 박스의 활성 회원을 가로채지 못하게 제약)
+      //       - 거절 시 boxName을 ''로 비우는 케이스도 포함(현재 박스의 코치면 허용)
+      // 플랫폼 운영자/관리자는 하단 wildcard에서 별도로 전체 허용되므로 여기선 제외.
+      allow update: if isSelf(email)
+              || (
+                   userExists() && roleLower() == 'coach'
+                   && (
+                        // 본인 박스로 편입/승인 (신규 boxName이 코치 박스)
+                        (
+                          userBox() == normalizeBox(request.resource.data.boxName)
+                          && (
+                               resource.data.boxName == null
+                            || resource.data.boxName == ''
+                            || normalizeBox(resource.data.boxName) == userBox()
+                          )
+                        )
+                        // 거절: 현재 박스(신청 포함)의 코치가 boxName을 비움
+                        || (
+                          userBox() == normalizeBox(resource.data.boxName)
+                          && request.resource.data.boxName == ''
+                        )
+                      )
+                 );
+
+      // 삭제: 본인(회원 탈퇴) 또는 본인 박스 코치(회원 강제 삭제 cascade)
+      allow delete: if isSelf(email)
+              || isCoachOf(normalizeBox(resource.data.boxName));
+
+      // 개인 기록 — 본인만
+      match /personal_record/{doc} {
+        allow read, write: if isSelf(email);
+      }
+
+      // WOD 기록 — 본인 read/write, 같은 박스 코치 read
+      match /records/{recordId} {
+        allow read: if isSelf(email)
+                 || isCoachOf(normalizeBox(get(/databases/$(database)/documents/user/$(email)).data.boxName));
+        allow create, update, delete: if isSelf(email);
+      }
+
+      // FCM 푸시 토큰 — 본인만
+      match /keys/{keyDoc} {
+        allow read, write: if isSelf(email);
+      }
+    }
+
+    // ===== /box/{boxName} =====
+    match /box/{boxName} {
+      // 박스 정보/목록은 인증 사용자면 읽기 허용(가입 시 박스 선택 + 앱 전반에서 사용).
+      // 회원가입 직후(user 문서 생성 전)에도 박스를 골라야 하므로 isSignedIn()만 요구.
+      allow get, list: if isSignedIn();
+      allow create: if isPlatformAdmin();                    // 신규 박스 온보딩
+      allow update: if isCoachOf(boxName) || isPlatformAdmin(); // 코치=본인 박스 정보, 운영자=박스 status 등
+      allow delete: if isPlatformAdmin();
+
+      // ── 회원 ──
+      // self-write 허용 사유:
+      //   • 예약 quota 감산: reservation_service → updateMemberships (member self-write)
+      //   • 프로필 수정: user_repository.updateUserProfile 가 member 문서도 갱신
+      //  → 잔존 위험(본인 회원권 조작)은 파일 상단 주석 참고.
+      match /member/{email} {
+        allow get: if isSelf(email) || isCoachOf(boxName);
+        allow list: if isCoachOf(boxName);
+        allow create: if isCoachOf(boxName)
+                   || (isSelf(email) && isMemberOf(boxName));
+        allow update: if isCoachOf(boxName) || isSelf(email);
+        allow delete: if isCoachOf(boxName);
+
+        // 출석 — 코치 마킹 + (일부 플로우의) 본인 기록 허용. 민감도 낮음.
+        match /attendance/{doc} {
+          allow read: if isSelf(email) || isCoachOf(boxName);
+          allow write: if isCoachOf(boxName) || isSelf(email);
+        }
+      }
+
+      // ── 수업 ──
+      match /class/{classId} {
+        allow read: if isCoachOrMember(boxName);
+        allow create: if isCoachOf(boxName);
+        // 회원은 reserved 필드만 수정 가능(예약/취소). 그 외 필드는 코치만.
+        allow update: if isCoachOf(boxName)
+                   || (isMemberOf(boxName) && affected().hasOnly(['reserved']));
+        allow delete: if isCoachOf(boxName);
+      }
+
+      // ── 회원권 플랜 ──
+      match /membership/{doc} {
+        allow read: if isCoachOrMember(boxName);
+        allow write: if isCoachOf(boxName);
+      }
+
+      // ── 락커 (단일 lockerdoc) ──
+      match /lockers/{doc} {
+        allow read: if isCoachOrMember(boxName);
+        allow write: if isCoachOf(boxName);
+      }
+
+      // ── 매출 ──
+      match /revenue/{year} {
+        allow read: if isCoachOf(boxName);
+        allow write: if isCoachOf(boxName);
+      }
+
+      // ── 가입 신청 ──
+      // 신청자는 자기 이메일 키 항목만 추가/수정 가능. 조회/삭제는 코치.
+      // create와 update를 분리: create 시 resource가 없어 diff() 호출이 에러나므로
+      // 신규 문서는 keys()로, 기존 문서는 diff()로 검증한다.
+      match /applied/{doc} {
+        allow read: if isCoachOf(boxName);
+        allow create: if (isSignedIn() && request.resource.data.keys().hasOnly([authEmail()]))
+                   || isCoachOf(boxName);
+        allow update: if (isSignedIn() && affected().hasOnly([authEmail()]))
+                   || isCoachOf(boxName);
+        allow delete: if isCoachOf(boxName);
+      }
+
+      // ── 대시보드 메모 (코치 전용) ──
+      match /dashboardCoachMemos/{doc} {
+        allow read, write: if isCoachOf(boxName);
+      }
+
+      // ── WOD ──
+      match /wod/{wodId} {
+        allow read: if isCoachOrMember(boxName);
+        // createdBy 강제: 푸시 트리거 남용 방지(Cloud Function 측 검증과 이중화).
+        allow create: if isCoachOf(boxName)
+                   && request.resource.data.createdBy == authEmail();
+        allow update, delete: if isCoachOf(boxName);
+
+        // 박스 WOD 기록 — 본인 작성, 같은 박스 read
+        match /records/{email} {
+          allow read: if isCoachOrMember(boxName);
+          allow create, update: if isSelf(email);
+          allow delete: if isSelf(email) || isCoachOf(boxName);
+        }
+      }
+
+      // ── Audit log (append-only) ── (T3-15 도입 시 사용)
+      match /auditLog/{logId} {
+        allow read: if isCoachOf(boxName);
+        allow create: if isCoachOf(boxName);
+        allow update, delete: if false;
+      }
+    }
+
+    // ===== /feedback/{email}/feedbacks/{fbId} =====
+    match /feedback/{email}/feedbacks/{fbId} {
+      function ownerBox() {
+        return normalizeBox(get(/databases/$(database)/documents/user/$(email)).data.boxName);
+      }
+      allow read: if isSelf(email) || isCoachOf(ownerBox());
+      allow create: if isSelf(email) || isCoachOf(ownerBox());
+      allow update: if isCoachOf(ownerBox());
+      allow delete: if isSelf(email) || isCoachOf(ownerBox());
+    }
+
+    // ===== /records/{autoId} (레거시 top-level, 현재 코드 미사용) =====
+    // 플랫폼 관리자만(아래 wildcard) 접근. 그 외 전면 차단.
+    match /records/{autoId} {
+      allow read, write: if false;
+    }
+
+    // ===== 플랫폼 운영자/관리자 override =====
+    // 멀티테넌트 콘솔(/admin/*) 운영을 위해 전체 경로 접근을 허용한다.
+    // Firestore는 매칭 규칙 간 OR로 평가하므로, 위의 coach/member 규칙은 그대로 두고
+    // 운영자/관리자에게만 추가로 전체 권한을 부여한다.
+    // (그 외 미매칭 경로는 기본 deny — 별도 if false catch-all 불필요.)
+    match /{document=**} {
+      allow read, write: if isPlatformAdmin();
+    }
+  }
+}

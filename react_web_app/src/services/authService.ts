@@ -1,10 +1,13 @@
 import { AuthRepository } from '../repositories/authRepository';
 import { BoxStatus, LoginCredentials, User, UserRole } from '../types/auth';
 
+// 로그아웃/clear 시 정리할 키 목록.
+// `userToken`/`tokenExpiration`/`id` 는 더 이상 저장하지 않지만, 과거 빌드에서 저장된
+// 잔존 값을 청소하기 위해 의도적으로 목록에 남겨둔다 (Firebase SDK가 자체 세션을 관리).
 const AUTH_STORAGE_KEYS = [
-  'userToken',
-  'tokenExpiration',
-  'id',
+  'userToken',           // legacy — 더 이상 set하지 않음, 정리 목적으로만 keep
+  'tokenExpiration',     // legacy
+  'id',                  // legacy
   'boxName',
   'userBoxStatus',
   'realName',
@@ -31,16 +34,12 @@ export class AuthService {
    */
   static async login(credentials: LoginCredentials): Promise<User> {
     try {
-      const userCredential = await AuthRepository.signIn(credentials);
-      const idToken = await userCredential.user.getIdToken();
-      const idTokenResult = await userCredential.user.getIdTokenResult();
+      // signIn 자체가 Firebase 내부 세션을 IndexedDB에 영구 저장 + 자동 갱신한다.
+      // 별도로 localStorage에 idToken/expiration을 저장하지 않는다 (XSS 절취 위험 +
+      // 1시간마다 강제 로그아웃 버그 회피).
+      await AuthRepository.signIn(credentials);
       const user = await this.getUserInfo(credentials.email);
-
-      localStorage.setItem('userToken', idToken);
-      localStorage.setItem('tokenExpiration', idTokenResult.expirationTime);
-      localStorage.setItem('id', JSON.stringify(idTokenResult));
       this.saveUserToLocalStorage(user);
-
       return user;
     } catch (error) {
       console.error('Login failed:', error);
@@ -120,34 +119,10 @@ export class AuthService {
   }
 
   /**
-   * 저장된 토큰의 만료 여부를 확인하고, 만료 시 로컬 인증 정보를 제거합니다.
-   *
-   * @returns 토큰이 만료되었으면 `true`
-   */
-  static checkTokenExpiration(): boolean {
-    const tokenExpiration = localStorage.getItem('tokenExpiration');
-    if (!tokenExpiration) return true;
-
-    const expired = new Date(tokenExpiration) < new Date();
-    if (expired) {
-      this.clearAuthStorage();
-    }
-
-    return expired;
-  }
-
-  /**
-   * 현재 사용자가 인증 상태인지 확인합니다.
-   *
-   * @returns 유효한 토큰이 있으면 `true`
-   */
-  static isAuthenticated(): boolean {
-    const token = localStorage.getItem('userToken');
-    return !!(token && !this.checkTokenExpiration());
-  }
-
-  /**
    * 인증 관련 로컬 스토리지 키를 일괄 삭제합니다.
+   *
+   * 현재/과거 키 모두 정리 — Firebase SDK 자체 세션은 별도(IndexedDB)로 관리되며
+   * 로그아웃 시 `AuthRepository.signOut`에서 함께 청소된다.
    */
   private static clearAuthStorage(): void {
     AUTH_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));

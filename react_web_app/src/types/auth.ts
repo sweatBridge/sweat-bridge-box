@@ -1,4 +1,4 @@
-export type UserRole = 'coach' | 'operator' | 'admin';
+export type UserRole = 'coach' | 'admin';
 export type BoxStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export interface LoginCredentials {
