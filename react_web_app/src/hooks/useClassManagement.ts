@@ -1,7 +1,14 @@
 import { useCallback } from 'react';
 import { useClassContext } from '../contexts/ClassContext';
 import { ClassService, ClassPayload } from '../services/classService';
+import { ClassAlreadyExistsError } from '../repositories/classRepository';
 import { SaveClassResult, UpdateClassResult, ClassEvent } from '../types/class';
+
+export interface RecurringCreateSummary {
+  created: ClassEvent[];      // 실제 생성된 수업
+  skippedWeeks: number[];     // 같은 시간대에 이미 클래스가 있어 건너뛴 주 (1-indexed)
+  failedWeeks: number[];      // 그 외 사유로 실패한 주
+}
 
 export const useClassManagement = () => {
   const { state, dispatch } = useClassContext();
@@ -53,6 +60,12 @@ export const useClassManagement = () => {
       
       return newEvent;
     } catch (error) {
+      // "이미 존재" 케이스는 호출자가 명시적으로 분기 처리한다(4주 반복 시 해당 주만 skip 처리).
+      // 컨텍스트 error 상태를 오염시키지 않고 그대로 throw하여 호출자가 typed catch로 분기 가능하게.
+      if (error instanceof ClassAlreadyExistsError) {
+        dispatch({ type: 'SET_LOADING', payload: false });
+        throw error;
+      }
       dispatch({ type: 'SET_ERROR', payload: (error as Error).message });
       throw error;
     }
@@ -111,27 +124,37 @@ export const useClassManagement = () => {
     }
   }, [state.currentBox, dispatch]);
 
-  // 4주간 반복 수업 생성
+  // 4주간 반복 수업 생성. 각 주별로 시도하고 결과를 분류해 반환:
+  //   - created: 정상 생성된 수업 ClassEvent 목록
+  //   - skippedWeeks: 같은 시간대에 이미 클래스가 있어 건너뛴 주 번호 (1-indexed)
+  //   - failedWeeks: 그 외 사유로 실패한 주 번호
   const createRecurringClasses = useCallback(async (
     startDate: Date,
     classData: SaveClassResult
-  ): Promise<ClassEvent[]> => {
-    const createdClasses: ClassEvent[] = [];
-    
+  ): Promise<RecurringCreateSummary> => {
+    const created: ClassEvent[] = [];
+    const skippedWeeks: number[] = [];
+    const failedWeeks: number[] = [];
+
     for (let week = 0; week < 4; week++) {
       const classDate = new Date(startDate);
       classDate.setDate(startDate.getDate() + (week * 7));
-      
+
       try {
         const newClass = await createClass(classDate, classData);
-        createdClasses.push(newClass);
+        created.push(newClass);
       } catch (error) {
-        console.error(`Failed to create class for week ${week + 1}:`, error);
-        // 일부 실패해도 계속 진행
+        if (error instanceof ClassAlreadyExistsError) {
+          console.warn(`Week ${week + 1}: class already exists at ${error.docKey} — skipped.`);
+          skippedWeeks.push(week + 1);
+        } else {
+          console.error(`Week ${week + 1}: failed to create class:`, error);
+          failedWeeks.push(week + 1);
+        }
       }
     }
-    
-    return createdClasses;
+
+    return { created, skippedWeeks, failedWeeks };
   }, [createClass]);
 
   // 박스 변경

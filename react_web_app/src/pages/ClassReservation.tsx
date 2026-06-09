@@ -7,6 +7,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { DateSelectArg, EventClickArg, EventApi, DatesSetArg } from '@fullcalendar/core';
 import { ClassEvent, SaveClassResult, UpdateClassResult, DeleteClassResult, ToastMessageType } from '../types/class';
 import { useClassManagement } from '../hooks/useClassManagement';
+import { ClassAlreadyExistsError } from '../repositories/classRepository';
 import SaveClassModal from '../components/modals/class/SaveClassModal';
 import ManageClassModal from '../components/modals/class/ManageClassModal';
 import ToastMessage from '../components/ToastMessage';
@@ -248,31 +249,49 @@ const ClassReservation = () => {
       const selectedDate = new Date(selectInfo.start);
 
       if (result.applyToFourWeeks) {
-        // 4주간 반복 생성
-        await createRecurringClasses(selectedDate, result);
-        if (createToast) {
+        // 4주간 반복 생성 — 주별 결과를 모아서 사용자에게 요약 전달
+        const summary = await createRecurringClasses(selectedDate, result);
+        if (!createToast) return;
+
+        const { created, skippedWeeks, failedWeeks } = summary;
+        if (created.length === 0 && (skippedWeeks.length > 0 || failedWeeks.length > 0)) {
+          // 한 주도 등록 못 함
           createToast({
-            type: 'success',
-            message: '4주간 수업 등록 성공'
+            type: 'danger',
+            message: skippedWeeks.length > 0
+              ? '모든 주의 같은 시간대에 이미 수업이 등록되어 있습니다.'
+              : '4주간 수업 등록에 실패했습니다.'
           });
+        } else if (skippedWeeks.length === 0 && failedWeeks.length === 0) {
+          createToast({ type: 'success', message: '4주간 수업 등록 성공' });
+        } else {
+          // 부분 성공
+          const parts = [`${created.length}주 등록 성공`];
+          if (skippedWeeks.length > 0) {
+            parts.push(`${skippedWeeks.join(', ')}주차는 이미 등록된 수업이라 건너뜀`);
+          }
+          if (failedWeeks.length > 0) {
+            parts.push(`${failedWeeks.join(', ')}주차 실패`);
+          }
+          createToast({ type: 'warning', message: parts.join(' · ') });
         }
       } else {
         // 단일 수업 생성
         await createClass(selectedDate, result);
         if (createToast) {
-          createToast({
-            type: 'success',
-            message: '수업 등록 성공'
-          });
+          createToast({ type: 'success', message: '수업 등록 성공' });
         }
       }
     } catch (error) {
       console.error('Failed to save class', error);
-      if (createToast) {
+      if (!createToast) return;
+      if (error instanceof ClassAlreadyExistsError) {
         createToast({
-          type: 'danger',
-          message: '수업 등록 실패'
+          type: 'warning',
+          message: '같은 시간대에 이미 등록된 수업이 있습니다. 수업 수정으로 변경해 주세요.'
         });
+      } else {
+        createToast({ type: 'danger', message: '수업 등록 실패' });
       }
     }
   }, [createToast, selectInfo, createClass, createRecurringClasses]);

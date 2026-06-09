@@ -161,6 +161,22 @@ for (const m of allMembers.docs) await deleteDoc(m.ref);
 
 ## 2. Cloud Function `email.js`에 placeholder 자격증명이 박혀 있음
 
+> ### ✅ 상태 (2026-05-28 갱신): 무해 판정 — 조치 불필요. Tier 1에서 제외.
+>
+> 초기 sweep은 세 가지 가능성을 두고 보수적으로 Critical로 잡았으나, git 감사로 **위험 케이스가 모두 배제**됐다.
+>
+> **감사 근거** (`sweatBridge-app`, 전체 539 커밋):
+> - `functions/email.js`를 건드린 커밋은 **단 하나**("Initial commit"). 이후 한 번도 수정 안 됨.
+> - 전체 히스토리에서 email.js에 등장한 자격증명 라인은 **placeholder뿐** (`'your email'` / `'your 16digit created password'`). 실제 비밀번호가 commit된 적 없음.
+> - `functions/`에 `.env`/config/secret 파일 없음 (`package.json`, `package-lock.json`만 존재).
+> - 추적 파일 어디에도 Gmail 앱 비밀번호 패턴 없음.
+>
+> **실제 정체**: 보안 취약점이 아니라 **의도적으로 폐기한 기능의 죽은 코드**다. 팀 확인 결과, 이 nodemailer 함수는 과거 "회원 피드백 도착 시 운영 메일로 알림 → 빠른 CS 대응" 용도였고 **나중에 의도적으로 사용 중단**했다. placeholder 자격증명이라 인증이 실패할 뿐, 피드백 자체는 Firestore에 정상 저장된다(이메일 알림만 미발송).
+>
+> **잔여 미확인 1건(낮음)**: 배포된 Cloud Function 런타임 환경. 단, 코드가 `process.env`/`defineSecret`를 쓰지 않고 하드코딩 문자열을 읽으며, redeploy가 콘솔 수정을 덮어쓰므로 실제 비밀번호가 주입돼 있을 가능성은 희박. 30초 확인: `firebase functions:config:get` + 콘솔의 배포 소스 확인.
+>
+> **결론**: 보안 긴급도 없음. 정리하려면 (a) 기능을 되살릴 거면 Secret Manager로 자격증명 주입, (b) 아니면 `email.js`/`index.js`에서 `sendFeedbackEmail` 삭제. 둘 다 **선택 사항, 낮은 우선순위**. 아래 원본 분석은 기록용으로 보존.
+
 ### 위치
 
 [sweatBridge-app/functions/email.js:5-11](../../../sweatBridge-app/functions/email.js#L5-L11)
@@ -245,6 +261,22 @@ const transporter = nodemailer.createTransport({
 
 ## 3. 모바일 앱이 가짜 로그인 시도로 사용자 존재 여부 확인
 
+> ### ✅ 상태 (2026-05-28): 해결됨 (fixed).
+>
+> **무엇을 했나**
+> - `auth_repository.dart`에서 가짜 로그인 함수 `userExistsByEmail`를 **완전 삭제**. (틀린 비밀번호로 로그인 시도 → 실패 카운터 누적 → 계정 잠금(DoS) + enumeration 벡터였음.)
+> - `auth_service.checkDuplicate` / `auth_controller.checkDuplicate`에서 `isAuth`(Auth 존재 확인) 경로 제거. 이메일 중복은 Firestore(`user` 컬렉션) 조회로만 판단하고, **최종 권위는 회원가입 완료 시 `createUserWithEmailAndPassword`의 `email-already-in-use`** 가 가진다.
+> - `resetPassword`를 **enumeration-safe**로 변경: 존재 여부 게이트 제거 → 항상 `sendPasswordResetEmail` 시도 후 오류를 swallow하고 **중립 메시지**("등록된 이메일이라면 링크를 보냈습니다") 반환. 미등록 이메일도 동일 응답 → 존재 여부 비노출.
+> - 테스트 갱신: `test/service/auth_service_test.dart` (이메일 중복 케이스를 user 저장소 기반으로 교체, fake 정리) → `flutter test` **4/4 통과**.
+>
+> **왜 이렇게 했나 (리뷰의 원래 제안과 다른 점)**
+> - 리뷰는 `fetchSignInMethodsForEmail`로의 교체를 제안했으나, 이 메서드는 Firebase **Email Enumeration Protection**으로 폐기됐다 — 2023-09-15 이후 생성 프로젝트에선 **빈 리스트만 반환**하고 모든 SDK에서 deprecated. 본 앱은 `firebase_auth ^6.1.4`라 이 메서드는 사실상 죽어 있어, 그대로 교체했다면 회원가입/비번찾기가 조용히 깨졌을 것이다.
+> - 즉 `fetchSignInMethodsForEmail`와 이 가짜 로그인 트릭은 **같은 취약점(이메일 enumeration)**. Google은 자사 메서드를 폐기했고, 우리는 우리 쪽 트릭을 제거했다. **클라이언트 측 대체재는 설계상 존재하지 않으며**, 존재 확인이 꼭 필요하면 server-side(Admin SDK `getUserByEmail`) — 즉 예약 게이트키퍼와 같은 신뢰 서버 패턴 — 로 가야 한다.
+>
+> **이 작업에서 드러난 후속 항목 (T0 상호작용)**: 회원가입 중복 체크가 미인증 상태로 `/user`를 조회하므로 T0 규칙 배포 시 `permission-denied`로 깨진다. 이메일은 `createUser` 백스톱이 있으나 **닉네임 유일성은 백스톱이 없어 중복 통과 가능** → server-side 유일성 검사로 이전 필요. 상세: [t0-firestore-rules-runbook.md](./t0-firestore-rules-runbook.md) §3-bis.
+>
+> 아래 원본 분석은 기록용으로 보존.
+
 ### 위치
 
 [sweatBridge-app/lib/repository/auth_repository.dart:75-89](../../../sweatBridge-app/lib/repository/auth_repository.dart#L75-L89)
@@ -317,6 +349,28 @@ Future<bool> userExistsByEmail(String email) async {
 ---
 
 ## 4. 모바일 수업 예약 — 동시성 경쟁 미해결
+
+> ### ⏸ 상태 (2026-06-01): **연기(deferred) — 팀 결정으로 현 시점에는 수정하지 않음.**
+>
+> 이 항목은 "해결 안 됐다"가 아니라 "현 시점에 받아들이기로 한 알려진 리스크"다. 다만 *언제* 깨질지는
+> 트래픽 패턴에 달려 있고, 깨졌을 때는 회원 분쟁으로 직결되므로 **잊지 말 것** — 아래 트리거가 보이면
+> 즉시 우선순위 올려야 한다.
+>
+> **연기 근거**: 현 회원 규모(< 100명)에서 동일 클래스를 1초 이내에 여럿이 동시 예약할 확률이
+> 충분히 낮음. 4인 팀의 작업 부담 대비 발생 빈도를 저울질해 다른 항목 우선.
+>
+> **재가동 트리거** — 다음 중 하나가 보이면 다시 켠다:
+> - 인기 시간대 클래스가 5분 이내 cap에 도달하는 패턴이 정착 (= 동시 클릭 가능성 ↑)
+> - 회원 컴플레인: "분명 예약했는데 명단에 없다" 가 한 번이라도 들어옴
+> - Cloud Logging에서 같은 `class/{docKey}` 의 `reserved` 필드가 1초 이내 여러 번 update되는 패턴
+>
+> **재가동 시 작업 범위 (변경 없음)**:
+> - `reservation_service.dart`의 read→modify→write 를 `runTransaction` 으로 묶기
+> - 같은 트랜잭션 안에서 `box/{box}/class/{id}.reserved` 와 `box/{box}/member/{email}.memberships` 모두 갱신
+> - cap 검증을 트랜잭션 안에서 다시 수행
+> - 추정 1.5 인일 (모바일만; 웹은 코치만 수업 수정하므로 우선순위 낮음)
+>
+> 아래 원본 분석은 기록용으로 보존.
 
 ### 위치
 
@@ -446,6 +500,29 @@ test('동시 예약 시 cap을 넘지 않는다', () async {
 
 ## 5. 락커 비밀번호 평문 저장
 
+> ### ✅ 상태 (2026-06-01): 무해 판정 — 필드 제거 완료. Tier 1에서 제외.
+>
+> 초기 리뷰는 `Member.lockerPass?: string` 필드의 **존재 자체**(평문 PIN 저장 의도)를 문제 삼았지만,
+> 실제로 코드 어디에서도 이 필드를 **읽거나 쓰지 않는 죽은 타입**이었음이 확인됐다.
+>
+> **감사 근거**:
+> - `lockerPass` 참조: 양쪽 repo 전체에서 단 4건 — `src/types/member.ts:57` (타입 선언) +
+>   `rules/firebase-structure.md`, `docs/locker-state-and-history.md` (문서 2건) + 본 보안 리뷰.
+> - **읽기/쓰기 코드 0건** (web/mobile/Cloud Functions 모두).
+> - firestore-tree 표본조사(2026-04-22)에서 일반 회원 문서에 등장하는 필드 목록에 `lockerPass` 없음.
+>   → DB에 실데이터가 사실상 없거나 매우 드뭄.
+>
+> **현재 상태 vs 의도 불일치**: 문서는 "락커 비밀번호"라 적혀 있으나 팀 내부 인식은 "회원권 관련"
+> 쪽이었다고 함(2026-06-01 확인). 어느 쪽이든 코드가 사용하지 않아 의미를 가질 수 없는 죽은 필드.
+>
+> **조치 (2026-06-01 완료)**:
+> - `src/types/member.ts`에서 `lockerPass?: string` 제거.
+> - `rules/firebase-structure.md`, `docs/locker-state-and-history.md`에서 관련 라인 정리.
+> - DB에 잔존 데이터 우려가 있다면 콘솔에서 `/box/*/member/*.lockerPass`를 검색해 일괄 삭제 권장
+>   (실제로 존재한다면 평문 secret이었을 수 있으므로 제거가 안전). 코드는 더 이상 이 필드를 만들지 않음.
+>
+> 아래 원본 분석은 기록용으로 보존.
+
 ### 위치
 
 [sweat-bridge-box/react_web_app/src/types/member.ts:55](../src/types/member.ts#L55)
@@ -495,6 +572,32 @@ lockerPass?: string;
 # 🟡 TIER 2 — High
 
 ## 6. localStorage에 토큰·역할 저장 (웹)
+
+> ### ✅ 상태 (2026-06-01): 부분 해결됨 (web만, 토큰 관련 항목 제거).
+>
+> **이번에 한 것 (A)**:
+> - `authService.login()`에서 `localStorage.setItem('userToken'|'tokenExpiration'|'id', ...)` 3줄 제거.
+>   더 이상 ID 토큰/만료 시각을 직접 저장하지 않는다 (Firebase SDK가 IndexedDB로 자체 관리).
+> - `AuthService.isAuthenticated()` / `AuthService.checkTokenExpiration()` 메서드 삭제.
+> - `AuthContext`가 mount 시 `getAuth() + onAuthStateChanged()`를 구독하도록 변경.
+>   세션의 진실(true source)을 Firebase SDK에서 직접 받는다.
+> - `AUTH_STORAGE_KEYS`에는 legacy 키(`userToken`/`tokenExpiration`/`id`)를 유지하되 주석 처리 —
+>   더 이상 set하지 않지만, 과거 빌드에서 저장된 잔존 값을 로그아웃 시 청소하기 위해 정리 목록에는 남김.
+> - `flutter_test` / `tsc --noEmit` 통과. 호출자(`AdminProtectedRoute`/`ProtectedRoute`/`Login`)는
+>   `useAuth().isAuthenticated` (React state)를 사용하므로 영향 없음.
+>
+> **이번에 안 한 것 (B, 의도적)**:
+> - `userRole`을 localStorage가 아닌 AuthContext에서 sourcing하도록 리팩토링.
+> - 팀 결정: 웹은 코치/관리자만 사용하므로 `userRole` UI 분기를 콘솔에서 스푸핑해도
+>   **T0 규칙이 모든 권한 분기를 막아 실제 DB 접근은 불가** → 코스메틱 위협만 남고 작업 우선순위 낮음.
+> - `userRole`은 localStorage에 그대로 유지. 향후 AuthContext 작업 시 같이 정리.
+>
+> **닫힌 위험**:
+> - XSS로 `userToken` 절취하는 경로 — 더 이상 localStorage에 토큰이 없으므로 차단.
+> - **1시간마다 강제 로그아웃 버그** — Firebase가 토큰을 자동 갱신하지만 우리 코드가
+>   stale `tokenExpiration`을 보고 로그아웃 처리하던 문제. 이제 코드가 직접 만료 추적을 하지 않음.
+>
+> 아래 원본 분석은 기록용으로 보존.
 
 ### 위치
 
@@ -559,6 +662,36 @@ localStorage.setItem('userRole', user.role);
 ---
 
 ## 7. Cloud Functions가 호출자 권한을 검증하지 않음
+
+> ### 🟢 상태 (2026-06-01): **benign 판정 — 작업 보류. Tier 2에서 사실상 제외.**
+>
+> 초기 리뷰는 "함수가 호출자 검증을 안 한다 → 누구든 trigger doc을 만들면 함수가 발화"를 우려했다.
+> **T0 규칙 배포로 그 전제(누구든 만들 수 있다)가 닫혔다** — 두 함수 모두 trigger doc 생성 자체를
+> 규칙이 막는다.
+>
+> **현재 닫힌 상태**:
+> - `sendWodPush` ([box/{box}/wod/{wodId}](../firestore.rules)): 규칙이 `isCoachOf(boxName) &&
+>   request.resource.data.createdBy == authEmail()` 을 강제 → 본인 박스의 코치가 본인 이메일을
+>   `createdBy`로 박아 넣은 정상 흐름만 통과. 외부에서 trigger를 fire할 경로 없음.
+> - `sendFeedbackEmail` ([feedback/{email}/feedbacks/...](../firestore.rules)): 규칙이 `isSelf(email) ||
+>   isCoachOf(ownerBox())` 으로 제한. 게다가 함수 자체가 **T1-2에서 dead code로 판정**돼 실제 동작은
+>   placeholder 자격증명으로 인증 실패하며 메일은 발송되지 않음.
+>
+> **연기 근거 (팀 결정 2026-06-01)**:
+> - 4인 팀, "낮은 확률의 미래 시나리오"보다는 현재 활성 리스크(T2-8 cascade 삭제, T2-10 클래스
+>   덮어쓰기)에 인력 투입이 우선.
+> - 본 항목은 defense-in-depth가 본질이고 현재 단일 lock(규칙)이 잘 잠겨 있어 실제 잔존 리스크는
+>   미미.
+>
+> **재가동 트리거** — 다음 중 하나가 보이면 다시 켠다:
+> - 규칙 리팩토링 중 `wod` 또는 `feedback` 경로의 권한 조항이 의도치 않게 느슨해짐.
+> - Cloud Logging에서 `sendWodPush`/`sendFeedbackEmail` 가 예상 흐름과 다른 actor에 의해 발화되는 패턴.
+> - Cloud Functions가 callable 형태(클라이언트가 직접 호출)로 확장되어 trigger 모델이 바뀜.
+>
+> **재가동 시 작업 범위 (변경 없음)** — 함수 내부에 `wodData.createdBy` 기반 추가 검증을 넣고
+> 불일치 시 `console.error` + 조기 return. 추정 1 인일.
+>
+> 아래 원본 분석은 기록용으로 보존.
 
 ### 위치
 
@@ -634,6 +767,32 @@ match /box/{boxName}/wod/{wodId} {
 ---
 
 ## 8. 회원 탈퇴/삭제 시 cascade 누락
+
+> ### ⏸ 상태 (2026-06-01): **연기(deferred) — ToS/약관 작업과 함께 다루기로 결정.**
+>
+> 이 항목은 "유효한 문제 + 1인일짜리 명확한 fix"이지만, 코치-삭제와 본인-삭제의 *의도(soft remove vs
+> 하드 erasure)*를 가르는 결정이 결국 **이용약관/개인정보 처리방침 문구**와 한 묶음이라 — 팀이
+> 다음 ToS 작업 사이클에서 함께 처리하기로 했다.
+>
+> **그동안 잔존하는 영향** (의식해 둘 것):
+> - **푸시 ghost**: 코치-삭제된 회원의 `/user.boxName` 이 그대로라 `sendWodPush` 가 계속 그들에게
+>   알림을 보낸다. 회원 컴플레인이 들어오면 임시 대응으로 해당 user 문서를 콘솔에서 수동 정리.
+> - **PIPA 노출**: 탈퇴자 데이터 누적이 시간 경과로 가시화. 회원 수가 100명대 초중반을 넘기 전에
+>   해결 필요.
+> - **죽은 데이터 축적**: 매월 churn 만큼. 50명 규모에선 무시 가능, 수백 명 규모에선 분석 노이즈.
+>
+> **재가동 트리거**:
+> - ToS/약관 개정 작업이 시작될 때 (= 본 항목도 같이 처리).
+> - PIPA 감사/외부 점검 일정이 잡힘.
+> - 푸시 ghost 컴플레인이 2건 이상 들어옴.
+> - 회원 수가 100명을 넘는 시점.
+>
+> **재가동 시 작업 범위** (변경 없음 — 본 리뷰의 원래 분석대로):
+> - 코치 삭제(`MemberService.deleteMember`) → soft remove + `/user.boxName` 클리어 + 푸시 토큰 제거.
+> - 본인 탈퇴(모바일 `deleteUserData`) → 전체 erasure (`/user`, PR, records, feedback 서브컬렉션 포함).
+> - `writeBatch` + 서브컬렉션 chunked 삭제 헬퍼. 추정 1 인일.
+>
+> 아래 원본 분석은 기록용으로 보존.
 
 ### 위치
 
@@ -715,6 +874,33 @@ async function deleteSubcollection(path: string) {
 
 ## 9. PII가 Cloud Function 로그에 남음
 
+> ### 🟡 상태 (2026-06-01): **neutral — 의식적으로 현 상태 유지. Tier 2에서 사실상 제외.**
+>
+> 본 항목의 실제 위험(외부 노출, PIPA 위반)이 현 단계에선 매우 낮고, **디버깅 효용**(작은 팀이
+> 4명 모두가 곧바로 로그에서 실 사용자 이메일을 보고 추적할 수 있는 가치)이 그 위험보다 크다고
+> 팀이 판단 (2026-06-01).
+>
+> **현재 노출 평가**:
+> - GCP `roles/logging.viewer` 보유자 = 팀원 4명 + Firebase 서비스 계정뿐. 외부 컨설턴트 접근 없음.
+> - 로그 export(BigQuery/Slack 등) 설정 없음.
+> - 따라서 PII가 로그에 있어도 "내부 4명 + Firebase"를 넘어 노출되지 않음.
+>
+> **유지하기로 한 이유**: 풀 이메일이 보여야 알림 미발송/토큰 누락 등 회원 단위 디버깅이 즉시 가능.
+> 마스킹하면 표본 사이즈가 작아 디버깅 비용이 오히려 상승한다고 판단.
+>
+> **재가동 트리거** — 다음 중 하나가 보이면 즉시 마스킹 적용 (작업은 30분):
+> - GCP IAM에 **팀 외부 인원**(컨설턴트, 외주 등) 추가.
+> - **로그 export 설정**(BigQuery, Slack, Pub/Sub, 외부 SIEM 등) 활성화.
+> - PIPA 감사/외부 점검 일정 잡힘.
+> - 팀이 5명 이상으로 늘어남(접근자 수 증가 자체가 위험).
+>
+> **재가동 시 작업 범위** (변경 없음):
+> - `functions/push.js`, `functions/email.js` 의 모든 `console.log/error`에서 이메일을 `maskEmail()` 통과.
+> - 피드백 내용은 길이만 출력.
+> - 30분.
+>
+> 아래 원본 분석은 기록용으로 보존.
+
 ### 위치
 
 [sweatBridge-app/functions/push.js:65, 81-82, 108-110](../../../sweatBridge-app/functions/push.js#L65)
@@ -770,6 +956,34 @@ console.log(`[FEEDBACK] from ${maskEmail(userEmail)}, content length: ${feedback
 ---
 
 ## 10. 동시 클래스 생성 시 기존 예약 wipe-out 가능성 (잔존 버그)
+
+> ### ✅ 상태 (2026-06-01): 해결됨 (fixed) — Option B (loud reject) 채택.
+>
+> **무엇을 했나**
+> - `ClassRepository.setClassDocument` 를 **트랜잭션**으로 감싸 같은 `docKey`의 문서가 이미 있으면
+>   `ClassAlreadyExistsError`를 던지고 write를 거부하도록 변경.
+> - 새 typed exception `ClassAlreadyExistsError`를 export — 호출자가 "이미 존재" 케이스를 일반 실패와
+>   분리해서 처리 가능.
+> - `useClassManagement.createClass`: 이 에러는 컨텍스트 `error` 상태를 오염시키지 않고 typed로 rethrow.
+>   (기존 generic error toast가 false-positive로 뜨는 것 방지.)
+> - `useClassManagement.createRecurringClasses`: 반환 타입을
+>   `{ created, skippedWeeks, failedWeeks }` 구조로 변경 — 어떤 주가 어떤 사유로 안 됐는지 호출자가 분류 가능.
+> - `ClassReservation.saveClass`:
+>   - 단일 등록 시 `ClassAlreadyExistsError` 면 "같은 시간대에 이미 등록된 수업이 있습니다." 안내.
+>   - 4주 반복 시 결과 요약 토스트 — 예: "3주 등록 성공 · 2주차는 이미 등록된 수업이라 건너뜀".
+>   - 0건 성공이면 명시적 실패 토스트.
+>
+> **닫힌 위험**: 코치 B가 모르고 같은 시간대 클래스를 재생성해 코치 A의 클래스 + 예약자 명단을
+> 통째로 덮어쓰는 시나리오 — 트랜잭션 단계에서 거부됨. 이미 예약된 회원의 spot이 silent하게 사라지는
+> 데이터 손실 경로 차단.
+>
+> **검증**
+> - `tsc --noEmit` 통과.
+> - `architecture-refactor` 테스트 33/34 통과 (사전 존재 LockerService 테스트 1건만 실패, 본 작업과 무관).
+> - 통합 테스트는 `setClassDocument`를 직접 검증하지 않음 — 동시성 회귀 검증이 필요하면 라이브 환경에서
+>   동일 docKey로 두 번 호출해 두 번째가 명시적으로 `ClassAlreadyExistsError`로 실패하는지 확인.
+>
+> 아래 원본 분석은 기록용으로 보존.
 
 ### 위치
 

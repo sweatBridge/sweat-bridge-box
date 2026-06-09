@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { AdminColors } from '../constants/adminColors';
 
 const AdminProtectedRoute = () => {
-  const { isAuthenticated, isOperator, loading } = useAuth();
+  const { isAuthenticated, isAdmin, loading } = useAuth();
 
   if (loading) {
     return (
@@ -33,7 +33,7 @@ const AdminProtectedRoute = () => {
   }
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!isOperator) return <Navigate to="/dashboard" replace />;
+  if (!isAdmin) return <Navigate to="/dashboard" replace />;
 
   return <Outlet />;
 };

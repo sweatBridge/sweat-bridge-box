@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { AuthState, LoginCredentials } from '../types/auth';
 import { AuthService } from '../services/authService';
 
@@ -6,7 +7,6 @@ interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
-  isOperator: boolean;
   isAdmin: boolean;
 }
 
@@ -32,30 +32,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     error: null
   });
 
-  // 초기 인증 상태 확인
+  // 인증 상태는 Firebase SDK가 IndexedDB로 영구 저장 + 자동 갱신하므로,
+  // localStorage의 토큰 만료 시각을 우리가 따로 추적하지 않는다.
+  // onAuthStateChanged가 세션의 진실(true source)을 알려준다.
   useEffect(() => {
-    const checkAuthStatus = () => {
-      try {
-        const isAuthenticated = AuthService.isAuthenticated();
-        const user = AuthService.getUserFromLocalStorage();
-        
-        setAuthState({
-          isAuthenticated,
-          user,
-          loading: false,
-          error: null
-        });
-      } catch (error) {
-        setAuthState({
-          isAuthenticated: false,
-          user: null,
-          loading: false,
-          error: null
-        });
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser?.email) {
+        setAuthState({ isAuthenticated: false, user: null, loading: false, error: null });
+        return;
       }
-    };
 
-    checkAuthStatus();
+      // 프로필은 localStorage 캐시 우선(빠른 렌더). 없으면 Firestore에서 fetch 후 캐시.
+      let user = AuthService.getUserFromLocalStorage();
+      if (!user) {
+        try {
+          user = await AuthService.getUserInfo(firebaseUser.email);
+          AuthService.saveUserToLocalStorage(user);
+        } catch (error) {
+          console.error('Failed to hydrate user profile after auth state change:', error);
+          user = null;
+        }
+      }
+
+      setAuthState({
+        isAuthenticated: !!user,
+        user,
+        loading: false,
+        error: null,
+      });
+    });
+
+    return unsubscribe;
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
@@ -114,7 +122,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     clearError,
-    isOperator: authState.user?.role === 'operator' || authState.user?.role === 'admin',
     isAdmin: authState.user?.role === 'admin',
   };
 

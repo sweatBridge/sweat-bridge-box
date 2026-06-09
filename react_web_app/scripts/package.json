@@ -1,0 +1,13 @@
+{
+  "name": "sweat-bridge-ops-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sweat Bridge 운영용 일회성 스크립트 (마이그레이션 등).",
+  "scripts": {
+    "migrate:operator-to-admin": "node migrate-operator-to-admin.js",
+    "migrate:operator-to-admin:execute": "node migrate-operator-to-admin.js --execute"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

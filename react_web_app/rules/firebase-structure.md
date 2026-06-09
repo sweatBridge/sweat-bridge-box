@@ -111,7 +111,6 @@ firestore/
 ├── phone: string
 ├── joinedAt: Timestamp
 ├── memo: string                     ← 회원 메모
-├── lockerPass: string               ← 락커 비밀번호 (선택)
 ├── lockerHistory: MemberLockerHistory[]
 │   └── { lockerNum, startDate, endDate, createdAt, key, price, paymentType }
 ├── memberships: UserMembership[]    ← 현재/과거 회원권
@@ -127,7 +126,7 @@ firestore/
         └── memberships: UserMembership[]   ← 부모 문서의 `memberships` 배열과 동일 (중복 미러)
 ```
 
-> 실측(2026-04-22)상 보편적으로 존재하는 필드는 `email, realName, nickName, gender, phone, boxName, memberships`. 나머지(`joinedAt, memo, lockerPass, lockerHistory, birthDate, updatedAt, futureMemberships`)는 선택 필드라 모든 회원 문서에 있지 않을 수 있다.
+> 실측(2026-04-22)상 보편적으로 존재하는 필드는 `email, realName, nickName, gender, phone, boxName, memberships`. 나머지(`joinedAt, memo, lockerHistory, birthDate, updatedAt, futureMemberships`)는 선택 필드라 모든 회원 문서에 있지 않을 수 있다.
 
 > `member/{email}/membership/membership_doc`은 DB에는 존재하지만 현재 레포지토리 코드 어디서도 읽거나 쓰지 않는다. 과거 스키마 잔여물로 추정되며 정본은 부모 회원 문서의 `memberships` 배열이다.
 

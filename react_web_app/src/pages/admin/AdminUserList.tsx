@@ -8,13 +8,11 @@ type RoleFilter = 'all' | UserRole;
 
 const ROLE_LABEL: Record<UserRole, string> = {
   coach: '코치',
-  operator: '운영자',
   admin: '어드민',
 };
 
 const ROLE_COLOR: Record<UserRole, { bg: string; color: string }> = {
   coach: { bg: '#eff6ff', color: '#1d4ed8' },
-  operator: { bg: '#f0fdf4', color: '#15803d' },
   admin: { bg: '#fdf4ff', color: '#7e22ce' },
 };
 
@@ -134,7 +132,7 @@ const RoleChangeModal = ({ user, onConfirm, onClose }: RoleChangeModalProps) => 
             변경할 역할 선택
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {(['coach', 'operator', 'admin'] as UserRole[]).map((role) => {
+            {(['coach', 'admin'] as UserRole[]).map((role) => {
               const { bg, color } = ROLE_COLOR[role];
               const isSelected = selectedRole === role;
               return (
@@ -160,8 +158,7 @@ const RoleChangeModal = ({ user, onConfirm, onClose }: RoleChangeModalProps) => 
                   </div>
                   <span style={{ fontSize: '12px', color: '#9ca3af' }}>
                     {role === 'coach' && '박스 내 기능 접근'}
-                    {role === 'operator' && '어드민 포털 접근'}
-                    {role === 'admin' && '전체 권한'}
+                    {role === 'admin' && '어드민 포털 + 전체 권한'}
                   </span>
                 </button>
               );
@@ -320,7 +317,7 @@ const BoxGroup = ({ boxName, users, onRoleChange }: BoxGroupProps) => {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '6px', marginRight: '8px' }}>
-          {(['coach', 'operator', 'admin'] as UserRole[]).map((role) => {
+          {(['coach', 'admin'] as UserRole[]).map((role) => {
             const count = users.filter((u) => u.role === role).length;
             if (count === 0) return null;
             const { bg, color } = ROLE_COLOR[role];
@@ -389,7 +386,6 @@ const AdminUserList = () => {
   }, [filtered]);
 
   const totalCoach = users.filter((u) => u.role === 'coach').length;
-  const totalOperator = users.filter((u) => u.role === 'operator').length;
   const totalAdmin = users.filter((u) => u.role === 'admin').length;
 
   const handleRoleChange = (newRole: UserRole) => {
@@ -403,17 +399,15 @@ const AdminUserList = () => {
   const ROLE_FILTERS: { value: RoleFilter; label: string }[] = [
     { value: 'all', label: '전체' },
     { value: 'coach', label: '코치' },
-    { value: 'operator', label: '운영자' },
     { value: 'admin', label: '어드민' },
   ];
 
   return (
     <div>
       {/* 요약 카드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
         <SummaryCard label="전체 유저" value={users.length} icon={Users} color="#3182f6" bg="#eff6ff" />
         <SummaryCard label="코치" value={totalCoach} icon={UserCheck} color="#1d4ed8" bg="#dbeafe" />
-        <SummaryCard label="운영자" value={totalOperator} icon={UserCog} color="#15803d" bg="#dcfce7" />
         <SummaryCard label="어드민" value={totalAdmin} icon={ShieldCheck} color="#7e22ce" bg="#f3e8ff" />
       </div>
 
