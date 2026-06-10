@@ -1,4 +1,5 @@
 import { SERVER_URL, SERVER_TIMEOUT_MS, SERVER_API_KEY } from './apiConfig';
+import { encryptUserEmail } from './userToken';
 
 async function fetchWithTimeout(url: string, options?: RequestInit): Promise<Response> {
   const controller = new AbortController();
@@ -13,13 +14,16 @@ async function fetchWithTimeout(url: string, options?: RequestInit): Promise<Res
   }
 }
 
-const baseHeaders = (): Record<string, string> => ({
-  'X-API-Key': SERVER_API_KEY,
-});
+const baseHeaders = async (): Promise<Record<string, string>> => {
+  const headers: Record<string, string> = { 'X-API-Key': SERVER_API_KEY };
+  const token = await encryptUserEmail();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+};
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
-    headers: baseHeaders(),
+    headers: await baseHeaders(),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}: GET ${path}`);
   return res.json() as Promise<T>;
@@ -28,7 +32,7 @@ async function get<T>(path: string): Promise<T> {
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
     method: 'POST',
-    headers: { ...baseHeaders(), 'Content-Type': 'application/json' },
+    headers: { ...await baseHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}: POST ${path}`);
@@ -38,7 +42,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 async function patch<T>(path: string, body: unknown): Promise<T> {
   const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
     method: 'PATCH',
-    headers: { ...baseHeaders(), 'Content-Type': 'application/json' },
+    headers: { ...await baseHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}: PATCH ${path}`);
@@ -48,7 +52,7 @@ async function patch<T>(path: string, body: unknown): Promise<T> {
 async function put<T>(path: string, body: unknown): Promise<T> {
   const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
     method: 'PUT',
-    headers: { ...baseHeaders(), 'Content-Type': 'application/json' },
+    headers: { ...await baseHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}: PUT ${path}`);
@@ -58,7 +62,7 @@ async function put<T>(path: string, body: unknown): Promise<T> {
 async function del(path: string): Promise<void> {
   const res = await fetchWithTimeout(`${SERVER_URL}${path}`, {
     method: 'DELETE',
-    headers: baseHeaders(),
+    headers: await baseHeaders(),
   });
   if (!res.ok && res.status !== 204) throw new Error(`HTTP ${res.status}: DELETE ${path}`);
 }
