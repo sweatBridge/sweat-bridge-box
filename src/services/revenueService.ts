@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { RevenueRepository } from '../repositories/revenueRepository';
+import { RevenueRepository } from '../repositories';
 import { DailyRevenue, MonthlyRevenue, RevenueData, RevenueStats } from '../types/revenue';
 import { UserMembership } from '../types/membership';
 import { formatDateToString } from '../utils/dateUtils';
@@ -158,22 +158,6 @@ export class RevenueService {
     } catch (error) {
       console.error('Error fetching revenue stats:', error);
       throw new Error('매출 통계를 불러오는데 실패했습니다.');
-    }
-  }
-
-  /**
-   * 일별 매출 저장 API의 자리만 유지합니다.
-   *
-   * @param dailyRevenue 저장할 일별 매출
-   */
-  static async updateDailyRevenue(dailyRevenue: DailyRevenue): Promise<void> {
-    try {
-      const boxName = this.getBoxName();
-      console.log('TODO: Save daily revenue to Firebase', { boxName, dailyRevenue });
-      await RevenueRepository.updateDailyRevenue(boxName, dailyRevenue);
-    } catch (error) {
-      console.error('Error updating daily revenue:', error);
-      throw new Error('매출 데이터 저장에 실패했습니다.');
     }
   }
 

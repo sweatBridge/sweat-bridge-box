@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { RevenueState, DailyRevenue } from '../types/revenue';
+import { RevenueState } from '../types/revenue';
 import { RevenueService } from '../services/revenueService';
 
 export const useRevenueManagement = () => {
@@ -81,24 +81,6 @@ export const useRevenueManagement = () => {
     }
   }, [setLoading, setError]);
 
-  // 일별 매출 데이터 업데이트
-  const updateDailyRevenue = useCallback(async (dailyRevenue: DailyRevenue) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      await RevenueService.updateDailyRevenue(dailyRevenue);
-      // 현재 월 데이터 다시 로드
-      if (state.monthlyRevenue) {
-        await loadMonthlyRevenue(state.monthlyRevenue.year, state.monthlyRevenue.month);
-      }
-    } catch (error) {
-      setError((error as Error).message);
-      setLoading(false);
-      throw error;
-    }
-  }, [setLoading, setError, loadMonthlyRevenue, state.monthlyRevenue]);
-
   return {
     monthlyRevenue: state.monthlyRevenue,
     stats: state.stats,
@@ -107,7 +89,6 @@ export const useRevenueManagement = () => {
     loadMonthlyRevenue,
     loadRevenueStats,
     loadInitialData,
-    updateDailyRevenue,
     clearError
   };
 }; 

@@ -1,4 +1,4 @@
-import { AuthRepository } from '../repositories/authRepository';
+import { AuthRepository } from '../repositories';
 import { BoxStatus, LoginCredentials, User, UserRole } from '../types/auth';
 
 const AUTH_STORAGE_KEYS = [

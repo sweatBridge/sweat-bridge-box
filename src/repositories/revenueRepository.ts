@@ -40,19 +40,6 @@ export class RevenueRepository {
   }
 
   /**
-   * 특정 연도의 매출 문서를 저장합니다.
-   *
-   * 동시 쓰기 시에도 다른 월/엔트리를 덮어쓰지 않도록 merge 모드를 사용합니다.
-   *
-   * @param boxName 박스 이름
-   * @param year 저장 연도
-   * @param data 저장할 연도 데이터
-   */
-  static async setRevenueYear(boxName: string, year: number | string, data: RevenueYearData): Promise<void> {
-    await setDoc(doc(db, `box/${boxName}/revenue/${year}`), data, { merge: true });
-  }
-
-  /**
    * 매출 문서에 단일 엔트리를 추가/갱신합니다.
    *
    * 연도 문서가 없으면 새로 만들고, 있으면 해당 월의 해당 키만 갱신합니다.
@@ -122,13 +109,4 @@ export class RevenueRepository {
     });
   }
 
-  /**
-   * 일별 매출 저장 구현을 위한 예약 메서드입니다.
-   *
-   * @param _boxName 박스 이름
-   * @param _dailyRevenue 저장할 일별 매출
-   */
-  static async updateDailyRevenue(_boxName: string, _dailyRevenue: any): Promise<void> {
-    return Promise.resolve();
-  }
 }

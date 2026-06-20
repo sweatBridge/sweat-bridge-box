@@ -1,4 +1,4 @@
-import { BoxRepository } from '../repositories/boxRepository';
+import { BoxRepository } from '../repositories';
 import { BoxInfo, Coach } from '../types/box';
 import { getCachedCoaches, hasFetchedCoachList, setCachedCoaches } from '../utils/coachStorage';
 

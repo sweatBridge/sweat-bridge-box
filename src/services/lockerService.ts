@@ -1,7 +1,7 @@
 import { doc, runTransaction, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getLatestLocker, hasActiveAssignedUser, toLocker } from '../models/lockerModel';
-import { LockerRepository } from '../repositories/lockerRepository';
+import { LockerRepository } from '../repositories';
 import { Locker, LOCKER_ACTION, LOCKER_STATE, LockerDocumentData, LockerDocumentEntry, LockerState } from '../types/locker';
 import { MemberLockerHistory } from '../types/member';
 import { formatDateToString } from '../utils/dateUtils';

@@ -4,8 +4,8 @@ import {
   categorizeMemberships,
   convertMembershipsFromFirebase
 } from '../models/memberModel';
-import { FirebaseMemberData, MemberRepository } from '../repositories/memberRepository';
-import { BoxRepository } from '../repositories/boxRepository';
+import { FirebaseMemberData, MemberRepository } from '../repositories';
+import { BoxRepository } from '../repositories';
 import { BoxUser, Member, MemberApplicant, MemberLockerHistory } from '../types/member';
 
 export class MemberService {

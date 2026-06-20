@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore';
 import { extractDateTimeFromDocKey, formatDateTime, generateDocKey } from '../models/classModel';
-import { ClassPayload, ClassRepository, FirebaseClassData, FirebaseClassDocument } from '../repositories/classRepository';
+import { ClassPayload, ClassRepository, FirebaseClassDocument } from '../repositories';
 import { ClassEvent } from '../types/class';
 
 export class ClassService {
@@ -52,18 +52,6 @@ export class ClassService {
     endDt.setHours(23, 59, 59, 999);
 
     return this.getClassesInRange(box, startDt, endDt, false);
-  }
-
-  /**
-   * 레거시 경로 기준으로 특정 클래스 문서를 조회합니다.
-   *
-   * @param box 박스 이름
-   * @param date 날짜 경로
-   * @param time 시간 경로
-   * @returns 클래스 문서 또는 `null`
-   */
-  static async getClass(box: string, date: string, time: string): Promise<FirebaseClassData | null> {
-    return ClassRepository.getClass(box, date, time);
   }
 
   /**
