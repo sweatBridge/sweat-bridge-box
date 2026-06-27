@@ -1,3 +1,4 @@
+import { Timestamp } from 'firebase/firestore';
 import { serverRead, serverWrite } from '../../data/apiClient';
 import { BoxStatus } from '../../types/auth';
 import { BoxUser, MemberApplicantRecord } from '../../types/member';
@@ -95,6 +96,9 @@ export class HybridMemberRepository {
 
   static async setMember(box: string, email: string, payload: Record<string, unknown>): Promise<void> {
     await MemberRepository.setMember(box, email, payload);
+    const joinedAt = payload.joinedAt instanceof Timestamp
+      ? payload.joinedAt.toDate().toISOString()
+      : null;
     serverWrite(async () => {
       const existing = await ServerMemberRepository.getMemberByEmail(box, email).catch(() => null);
       if (existing) {
@@ -115,7 +119,8 @@ export class HybridMemberRepository {
           gender: (payload.gender as string | null) ?? null,
           birth_date: (payload.birthDate as string | null) ?? null,
           phone: (payload.phone as string | null) ?? null,
-          memo: (payload.memo as string | null) ?? null
+          memo: (payload.memo as string | null) ?? null,
+          joined_at: joinedAt,
         });
       }
     }, `Member.setMember(${email})`);
@@ -182,8 +187,13 @@ export class HybridMemberRepository {
     memberData: Record<string, unknown>
   ): Promise<void> {
     await MemberRepository.commitApproveApplicantBatch(email, boxName, memberData);
-    serverWrite(
-      () => ServerMemberRepository.createMember({
+    const joinedAt = memberData.joinedAt instanceof Timestamp
+      ? memberData.joinedAt.toDate().toISOString()
+      : null;
+    serverWrite(async () => {
+      const applied = await ServerAppliedRepository.findByEmail(boxName, email).catch(() => null);
+      if (applied) await ServerAppliedRepository.deleteApplied(applied.id);
+      await ServerMemberRepository.createMember({
         box_name: boxName,
         email,
         real_name: (memberData.realName as string) || '',
@@ -191,10 +201,10 @@ export class HybridMemberRepository {
         gender: (memberData.gender as string | null) ?? null,
         birth_date: (memberData.birthDate as string | null) ?? null,
         phone: (memberData.phone as string | null) ?? null,
-        memo: (memberData.memo as string | null) ?? null
-      }),
-      `Member.commitApproveApplicantBatch(${email})`
-    );
+        memo: (memberData.memo as string | null) ?? null,
+        joined_at: joinedAt,
+      });
+    }, `Member.commitApproveApplicantBatch(${email})`);
   }
 
   static commitRejectApplicantBatch(email: string, boxName: string): Promise<void> {
