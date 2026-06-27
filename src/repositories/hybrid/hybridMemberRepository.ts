@@ -238,5 +238,6 @@ function toBoxUser(u: ServerUserResponse): BoxUser {
     status: u.status as BoxStatus,
     gender: (u.gender as 'M' | 'F') ?? undefined,
     role: u.role ?? undefined,
+    birth: u.birth ?? undefined,
   };
 }
