@@ -1,6 +1,6 @@
 /**
  * Design system theme – CSS custom properties
- * Key color: Blue tokens
+ * Key color: Blue tokens. Foundations: Toss/Linear minimal.
  */
 :root {
   /* Blue – Light */
@@ -28,4 +28,69 @@
   --color-primary-bg: var(--blue-light);
   --color-primary-bg-hover: var(--blue-light-hover);
   --color-primary-bg-active: var(--blue-light-active);
+
+  /* ===================================================================== */
+  /* Foundations — Toss/Linear minimal                                     */
+  /* ===================================================================== */
+
+  /* Neutral scale */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-150: #eceef1;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Surfaces */
+  --bg-app: #f7f8fa;        /* page background */
+  --surface: #ffffff;       /* cards / panels */
+  --surface-muted: #f9fafb; /* subtle fills, table headers */
+  --border: #edeef1;        /* hairline borders (Toss-style, very soft) */
+  --border-strong: #e2e5e9;
+
+  /* Text */
+  --text-strong: #14161a;
+  --text: #1f2937;
+  --text-muted: #6b7280;
+  --text-subtle: #9aa1ac;
+
+  /* Feedback */
+  --success: #03b26c;
+  --success-bg: #e6f7f0;
+  --warning: #fe9800;
+  --warning-bg: #fff4e2;
+  --error: #f04452;
+  --error-bg: #fdecee;
+
+  /* Spacing scale (4pt) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 999px;
+
+  /* Shadows — soft, low, layered (Toss/Linear) */
+  --shadow-xs: 0 1px 2px rgba(17, 24, 39, 0.04);
+  --shadow-sm: 0 1px 3px rgba(17, 24, 39, 0.06), 0 1px 2px rgba(17, 24, 39, 0.04);
+  --shadow-md: 0 4px 12px rgba(17, 24, 39, 0.06);
+  --shadow-lg: 0 12px 32px rgba(17, 24, 39, 0.08);
+
+  /* Motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur: 0.18s;
 }

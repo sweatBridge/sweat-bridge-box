@@ -10,16 +10,7 @@ type FilterStatus = 'all' | BoxStatus;
 const StatusBadge = ({ status }: { status?: BoxStatus }) => {
   const resolved = status ?? 'active';
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '5px',
-      padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '600',
-      background: resolved === 'active' ? '#d1fae5' : '#fee2e2',
-      color: resolved === 'active' ? '#065f46' : '#991b1b',
-    }}>
-      <span style={{
-        width: '6px', height: '6px', borderRadius: '50%',
-        background: resolved === 'active' ? '#10b981' : '#ef4444',
-      }} />
+    <span className={`ds-badge ${resolved === 'active' ? 'ds-badge--success' : 'ds-badge--error'}`}>
       {resolved === 'active' ? '활성' : '정지'}
     </span>
   );
@@ -28,20 +19,14 @@ const StatusBadge = ({ status }: { status?: BoxStatus }) => {
 const SummaryCard = ({
   label, value, icon: Icon, color, bg,
 }: { label: string; value: number; icon: React.ElementType; color: string; bg: string }) => (
-  <div style={{
-    background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px',
-    padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '16px',
-  }}>
-    <div style={{
-      width: '44px', height: '44px', borderRadius: '10px', background: bg,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <Icon size={20} color={color} />
+  <div className="ds-stat">
+    <div className="ds-stat__top">
+      <div className="ds-stat__icon" style={{ background: bg, color }}>
+        <Icon />
+      </div>
+      <span className="ds-stat__label">{label}</span>
     </div>
-    <div>
-      <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>{label}</div>
-      <div style={{ fontSize: '28px', fontWeight: '700', color: '#111827', lineHeight: 1 }}>{value}</div>
-    </div>
+    <div className="ds-stat__value">{value}</div>
   </div>
 );
 
@@ -93,30 +78,26 @@ const AdminBoxList = () => {
   }
 
   return (
-    <div>
+    <div className="ds-page">
       {/* 요약 카드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-        <SummaryCard label="전체 고객사" value={boxes.length} icon={Building2} color="#3182f6" bg="#eff6ff" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)' }}>
+        <SummaryCard label="전체 고객사" value={boxes.length} icon={Building2} color={AdminColors.primary} bg={AdminColors.primaryLight} />
         <SummaryCard label="활성 박스" value={totalActive} icon={Building2} color="#10b981" bg="#ecfdf5" />
         <SummaryCard label="정지 박스" value={totalSuspended} icon={Building2} color="#ef4444" bg="#fef2f2" />
       </div>
 
       {/* 전체 회원 수 배너 */}
-      <div style={{
-        background: AdminColors.headerGradient,
-        borderRadius: '12px', padding: '20px 24px', marginBottom: '24px',
-        display: 'flex', alignItems: 'center', gap: '14px', color: 'white',
-      }}>
+      <div className="ds-card ds-card--pad" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <div style={{
-          width: '44px', height: '44px', borderRadius: '10px',
-          background: 'rgba(255,255,255,0.2)',
+          width: '44px', height: '44px', borderRadius: 'var(--radius-md)',
+          background: 'var(--color-primary-bg)', color: 'var(--color-primary)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Users size={20} color="white" />
+          <Users size={20} />
         </div>
         <div>
-          <div style={{ fontSize: '13px', opacity: 0.8 }}>전체 등록 회원 수</div>
-          <div style={{ fontSize: '28px', fontWeight: '700', lineHeight: 1 }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>전체 등록 회원 수</div>
+          <div style={{ fontSize: '28px', fontWeight: '700', lineHeight: 1, color: 'var(--text-strong)' }}>
             {totalMembers > 0 ? `${totalMembers.toLocaleString()}명` : '-'}
           </div>
         </div>
@@ -124,14 +105,14 @@ const AdminBoxList = () => {
 
       {/* 검색 & 필터 & 테이블 */}
       <div style={{
-        background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px 24px',
+        background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '20px 24px',
       }}>
         <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
           {/* 검색창 */}
           <div style={{
             flex: 1, minWidth: '200px',
             display: 'flex', alignItems: 'center', gap: '10px',
-            border: '1px solid #d1d5db', borderRadius: '8px', padding: '0 14px', background: '#f9fafb',
+            border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 14px', background: 'var(--surface-muted)',
           }}>
             <Search size={16} color="#9ca3af" />
             <input
@@ -156,8 +137,8 @@ const AdminBoxList = () => {
                   padding: '0 18px', height: '42px', borderRadius: '8px',
                   border: '1px solid',
                   borderColor: filterStatus === val ? AdminColors.primary : '#d1d5db',
-                  background: filterStatus === val ? AdminColors.primary : 'white',
-                  color: filterStatus === val ? 'white' : '#6b7280',
+                  background: filterStatus === val ? AdminColors.primary : 'var(--surface)',
+                  color: filterStatus === val ? 'white' : 'var(--text-muted)',
                   fontSize: '14px', fontWeight: filterStatus === val ? '600' : '400',
                   cursor: 'pointer',
                 }}
@@ -169,11 +150,9 @@ const AdminBoxList = () => {
 
           <button
             onClick={() => navigate('/admin/boxes/new')}
+            className="ds-btn ds-btn--primary"
             style={{
-              display: 'flex', alignItems: 'center', gap: '7px',
-              padding: '0 18px', height: '42px', borderRadius: '8px',
-              border: 'none', background: AdminColors.primary, color: 'white',
-              fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+              height: '42px', padding: '0 18px',
             }}
           >
             <PlusCircle size={16} />

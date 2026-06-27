@@ -1,137 +1,154 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, ChevronLeft, ChevronRight, PlusCircle, Users } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Building2, ChevronLeft, ChevronRight, LayoutDashboard, PlusCircle, Users } from 'lucide-react';
 
 const menuItems = [
   { icon: LayoutDashboard, title: '대시보드', path: '/admin/dashboard' },
   { icon: Building2, title: '고객사 관리', path: '/admin/boxes' },
-  { icon: PlusCircle, title: '고객사 등록', path: '/admin/boxes/new' },
   { icon: Users, title: '유저 관리', path: '/admin/users' },
+  { icon: PlusCircle, title: '고객사 등록', path: '/admin/boxes/new' },
 ];
-
-const ADMIN_SIDEBAR_BG = '#0f172a';
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const isActive = (path: string) => location.pathname === path;
+  const isMenuActive = (path: string) => {
+    if (path === '/admin/boxes') {
+      return location.pathname === path
+        || (location.pathname.startsWith('/admin/boxes/') && location.pathname !== '/admin/boxes/new');
+    }
+    return location.pathname === path;
+  };
 
   return (
-    <div style={{
-      width: isCollapsed ? '80px' : '260px',
-      background: ADMIN_SIDEBAR_BG,
-      color: 'white',
-      height: '100vh',
-      position: 'relative',
-      transition: 'width 0.3s ease',
-      overflow: 'hidden',
-      flexShrink: 0,
-    }}>
-      {/* 로고 */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        padding: '24px 20px',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        minHeight: '80px',
-      }}>
-        <div style={{
-          width: '32px',
-          height: '32px',
-          borderRadius: '8px',
-          background: 'linear-gradient(135deg, #3182f6 0%, #1d4ed8 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          fontSize: '14px',
-          fontWeight: '800',
-          color: 'white',
-        }}>
-          SB
+    <aside className={`admin-sidebar${isCollapsed ? ' admin-sidebar--collapsed' : ''}`}>
+      <div className="admin-sidebar__brand">
+        <div className="admin-sidebar__mark">SB</div>
+        <div className="admin-sidebar__brand-copy">
+          <strong>SweatBridge</strong>
+          <span>운영사 관리콘솔</span>
         </div>
-        {!isCollapsed && (
-          <div style={{ marginLeft: '12px' }}>
-            <div style={{ fontSize: '14px', fontWeight: '700', whiteSpace: 'nowrap' }}>SweatBridge</div>
-            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px', whiteSpace: 'nowrap' }}>운영사 관리콘솔</div>
-          </div>
-        )}
       </div>
 
-      {/* 토글 버튼 */}
       <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        style={{
-          position: 'absolute',
-          top: '24px',
-          right: '16px',
-          background: 'rgba(255,255,255,0.1)',
-          border: '1px solid rgba(255,255,255,0.2)',
-          color: 'white',
-          borderRadius: '6px',
-          width: '28px',
-          height: '28px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          zIndex: 10,
-        }}
+        className="admin-sidebar__toggle"
+        type="button"
+        onClick={() => setIsCollapsed((prev) => !prev)}
+        aria-label={isCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
       >
-        {isCollapsed
-          ? <ChevronRight size={14} />
-          : <ChevronLeft size={14} />
-        }
+        {isCollapsed ? <ChevronRight /> : <ChevronLeft />}
       </button>
 
-      {/* 메뉴 */}
-      <nav style={{ padding: '16px 0' }}>
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.path);
+      <nav className="admin-sidebar__nav">
+        {menuItems.map(({ icon: Icon, title, path }) => {
+          const active = isMenuActive(path);
           return (
-            <div
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              title={isCollapsed ? item.title : ''}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: isCollapsed ? '14px 8px' : '13px 16px',
-                margin: '3px 10px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                background: active ? 'rgba(49,130,246,0.25)' : 'transparent',
-                borderLeft: active ? '3px solid #3182f6' : '3px solid transparent',
-                transition: 'all 0.2s',
-                justifyContent: isCollapsed ? 'center' : 'flex-start',
-              }}
-              onMouseEnter={(e) => {
-                if (!active) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.07)';
-              }}
-              onMouseLeave={(e) => {
-                if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent';
-              }}
+            <button
+              key={path}
+              className={`admin-sidebar__item${active ? ' admin-sidebar__item--active' : ''}`}
+              type="button"
+              title={isCollapsed ? title : undefined}
+              onClick={() => navigate(path)}
             >
-              <Icon size={18} color={active ? '#3182f6' : '#94a3b8'} style={{ flexShrink: 0 }} />
-              {!isCollapsed && (
-                <span style={{
-                  marginLeft: '10px',
-                  fontSize: '14px',
-                  fontWeight: active ? '600' : '400',
-                  color: active ? '#ffffff' : '#cbd5e1',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {item.title}
-                </span>
-              )}
-            </div>
+              <Icon />
+              <span>{title}</span>
+            </button>
           );
         })}
       </nav>
-    </div>
+
+      <style>{`
+        .admin-sidebar {
+          width: 248px;
+          height: 100vh;
+          position: relative;
+          flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          overflow: visible;
+          color: #fff;
+          background: #0f172a;
+          transition: width 0.24s var(--ease);
+        }
+        .admin-sidebar--collapsed { width: 76px; }
+        .admin-sidebar__brand {
+          min-height: 76px;
+          padding: 20px;
+          display: flex;
+          align-items: center;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+        }
+        .admin-sidebar__mark {
+          width: 32px;
+          height: 32px;
+          border-radius: 9px;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          background: linear-gradient(135deg, #3182f6 0%, #1d4ed8 100%);
+          font-size: 13px;
+          font-weight: 800;
+        }
+        .admin-sidebar__brand-copy {
+          min-width: 0;
+          margin-left: 10px;
+          display: flex;
+          flex-direction: column;
+          white-space: nowrap;
+          transition: opacity 0.18s var(--ease);
+        }
+        .admin-sidebar__brand-copy strong { font-size: 15px; letter-spacing: -0.01em; }
+        .admin-sidebar__brand-copy span { margin-top: 2px; font-size: 11px; color: rgba(255,255,255,0.68); }
+        .admin-sidebar--collapsed .admin-sidebar__brand-copy { opacity: 0; width: 0; margin-left: 0; overflow: hidden; }
+        .admin-sidebar__toggle {
+          position: absolute;
+          top: 25px;
+          right: -13px;
+          z-index: 10;
+          width: 26px;
+          height: 26px;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--color-primary);
+          background: var(--surface);
+          border: 1px solid var(--border-strong);
+          border-radius: var(--radius-full);
+          box-shadow: var(--shadow-sm);
+          cursor: pointer;
+        }
+        .admin-sidebar__toggle svg { width: 15px; height: 15px; }
+        .admin-sidebar__nav { padding: 14px 0; display: flex; flex-direction: column; gap: 3px; }
+        .admin-sidebar__item {
+          min-height: 42px;
+          margin: 0 12px;
+          padding: 0 14px;
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          color: rgba(255,255,255,0.78);
+          background: transparent;
+          border: 0;
+          border-radius: var(--radius-md);
+          font: inherit;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+        }
+        .admin-sidebar__item:hover { color: #fff; background: rgba(255,255,255,0.12); }
+        .admin-sidebar__item--active { color: #fff; background: rgba(49,130,246,0.25); font-weight: 600; }
+        .admin-sidebar__item svg { width: 19px; height: 19px; flex-shrink: 0; }
+        .admin-sidebar__item span { white-space: nowrap; }
+        .admin-sidebar--collapsed .admin-sidebar__item { justify-content: center; padding: 0; margin: 0 14px; }
+        .admin-sidebar--collapsed .admin-sidebar__item span { display: none; }
+      `}</style>
+    </aside>
   );
 };
 

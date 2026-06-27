@@ -239,22 +239,23 @@ const AppHeader = () => {
 
         .page-title {
           margin: 0;
-          font-size: 24px;
+          font-size: 20px;
           font-weight: 700;
-          color: #1f2937;
+          letter-spacing: -0.01em;
+          color: var(--text-strong);
           line-height: 1.2;
         }
 
         .page-separator {
-          color: #d1d5db;
-          font-size: 16px;
+          color: var(--gray-300);
+          font-size: 14px;
           font-weight: 500;
         }
 
         .page-subtitle {
           margin: 0;
-          font-size: 14px;
-          color: #6b7280;
+          font-size: 13px;
+          color: var(--text-muted);
           font-weight: 500;
           line-height: 1.2;
         }
@@ -263,10 +264,10 @@ const AppHeader = () => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 20px 24px;
-          background: white;
-          border-bottom: 1px solid #e5e7eb;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          padding: 0 32px;
+          height: 68px;
+          background: var(--surface);
+          border-bottom: 1px solid var(--border);
         }
 
         .settings-menu-header {
