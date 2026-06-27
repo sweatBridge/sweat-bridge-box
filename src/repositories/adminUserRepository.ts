@@ -1,4 +1,4 @@
-import { collection, getDocs, updateDoc, doc, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, updateDoc, doc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { AdminUserRole, AdminUserSummary } from '../types/adminUser';
 import { BoxStatus, UserRole } from '../types/auth';
@@ -52,5 +52,10 @@ export class AdminUserRepository {
   /** 이메일을 문서 ID로 사용하는 사용자 문서의 역할을 변경합니다. */
   static async updateUserRole(email: string, role: UserRole): Promise<void> {
     await updateDoc(doc(db, 'user', email), { role });
+  }
+
+  /** Firestore user/{email} 문서를 삭제합니다. */
+  static async deleteUserDoc(email: string): Promise<void> {
+    await deleteDoc(doc(db, 'user', email));
   }
 }

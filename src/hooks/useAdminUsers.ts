@@ -34,11 +34,20 @@ export const useAdminUsers = () => {
     }));
   }, []);
 
+  const deleteUser = useCallback(async (email: string, boxName: string) => {
+    await AdminUserRepository.deleteUser(email, boxName);
+    setState((prev) => ({
+      ...prev,
+      users: prev.users.filter((user) => user.email !== email),
+    }));
+  }, []);
+
   return {
     users: state.users,
     loading: state.loading,
     error: state.error,
     loadUsers,
     updateUserRole,
+    deleteUser,
   };
 };

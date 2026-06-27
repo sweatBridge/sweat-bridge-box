@@ -2,6 +2,7 @@ import { serverRead, serverWrite } from '../../data/apiClient';
 import { AdminUserRole, AdminUserSummary } from '../../types/adminUser';
 import { BoxStatus, UserRole } from '../../types/auth';
 import { AdminUserRepository } from '../adminUserRepository';
+import { MemberRepository } from '../memberRepository';
 import { ServerUserRepository, ServerUserResponse } from '../server/serverUserRepository';
 
 const USER_ROLES: AdminUserRole[] = ['member', 'coach', 'admin'];
@@ -58,6 +59,26 @@ export class HybridAdminUserRepository {
     serverWrite(
       () => ServerUserRepository.updateUser(email, { role }),
       `AdminUser.updateUserRole(${email})`
+    );
+  }
+
+  /**
+   * 사용자를 완전 삭제합니다.
+   * Firestore user 문서 + box member 문서를 삭제하고,
+   * 서버 API를 통해 PostgreSQL 및 Firebase Auth도 삭제합니다.
+   */
+  static async deleteUser(email: string, boxName: string): Promise<void> {
+    const actualBoxName = boxName.replace(/^\?+/, '').trim();
+
+    await AdminUserRepository.deleteUserDoc(email);
+
+    if (actualBoxName) {
+      await MemberRepository.deleteMember(actualBoxName, email).catch(() => {});
+    }
+
+    serverWrite(
+      () => ServerUserRepository.deleteUser(email),
+      `AdminUser.deleteUser(${email})`
     );
   }
 }

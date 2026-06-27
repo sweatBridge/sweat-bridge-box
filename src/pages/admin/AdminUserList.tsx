@@ -1,9 +1,11 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Search, Users, UserCheck, UserCog, ShieldCheck, X, ChevronDown, ChevronRight, Building2, AlertCircle } from 'lucide-react';
+import { Search, Users, UserCheck, UserCog, ShieldCheck, X, ChevronDown, ChevronRight, Building2, AlertCircle, Trash2 } from 'lucide-react';
 import { AdminColors } from '../../constants/adminColors';
 import { UserRole, BoxStatus } from '../../types/auth';
 import { AdminUserRole, AdminUserSummary } from '../../types/adminUser';
 import { useAdminUsers } from '../../hooks/useAdminUsers';
+import ToastMessage from '../../components/ToastMessage';
+import { ToastMessageType } from '../../types/member';
 
 type RoleFilter = 'all' | AdminUserRole;
 
@@ -216,7 +218,95 @@ const RoleChangeModal = ({ user, onConfirm, onClose, submitting, error }: RoleCh
   );
 };
 
-const COL = '2fr 1fr 1.1fr 0.9fr 0.8fr';
+interface DeleteConfirmModalProps {
+  user: AdminUserSummary;
+  onConfirm: () => Promise<void>;
+  onClose: () => void;
+  submitting: boolean;
+  error: string | null;
+}
+
+const DeleteConfirmModal = ({ user, onConfirm, onClose, submitting, error }: DeleteConfirmModalProps) => (
+  <div
+    style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    }}
+    onClick={onClose}
+  >
+    <div
+      style={{
+        background: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '28px 32px',
+        width: '420px', boxShadow: 'var(--shadow-lg)',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '36px', height: '36px', borderRadius: '9px', background: '#fee2e2',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Trash2 size={18} color="#dc2626" />
+          </div>
+          <div>
+            <div style={{ fontSize: '16px', fontWeight: '700', color: '#111827' }}>유저 삭제</div>
+            <div style={{ fontSize: '13px', color: '#6b7280' }}>{user.realName} ({user.email})</div>
+          </div>
+        </div>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+          <X size={18} color="#9ca3af" />
+        </button>
+      </div>
+
+      <div style={{
+        background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px',
+        padding: '12px 16px', marginBottom: '24px', fontSize: '13px', color: '#92400e', lineHeight: '1.6',
+      }}>
+        이 작업은 되돌릴 수 없습니다.<br />
+        <strong>{user.realName}</strong>의 계정이 아래에서 모두 삭제됩니다.<br />
+        · Firestore (user 문서, member 문서)<br />
+        · Firebase Authentication<br />
+        · 서버 DB (PostgreSQL)
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button
+          onClick={onClose}
+          disabled={submitting}
+          style={{
+            flex: 1, padding: '11px', borderRadius: '9px',
+            border: '1px solid var(--border-strong)', background: 'var(--surface)',
+            fontSize: '14px', fontWeight: '500', color: '#374151', cursor: 'pointer',
+          }}
+        >
+          취소
+        </button>
+        <button
+          onClick={() => void onConfirm()}
+          disabled={submitting}
+          style={{
+            flex: 1, padding: '11px', borderRadius: '9px', border: 'none',
+            background: submitting ? '#e5e7eb' : '#dc2626',
+            fontSize: '14px', fontWeight: '600',
+            color: submitting ? '#9ca3af' : 'white',
+            cursor: submitting ? 'not-allowed' : 'pointer',
+            transition: 'background 0.15s',
+          }}
+        >
+          {submitting ? '삭제 중...' : '삭제 확인'}
+        </button>
+      </div>
+      {error && (
+        <div style={{ marginTop: '12px', fontSize: '13px', color: '#dc2626', textAlign: 'center' }}>
+          {error}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const COL = '2fr 1fr 1.1fr 0.9fr 1fr';
 
 const TableHeader = () => (
   <div style={{
@@ -237,9 +327,10 @@ const TableHeader = () => (
 interface UserRowProps {
   user: AdminUserSummary;
   onRoleChange: (user: AdminUserSummary) => void;
+  onDelete: (user: AdminUserSummary) => void;
 }
 
-const UserRow = ({ user, onRoleChange }: UserRowProps) => (
+const UserRow = ({ user, onRoleChange, onDelete }: UserRowProps) => (
   <div style={{
     display: 'grid', gridTemplateColumns: COL,
     gap: '12px', padding: '13px 16px',
@@ -268,7 +359,7 @@ const UserRow = ({ user, onRoleChange }: UserRowProps) => (
     <div><RoleBadge role={user.role} /></div>
     <div style={{ fontSize: '13px', color: '#6b7280' }}>{user.createdAt}</div>
     <div><StatusBadge status={user.status} /></div>
-    <div>
+    <div style={{ display: 'flex', gap: '6px' }}>
       <button
         onClick={() => onRoleChange(user)}
         style={{
@@ -289,6 +380,29 @@ const UserRow = ({ user, onRoleChange }: UserRowProps) => (
       >
         역할 변경
       </button>
+      <button
+        onClick={() => onDelete(user)}
+        style={{
+          padding: '6px 8px', borderRadius: '7px',
+          border: '1px solid #fecaca',
+          background: 'white', color: '#dc2626',
+          fontSize: '12px', cursor: 'pointer',
+          transition: 'all 0.15s', display: 'flex', alignItems: 'center',
+        }}
+        title="유저 삭제"
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = '#dc2626';
+          (e.currentTarget as HTMLButtonElement).style.color = 'white';
+          (e.currentTarget as HTMLButtonElement).style.borderColor = '#dc2626';
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = 'white';
+          (e.currentTarget as HTMLButtonElement).style.color = '#dc2626';
+          (e.currentTarget as HTMLButtonElement).style.borderColor = '#fecaca';
+        }}
+      >
+        <Trash2 size={13} />
+      </button>
     </div>
   </div>
 );
@@ -297,9 +411,10 @@ interface BoxGroupProps {
   boxName: string;
   users: AdminUserSummary[];
   onRoleChange: (user: AdminUserSummary) => void;
+  onDelete: (user: AdminUserSummary) => void;
 }
 
-const BoxGroup = ({ boxName, users, onRoleChange }: BoxGroupProps) => {
+const BoxGroup = ({ boxName, users, onRoleChange, onDelete }: BoxGroupProps) => {
   const [collapsed, setCollapsed] = useState(true);
   const isUnassigned = !boxName;
 
@@ -357,7 +472,7 @@ const BoxGroup = ({ boxName, users, onRoleChange }: BoxGroupProps) => {
         <div style={{ padding: '8px 20px 12px' }}>
           <TableHeader />
           {users.map((user) => (
-            <UserRow key={user.uid} user={user} onRoleChange={onRoleChange} />
+            <UserRow key={user.uid} user={user} onRoleChange={onRoleChange} onDelete={onDelete} />
           ))}
         </div>
       )}
@@ -366,13 +481,17 @@ const BoxGroup = ({ boxName, users, onRoleChange }: BoxGroupProps) => {
 };
 
 const AdminUserList = () => {
-  const { users, loading, error, loadUsers, updateUserRole } = useAdminUsers();
+  const { users, loading, error, loadUsers, updateUserRole, deleteUser } = useAdminUsers();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<RoleFilter>('all');
   const [selectedUser, setSelectedUser] = useState<AdminUserSummary | null>(null);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [roleUpdating, setRoleUpdating] = useState(false);
   const [roleUpdateError, setRoleUpdateError] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<AdminUserSummary | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [createToast, setCreateToast] = useState<((toast: ToastMessageType) => void) | null>(null);
 
   useEffect(() => { void loadUsers(); }, [loadUsers]);
 
@@ -425,10 +544,27 @@ const AdminUserList = () => {
     try {
       await updateUserRole(selectedUser.email, newRole);
       setSelectedUser(null);
+      createToast?.({ type: 'success', message: `${selectedUser.realName}의 역할이 ${ROLE_LABEL[newRole as AdminUserRole] ?? newRole}(으)로 변경되었습니다.` });
     } catch {
       setRoleUpdateError('역할 변경에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setRoleUpdating(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const name = userToDelete.realName;
+      await deleteUser(userToDelete.email, userToDelete.boxName);
+      setUserToDelete(null);
+      createToast?.({ type: 'success', message: `${name} 계정이 삭제되었습니다.` });
+    } catch {
+      setDeleteError('삭제에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -557,6 +693,7 @@ const AdminUserList = () => {
               boxName={boxName}
               users={boxUsers}
               onRoleChange={setSelectedUser}
+              onDelete={setUserToDelete}
             />
           ))}
           <div style={{ fontSize: '13px', color: '#9ca3af', marginTop: '4px' }}>
@@ -577,6 +714,23 @@ const AdminUserList = () => {
           error={roleUpdateError}
         />
       )}
+
+      {userToDelete && (
+        <DeleteConfirmModal
+          user={userToDelete}
+          onConfirm={handleDeleteConfirm}
+          onClose={() => {
+            setUserToDelete(null);
+            setDeleteError(null);
+          }}
+          submitting={deleting}
+          error={deleteError}
+        />
+      )}
+
+      <ToastMessage
+        onCreateToast={(fn) => setCreateToast(() => fn)}
+      />
     </div>
   );
 };
