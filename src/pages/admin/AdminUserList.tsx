@@ -11,16 +11,14 @@ const normalizeBoxName = (boxName: string): string => boxName.replace(/^\?+/, ''
 
 const ROLE_SORT_ORDER: Record<AdminUserRole, number> = {
   admin: 0,
-  operator: 1,
-  coach: 2,
-  member: 3,
-  unknown: 4,
+  coach: 1,
+  member: 2,
+  unknown: 3,
 };
 
 const ROLE_LABEL: Record<AdminUserRole, string> = {
   member: '회원',
   coach: '코치',
-  operator: '운영자',
   admin: '어드민',
   unknown: '미확인',
 };
@@ -28,7 +26,6 @@ const ROLE_LABEL: Record<AdminUserRole, string> = {
 const ROLE_COLOR: Record<AdminUserRole, { bg: string; color: string }> = {
   member: { bg: '#f3f4f6', color: '#4b5563' },
   coach: { bg: '#eff6ff', color: '#1d4ed8' },
-  operator: { bg: '#f0fdf4', color: '#15803d' },
   admin: { bg: '#fdf4ff', color: '#7e22ce' },
   unknown: { bg: '#fff7ed', color: '#c2410c' },
 };
@@ -98,7 +95,7 @@ interface RoleChangeModalProps {
 
 const RoleChangeModal = ({ user, onConfirm, onClose, submitting, error }: RoleChangeModalProps) => {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(
-    user.role === 'member' || user.role === 'unknown' ? null : user.role
+    user.role === 'unknown' ? null : user.role as UserRole
   );
 
   return (
@@ -147,7 +144,7 @@ const RoleChangeModal = ({ user, onConfirm, onClose, submitting, error }: RoleCh
             변경할 역할 선택
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {(['coach', 'operator', 'admin'] as UserRole[]).map((role) => {
+            {(['member', 'coach', 'admin'] as UserRole[]).map((role) => {
               const { bg, color } = ROLE_COLOR[role];
               const isSelected = selectedRole === role;
               return (
@@ -172,9 +169,9 @@ const RoleChangeModal = ({ user, onConfirm, onClose, submitting, error }: RoleCh
                     </span>
                   </div>
                   <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                    {role === 'member' && '일반 회원'}
                     {role === 'coach' && '박스 내 기능 접근'}
-                    {role === 'operator' && '어드민 포털 접근'}
-                    {role === 'admin' && '전체 권한'}
+                    {role === 'admin' && '어드민 포털 + 전체 권한'}
                   </span>
                 </button>
               );
@@ -336,7 +333,7 @@ const BoxGroup = ({ boxName, users, onRoleChange }: BoxGroupProps) => {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '6px', marginRight: '8px' }}>
-          {(['member', 'coach', 'operator', 'admin', 'unknown'] as AdminUserRole[]).map((role) => {
+          {(['member', 'coach', 'admin', 'unknown'] as AdminUserRole[]).map((role) => {
             const count = users.filter((u) => u.role === role).length;
             if (count === 0) return null;
             const { bg, color } = ROLE_COLOR[role];
@@ -419,7 +416,6 @@ const AdminUserList = () => {
 
   const totalCoach = users.filter((u) => u.role === 'coach').length;
   const totalMember = users.filter((u) => u.role === 'member').length;
-  const totalOperator = users.filter((u) => u.role === 'operator').length;
   const totalAdmin = users.filter((u) => u.role === 'admin').length;
 
   const handleRoleChange = async (newRole: UserRole) => {
@@ -440,7 +436,6 @@ const AdminUserList = () => {
     { value: 'all', label: '전체' },
     { value: 'member', label: '회원' },
     { value: 'coach', label: '코치' },
-    { value: 'operator', label: '운영자' },
     { value: 'admin', label: '어드민' },
     { value: 'unknown', label: '미확인' },
   ];
@@ -452,7 +447,6 @@ const AdminUserList = () => {
         <SummaryCard label="전체 유저" value={users.length} icon={Users} color={AdminColors.primary} bg={AdminColors.primaryLight} />
         <SummaryCard label="회원" value={totalMember} icon={Users} color="#4b5563" bg="#f3f4f6" />
         <SummaryCard label="코치" value={totalCoach} icon={UserCheck} color="#1d4ed8" bg="#dbeafe" />
-        <SummaryCard label="운영자" value={totalOperator} icon={UserCog} color="#15803d" bg="#dcfce7" />
         <SummaryCard label="어드민" value={totalAdmin} icon={ShieldCheck} color="#7e22ce" bg="#f3e8ff" />
       </div>
 

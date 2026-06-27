@@ -3,12 +3,13 @@ import { db } from '../config/firebase';
 import { AdminUserRole, AdminUserSummary } from '../types/adminUser';
 import { BoxStatus, UserRole } from '../types/auth';
 
-const USER_ROLES: AdminUserRole[] = ['member', 'coach', 'operator', 'admin'];
+const USER_ROLES: AdminUserRole[] = ['member', 'coach', 'admin'];
 const BOX_STATUSES: BoxStatus[] = ['NONE', 'PENDING', 'APPROVED', 'REJECTED'];
 
 function normalizeRole(value: unknown): AdminUserRole {
-  const normalized = String(value ?? '').toLowerCase() as AdminUserRole;
-  return USER_ROLES.includes(normalized) ? normalized : 'unknown';
+  const normalized = String(value ?? '').toLowerCase();
+  if (normalized === 'operator') return 'admin';
+  return USER_ROLES.includes(normalized as AdminUserRole) ? (normalized as AdminUserRole) : 'unknown';
 }
 
 function normalizeStatus(value: unknown, boxName: string): BoxStatus {
