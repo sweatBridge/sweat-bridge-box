@@ -6,6 +6,7 @@ const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   '/admin/dashboard': { title: '운영 대시보드', subtitle: '전체 고객사 현황을 한눈에 확인하세요' },
   '/admin/boxes': { title: '고객사 관리', subtitle: '등록된 모든 박스를 관리합니다' },
   '/admin/boxes/new': { title: '신규 고객사 등록', subtitle: '새로운 고객사(박스)를 등록합니다' },
+  '/admin/classes': { title: '수업 등록 현황', subtitle: '날짜별 고객사 수업 및 예약 현황을 확인합니다' },
   '/admin/users': { title: '유저 관리', subtitle: '전체 유저와 권한을 박스별로 관리합니다' },
 };
 

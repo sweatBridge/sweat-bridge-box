@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Building2, ChevronLeft, ChevronRight, LayoutDashboard, PlusCircle, Users } from 'lucide-react';
+import { Building2, CalendarDays, ChevronLeft, ChevronRight, LayoutDashboard, PlusCircle, Users } from 'lucide-react';
 
 const menuItems = [
   { icon: LayoutDashboard, title: '대시보드', path: '/admin/dashboard' },
   { icon: Building2, title: '고객사 관리', path: '/admin/boxes' },
+  { icon: CalendarDays, title: '수업 등록 현황', path: '/admin/classes' },
   { icon: Users, title: '유저 관리', path: '/admin/users' },
   { icon: PlusCircle, title: '고객사 등록', path: '/admin/boxes/new' },
 ];
