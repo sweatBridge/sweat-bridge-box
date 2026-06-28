@@ -64,21 +64,21 @@ export class HybridAdminUserRepository {
 
   /**
    * 사용자를 완전 삭제합니다.
-   * Firestore user 문서 + box member 문서를 삭제하고,
-   * 서버 API를 통해 PostgreSQL 및 Firebase Auth도 삭제합니다.
+   * 서버(PostgreSQL + Firebase Auth) 삭제를 먼저 await한 후
+   * Firestore user/member 문서를 삭제합니다.
+   * 서버 삭제 실패 시 예외를 던져 호출부에서 처리합니다.
    */
   static async deleteUser(email: string, boxName: string): Promise<void> {
     const actualBoxName = boxName.replace(/^\?+/, '').trim();
 
+    // 서버(PostgreSQL + Firebase Auth) 삭제를 먼저 — 실패 시 예외 전파
+    await ServerUserRepository.deleteUser(email);
+
+    // Firestore는 서버 성공 후 삭제
     await AdminUserRepository.deleteUserDoc(email);
 
     if (actualBoxName) {
       await MemberRepository.deleteMember(actualBoxName, email).catch(() => {});
     }
-
-    serverWrite(
-      () => ServerUserRepository.deleteUser(email),
-      `AdminUser.deleteUser(${email})`
-    );
   }
 }
