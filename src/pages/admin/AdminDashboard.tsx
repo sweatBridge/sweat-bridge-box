@@ -31,17 +31,16 @@ const AdminDashboard = () => {
   }, [boxes]);
 
   const summaryCards = [
-    { label: '전체 고객사', value: stats.totalBoxes, unit: '개', icon: Building2, color: AdminColors.primary, bg: AdminColors.primaryLight, borderColor: AdminColors.border },
-    { label: '활성 박스', value: stats.activeBoxes, unit: '개', icon: TrendingUp, color: '#10b981', bg: '#ecfdf5', borderColor: '#a7f3d0' },
-    { label: '정지 박스', value: stats.suspendedBoxes, unit: '개', icon: AlertCircle, color: '#ef4444', bg: '#fef2f2', borderColor: '#fecaca' },
+    { label: '전체 고객사', value: stats.totalBoxes, unit: '개', icon: Building2, color: AdminColors.primary, bg: AdminColors.primaryLight },
+    { label: '활성 박스', value: stats.activeBoxes, unit: '개', icon: TrendingUp, color: 'var(--success)', bg: 'var(--success-bg)' },
+    { label: '정지 박스', value: stats.suspendedBoxes, unit: '개', icon: AlertCircle, color: 'var(--error)', bg: 'var(--error-bg)' },
     {
       label: '전체 회원',
       value: stats.boxesWithCount.length > 0 ? stats.totalMembers : null,
       unit: '명',
       icon: Users,
-      color: '#f59e0b',
-      bg: '#fffbeb',
-      borderColor: '#fde68a',
+      color: 'var(--warning)',
+      bg: 'var(--warning-bg)',
     },
   ];
 
@@ -63,40 +62,34 @@ const AdminDashboard = () => {
   const circumference = 2 * Math.PI * 54; // ≈ 339.3
 
   return (
-    <div>
+    <div className="ds-page">
       {/* 요약 카드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
-        {summaryCards.map(({ label, value, unit, icon: Icon, color, bg, borderColor }) => (
-          <div key={label} style={{
-            background: 'white', border: `1px solid ${borderColor}`, borderRadius: '12px',
-            padding: '22px 20px', display: 'flex', alignItems: 'center', gap: '16px',
-          }}>
-            <div style={{
-              width: '48px', height: '48px', borderRadius: '12px', background: bg,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <Icon size={22} color={color} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-4)' }}>
+        {summaryCards.map(({ label, value, unit, icon: Icon, color, bg }) => (
+          <div key={label} className="ds-stat">
+            <div className="ds-stat__top">
+              <div className="ds-stat__icon" style={{ background: bg, color }}>
+                <Icon />
+              </div>
+              <span className="ds-stat__label">{label}</span>
             </div>
-            <div>
-              <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>{label}</div>
-              {loading ? (
-                <div style={{ width: '60px', height: '28px', background: '#f3f4f6', borderRadius: '6px', animation: 'pulse 1.5s ease-in-out infinite' }} />
-              ) : (
-                <div style={{ fontSize: '30px', fontWeight: '700', color: '#111827', lineHeight: 1 }}>
-                  {value !== null && value !== undefined
-                    ? <>{value}<span style={{ fontSize: '15px', fontWeight: '500', color: '#6b7280', marginLeft: '3px' }}>{unit}</span></>
-                    : <span style={{ fontSize: '16px', color: '#9ca3af' }}>-</span>
-                  }
-                </div>
-              )}
-            </div>
+            {loading ? (
+              <div style={{ width: '60px', height: '30px', background: 'var(--gray-100)', borderRadius: 'var(--radius-sm)' }} />
+            ) : (
+              <div className="ds-stat__value">
+                {value !== null && value !== undefined
+                  ? <>{value}<span style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-muted)', marginLeft: '4px' }}>{unit}</span></>
+                  : <span style={{ fontSize: '16px', color: 'var(--text-subtle)' }}>-</span>
+                }
+              </div>
+            )}
           </div>
         ))}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '20px' }}>
         {/* 회원 수 TOP 5 */}
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px' }}>
+        <div className="ds-card ds-card--pad">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#111827' }}>회원 수 TOP 5 (활성 박스)</h3>
             <button
@@ -164,7 +157,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* 전체 박스 현황 */}
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px' }}>
+        <div className="ds-card ds-card--pad">
           <h3 style={{ margin: '0 0 20px', fontSize: '16px', fontWeight: '700', color: '#111827' }}>전체 박스 현황</h3>
 
           <div style={{ marginBottom: '20px', textAlign: 'center' }}>
@@ -175,7 +168,7 @@ const AdminDashboard = () => {
                   <>
                     <circle
                       cx="70" cy="70" r="54" fill="none"
-                      stroke="#1e293b" strokeWidth="18"
+                      stroke="var(--color-primary)" strokeWidth="18"
                       strokeDasharray={`${(stats.activeBoxes / stats.totalBoxes) * circumference} ${circumference}`}
                       strokeDashoffset={circumference * 0.25}
                       strokeLinecap="round"
@@ -211,7 +204,7 @@ const AdminDashboard = () => {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {[
-              { label: '활성', value: stats.activeBoxes, color: '#1e293b' },
+              { label: '활성', value: stats.activeBoxes, color: 'var(--color-primary)' },
               { label: '정지', value: stats.suspendedBoxes, color: '#ef4444' },
             ].map(({ label, value, color }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

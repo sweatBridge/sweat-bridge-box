@@ -16,6 +16,8 @@ export type { FirebaseClassData, ClassPayload, FirebaseClassDocument } from './h
 
 export { HybridAdminBoxRepository as AdminBoxRepository } from './hybrid/hybridAdminBoxRepository';
 
+export { HybridAdminUserRepository as AdminUserRepository } from './hybrid/hybridAdminUserRepository';
+
 export { HybridNoticeRepository as NoticeRepository } from './hybrid/hybridNoticeRepository';
 export type { NoticePost, NoticeAuthor } from './noticeRepository';
 

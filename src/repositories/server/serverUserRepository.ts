@@ -8,8 +8,10 @@ export interface ServerUserResponse {
   gender: string | null;
   birth: string | null;
   box_name: string | null;
-  role: string;
-  status: string;
+  role: string | null;
+  status: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface ServerUserUpdate {
@@ -24,6 +26,10 @@ export interface ServerUserUpdate {
 }
 
 export class ServerUserRepository {
+  static async listUsers(): Promise<ServerUserResponse[]> {
+    return api.get<ServerUserResponse[]>('/api/v1/users?limit=200');
+  }
+
   static async getUserByEmail(email: string): Promise<ServerUserResponse> {
     return api.get<ServerUserResponse>(`/api/v1/users/${encodeURIComponent(email)}`);
   }

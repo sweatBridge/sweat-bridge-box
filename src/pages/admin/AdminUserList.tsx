@@ -1,21 +1,35 @@
-import { useState, useMemo } from 'react';
-import { Search, Users, UserCheck, UserCog, ShieldCheck, X, ChevronDown, ChevronRight, Building2 } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { Search, Users, UserCheck, UserCog, ShieldCheck, X, ChevronDown, ChevronRight, Building2, AlertCircle, Trash2 } from 'lucide-react';
 import { AdminColors } from '../../constants/adminColors';
 import { UserRole, BoxStatus } from '../../types/auth';
-import { MOCK_USERS, AdminUserSummary } from './_mockData';
+import { AdminUserRole, AdminUserSummary } from '../../types/adminUser';
+import { useAdminUsers } from '../../hooks/useAdminUsers';
+import ToastMessage from '../../components/ToastMessage';
+import { ToastMessageType } from '../../types/member';
 
-type RoleFilter = 'all' | UserRole;
+type RoleFilter = 'all' | AdminUserRole;
 
-const ROLE_LABEL: Record<UserRole, string> = {
-  coach: '코치',
-  operator: '운영자',
-  admin: '어드민',
+const normalizeBoxName = (boxName: string): string => boxName.replace(/^\?+/, '').trim();
+
+const ROLE_SORT_ORDER: Record<AdminUserRole, number> = {
+  admin: 0,
+  coach: 1,
+  member: 2,
+  unknown: 3,
 };
 
-const ROLE_COLOR: Record<UserRole, { bg: string; color: string }> = {
+const ROLE_LABEL: Record<AdminUserRole, string> = {
+  member: '회원',
+  coach: '코치',
+  admin: '어드민',
+  unknown: '미확인',
+};
+
+const ROLE_COLOR: Record<AdminUserRole, { bg: string; color: string }> = {
+  member: { bg: '#f3f4f6', color: '#4b5563' },
   coach: { bg: '#eff6ff', color: '#1d4ed8' },
-  operator: { bg: '#f0fdf4', color: '#15803d' },
   admin: { bg: '#fdf4ff', color: '#7e22ce' },
+  unknown: { bg: '#fff7ed', color: '#c2410c' },
 };
 
 const BOX_STATUS_LABEL: Record<BoxStatus, string> = {
@@ -32,7 +46,7 @@ const BOX_STATUS_COLOR: Record<BoxStatus, { bg: string; color: string }> = {
   REJECTED: { bg: '#fee2e2', color: '#991b1b' },
 };
 
-const RoleBadge = ({ role }: { role: UserRole }) => {
+const RoleBadge = ({ role }: { role: AdminUserRole }) => {
   const { bg, color } = ROLE_COLOR[role];
   return (
     <span style={{
@@ -62,31 +76,29 @@ const StatusBadge = ({ status }: { status?: BoxStatus }) => {
 const SummaryCard = ({
   label, value, icon: Icon, color, bg,
 }: { label: string; value: number; icon: React.ElementType; color: string; bg: string }) => (
-  <div style={{
-    background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px',
-    padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '16px',
-  }}>
-    <div style={{
-      width: '44px', height: '44px', borderRadius: '10px', background: bg,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <Icon size={20} color={color} />
+  <div className="ds-stat">
+    <div className="ds-stat__top">
+      <div className="ds-stat__icon" style={{ background: bg, color }}>
+        <Icon />
+      </div>
+      <span className="ds-stat__label">{label}</span>
     </div>
-    <div>
-      <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '4px' }}>{label}</div>
-      <div style={{ fontSize: '28px', fontWeight: '700', color: '#111827', lineHeight: 1 }}>{value}</div>
-    </div>
+    <div className="ds-stat__value">{value}</div>
   </div>
 );
 
 interface RoleChangeModalProps {
   user: AdminUserSummary;
-  onConfirm: (newRole: UserRole) => void;
+  onConfirm: (newRole: UserRole) => Promise<void>;
   onClose: () => void;
+  submitting: boolean;
+  error: string | null;
 }
 
-const RoleChangeModal = ({ user, onConfirm, onClose }: RoleChangeModalProps) => {
-  const [selectedRole, setSelectedRole] = useState<UserRole>(user.role);
+const RoleChangeModal = ({ user, onConfirm, onClose, submitting, error }: RoleChangeModalProps) => {
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(
+    user.role === 'unknown' ? null : user.role as UserRole
+  );
 
   return (
     <div
@@ -98,8 +110,8 @@ const RoleChangeModal = ({ user, onConfirm, onClose }: RoleChangeModalProps) => 
     >
       <div
         style={{
-          background: 'white', borderRadius: '16px', padding: '28px 32px',
-          width: '400px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+          background: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '28px 32px',
+          width: '400px', boxShadow: 'var(--shadow-lg)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -134,7 +146,7 @@ const RoleChangeModal = ({ user, onConfirm, onClose }: RoleChangeModalProps) => 
             변경할 역할 선택
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {(['coach', 'operator', 'admin'] as UserRole[]).map((role) => {
+            {(['member', 'coach', 'admin'] as UserRole[]).map((role) => {
               const { bg, color } = ROLE_COLOR[role];
               const isSelected = selectedRole === role;
               return (
@@ -159,9 +171,9 @@ const RoleChangeModal = ({ user, onConfirm, onClose }: RoleChangeModalProps) => 
                     </span>
                   </div>
                   <span style={{ fontSize: '12px', color: '#9ca3af' }}>
+                    {role === 'member' && '일반 회원'}
                     {role === 'coach' && '박스 내 기능 접근'}
-                    {role === 'operator' && '어드민 포털 접근'}
-                    {role === 'admin' && '전체 권한'}
+                    {role === 'admin' && '어드민 포털 + 전체 권한'}
                   </span>
                 </button>
               );
@@ -172,35 +184,129 @@ const RoleChangeModal = ({ user, onConfirm, onClose }: RoleChangeModalProps) => 
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
             onClick={onClose}
+            disabled={submitting}
             style={{
               flex: 1, padding: '11px', borderRadius: '9px',
-              border: '1px solid #e5e7eb', background: 'white',
+              border: '1px solid var(--border-strong)', background: 'var(--surface)',
               fontSize: '14px', fontWeight: '500', color: '#374151', cursor: 'pointer',
             }}
           >
             취소
           </button>
           <button
-            onClick={() => onConfirm(selectedRole)}
-            disabled={selectedRole === user.role}
+            onClick={() => selectedRole && void onConfirm(selectedRole)}
+            disabled={!selectedRole || selectedRole === user.role || submitting}
             style={{
               flex: 1, padding: '11px', borderRadius: '9px', border: 'none',
-              background: selectedRole === user.role ? '#e5e7eb' : AdminColors.primary,
+              background: !selectedRole || selectedRole === user.role || submitting ? '#e5e7eb' : AdminColors.primary,
               fontSize: '14px', fontWeight: '600',
-              color: selectedRole === user.role ? '#9ca3af' : 'white',
-              cursor: selectedRole === user.role ? 'not-allowed' : 'pointer',
+              color: !selectedRole || selectedRole === user.role || submitting ? '#9ca3af' : 'white',
+              cursor: !selectedRole || selectedRole === user.role || submitting ? 'not-allowed' : 'pointer',
               transition: 'background 0.15s',
             }}
           >
-            변경 확인
+            {submitting ? '변경 중...' : '변경 확인'}
           </button>
         </div>
+        {error && (
+          <div style={{ marginTop: '12px', fontSize: '13px', color: '#dc2626', textAlign: 'center' }}>
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-const COL = '2fr 1fr 1.1fr 0.9fr 0.8fr';
+interface DeleteConfirmModalProps {
+  user: AdminUserSummary;
+  onConfirm: () => Promise<void>;
+  onClose: () => void;
+  submitting: boolean;
+  error: string | null;
+}
+
+const DeleteConfirmModal = ({ user, onConfirm, onClose, submitting, error }: DeleteConfirmModalProps) => (
+  <div
+    style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    }}
+    onClick={onClose}
+  >
+    <div
+      style={{
+        background: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '28px 32px',
+        width: '420px', boxShadow: 'var(--shadow-lg)',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '36px', height: '36px', borderRadius: '9px', background: '#fee2e2',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Trash2 size={18} color="#dc2626" />
+          </div>
+          <div>
+            <div style={{ fontSize: '16px', fontWeight: '700', color: '#111827' }}>유저 삭제</div>
+            <div style={{ fontSize: '13px', color: '#6b7280' }}>{user.realName} ({user.email})</div>
+          </div>
+        </div>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+          <X size={18} color="#9ca3af" />
+        </button>
+      </div>
+
+      <div style={{
+        background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px',
+        padding: '12px 16px', marginBottom: '24px', fontSize: '13px', color: '#92400e', lineHeight: '1.6',
+      }}>
+        이 작업은 되돌릴 수 없습니다.<br />
+        <strong>{user.realName}</strong>의 계정이 아래에서 모두 삭제됩니다.<br />
+        · Firestore (user 문서, member 문서)<br />
+        · Firebase Authentication<br />
+        · 서버 DB (PostgreSQL)
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button
+          onClick={onClose}
+          disabled={submitting}
+          style={{
+            flex: 1, padding: '11px', borderRadius: '9px',
+            border: '1px solid var(--border-strong)', background: 'var(--surface)',
+            fontSize: '14px', fontWeight: '500', color: '#374151', cursor: 'pointer',
+          }}
+        >
+          취소
+        </button>
+        <button
+          onClick={() => void onConfirm()}
+          disabled={submitting}
+          style={{
+            flex: 1, padding: '11px', borderRadius: '9px', border: 'none',
+            background: submitting ? '#e5e7eb' : '#dc2626',
+            fontSize: '14px', fontWeight: '600',
+            color: submitting ? '#9ca3af' : 'white',
+            cursor: submitting ? 'not-allowed' : 'pointer',
+            transition: 'background 0.15s',
+          }}
+        >
+          {submitting ? '삭제 중...' : '삭제 확인'}
+        </button>
+      </div>
+      {error && (
+        <div style={{ marginTop: '12px', fontSize: '13px', color: '#dc2626', textAlign: 'center' }}>
+          {error}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const COL = '2fr 1fr 1.1fr 0.9fr 1fr';
 
 const TableHeader = () => (
   <div style={{
@@ -221,9 +327,10 @@ const TableHeader = () => (
 interface UserRowProps {
   user: AdminUserSummary;
   onRoleChange: (user: AdminUserSummary) => void;
+  onDelete: (user: AdminUserSummary) => void;
 }
 
-const UserRow = ({ user, onRoleChange }: UserRowProps) => (
+const UserRow = ({ user, onRoleChange, onDelete }: UserRowProps) => (
   <div style={{
     display: 'grid', gridTemplateColumns: COL,
     gap: '12px', padding: '13px 16px',
@@ -252,13 +359,13 @@ const UserRow = ({ user, onRoleChange }: UserRowProps) => (
     <div><RoleBadge role={user.role} /></div>
     <div style={{ fontSize: '13px', color: '#6b7280' }}>{user.createdAt}</div>
     <div><StatusBadge status={user.status} /></div>
-    <div>
+    <div style={{ display: 'flex', gap: '6px' }}>
       <button
         onClick={() => onRoleChange(user)}
         style={{
           padding: '6px 12px', borderRadius: '7px',
           border: `1px solid ${AdminColors.primary}`,
-          background: 'white', color: AdminColors.primary,
+          background: 'var(--surface)', color: AdminColors.primary,
           fontSize: '12px', fontWeight: '600', cursor: 'pointer',
           transition: 'all 0.15s',
         }}
@@ -273,6 +380,29 @@ const UserRow = ({ user, onRoleChange }: UserRowProps) => (
       >
         역할 변경
       </button>
+      <button
+        onClick={() => onDelete(user)}
+        style={{
+          padding: '6px 8px', borderRadius: '7px',
+          border: '1px solid #fecaca',
+          background: 'white', color: '#dc2626',
+          fontSize: '12px', cursor: 'pointer',
+          transition: 'all 0.15s', display: 'flex', alignItems: 'center',
+        }}
+        title="유저 삭제"
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = '#dc2626';
+          (e.currentTarget as HTMLButtonElement).style.color = 'white';
+          (e.currentTarget as HTMLButtonElement).style.borderColor = '#dc2626';
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = 'white';
+          (e.currentTarget as HTMLButtonElement).style.color = '#dc2626';
+          (e.currentTarget as HTMLButtonElement).style.borderColor = '#fecaca';
+        }}
+      >
+        <Trash2 size={13} />
+      </button>
     </div>
   </div>
 );
@@ -281,27 +411,25 @@ interface BoxGroupProps {
   boxName: string;
   users: AdminUserSummary[];
   onRoleChange: (user: AdminUserSummary) => void;
+  onDelete: (user: AdminUserSummary) => void;
 }
 
-const BoxGroup = ({ boxName, users, onRoleChange }: BoxGroupProps) => {
-  const [collapsed, setCollapsed] = useState(false);
+const BoxGroup = ({ boxName, users, onRoleChange, onDelete }: BoxGroupProps) => {
+  const [collapsed, setCollapsed] = useState(true);
   const isUnassigned = !boxName;
 
   return (
-    <div style={{
-      background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px',
-      overflow: 'hidden', marginBottom: '12px',
-    }}>
+    <div className="ds-card" style={{ overflow: 'hidden', marginBottom: '12px' }}>
       {/* 박스 헤더 */}
       <button
         onClick={() => setCollapsed(!collapsed)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: '12px',
           padding: '14px 20px', background: 'transparent', border: 'none', cursor: 'pointer',
-          borderBottom: collapsed ? 'none' : '1px solid #f3f4f6',
+          borderBottom: collapsed ? 'none' : '1px solid var(--border)',
           transition: 'background 0.15s',
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
+        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-muted)')}
         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
       >
         <div style={{
@@ -320,7 +448,7 @@ const BoxGroup = ({ boxName, users, onRoleChange }: BoxGroupProps) => {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '6px', marginRight: '8px' }}>
-          {(['coach', 'operator', 'admin'] as UserRole[]).map((role) => {
+          {(['member', 'coach', 'admin', 'unknown'] as AdminUserRole[]).map((role) => {
             const count = users.filter((u) => u.role === role).length;
             if (count === 0) return null;
             const { bg, color } = ROLE_COLOR[role];
@@ -344,7 +472,7 @@ const BoxGroup = ({ boxName, users, onRoleChange }: BoxGroupProps) => {
         <div style={{ padding: '8px 20px 12px' }}>
           <TableHeader />
           {users.map((user) => (
-            <UserRow key={user.uid} user={user} onRoleChange={onRoleChange} />
+            <UserRow key={user.uid} user={user} onRoleChange={onRoleChange} onDelete={onDelete} />
           ))}
         </div>
       )}
@@ -353,11 +481,19 @@ const BoxGroup = ({ boxName, users, onRoleChange }: BoxGroupProps) => {
 };
 
 const AdminUserList = () => {
-  const [users, setUsers] = useState<AdminUserSummary[]>(MOCK_USERS);
+  const { users, loading, error, loadUsers, updateUserRole, deleteUser } = useAdminUsers();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<RoleFilter>('all');
   const [selectedUser, setSelectedUser] = useState<AdminUserSummary | null>(null);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const [roleUpdating, setRoleUpdating] = useState(false);
+  const [roleUpdateError, setRoleUpdateError] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<AdminUserSummary | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [createToast, setCreateToast] = useState<((toast: ToastMessageType) => void) | null>(null);
+
+  useEffect(() => { void loadUsers(); }, [loadUsers]);
 
   const filtered = useMemo(() => {
     return users.filter((u) => {
@@ -373,47 +509,80 @@ const AdminUserList = () => {
     });
   }, [users, searchQuery, filterRole]);
 
-  // 박스별 그룹핑 — boxName 알파벳순, 미지정은 마지막
+  // 가입 대기 사용자의 "?" 접두사를 제거해 실제 박스 기준으로 묶습니다.
+  // 박스명은 가나다순, 그룹 내부는 권한과 이름 순으로 정렬합니다.
   const grouped = useMemo(() => {
     const map = new Map<string, AdminUserSummary[]>();
     for (const u of filtered) {
-      const key = u.boxName || '';
+      const key = normalizeBoxName(u.boxName);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(u);
     }
-    return Array.from(map.entries()).sort(([a], [b]) => {
-      if (!a) return 1;
-      if (!b) return -1;
-      return a.localeCompare(b);
-    });
+    return Array.from(map.entries())
+      .map(([boxName, boxUsers]) => [
+        boxName,
+        [...boxUsers].sort((a, b) =>
+          ROLE_SORT_ORDER[a.role] - ROLE_SORT_ORDER[b.role]
+          || a.realName.localeCompare(b.realName, 'ko')
+        ),
+      ] as [string, AdminUserSummary[]])
+      .sort(([a], [b]) => {
+        if (!a) return 1;
+        if (!b) return -1;
+        return a.localeCompare(b, 'ko');
+      });
   }, [filtered]);
 
   const totalCoach = users.filter((u) => u.role === 'coach').length;
-  const totalOperator = users.filter((u) => u.role === 'operator').length;
+  const totalMember = users.filter((u) => u.role === 'member').length;
   const totalAdmin = users.filter((u) => u.role === 'admin').length;
 
-  const handleRoleChange = (newRole: UserRole) => {
+  const handleRoleChange = async (newRole: UserRole) => {
     if (!selectedUser) return;
-    setUsers((prev) =>
-      prev.map((u) => (u.uid === selectedUser.uid ? { ...u, role: newRole } : u))
-    );
-    setSelectedUser(null);
+    setRoleUpdating(true);
+    setRoleUpdateError(null);
+    try {
+      await updateUserRole(selectedUser.email, newRole);
+      setSelectedUser(null);
+      createToast?.({ type: 'success', message: `${selectedUser.realName}의 역할이 ${ROLE_LABEL[newRole as AdminUserRole] ?? newRole}(으)로 변경되었습니다.` });
+    } catch {
+      setRoleUpdateError('역할 변경에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setRoleUpdating(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const name = userToDelete.realName;
+      await deleteUser(userToDelete.email, userToDelete.boxName);
+      setUserToDelete(null);
+      createToast?.({ type: 'success', message: `${name} 계정이 삭제되었습니다.` });
+    } catch {
+      setDeleteError('삭제에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const ROLE_FILTERS: { value: RoleFilter; label: string }[] = [
     { value: 'all', label: '전체' },
+    { value: 'member', label: '회원' },
     { value: 'coach', label: '코치' },
-    { value: 'operator', label: '운영자' },
     { value: 'admin', label: '어드민' },
+    { value: 'unknown', label: '미확인' },
   ];
 
   return (
     <div>
       {/* 요약 카드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-        <SummaryCard label="전체 유저" value={users.length} icon={Users} color="#3182f6" bg="#eff6ff" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
+        <SummaryCard label="전체 유저" value={users.length} icon={Users} color={AdminColors.primary} bg={AdminColors.primaryLight} />
+        <SummaryCard label="회원" value={totalMember} icon={Users} color="#4b5563" bg="#f3f4f6" />
         <SummaryCard label="코치" value={totalCoach} icon={UserCheck} color="#1d4ed8" bg="#dbeafe" />
-        <SummaryCard label="운영자" value={totalOperator} icon={UserCog} color="#15803d" bg="#dcfce7" />
         <SummaryCard label="어드민" value={totalAdmin} icon={ShieldCheck} color="#7e22ce" bg="#f3e8ff" />
       </div>
 
@@ -422,7 +591,7 @@ const AdminUserList = () => {
         <div style={{
           flex: 1, minWidth: '200px',
           display: 'flex', alignItems: 'center', gap: '10px',
-          border: '1px solid #d1d5db', borderRadius: '8px', padding: '0 14px', background: 'white',
+          border: '1px solid var(--border-strong)', borderRadius: 'var(--radius-md)', padding: '0 14px', background: 'var(--surface)',
         }}>
           <Search size={16} color="#9ca3af" />
           <input
@@ -444,8 +613,8 @@ const AdminUserList = () => {
               display: 'flex', alignItems: 'center', gap: '8px',
               padding: '0 16px', height: '42px', borderRadius: '8px',
               border: `1px solid ${filterRole !== 'all' ? AdminColors.primary : '#d1d5db'}`,
-              background: filterRole !== 'all' ? AdminColors.primary : 'white',
-              color: filterRole !== 'all' ? 'white' : '#374151',
+              background: filterRole !== 'all' ? AdminColors.primary : 'var(--surface)',
+              color: filterRole !== 'all' ? 'white' : 'var(--text)',
               fontSize: '14px', cursor: 'pointer', fontWeight: '500',
             }}
           >
@@ -455,8 +624,8 @@ const AdminUserList = () => {
           {roleDropdownOpen && (
             <div style={{
               position: 'absolute', top: '46px', left: 0, zIndex: 100,
-              background: 'white', border: '1px solid #e5e7eb', borderRadius: '8px',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.1)', overflow: 'hidden', minWidth: '110px',
+              background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+              boxShadow: 'var(--shadow-md)', overflow: 'hidden', minWidth: '110px',
             }}>
               {ROLE_FILTERS.map((f) => (
                 <button
@@ -478,9 +647,39 @@ const AdminUserList = () => {
       </div>
 
       {/* 박스별 그룹 */}
-      {grouped.length === 0 ? (
+      {loading ? (
         <div style={{
-          background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px',
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)',
+          textAlign: 'center', padding: '60px 20px', color: '#9ca3af',
+        }}>
+          <div style={{
+            width: '32px', height: '32px', margin: '0 auto 12px',
+            border: '3px solid #e2e8f0', borderTop: `3px solid ${AdminColors.primary}`,
+            borderRadius: '50%', animation: 'spin 1s linear infinite',
+          }} />
+          <p style={{ margin: 0, fontSize: '14px' }}>유저 목록을 불러오는 중...</p>
+          <style>{`@keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }`}</style>
+        </div>
+      ) : error ? (
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)',
+          textAlign: 'center', padding: '60px 20px', color: '#9ca3af',
+        }}>
+          <AlertCircle size={40} color="#ef4444" style={{ marginBottom: '12px' }} />
+          <p style={{ margin: '0 0 16px', fontSize: '15px', color: '#374151' }}>{error}</p>
+          <button
+            onClick={() => void loadUsers()}
+            style={{
+              padding: '9px 20px', border: 'none', borderRadius: '8px',
+              background: AdminColors.primary, color: 'white', cursor: 'pointer', fontSize: '14px',
+            }}
+          >
+            다시 시도
+          </button>
+        </div>
+      ) : grouped.length === 0 ? (
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)',
           textAlign: 'center', padding: '60px 20px', color: '#9ca3af',
         }}>
           <Users size={40} style={{ marginBottom: '12px', opacity: 0.4 }} />
@@ -494,6 +693,7 @@ const AdminUserList = () => {
               boxName={boxName}
               users={boxUsers}
               onRoleChange={setSelectedUser}
+              onDelete={setUserToDelete}
             />
           ))}
           <div style={{ fontSize: '13px', color: '#9ca3af', marginTop: '4px' }}>
@@ -506,9 +706,31 @@ const AdminUserList = () => {
         <RoleChangeModal
           user={selectedUser}
           onConfirm={handleRoleChange}
-          onClose={() => setSelectedUser(null)}
+          onClose={() => {
+            setSelectedUser(null);
+            setRoleUpdateError(null);
+          }}
+          submitting={roleUpdating}
+          error={roleUpdateError}
         />
       )}
+
+      {userToDelete && (
+        <DeleteConfirmModal
+          user={userToDelete}
+          onConfirm={handleDeleteConfirm}
+          onClose={() => {
+            setUserToDelete(null);
+            setDeleteError(null);
+          }}
+          submitting={deleting}
+          error={deleteError}
+        />
+      )}
+
+      <ToastMessage
+        onCreateToast={(fn) => setCreateToast(() => fn)}
+      />
     </div>
   );
 };

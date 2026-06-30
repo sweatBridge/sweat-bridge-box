@@ -401,7 +401,7 @@ const MemberManagement = () => {
               className={`tab-button ${activeTab === 'current' ? 'active' : ''}`}
               onClick={() => setActiveTab('current')}
             >
-              현재
+              전체
             </button>
             <button
               className={`tab-button ${activeTab === 'expired' ? 'active' : ''}`}

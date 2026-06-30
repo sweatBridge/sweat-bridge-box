@@ -6,7 +6,6 @@ interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
-  isOperator: boolean;
   isAdmin: boolean;
 }
 
@@ -114,7 +113,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     clearError,
-    isOperator: authState.user?.role === 'operator' || authState.user?.role === 'admin',
     isAdmin: authState.user?.role === 'admin',
   };
 

@@ -72,6 +72,7 @@ export interface ServerMemberCreate {
   birth_date?: string | null;
   phone?: string | null;
   memo?: string | null;
+  joined_at?: string | null;
 }
 
 export interface ServerMemberUpdate {

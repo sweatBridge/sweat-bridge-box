@@ -8,13 +8,7 @@ import { AdminBoxRepository } from '../../repositories/adminBoxRepository';
 const StatusBadge = ({ status }: { status?: BoxStatus }) => {
   const resolved = status ?? 'active';
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: '6px',
-      padding: '5px 14px', borderRadius: '16px', fontSize: '13px', fontWeight: '600',
-      background: resolved === 'active' ? '#d1fae5' : '#fee2e2',
-      color: resolved === 'active' ? '#065f46' : '#991b1b',
-    }}>
-      <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: resolved === 'active' ? '#10b981' : '#ef4444' }} />
+    <span className={`ds-badge ${resolved === 'active' ? 'ds-badge--success' : 'ds-badge--error'}`}>
       {resolved === 'active' ? '활성' : '정지'}
     </span>
   );
@@ -28,7 +22,7 @@ const InfoRow = ({ icon: Icon, label, value }: { icon: React.ElementType; label:
     }}>
       <Icon size={16} color={AdminColors.primary} />
     </div>
-    <div>
+    <div className="ds-page">
       <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '3px' }}>{label}</div>
       <div style={{ fontSize: '14px', color: '#111827', fontWeight: '500' }}>{value || '-'}</div>
     </div>
@@ -119,8 +113,8 @@ const AdminBoxDetail = () => {
         onClick={() => navigate('/admin/boxes')}
         style={{
           display: 'flex', alignItems: 'center', gap: '6px',
-          border: 'none', background: 'transparent', color: '#6b7280',
-          fontSize: '14px', cursor: 'pointer', marginBottom: '20px', padding: 0,
+          border: 'none', background: 'transparent', color: 'var(--text-muted)',
+          fontSize: '14px', cursor: 'pointer', padding: 0,
         }}
       >
         <ArrowLeft size={16} />
@@ -130,7 +124,7 @@ const AdminBoxDetail = () => {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px', alignItems: 'start' }}>
         {/* 기본 정보 */}
         <div>
-          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', marginBottom: '16px' }}>
+          <div className="ds-card ds-card--pad" style={{ marginBottom: 'var(--space-4)' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <div style={{
@@ -173,7 +167,7 @@ const AdminBoxDetail = () => {
           </div>
 
           {/* 코치 목록 */}
-          <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px' }}>
+          <div className="ds-card ds-card--pad">
             <h3 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: '700', color: '#111827' }}>코치 목록</h3>
             {!box.coaches?.length ? (
               <p style={{ color: '#9ca3af', fontSize: '14px' }}>등록된 코치가 없습니다.</p>
@@ -205,7 +199,7 @@ const AdminBoxDetail = () => {
         </div>
 
         {/* 운영 상태 관리 */}
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px' }}>
+        <div className="ds-card ds-card--pad">
           <h3 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: '700', color: '#111827' }}>운영 상태 관리</h3>
 
           <div style={{ marginBottom: '16px' }}>
@@ -255,7 +249,7 @@ const AdminBoxDetail = () => {
           onClick={() => !statusUpdating && setShowStatusConfirm(false)}
         >
           <div
-            style={{ background: 'white', padding: '28px', borderRadius: '12px', width: '380px' }}
+            style={{ background: 'var(--surface)', padding: '28px', borderRadius: 'var(--radius-lg)', width: '380px', boxShadow: 'var(--shadow-lg)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <h3 style={{ margin: '0 0 12px', fontSize: '18px', fontWeight: '700' }}>상태 변경 확인</h3>
@@ -269,7 +263,7 @@ const AdminBoxDetail = () => {
               <button
                 onClick={() => setShowStatusConfirm(false)}
                 disabled={statusUpdating}
-                style={{ padding: '9px 18px', border: '1px solid #d1d5db', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '14px' }}
+                className="ds-btn ds-btn--ghost"
               >
                 취소
               </button>

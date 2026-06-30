@@ -1,3 +1,4 @@
+import { Timestamp } from 'firebase/firestore';
 import { serverRead, serverWrite } from '../../data/apiClient';
 import { BoxStatus } from '../../types/auth';
 import { BoxUser, MemberApplicantRecord } from '../../types/member';
@@ -71,9 +72,11 @@ export class HybridMemberRepository {
 
   static async deleteMember(box: string, email: string): Promise<void> {
     await MemberRepository.deleteMember(box, email);
+    await MemberRepository.updateUserBoxInfo(email, '', 'NONE');
     serverWrite(async () => {
       const member = await ServerMemberRepository.getMemberByEmail(box, email).catch(() => null);
       if (member) await ServerMemberRepository.deleteMemberById(member.id);
+      await ServerUserRepository.updateUser(email, { box_name: '', status: 'NONE' });
     }, `Member.deleteMember(${email})`);
   }
 
@@ -95,6 +98,9 @@ export class HybridMemberRepository {
 
   static async setMember(box: string, email: string, payload: Record<string, unknown>): Promise<void> {
     await MemberRepository.setMember(box, email, payload);
+    const joinedAt = payload.joinedAt instanceof Timestamp
+      ? payload.joinedAt.toDate().toISOString()
+      : null;
     serverWrite(async () => {
       const existing = await ServerMemberRepository.getMemberByEmail(box, email).catch(() => null);
       if (existing) {
@@ -115,7 +121,8 @@ export class HybridMemberRepository {
           gender: (payload.gender as string | null) ?? null,
           birth_date: (payload.birthDate as string | null) ?? null,
           phone: (payload.phone as string | null) ?? null,
-          memo: (payload.memo as string | null) ?? null
+          memo: (payload.memo as string | null) ?? null,
+          joined_at: joinedAt,
         });
       }
     }, `Member.setMember(${email})`);
@@ -182,23 +189,42 @@ export class HybridMemberRepository {
     memberData: Record<string, unknown>
   ): Promise<void> {
     await MemberRepository.commitApproveApplicantBatch(email, boxName, memberData);
-    serverWrite(
-      () => ServerMemberRepository.createMember({
-        box_name: boxName,
-        email,
-        real_name: (memberData.realName as string) || '',
-        nick_name: (memberData.nickName as string | null) ?? null,
-        gender: (memberData.gender as string | null) ?? null,
-        birth_date: (memberData.birthDate as string | null) ?? null,
-        phone: (memberData.phone as string | null) ?? null,
-        memo: (memberData.memo as string | null) ?? null
-      }),
-      `Member.commitApproveApplicantBatch(${email})`
-    );
+    const joinedAt = memberData.joinedAt instanceof Timestamp
+      ? memberData.joinedAt.toDate().toISOString()
+      : null;
+    serverWrite(async () => {
+      // applied 삭제와 member 생성을 독립적으로 처리 — 하나가 실패해도 다른 하나가 블록되지 않음
+      const applied = await ServerAppliedRepository.findByEmail(boxName, email).catch(() => null);
+      if (applied) {
+        await ServerAppliedRepository.deleteApplied(applied.id).catch(() => {});
+      }
+      const existing = await ServerMemberRepository.getMemberByEmail(boxName, email).catch(() => null);
+      if (!existing) {
+        await ServerMemberRepository.createMember({
+          box_name: boxName,
+          email,
+          real_name: (memberData.realName as string) || '',
+          nick_name: (memberData.nickName as string | null) ?? null,
+          gender: (memberData.gender as string | null) ?? null,
+          birth_date: (memberData.birthDate as string | null) ?? null,
+          phone: (memberData.phone as string | null) ?? null,
+          memo: (memberData.memo as string | null) ?? null,
+          joined_at: joinedAt,
+        });
+      }
+      await ServerUserRepository.updateUser(email, { box_name: boxName, status: 'APPROVED' });
+    }, `Member.commitApproveApplicantBatch(${email})`);
   }
 
-  static commitRejectApplicantBatch(email: string, boxName: string): Promise<void> {
-    return MemberRepository.commitRejectApplicantBatch(email, boxName);
+  static async commitRejectApplicantBatch(email: string, boxName: string): Promise<void> {
+    await MemberRepository.commitRejectApplicantBatch(email, boxName);
+    serverWrite(async () => {
+      const applied = await ServerAppliedRepository.findByEmail(boxName, email).catch(() => null);
+      if (applied) {
+        await ServerAppliedRepository.deleteApplied(applied.id).catch(() => {});
+      }
+      await ServerUserRepository.updateUser(email, { box_name: '', status: 'REJECTED' });
+    }, `Member.commitRejectApplicantBatch(${email})`);
   }
 
   static async updateUserBoxInfo(email: string, boxName: string, status: BoxStatus): Promise<void> {
@@ -227,6 +253,7 @@ function toBoxUser(u: ServerUserResponse): BoxUser {
     boxName: u.box_name ?? '',
     status: u.status as BoxStatus,
     gender: (u.gender as 'M' | 'F') ?? undefined,
-    role: u.role,
+    role: u.role ?? undefined,
+    birth: u.birth ?? undefined,
   };
 }

@@ -37,11 +37,11 @@ const INITIAL_COACH: Coach = { name: '', phone: '', email: '' };
 const inputStyle = (readonly = false): React.CSSProperties => ({
   width: '100%',
   padding: '10px 12px',
-  border: '1px solid #d1d5db',
-  borderRadius: '6px',
+  border: '1px solid var(--border-strong)',
+  borderRadius: 'var(--radius-md)',
   fontSize: '14px',
-  color: readonly ? '#6b7280' : '#111827',
-  background: readonly ? '#f9fafb' : 'white',
+  color: readonly ? 'var(--text-muted)' : 'var(--text-strong)',
+  background: readonly ? 'var(--surface-muted)' : 'var(--surface)',
   cursor: readonly ? 'not-allowed' : 'text',
   boxSizing: 'border-box',
   outline: 'none',
@@ -61,23 +61,17 @@ interface SectionProps {
 }
 
 const Section = ({ icon: Icon, title, children, action }: SectionProps) => (
-  <div style={{
-    background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px',
-    overflow: 'hidden', marginBottom: '16px',
-  }}>
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '14px 20px',
-      background: AdminColors.headerGradient,
-      color: 'white',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '15px' }}>
-        <Icon size={18} />
+  <div className="ds-card" style={{ overflow: 'hidden', marginBottom: 'var(--space-4)' }}>
+    <div className="ds-card__head" style={{ alignItems: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 600, fontSize: '15px', color: 'var(--text-strong)' }}>
+        <span style={{ width: '34px', height: '34px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-md)', background: 'var(--color-primary-bg)', color: 'var(--color-primary)' }}>
+          <Icon size={17} />
+        </span>
         {title}
       </div>
       {action}
     </div>
-    <div style={{ padding: '24px 20px' }}>{children}</div>
+    <div className="ds-card__body">{children}</div>
   </div>
 );
 
@@ -89,7 +83,7 @@ const FormGroup = ({
   label, required, fullWidth, children,
 }: { label: string; required?: boolean; fullWidth?: boolean; children: React.ReactNode }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: fullWidth ? '1 / -1' : undefined }}>
-    <label style={{ fontSize: '14px', fontWeight: 500, color: '#374151' }}>
+    <label style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text)' }}>
       {label}{required && <span style={{ color: '#ef4444', marginLeft: '3px' }}>*</span>}
     </label>
     {children}
@@ -210,7 +204,7 @@ const AdminBoxOnboarding = () => {
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
           <button
             onClick={() => { setForm(INITIAL_FORM); setSubmitted(false); }}
-            style={{ padding: '11px 22px', border: '1px solid #d1d5db', borderRadius: '8px', background: 'white', color: '#374151', fontSize: '14px', cursor: 'pointer' }}
+            className="ds-btn ds-btn--ghost"
           >
             추가 등록
           </button>
@@ -276,12 +270,7 @@ const AdminBoxOnboarding = () => {
             <button
               type="button"
               onClick={handlePostcode}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '5px',
-                padding: '5px 12px', borderRadius: '6px',
-                background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)',
-                color: 'white', fontSize: '13px', cursor: 'pointer',
-              }}
+              className="ds-btn ds-btn--subtle ds-btn--sm"
             >
               <Search size={13} />
               주소 검색
@@ -316,7 +305,7 @@ const AdminBoxOnboarding = () => {
         {/* ── 코치진 ── */}
         <Section icon={Users} title="코치진">
           {/* 코치 추가 행 */}
-          <div style={{ background: '#f8fafc', padding: '16px 20px', borderRadius: '8px', marginBottom: '20px' }}>
+          <div style={{ background: 'var(--surface-muted)', padding: '16px 20px', borderRadius: 'var(--radius-md)', marginBottom: '20px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '12px', alignItems: 'flex-end' }}>
               <FormGroup label="이름">
                 <input
@@ -352,11 +341,9 @@ const AdminBoxOnboarding = () => {
                 type="button"
                 onClick={handleAddCoach}
                 disabled={!newCoach.name.trim() || !newCoach.phone.trim() || !newCoach.email.trim()}
+                className="ds-btn ds-btn--primary"
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '5px',
-                  padding: '10px 16px', border: 'none', borderRadius: '6px',
-                  background: AdminColors.primary, color: 'white', fontSize: '14px',
-                  cursor: 'pointer', whiteSpace: 'nowrap', marginTop: '22px',
+                  marginTop: '22px',
                   opacity: (!newCoach.name.trim() || !newCoach.phone.trim() || !newCoach.email.trim()) ? 0.5 : 1,
                 }}
               >
@@ -454,18 +441,16 @@ const AdminBoxOnboarding = () => {
           <button
             type="button"
             onClick={() => navigate('/admin/boxes')}
-            style={{ padding: '11px 22px', border: '1px solid #d1d5db', borderRadius: '8px', background: 'white', color: '#374151', fontSize: '14px', cursor: 'pointer' }}
+            className="ds-btn ds-btn--ghost"
           >
             취소
           </button>
           <button
             type="submit"
             disabled={submitting}
+            className="ds-btn ds-btn--primary"
             style={{
-              padding: '11px 28px', border: 'none', borderRadius: '8px',
-              background: AdminColors.primary, color: 'white', fontSize: '14px', fontWeight: '600',
-              cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1,
-              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '0 24px', opacity: submitting ? 0.7 : 1,
             }}
           >
             {submitting && (

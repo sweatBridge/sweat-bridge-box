@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, Calendar, ChevronLeft, ChevronRight, LockIcon, DollarSign } from 'lucide-react';
-import { AppColors } from '../constants/colors';
 import NoticeIcon from './icons/NoticeIcon';
 
 interface AppSidebarProps {
@@ -74,41 +73,45 @@ const AppSidebar = ({ selectedIndex }: AppSidebarProps) => {
 
       <style>{`
         .sidebar {
-          width: 280px;
-          background: ${AppColors.primary};
-          color: white;
+          width: 248px;
+          background: var(--color-primary);
+          color: #fff;
           height: 100vh;
           position: relative;
-          transition: width 0.3s ease;
-          overflow: hidden;
+          transition: width 0.24s var(--ease);
+          overflow: visible;
+          display: flex;
+          flex-direction: column;
         }
 
         .sidebar.collapsed {
-          width: 80px;
+          width: 76px;
         }
 
         .sidebar-logo {
           display: flex;
           align-items: center;
-          padding: 24px 20px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          min-height: 80px;
+          padding: 22px 20px;
+          min-height: 76px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.16);
         }
 
         .sidebar-logo-icon {
-          width: 32px;
-          height: 32px;
+          width: 30px;
+          height: 30px;
           flex-shrink: 0;
-          border-radius: 6px;
+          border-radius: 8px;
           object-fit: cover;
         }
 
         .sidebar-logo-text {
-          margin-left: 12px;
-          font-size: 20px;
+          margin-left: 10px;
+          font-size: 17px;
           font-weight: 700;
+          letter-spacing: -0.01em;
+          color: #fff;
           opacity: 1;
-          transition: opacity 0.3s ease;
+          transition: opacity 0.2s ease;
           white-space: nowrap;
         }
 
@@ -119,143 +122,109 @@ const AppSidebar = ({ selectedIndex }: AppSidebarProps) => {
         .sidebar-toggle {
           position: absolute;
           top: 24px;
-          right: 24px;
-          background: rgba(255, 255, 255, 0.15);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          color: white;
-          border-radius: 6px;
-          width: 32px;
-          height: 32px;
+          right: -13px;
+          background: var(--surface);
+          border: 1px solid var(--border-strong);
+          color: var(--color-primary);
+          border-radius: var(--radius-full);
+          width: 26px;
+          height: 26px;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          transition: all 0.2s ease;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          transition: all var(--dur) var(--ease);
+          box-shadow: var(--shadow-sm);
           z-index: 10;
         }
 
         .sidebar-toggle:hover {
-          background: rgba(255, 255, 255, 0.2);
-          border-color: rgba(255, 255, 255, 0.4);
-          transform: scale(1.1);
+          color: var(--color-primary-hover);
+          border-color: var(--color-primary);
         }
 
         .toggle-icon {
-          width: 16px;
-          height: 16px;
+          width: 15px;
+          height: 15px;
         }
 
         .sidebar-nav {
-          padding: 20px 0;
+          padding: 14px 0;
         }
 
         .sidebar-nav-item {
           display: flex;
           align-items: center;
-          padding: 16px 20px;
+          padding: 11px 14px;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
           position: relative;
-          margin: 4px 12px;
-          border-radius: 8px;
+          margin: 3px 12px;
+          border-radius: var(--radius-md);
+          color: rgba(255, 255, 255, 0.78);
+          font-weight: 500;
         }
 
         .sidebar.collapsed .sidebar-nav-item {
           justify-content: center;
-          margin: 4px 8px;
-          padding: 16px 8px;
+          margin: 3px 14px;
+          padding: 11px 8px;
         }
 
         .sidebar-nav-item:hover {
-          background-color: rgba(255, 255, 255, 0.1);
-          transform: translateX(4px);
-        }
-
-        .sidebar.collapsed .sidebar-nav-item:hover {
-          transform: scale(1.05);
+          background-color: rgba(255, 255, 255, 0.12);
+          color: #fff;
         }
 
         .sidebar-nav-item.active {
-          background-color: rgba(255, 255, 255, 0.2);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .sidebar-nav-item.active::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 0;
-          bottom: 0;
-          width: 4px;
-          background-color: white;
-          border-radius: 0 2px 2px 0;
-        }
-
-        .sidebar.collapsed .sidebar-nav-item.active::before {
-          display: none;
+          background-color: rgba(255, 255, 255, 0.18);
+          color: #fff;
+          font-weight: 600;
         }
 
         .sidebar-nav-icon {
-          width: 20px;
-          height: 20px;
+          width: 19px;
+          height: 19px;
           flex-shrink: 0;
         }
 
         .nav-text {
-          margin-left: 12px;
-          font-weight: 500;
-          transition: opacity 0.3s ease;
+          margin-left: 11px;
+          font-size: 14px;
+          transition: opacity 0.2s ease;
           white-space: nowrap;
         }
 
         .sidebar.collapsed .nav-text {
           opacity: 0;
+          width: 0;
+          margin-left: 0;
+          overflow: hidden;
         }
 
-        /* 툴팁 스타일 (접힌 상태에서 호버 시) */
-        .sidebar.collapsed .sidebar-nav-item {
-          position: relative;
-        }
-
+        /* 툴팁 (접힌 상태에서 호버 시) */
         .sidebar.collapsed .sidebar-nav-item::after {
           content: attr(title);
           position: absolute;
           left: 100%;
           top: 50%;
           transform: translateY(-50%);
-          background-color: #1f2937;
+          background-color: var(--gray-900);
           color: white;
-          padding: 8px 12px;
-          border-radius: 6px;
-          font-size: 14px;
+          padding: 7px 11px;
+          border-radius: var(--radius-sm);
+          font-size: 13px;
+          font-weight: 500;
           white-space: nowrap;
           opacity: 0;
           visibility: hidden;
-          transition: all 0.2s ease;
-          margin-left: 12px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          transition: opacity var(--dur) var(--ease);
+          margin-left: 14px;
+          box-shadow: var(--shadow-md);
           z-index: 100;
         }
 
-        .sidebar.collapsed .sidebar-nav-item::before {
-          content: '';
-          position: absolute;
-          left: 100%;
-          top: 50%;
-          transform: translateY(-50%);
-          border-style: solid;
-          border-width: 6px 6px 6px 0;
-          border-color: transparent #1f2937 transparent transparent;
-          opacity: 0;
-          visibility: hidden;
-          transition: all 0.2s ease;
-          margin-left: 6px;
-          z-index: 100;
-        }
-
-        .sidebar.collapsed .sidebar-nav-item:hover::after,
-        .sidebar.collapsed .sidebar-nav-item:hover::before {
+        .sidebar.collapsed .sidebar-nav-item:hover::after {
           opacity: 1;
           visibility: visible;
         }
@@ -265,11 +234,7 @@ const AppSidebar = ({ selectedIndex }: AppSidebarProps) => {
           .sidebar {
             position: fixed;
             z-index: 1000;
-            left: ${isCollapsed ? '-280px' : '0'};
-          }
-
-          .sidebar.collapsed {
-            left: -80px;
+            left: ${isCollapsed ? '-76px' : '0'};
           }
         }
       `}</style>

@@ -33,16 +33,15 @@ const AdminHeader = ({ title, subtitle }: AdminHeaderProps) => {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '0 28px',
-        height: '72px',
-        background: 'white',
-        borderBottom: '1px solid #e5e7eb',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+        padding: '0 32px',
+        height: '68px',
+        background: 'var(--surface)',
+        borderBottom: '1px solid var(--border)',
         flexShrink: 0,
       }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#111827' }}>{title}</h1>
-          {subtitle && <p style={{ margin: 0, fontSize: '13px', color: '#6b7280', marginTop: '2px' }}>{subtitle}</p>}
+          <h1 style={{ margin: 0, fontSize: '20px', fontWeight: '700', letterSpacing: '-0.01em', color: 'var(--text-strong)' }}>{title}</h1>
+          {subtitle && <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>{subtitle}</p>}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -53,11 +52,11 @@ const AdminHeader = ({ title, subtitle }: AdminHeaderProps) => {
             padding: '6px 14px',
             background: AdminColors.primaryLight,
             border: `1px solid ${AdminColors.border}`,
-            borderRadius: '20px',
+            borderRadius: 'var(--radius-full)',
           }}>
             <Shield size={14} color={AdminColors.primary} />
             <span style={{ fontSize: '13px', fontWeight: '600', color: AdminColors.primary }}>운영사</span>
-            <span style={{ fontSize: '13px', color: '#374151' }}>{user?.realName || '관리자'}</span>
+            <span style={{ fontSize: '13px', color: 'var(--text)' }}>{user?.realName || '관리자'}</span>
           </div>
 
           <button
@@ -67,21 +66,21 @@ const AdminHeader = ({ title, subtitle }: AdminHeaderProps) => {
               alignItems: 'center',
               gap: '6px',
               padding: '7px 14px',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              background: 'white',
-              color: '#6b7280',
+              border: '1px solid var(--border-strong)',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--surface)',
+              color: 'var(--text-muted)',
               fontSize: '13px',
               cursor: 'pointer',
               transition: 'all 0.2s',
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = '#f9fafb';
-              (e.currentTarget as HTMLElement).style.color = '#374151';
+              (e.currentTarget as HTMLElement).style.background = 'var(--surface-muted)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--text)';
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'white';
-              (e.currentTarget as HTMLElement).style.color = '#6b7280';
+              (e.currentTarget as HTMLElement).style.background = 'var(--surface)';
+              (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)';
             }}
           >
             <LogOut size={14} />
@@ -99,25 +98,22 @@ const AdminHeader = ({ title, subtitle }: AdminHeaderProps) => {
           onClick={() => setShowLogoutDialog(false)}
         >
           <div
-            style={{ background: 'white', padding: '28px', borderRadius: '12px', width: '360px' }}
+            style={{ background: 'var(--surface)', padding: '28px', borderRadius: 'var(--radius-lg)', width: '360px', boxShadow: 'var(--shadow-lg)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ margin: '0 0 12px', fontSize: '18px', fontWeight: '700' }}>로그아웃</h3>
-            <p style={{ margin: '0 0 24px', color: '#6b7280', fontSize: '14px' }}>정말 로그아웃하시겠습니까?</p>
+            <h3 style={{ margin: '0 0 12px', fontSize: '18px', fontWeight: '700', color: 'var(--text-strong)' }}>로그아웃</h3>
+            <p style={{ margin: '0 0 24px', color: 'var(--text-muted)', fontSize: '14px' }}>정말 로그아웃하시겠습니까?</p>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button
                 onClick={() => setShowLogoutDialog(false)}
-                style={{ padding: '8px 18px', border: '1px solid #d1d5db', borderRadius: '6px', background: 'white', cursor: 'pointer', fontSize: '14px' }}
+                className="ds-btn ds-btn--ghost"
               >
                 취소
               </button>
               <button
                 onClick={handleLogout}
                 disabled={isLoggingOut}
-                style={{
-                  padding: '8px 18px', border: 'none', borderRadius: '6px',
-                  background: AdminColors.primary, color: 'white', cursor: 'pointer', fontSize: '14px',
-                }}
+                className="ds-btn ds-btn--primary"
               >
                 {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
               </button>
