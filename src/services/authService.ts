@@ -32,9 +32,15 @@ export class AuthService {
   static async login(credentials: LoginCredentials): Promise<User> {
     try {
       const userCredential = await AuthRepository.signIn(credentials);
+      const user = await this.getUserInfo(credentials.email);
+
+      if (user.role !== 'admin' && user.role !== 'coach') {
+        await AuthRepository.signOut();
+        throw new Error('관리자 또는 코치 계정만 로그인할 수 있습니다.');
+      }
+
       const idToken = await userCredential.user.getIdToken();
       const idTokenResult = await userCredential.user.getIdTokenResult();
-      const user = await this.getUserInfo(credentials.email);
 
       localStorage.setItem('userToken', idToken);
       localStorage.setItem('tokenExpiration', idTokenResult.expirationTime);
@@ -44,6 +50,9 @@ export class AuthService {
       return user;
     } catch (error) {
       console.error('Login failed:', error);
+      if (error instanceof Error && error.message === '관리자 또는 코치 계정만 로그인할 수 있습니다.') {
+        throw error;
+      }
       throw new Error('아이디와 비밀번호를 다시 확인해주세요.');
     }
   }
